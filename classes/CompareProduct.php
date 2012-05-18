@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 15173 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,7 +80,13 @@ class CompareProductCore extends ObjectModel
 	public static function addCompareProduct($id_compare, $id_product)
 	{
 		global $cookie;
-		
+
+		// Check if compare row exists
+		$id_compare = Db::getInstance()->getValue('
+			SELECT `id_compare`
+			FROM `'._DB_PREFIX_.'compare`
+			WHERE `id_compare` = '.(int)$id_compare);
+
 		if (!$id_compare)
 		{
 			$id_customer = false;

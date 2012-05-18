@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15238 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,7 +40,8 @@ class FianetSceau extends Module
 		$this->limited_countries = array('fr');
 		
 	 	parent::__construct();
-		
+
+		$this->author = 'PrestaShop';
 		$this->displayName = $this->l('FIA-NET Seal of Confidence');
 		$this->description = $this->l('Turn your visitors into buyers by creating confidence in your site.');
 		if (!Configuration::get('FIANET_SCEAU_PRIVATEKEY'))

@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 13850 $
+*  @version  Release: $Revision: 14971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 *}
@@ -51,9 +51,9 @@ param_product_url = '';
 										{if $smarty.foreach.f_values.first}
 											<li>
 												<a href="#" rel="layered_{$filter.type}_slider" title="{l s='Cancel' mod='blocklayered'}">x</a>
-												{$filter.name|escape:html:'UTF-8'}{l s=':' mod='blocklayered'}
-												{$filter.values[0]|escape:html:'UTF-8'}{$filter.unit|escape:html:'UTF-8'} - 
-												{$filter.values[1]|escape:html:'UTF-8'}{$filter.unit|escape:html:'UTF-8'}
+												{$filter.name|escape:html:'UTF-8'} ({$filter.unit|escape:html:'UTF-8'}){l s=':' mod='blocklayered'}
+												{$filter.values[0]|escape:html:'UTF-8'} - 
+												{$filter.values[1]|escape:html:'UTF-8'}
 											</li>
 										{/if}
 									{else}
@@ -80,7 +80,7 @@ param_product_url = '';
 						{else}
 						<div>
 						{/if}
-						<span class="layered_subtitle">{$filter.name|escape:html:'UTF-8'}</span>
+						<span class="layered_subtitle">{$filter.name|escape:html:'UTF-8'} {if isset($filter.unit)}({$filter.unit|escape:html:'UTF-8'}){/if}</span>
 						<span class="layered_close"><a href="#" rel="ul_layered_{$filter.type}_{$filter.id_key}">v</a></span>
 						<div class="clear"></div>
 						<ul id="ul_layered_{$filter.type}_{$filter.id_key}">
@@ -97,7 +97,7 @@ param_product_url = '';
 										{/if}
 										<label for="layered_{$filter.type_lite}_{$id_value}"{if !$value.nbr} class="disabled"{else}{if isset($filter.is_color_group) && $filter.is_color_group} name="layered_{$filter.type_lite}_{$id_value}" class="layered_color" rel="{$id_value}_{$filter.id_key}"{/if}{/if}>
 											{if !$value.nbr}
-											{$value.name|escape:html:'UTF-8'}{if $layered_show_qties}<span> ({$value.nbr})</span>{/if}</a>
+											{$value.name|escape:html:'UTF-8'}{if $layered_show_qties}<span> ({$value.nbr})</span>{/if}
 											{else}
 											<a href="{$value.link}" rel="{$value.rel}">{$value.name|escape:html:'UTF-8'}{if $layered_show_qties}<span> ({$value.nbr})</span>{/if}</a>
 											{/if}
@@ -159,7 +159,7 @@ param_product_url = '';
 										values: [ {/literal}{$filter.values[0]}{literal}, {/literal}{$filter.values[1]}{literal}],
 										slide: function( event, ui ) {
 											stopAjaxQuery();
-											$('#layered_{/literal}{$filter.type}{literal}_range').html(ui.values[ 0 ] + '{/literal}{$filter.unit}{literal}' + ' - ' + ui.values[ 1 ] + '{/literal}{$filter.unit}{literal}');
+											$('#layered_{/literal}{$filter.type}{literal}_range').html(ui.values[ 0 ] + ' - ' + ui.values[ 1 ]);
 										},
 										stop: function () {
 											reloadContent();
@@ -182,8 +182,8 @@ param_product_url = '';
 									</script>
 								</li>
 								{else}
-								{foreach from=$filters.list_of_values  item=values}
-									<li class="nomargin" onclick="$('#layered_{$filter.type}_range_min').val({$values[0]});$('#layered_{$filter.type}_range_max').val({$values[1]});reloadContent();" class="{if $filter.values[1] == $values[1] && $filter.values[0] == $values[0]}layered_list_selected{/if} layered_list">
+								{foreach from=$filter.list_of_values  item=values}
+									<li class="nomargin {if $filter.values[1] == $values[1] && $filter.values[0] == $values[0]}layered_list_selected{/if} layered_list" onclick="$('#layered_{$filter.type}_range_min').val({$values[0]});$('#layered_{$filter.type}_range_max').val({$values[1]});reloadContent();">
 										- {l s='From' mod='blocklayered'} {$values[0]} {$filter.unit} {l s='to' mod='blocklayered'} {$values[1]} {$filter.unit}
 									</li>
 								{/foreach}

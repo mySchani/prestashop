@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14390 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -72,9 +72,9 @@ class PaypalPayment extends Paypal
 		$discounts = (float)($cart->getOrderTotal(true, PayPal::ONLY_DISCOUNTS));
 		if ($discounts == 0)
 		{
-			if ($params['cart']->id_customer)
+			if ($cart->id_customer)
 			{
-				$customer = new Customer((int)$params['cart']->id_customer);
+				$customer = new Customer((int)$cart->id_customer);
 				$taxCalculationMethod = Group::getPriceDisplayMethod((int)$customer->id_default_group);
 			}
 			else

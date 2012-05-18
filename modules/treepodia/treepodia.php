@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15238 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -49,6 +49,7 @@ class Treepodia extends Module
 	 	$this->tab = 'front_office_features';
 	 	$this->version = '1.6.1';
 		$this->displayName = 'Treepodia';
+		$this->author = 'PrestaShop';
 
 	 	parent::__construct();
 		$this->description = $this->l('Cover your entire catalog with product videos in 24 hours.');

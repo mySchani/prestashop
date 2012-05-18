@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14703 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -188,7 +188,7 @@ class AdminTaxes extends AdminTab
         $confirm = ($value AND TaxRule::isTaxInUse($id)) ? 'onclick="return confirm(\''. $this->l('This tax is currently in use in a tax rule. If you continue this tax will be removed from the tax rule, are you sure?').'\')"' : '';
 
 	    echo '<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&'.$active.
-	        ((int)$id_category AND (int)$id_product ? '&id_category='.$id_category : '').'&token='.($token!=NULL ? $token : $this->token).'" '.$confirm.'>
+	        ((int)$id_category && (int)$id_product ? '&id_category='.(int)$id_category : '').'&token='.($token != null ? $token : $this->token).'" '.$confirm.'>
 	        <img src="../img/admin/'.($value ? 'enabled.gif' : 'disabled.gif').'"
 	        alt="'.($value ? $this->l('Enabled') : $this->l('Disabled')).'" title="'.($value ? $this->l('Enabled') : $this->l('Disabled')).'" /></a>';
 	}

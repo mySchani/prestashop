@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14278 $
+*  @version  Release: $Revision: 15287 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -37,7 +37,7 @@ if (!isset($_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI'] == '')
 if ($tmp = strpos($_SERVER['REQUEST_URI'], '?'))
 	$_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 0, $tmp);
 
-define('INSTALL_VERSION', '1.4.7.2');
+define('INSTALL_VERSION', '1.4.8.2');
 define('MINIMUM_VERSION_TO_UPDATE', '0.8.5');
 define('INSTALL_PATH', dirname(__FILE__));
 if (version_compare(phpversion(), '5.0.0', '<'))
@@ -1364,8 +1364,8 @@ if ($lm->getIncludeTradFilename())
 </div>
 <ul id="footer">
 	<li><a href="http://www.prestashop.com/forums/" title="<?php echo lang('PrestaShop Forums'); ?>" target="_blank"><?php echo lang('PrestaShop Forums'); ?></a> | </li>
-	<li><a href="http://www.prestashop.com" title="PrestaShop.com" target="_blank">PrestaShop.com</a> | </li>
-	<li><a href="http://www.prestashop.com/contact.php" title="<?php echo lang('Contact us!'); ?>" target="_blank"><?php echo lang('Contact us!'); ?></a> | </li>
+	<li><a href="http://www.prestashop.com/?lang=<?php echo $lm->getIsoCodeSelectedLang(); ?>" title="PrestaShop.com" target="_blank">PrestaShop.com</a> | </li>
+	<li><a href="http://www.prestashop.com/contact.php?lang=<?php echo $lm->getIsoCodeSelectedLang(); ?>" title="<?php echo lang('Contact us!'); ?>" target="_blank"><?php echo lang('Contact us!'); ?></a> | </li>
 	<li>&copy; 2007-<?php echo date('Y'); ?></li>
 </ul>
 </body>

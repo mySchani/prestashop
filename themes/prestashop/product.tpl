@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14089 $
+*  @version  Release: $Revision: 14514 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -65,7 +65,7 @@ var productAvailableForOrder = {if (isset($restricted_country_mode) AND $restric
 var productShowPrice = '{if !$PS_CATALOG_MODE}{$product->show_price}{else}0{/if}';
 var productUnitPriceRatio = '{$product->unit_price_ratio}';
 var idDefaultImage = {if isset($cover.id_image_only)}{$cover.id_image_only}{else}0{/if};
-var ipa_default = {if isset($ipa_default)}{$ipa_default}{/if};
+var ipa_default = {if isset($ipa_default)}{$ipa_default}{else}0{/if};
 
 // Customizable field
 var img_ps_dir = '{$img_ps_dir}';
@@ -164,7 +164,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 					{foreach from=$images item=image name=thumbnails}
 					{assign var=imageIds value="`$product->id`-`$image.id_image`"}
 					<li id="thumbnail_{$image.id_image}">
-						<a href="{$link->getImageLink($product->link_rewrite, $imageIds, 'thickbox')}" rel="other-views" class="thickbox {if $smarty.foreach.thumbnails.first}shown{/if}" title="{$image.legend|htmlspecialchars}">
+						<a href="{$link->getImageLink($product->link_rewrite, $imageIds, 'thickbox')}" rel="other-views" class="thickbox {if (isset($image.cover) AND $image.cover == 1) OR (!isset($image.cover) AND $smarty.foreach.thumbnails.first)}shown{/if}" title="{$image.legend|htmlspecialchars}">
 							<img id="thumb_{$image.id_image}" src="{$link->getImageLink($product->link_rewrite, $imageIds, 'medium')}" alt="{$image.legend|htmlspecialchars}" height="{$mediumSize.height}" width="{$mediumSize.width}" />
 						</a>
 					</li>

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14007 $
+*  @version  Release: $Revision: 14424 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,6 +35,7 @@ function displayError($msg)
 	'This product does not exist in our store.' => Tools::displayError('This product does not exist in our store.'),
 	'This product has been deleted.' => Tools::displayError('This product has been deleted.'),
 	'This file no longer exists.'	=> Tools::displayError('This file no longer exists.'),
+    'This product has been refunded.' => Tools::displayError('This product has been refunded.'),
 	'The product deadline is in the past.' => Tools::displayError('The product deadline is in the past.'),
 	'Expiration date exceeded' => Tools::displayError('Expiration date exceeded'),
 	'You have reached the maximum number of allowed downloads.' => Tools::displayError('You have reached the maximum number of allowed downloads.'));
@@ -105,6 +106,10 @@ else
 
 	if (!file_exists(_PS_DOWNLOAD_DIR_.$filename))
 		displayError('This file no longer exists.');
+
+    if (isset($info['product_quantity_refunded']) && isset($info['product_quantity_return']) &&
+        ($info['product_quantity_refunded'] > 0 || $info['product_quantity_return'] > 0))
+        displayError('This product has been refunded.');
 
 	$now = time();
 

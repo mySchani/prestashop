@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15238 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */ 
@@ -40,17 +40,19 @@ class PayPal extends PaymentModule
 	{
 		$this->name = 'paypal';
 		$this->tab = 'payments_gateways';
-		$this->version = '2.8.6';
+		$this->version = '2.8.7';
 		
 		$this->currencies = true;
 		$this->currencies_mode = 'radio';
 
-	        parent::__construct();
+		$this->author = 'PrestaShop';
 
-        	$this->_errors = array();
+		parent::__construct();
+
+		$this->_errors = array();
 		$this->page = basename(__FILE__, '.php');
-	        $this->displayName = $this->l('PayPal');
-	        $this->description = $this->l('Accepts payments by credit cards (CB, Visa, MasterCard, Amex, Aurore, Cofinoga, 4 stars) with PayPal.');
+		$this->displayName = $this->l('PayPal');
+		$this->description = $this->l('Accepts payments by credit cards (CB, Visa, MasterCard, Amex, Aurore, Cofinoga, 4 stars) with PayPal.');
 		$this->confirmUninstall = $this->l('Are you sure you want to delete your details?');
 		if (Configuration::get('PAYPAL_BUSINESS') == 'paypal@prestashop.com')
 			$this->warning = $this->l('You are currently using the default PayPal e-mail address, please enter your own e-mail address.');
@@ -438,7 +440,6 @@ class PayPal extends PaymentModule
 			$request .= '&ORDERDESCRIPTION='.urlencode(substr($description, 0, 120));
 		}
 
-
 		// Calling PayPal API
 		include_once(_PS_MODULE_DIR_.'paypal/api/paypallib.php');
 		$ppAPI = new PaypalLib();
@@ -456,9 +457,6 @@ class PayPal extends PaymentModule
 			$ppExpress->displayPayPalAPIError($ppExpress->l('PayPal return error.', 'submit'), $logs);
 		}
 		
-
-
-
 		// Making log
 		$id_transaction = $result['TRANSACTIONID'];
 		if (Configuration::get('PAYPAL_CAPTURE'))
@@ -504,7 +502,7 @@ class PayPal extends PaymentModule
 			return;
 		
 		// Set transaction details if pcc is defiend in PaymentModule class_exists
-		if ($this->pcc)
+		if (isset($this->pcc))
 		{
 			$this->pcc->transaction_id = (isset($extraVars['transaction_id']) ?
 				$extraVars['transaction_id'] : '');
@@ -785,7 +783,6 @@ class PayPal extends PaymentModule
 			<li><input type="radio" name="payment_method" id="payment_method_2" value="'._PAYPAL_INTEGRAL_EVOLUTION_.'" '.($paymentMethod == _PAYPAL_INTEGRAL_EVOLUTION_ ? 'checked="checked" ' : '').'/> <label for="payment_method_2" class="t"><b>'.$this->l('Payments by cards + seller protection').'</b></label><sup>*</sup> '.$this->l('(PayPal Integral Evolution, monthly subscription)').'</li>
 			<li><input type="radio" name="payment_method" id="payment_method_1" value="'._PAYPAL_OPTION_PLUS_.'" '.($paymentMethod == _PAYPAL_OPTION_PLUS_ ? 'checked="checked" ' : '').'/> <label for="payment_method_1" class="t">'.$this->l('Payments by').' <b>'.$this->l('PayPal account').'</b> '.$this->l('(PayPal Option+)').'</label></li>
 		</ul>
-		<p style="color:red;"><sup>*</sup> '.$this->l('Activation subject to conditions').', <a style="color:red;text-decoration:underline;" href="'.$link.'" style="text-decoration:underline;" target="_blank">'.$this->l('click here to subscribe').'</a></p>
 		<h3>'.$this->l('Option:').'</h3>
 		<ul style="list-style-type:none;">
 			<li><input type="checkbox" name="paypal_express" id="paypal_express" value="1" '.($paypalExpress ? 'checked="checked" ' : '').'/> <label for="paypal_express" class="t"><b>'.$this->l('PayPal Express : payment in 2 clicks').'</b> '.$this->l('with PayPal account directly from cart page').'</label></li>
@@ -880,13 +877,6 @@ class PayPal extends PaymentModule
 	private function _setPayPalSubscription()
 	{
 		$this->_html .= '
-		<div style="float: right; width: 440px; height: 150px; border: dashed 1px #666; padding: 8px; margin-left: 12px;">
-			<h2>'.$this->l('Opening your PayPal account').'</h2>
-			<div style="clear: both;"></div>
-			<p>'.$this->l('When opening your PayPal account by clicking on the following image, you are helping us significantly to improve the PrestaShop software:').'</p>
-			<p style="text-align: center;"><a href="https://www.paypal.com/fr/mrb/pal=TWJHHUL9AEP9C"><img src="../modules/paypal/prestashop_paypal.png" alt="PrestaShop & PayPal" style="margin-top: 12px;" /></a></p>
-			<div style="clear: right;"></div>
-		</div>
 		<img src="../modules/paypal/paypal.gif" style="float:left; margin-right:15px;" />
 		<b>'.$this->l('This module allows you to accept payments by PayPal.').'</b><br /><br />
 		'.$this->l('If the client chooses this payment mode, your PayPal account will be automatically credited.').'<br />

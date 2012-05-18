@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14290 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -34,6 +34,9 @@ include(dirname(__FILE__).'/bankwire.php');
 
 if (!$cookie->isLogged(true))
 	Tools::redirect('authentication.php?back=order.php');
+elseif (!Customer::getAddressesTotalById((int)($cookie->id_customer)))
+	Tools::redirect('address.php?back=order.php?step=1');
+
 $bankwire = new BankWire();
 echo $bankwire->execPayment($cart);
 

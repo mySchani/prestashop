@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -178,7 +178,7 @@ abstract class PSCPrepaidServices extends PaymentModule
 		$hash = md5(Configuration::get($this->prefix.'SALT') + $amount + $currency_iso);
 
 		$ok_url = Tools::getShopDomainSsl(true, true)._MODULE_DIR_.$this->name.'/payment.php?hash='.$hash;
-		$nok_url = Tools::getShopDomainSsl(true, true).(_PS_VERSION_ < '1.5').__PS_BASE_URI__.'/order.php?step=3' ? : 'index.php?controller=order&step=3';
+		$nok_url = Tools::getShopDomainSsl(true, true).(_PS_VERSION_ < '1.5').__PS_BASE_URI__.'/order.php?step=3' ? '' : 'index.php?controller=order&step=3';
 
 		list($return_code, $error_code, $message) = PSCPrepaidServicesAPI::createDisposition($this->getAPIConfiguration($currency_iso), $mid, $mtid, $amount, $currency_iso, $ok_url, $nok_url, $business_type, $reporting_criteria);
 

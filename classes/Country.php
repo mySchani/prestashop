@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14418 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -83,6 +83,8 @@ class CountryCore extends ObjectModel
 
 	protected 	$table = 'country';
 	protected 	$identifier = 'id_country';
+
+    protected static $cache_iso_by_id = array();
 
 	public function getFields()
 	{
@@ -208,12 +210,15 @@ class CountryCore extends ObjectModel
 	*/
 	public static function getIsoById($id_country)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `iso_code`
-		FROM `'._DB_PREFIX_.'country`
-		WHERE `id_country` = '.(int)($id_country));
+        if (!isset(Country::$cache_iso_by_id[$id_country]))
+        {
+            Country::$cache_iso_by_id[$id_country] = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+            SELECT `iso_code`
+            FROM `'._DB_PREFIX_.'country`
+            WHERE `id_country` = '.(int)($id_country));
+        }
 
-		return $result['iso_code'];
+		return Country::$cache_iso_by_id[$id_country];
 	}
 
 	/**

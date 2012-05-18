@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14794 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -395,9 +395,15 @@ abstract class ModuleCore
 			$realpathModuleDir = realpath(_PS_MODULE_DIR_);
 			if (substr(realpath($filePath), 0, strlen($realpathModuleDir)) == $realpathModuleDir)
 			{
-				self::$classInModule[$currentClass] = substr(dirname($filePath), strlen($realpathModuleDir)+1);
+				$module_name = substr(dirname($filePath), strlen($realpathModuleDir) + 1);
+				// check the module name is correct (the name of the module directory, with no subdir)
+				$pos_dir_sep = strpos($module_name, DIRECTORY_SEPARATOR);
+				if (false != $pos_dir_sep)
+					self::$classInModule[$currentClass] = substr($module_name, 0, $pos_dir_sep);
+				else
+					self::$classInModule[$currentClass] = $module_name;
 
-				$id_lang = (!isset($cookie) OR !is_object($cookie)) ? (int)(Configuration::get('PS_LANG_DEFAULT')) : (int)($cookie->id_lang);
+				$id_lang = (!isset($cookie) || !is_object($cookie))?(int)Configuration::get('PS_LANG_DEFAULT'):(int)$cookie->id_lang;
 				$file = _PS_MODULE_DIR_.self::$classInModule[$currentClass].'/'.Language::getIsoById($id_lang).'.php';
 				if (Tools::file_exists_cache($file) AND include_once($file))
 					$_MODULES = !empty($_MODULES) ? array_merge($_MODULES, $_MODULE) : $_MODULE;

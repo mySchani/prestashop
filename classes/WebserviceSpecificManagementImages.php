@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14944 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -987,8 +987,13 @@ class WebserviceSpecificManagementImagesCore implements WebserviceSpecificManage
 						}
 						@unlink($tmpName);
 						$this->imgToDisplay = _PS_PROD_IMG_DIR_.$image->getExistingImgPath().'.'.$image->image_format;
+						if (!count($this->_errors))
+						{
+							header('Location: '.$this->wsObject->wsUrl.$this->wsObject->urlSegment[0].'/products/'.$product->id.'/'.$image->id);
+							die;
+						}
 					}
-					elseif ($this->imageType == 'categories')
+					elseif (isset($this->wsObject->urlSegment[1]) && in_array($this->wsObject->urlSegment[1], array('categories', 'manufacturers', 'suppliers', 'stores')))
 					{
 						if (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($file['tmp_name'], $tmpName))
 							throw new WebserviceException('An error occurred during the image upload', array(76, 400));

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 14935 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,7 +30,7 @@ class AdminPerformance extends AdminTab
 	public function postProcess()
 	{
 		global $currentIndex;
-		
+
 		/* PrestaShop demo mode */
 		if (_PS_MODE_DEMO_)
 		{
@@ -38,7 +38,7 @@ class AdminPerformance extends AdminTab
 			return;
 		}
 		/* PrestaShop demo mode*/
-		
+
 		if (Tools::isSubmit('submitCaching'))
 		{
 			if ($this->tabAccess['edit'] === '1')
@@ -46,7 +46,7 @@ class AdminPerformance extends AdminTab
 				$settings = file_get_contents(dirname(__FILE__).'/../../config/settings.inc.php');
 				if (!Tools::getValue('active'))
 					$cache_active = 0;
-				else	
+				else
 					$cache_active = 1;
 				if (!$caching_system = Tools::getValue('caching_system'))
 					$this->_errors[] = Tools::displayError('Caching system is missing');
@@ -62,7 +62,7 @@ class AdminPerformance extends AdminTab
 					if (!($depth = Tools::getValue('ps_cache_fs_directory_depth')))
 						$this->_errors[] = Tools::displayError('Please set a directory depth');
 					if (!sizeof($this->_errors))
-					{	
+					{
 						CacheFS::deleteCacheDirectory();
 						CacheFS::createCacheDirectories((int)$depth);
 						Configuration::updateValue('PS_CACHEFS_DIRECTORY_DEPTH', (int)$depth);
@@ -115,7 +115,7 @@ class AdminPerformance extends AdminTab
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
-		
+
 		if (Tools::isSubmit('submitCiphering') AND Configuration::get('PS_CIPHER_ALGORITHM') != (int)Tools::getValue('PS_CIPHER_ALGORITHM'))
 		{
 			if ($this->tabAccess['edit'] === '1')
@@ -156,7 +156,7 @@ class AdminPerformance extends AdminTab
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
-		
+
 		if (Tools::isSubmit('submitCCC'))
 		{
 			if ($this->tabAccess['edit'] === '1')
@@ -215,6 +215,16 @@ class AdminPerformance extends AdminTab
 		return parent::postProcess();
 	}
 
+	private function checkCloudCacheActive()
+	{
+		if (!class_exists('CloudCache'))
+			return -1;
+		$cc = new CloudCache();
+		if (!$cc->active)
+			return -2;
+		return 0;
+	}
+
 	public function display()
 	{
 		global $currentIndex;
@@ -224,12 +234,17 @@ class AdminPerformance extends AdminTab
 			$warnings[] = $this->l('To use Memcached, you must install the Memcache PECL extension on your server.').' <a href="http://www.php.net/manual/en/memcache.installation.php">http://www.php.net/manual/en/memcache.installation.php</a>';
 		if (!is_writable(_PS_CACHEFS_DIRECTORY_))
 			$warnings[] = $this->l('To use CacheFS the directory').' '.realpath(_PS_CACHEFS_DIRECTORY_).' '.$this->l('must be writable');
-	
+
 		if ($warnings)
 			$this->displayWarning($warnings);
-	
+
 		echo '<script type="text/javascript">
 						$(document).ready(function() {
+
+							$(\'#installCloudCache\').click(function() {
+								$(\'#filternameForm\').submit();
+							});
+
 							showMemcached();
 							$(\'#caching_system\').change(function() {
 								showMemcached();
@@ -254,12 +269,12 @@ class AdminPerformance extends AdminTab
 						});
 		</script>
 		';
-		
+
 		echo '
 		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'" method="post" style="margin-top:10px;">
 			<fieldset>
 				<legend><img src="../img/admin/prefs.gif" /> '.$this->l('Smarty').'</legend>
-				
+
 				<label>'.$this->l('Force compile:').'</label>
 				<div class="margin-form">
 					<input type="radio" name="smarty_force_compile" id="smarty_force_compile_1" value="1" '.(Configuration::get('PS_SMARTY_FORCE_COMPILE') ? 'checked="checked"' : '').' /> <label class="t"><img src="../img/admin/enabled.gif" alt="" /> '.$this->l('Yes').'</label>
@@ -278,7 +293,7 @@ class AdminPerformance extends AdminTab
 				</div>
 			</fieldset>
 		</form>';
-		
+
 		echo '
 		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'" method="post" style="margin-top:10px;">
 			<fieldset>
@@ -292,7 +307,7 @@ class AdminPerformance extends AdminTab
 					<input type="radio" value="0" name="PS_CSS_THEME_CACHE" id="PS_CSS_THEME_CACHE_0" '.(Configuration::get('PS_CSS_THEME_CACHE') ? '' : 'checked="checked"').' />
 					<label class="t" for="PS_CSS_THEME_CACHE_0">'.$this->l('Keep CSS as original').'</label>
 				</div>
-				
+
 				<label>'.$this->l('Smart cache for JavaScript').' </label>
 				<div class="margin-form">
 					<input type="radio" value="1" name="PS_JS_THEME_CACHE" id="PS_JS_THEME_CACHE_1" '.(Configuration::get('PS_JS_THEME_CACHE') ? 'checked="checked"' : '').' />
@@ -301,7 +316,7 @@ class AdminPerformance extends AdminTab
 					<input type="radio" value="0" name="PS_JS_THEME_CACHE" id="PS_JS_THEME_CACHE_0" '.(Configuration::get('PS_JS_THEME_CACHE') ? '' : 'checked="checked"').' />
 					<label class="t" for="PS_JS_THEME_CACHE_0">'.$this->l('Keep JavaScript as original').'</label>
 				</div>
-				
+
 				<label>'.$this->l('Minify HTML').' </label>
 				<div class="margin-form">
 					<input type="radio" value="1" name="PS_HTML_THEME_COMPRESSION" id="PS_HTML_THEME_COMPRESSION_1" '.(Configuration::get('PS_HTML_THEME_COMPRESSION') ? 'checked="checked"' : '').' />
@@ -310,7 +325,7 @@ class AdminPerformance extends AdminTab
 					<input type="radio" value="0" name="PS_HTML_THEME_COMPRESSION" id="PS_HTML_THEME_COMPRESSION_0" '.(Configuration::get('PS_HTML_THEME_COMPRESSION') ? '' : 'checked="checked"').' />
 					<label class="t" for="PS_HTML_THEME_COMPRESSION_0">'.$this->l('Keep HTML as original').'</label>
 				</div>
-				
+
 				<label>'.$this->l('Compress inline JavaScript in HTML').' </label>
 				<div class="margin-form">
 					<input type="radio" value="1" name="PS_JS_HTML_THEME_COMPRESSION" id="PS_JS_HTML_THEME_COMPRESSION_1" '.(Configuration::get('PS_JS_HTML_THEME_COMPRESSION') ? 'checked="checked"' : '').' />
@@ -319,7 +334,7 @@ class AdminPerformance extends AdminTab
 					<input type="radio" value="0" name="PS_JS_HTML_THEME_COMPRESSION" id="PS_JS_HTML_THEME_COMPRESSION_0" '.(Configuration::get('PS_JS_HTML_THEME_COMPRESSION') ? '' : 'checked="checked"').' />
 					<label class="t" for="PS_JS_HTML_THEME_COMPRESSION_0">'.$this->l('Keep inline JavaScript in HTML as original').'</label>
 				</div>
-				
+
 				<label>'.$this->l('High risk HTML compression').' </label>
 				<div class="margin-form">
 					<input type="radio" value="1" name="PS_HIGH_HTML_THEME_COMPRESSION" id="PS_HIGH_HTML_THEME_COMPRESSION_1" '.(Configuration::get('PS_HIGH_HTML_THEME_COMPRESSION') ? 'checked="checked"' : '').' />
@@ -328,13 +343,35 @@ class AdminPerformance extends AdminTab
 					<input type="radio" value="0" name="PS_HIGH_HTML_THEME_COMPRESSION" id="PS_HIGH_HTML_THEME_COMPRESSION_0" '.(Configuration::get('PS_HIGH_HTML_THEME_COMPRESSION') ? '' : 'checked="checked"').' />
 					<label class="t" for="PS_HIGH_HTML_THEME_COMPRESSION_0">'.$this->l('Keep W3C validation').'</label>
 				</div>
-				
+
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitCCC" class="button" />
 				</div>
 			</fieldset>
 		</form>';
-		
+
+		if (($cloudcache_status = $this->checkCloudCacheActive()) < 0)
+		{
+			echo '<br /><fieldset>
+				<legend><img src="'.($cloudcache_status == -2 ? '../modules/cloudcache/logo.gif' : '../img/admin/subdomain.gif').'" />CloudCache</legend>'.
+				$this->l('Performance matters! Improve speed and conversions the easy way.').'<br />'.
+				$this->l('CloudCache supercharges your site in minutes through its state-of-the-art content delivery network.').'<br /><br />'.
+				$this->l('Subscribe now using the code "presta25" and get an exclusive discount of 25% per month on every available package.').'<br /><br />';
+
+			if ($cloudcache_status == -2)
+				echo '<a style="color: blue" href="#" id="installCloudCache">&gt; '.
+					$this->l('Click here to install the CloudCache module for PrestaShop').'</a><br />';
+			else
+				echo '<a style="color: blue" href="http://addons.prestashop.com/en/content-management/5094-cloudcache.html" target="_blank">&gt; '.
+					$this->l('Click here to download the CloudCache module for PrestaShop').'</a><br />';
+
+			echo '</fieldset><br />';
+
+			echo '<form style="display: none;" id="filternameForm" method="post" action="index.php?tab=AdminModules&token='.
+				Tools::getAdminTokenLite('AdminModules').'">
+				<input type="hidden" value="CloudCache" name="filtername"> <input type="hidden" class="button" value="Search"></form>';
+	 }
+
 		echo '<form action="'.$currentIndex.'&token='.Tools::getValue('token').'" method="post" style="margin-top:10px;">
 			<fieldset>
 				<legend><img src="../img/admin/subdomain.gif" /> '.$this->l('Media servers (used only with CCC)').'</legend>
@@ -379,7 +416,7 @@ class AdminPerformance extends AdminTab
 			</form>
 		</fieldset>
 		';
-		
+
 		$depth = Configuration::get('PS_CACHEFS_DIRECTORY_DEPTH');
 		echo '<fieldset style="margin-top: 10px;">
 				<legend><img src="../img/admin/computer_key.png" /> '.$this->l('Caching').'</legend>
@@ -434,7 +471,7 @@ class AdminPerformance extends AdminTab
 						</form>
 					</div>';
 			$servers = MCached::getMemcachedServers();
-			if ($servers)					
+			if ($servers)
 			{
 				echo '<div class="margin-form">
 					<table style="width: 320px;" cellspacing="0" cellpadding="0" class="table">

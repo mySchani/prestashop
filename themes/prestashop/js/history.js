@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @version  Release: $Revision: 14917 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,10 +80,11 @@ function showOrder(mode, var_content, file)
 				$('form#sendOrderMessage').submit(function(){
 					return sendOrderMessage();
 			});
-			$(this).fadeIn('slow');
-			$.scrollTo(this, 1200);
-			if(typeof(resizeAddressesBox) == 'function')
-				resizeAddressesBox();
+			$(this).fadeIn('slow', function() {
+				$.scrollTo(this, 1200);
+				if(typeof(resizeAddressesBox) == 'function')
+					resizeAddressesBox();
+			});
 		});
 	});
 }

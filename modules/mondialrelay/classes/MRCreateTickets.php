@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15217 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -94,11 +94,11 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'Expe_Tel1'			=>  array(
 				'required'				=> true,
 				'value'						=> '',
-				'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+				'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Expe_Tel2'			=>  array(
 				'required'				=> false,
 				'value'						=> '',
-				'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+				'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Expe_Mail'			=>  array(
 				'required'				=> false,
 				'value'						=> '',
@@ -288,7 +288,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			$this->_fields['list']['Expe_Pays']['value'] = Country::getIsoById(Configuration::get('PS_SHOP_COUNTRY_ID'));
 		else
 			$this->_fields['list']['Expe_Pays']['value'] = substr(Configuration::get('PS_SHOP_COUNTRY'), 0, 2);
-		$this->_fields['list']['Expe_Tel1']['value'] = str_pad(substr(preg_replace('/[^0-9+\(\)]*/', '', Configuration::get('PS_SHOP_PHONE')), 0, 10), 10, '0');
+		$this->_fields['list']['Expe_Tel1']['value'] = MRTools::getFormatedPhone(Configuration::get('PS_SHOP_PHONE'));
 		$this->_fields['list']['Expe_Mail']['value'] = Configuration::get('PS_SHOP_EMAIL');
 		$this->_fields['list']['NbColis']['value'] = 1;
 		$this->_fields['list']['CRT_Valeur']['value'] = 0;
@@ -324,13 +324,10 @@ class MRCreateTickets implements IMondialRelayWSMethod
 						$tmp['Poids']['value'] = $this->_weightFormat($detail[0]);
 				}
 
-				$dest_tel = (!empty($deliveriesAddress->phone)) ?
-					str_pad(substr(preg_replace('/[^0-9+\(\)]*/', '', $deliveriesAddress->phone), 0, 10), 10, '0') :
-					'';
 
-				$dest_tel2 = (!empty($deliveriesAddress->phone_mobile)) ?
-					str_pad(substr(preg_replace('/[^0-9+\(\)]*/', '', $deliveriesAddress->phone_mobile), 0, 10), 10, '0') :
-					'';
+				$dest_tel = (!empty($deliveriesAddress->phone)) ? MRTools::getFormatedPhone($deliveriesAddress->phone) : '';
+
+				$dest_tel2 = (!empty($deliveriesAddress->phone_mobile)) ? MRTools::getFormatedPhone($deliveriesAddress->phone_mobile) : '';
 
 				$destIsoCode = Country::getIsoById($deliveriesAddress->id_country);
 				$tmp['ModeCol']['value'] = $orderDetail['mr_ModeCol'];
@@ -338,9 +335,9 @@ class MRCreateTickets implements IMondialRelayWSMethod
 				$tmp['NDossier']['value'] = $orderDetail['id_order'];
 				$tmp['NClient']['value'] = $orderDetail['id_customer'];
 				$tmp['Dest_Langage']['value'] = 'FR'; //Language::getIsoById($orderDetail['id_lang']);
-				$tmp['Dest_Ad1']['value'] = substr($deliveriesAddress->firstname.' '.$deliveriesAddress->lastname, 0, 32);;
-				$tmp['Dest_Ad2']['value'] = substr($deliveriesAddress->address2, 0, 32);
-				$tmp['Dest_Ad3']['value'] = substr($deliveriesAddress->address1, 0, 32);
+				$tmp['Dest_Ad1']['value'] = preg_replace(MRTools::REGEX_CLEAN_ADDR, '', substr($deliveriesAddress->firstname.' '.$deliveriesAddress->lastname, 0, 32));
+				$tmp['Dest_Ad2']['value'] = preg_replace(MRTools::REGEX_CLEAN_ADDR, '', substr($deliveriesAddress->address2, 0, 32));
+				$tmp['Dest_Ad3']['value'] = preg_replace(MRTools::REGEX_CLEAN_ADDR, '', substr($deliveriesAddress->address1, 0, 32));
 				$tmp['Dest_Ville']['value'] = $deliveriesAddress->city;
 				$tmp['Dest_CP']['value'] = $deliveriesAddress->postcode;
 				$tmp['Dest_CP']['params']['id_country'] = $deliveriesAddress->id_country;
@@ -382,7 +379,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 				{
 					// Mac server make an empty string instead of a cleaned string
 					// TODO : test on windows and linux server
-					$cleanedString = MRTools::replaceAccentedCharacters($valueDetailed['value']);
+					$cleanedString = MRTools::removeAccents($valueDetailed['value']);
 					$valueDetailed['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($valueDetailed['value']);
 
 					// Call a pointer function if exist to do different test
@@ -542,7 +539,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 					substr(Configuration::get('PS_SHOP_COUNTRY'), 0, 2)),
 				'error' => $this->_mondialrelay->l('Please check your country configuration')),
 			'Expe_Tel1' => array(
-				'value' => str_pad(substr(preg_replace('/[^0-9+\(\)]*/', '', Configuration::get('PS_SHOP_PHONE')), 0, 10), 10, '0'),
+				'value' => MRTools::getFormatedPhone(Configuration::get('PS_SHOP_PHONE')),
 				'error' => $this->_mondialrelay->l('Please check your Phone configuration')),
 			'Expe_Mail' => array(
 				'value' => Configuration::get('PS_SHOP_EMAIL'),
@@ -552,7 +549,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 		{
 			// Mac server make an empty string instead of a cleaned string
 			// TODO : test on windows and linux server
-			$cleanedString = MRTools::replaceAccentedCharacters($tab['value']);
+			$cleanedString = MRTools::removeAccents($tab['value']);
 			$tab['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($tab['value']);
 
 			if ($name == 'Expe_CP')

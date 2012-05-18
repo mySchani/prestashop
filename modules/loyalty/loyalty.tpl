@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14489 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -168,7 +168,7 @@
 	<div id="block-order-detail" class="hidden">&nbsp;</div>
 </div>
 
-{if $minimalLoyalty > 0}<p>{l s='The minimum order amount in order to use these vouchers is:'} {convertPrice price=$minimalLoyalty}</p>{/if}
+{if $minimalLoyalty > 0}<p>{l s='The minimum order amount in order to use these vouchers is:' mod='loyalty'} {convertPrice price=$minimalLoyalty}</p>{/if}
 
 <script type="text/javascript">
 {literal}

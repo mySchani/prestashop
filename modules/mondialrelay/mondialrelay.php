@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14232 $
+*  @version  Release: $Revision: 15283 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -71,9 +71,10 @@ class MondialRelay extends Module
 	{
 		$this->name		= 'mondialrelay';
 		$this->tab		= 'shipping_logistics';
-		$this->version	= '1.8.2';
+		$this->version	= '1.8.3';
 		$this->installed_version = '';
 		$this->module_key = '366584e511d311cfaa899fc2d9ec1bd0';
+		$this->author = 'PrestaShop';
 
 		parent::__construct();
 
@@ -157,11 +158,13 @@ class MondialRelay extends Module
 		}
 		else
 		{
+			$query = 'UPDATE `'._DB_PREFIX_.'carrier` c, `'._DB_PREFIX_.'mr_method` m
+					SET c.`deleted` = 0
+					WHERE c.`id_carrier` = m.`id_carrier`
+					AND m.`is_deleted` = 0';
+
 			// Reactive transport if database wasn't remove at the last uninstall
-			Db::getInstance()->execute('
-				UPDATE `'._DB_PREFIX_.'carrier` c, `'._DB_PREFIX_.'mr_method` m
-					SET c.`deleted` = 0, c.`active` = 1
-					WHERE c.id_carrier = m.id_carrier');
+			Db::getInstance()->execute($query);
 		}
 		return true;
 	}
@@ -218,7 +221,7 @@ class MondialRelay extends Module
 
 		if (!Db::getInstance()->execute('
 					UPDATE '._DB_PREFIX_.'carrier c, '._DB_PREFIX_.'mr_method m
-					SET c.`active` = 0, c.`deleted` = 1
+					SET c.`deleted` = 1
 					WHERE c.`id_carrier` = m.`id_carrier`'))
 			return false;
 
@@ -248,9 +251,9 @@ class MondialRelay extends Module
 					'._DB_PREFIX_ .'mr_method_shop'))
 		{
 			// If drop failed, try to turn off the carriers
-			!Db::getInstance()->execute('
+			Db::getInstance()->execute('
 					UPDATE '._DB_PREFIX_.'carrier c, '._DB_PREFIX_.'mr_method m
-					SET c.`active` = 0, c.`deleted` = 1
+					SET c.`deleted` = 1
 					WHERE c.`id_carrier` = m.`id_carrier`');
 			return false;
 		}
@@ -259,17 +262,22 @@ class MondialRelay extends Module
 
 	/**
 	 * Launch upgrade process for 1.3 and 1.4
-	 *
-	 * @TODO: Make a loop to load any upgraded version like 1.5 core does
 	 */
 	public function runUpgrade()
 	{
+		// List of upgraded version existing
+		$files_version = array('1.8', '1.8.3');
+
 		$upgrade_path = dirname(__FILE__).'/upgrade/';
-		if (_PS_VERSION_ < '1.5' && $this->installed_version < '1.8')
-			if (file_exists($upgrade_path.'install-1.8.0.php'))
+		if (_PS_VERSION_ < '1.5')
+			foreach ($files_version as $version)
 			{
-				include_once($upgrade_path.'install-1.8.0.php');
-				upgrade_module_1_8_0($this);
+				$file = $upgrade_path.'install-'.$version.'.php';
+				if ($this->installed_version < $version && file_exists($file))
+				{
+					include_once($file);
+					call_user_func('upgrade_module_'.str_replace('.', '_', $version), $this);
+				}
 			}
 	}
 
@@ -336,16 +344,7 @@ class MondialRelay extends Module
 		MondialRelay::$modulePath =	_PS_MODULE_DIR_. 'mondialrelay/';
 		MondialRelay::$MRFrontToken = sha1('mr'._COOKIE_KEY_.'Front');
 		MondialRelay::$MRBackToken = sha1('mr'._COOKIE_KEY_.'Back');
-
-		$protocol = (Configuration::get('PS_SSL_ENABLED') || (!empty($_SERVER['HTTPS'])
-			&& strtolower($_SERVER['HTTPS']) != 'off')) ? 'https://' : 'http://';
-
-		$endURL = __PS_BASE_URI__.'modules/mondialrelay/';
-
-		if (method_exists('Tools', 'getShopDomainSsl'))
-			MondialRelay::$moduleURL = $protocol.Tools::getShopDomainSsl().$endURL;
-		else
-			MondialRelay::$moduleURL = $protocol.$_SERVER['HTTP_HOST'].$endURL;
+		MondialRelay::$moduleURL = __PS_BASE_URI__.'modules/mondialrelay/';
 	}
 
 	public function fetchTemplate($path, $name)
@@ -358,6 +357,9 @@ class MondialRelay extends Module
 
 	public function hookNewOrder($params)
 	{
+		if (!MondialRelay::isMondialRelayCarrier($params['cart']->id_carrier))
+			return;
+		
 		DB::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'mr_selected`
 			SET `id_order` = '.(int)$params['order']->id.'
@@ -383,6 +385,9 @@ class MondialRelay extends Module
 
 	public function hookOrderDetail($params)
 	{
+		if (!Mondialrelay::isMondialRelayCarrier($params['order']->id_carrier))
+			return ;
+
 		$order = $params['order'];
 
 		if (!empty($order->shipping_number))
@@ -391,6 +396,9 @@ class MondialRelay extends Module
 
 	public function hookOrderDetailDisplayed($params)
 	{
+		if (!Mondialrelay::isMondialRelayCarrier($params['order']->id_carrier))
+			return '';
+
 		$res = Db::getInstance()->getRow('
 			SELECT s.`MR_Selected_LgAdr1`, s.`MR_Selected_LgAdr2`, s.`MR_Selected_LgAdr3`, s.`MR_Selected_LgAdr4`,
 			 s.`MR_Selected_CP`, s.`MR_Selected_Ville`, s.`MR_Selected_Pays`, s.`MR_Selected_Num`, s.`url_suivi`
@@ -431,7 +439,7 @@ class MondialRelay extends Module
 				(name, country_list, col_mode, dlv_mode, insurance, id_carrier)
 				(
 					SELECT
-						name,
+						"'.pSQL($params['carrier']->name).'",
 						country_list,
 						col_mode,
 						dlv_mode,
@@ -452,6 +460,11 @@ class MondialRelay extends Module
 					FROM `'._DB_PREFIX_.'mr_method_shop`
 					WHERE id_mr_method ='.(int)$id_mr_method.')';
 			Db::getInstance()->execute($query);
+
+			// Set the last mr_method to delete
+			Db::getInstance()->execute('
+				UPDATE `'._DB_PREFIX_.'mr_method` SET `is_deleted` = 1
+					WHERE `id_mr_method` = '.(int)$id_mr_method);
 		}
 	}
 
@@ -477,7 +490,8 @@ class MondialRelay extends Module
 			WHERE  c.`deleted` = 0
 			AND ms.`id_shop` = '.$this->account_shop['id_shop'] .'
 			AND cl.id_lang = '.$this->context->language->id .'
-			AND c.`active` = 1';
+			AND c.`active` = 1
+			AND m.`is_deleted` = 0';
 
 		$carriers = Db::getInstance()->executeS($query);
 
@@ -522,14 +536,13 @@ class MondialRelay extends Module
 		return '';
 	}
 
-	public function hookextraCarrier($params)
+	public function hookExtraCarrier($params)
 	{
 		if (!MondialRelay::isAccountSet())
 			return '';
 
 		$carrier = false;
 		$id_carrier = false;
-		$id_mr_method = false;
 		$preSelectedRelay = $this->getRelayPointSelected($params['cart']->id);
 		$carriersList = MondialRelay::_getCarriers();
 
@@ -539,11 +552,12 @@ class MondialRelay extends Module
 		// Check if the defined carrier are ok
 		foreach ($carriersList as $k => $row)
 		{
-			// For now works only with single shipping !
+			// For now works only with single shipping (>= 1.5 compatibility)
 			if (method_exists($params['cart'], 'carrierIsSelected'))
 				if ($params['cart']->carrierIsSelected($row['id_carrier'], $params['address']->id))
 					$id_carrier = $row['id_carrier'];
 
+			// Temporary carrier for some test
 			$carrier = new Carrier((int)($row['id_carrier']));
 			if ((Configuration::get('PS_SHIPPING_METHOD') AND $carrier->getMaxDeliveryPriceByWeight($id_zone) === false) ||
 				(!Configuration::get('PS_SHIPPING_METHOD') AND $carrier->getMaxDeliveryPriceByPrice($id_zone) === false))
@@ -563,7 +577,8 @@ class MondialRelay extends Module
 			}
 		}
 
-		$carrier = MondialRelay::getMethodByIdCarrier($id_carrier);
+		if ($id_carrier && MondialRelay::getMethodByIdCarrier($id_carrier))
+			$carrier = new Carrier((int)$id_carrier);
 
 		$this->context->smarty->assign(array(
 			'carriersextra' => $carriersList,
@@ -682,7 +697,7 @@ class MondialRelay extends Module
 				'MR_LANGUAGE' => Tools::getValue('MR_language'),
 				'MR_ORDER_STATE' => $this->account_shop['MR_ORDER_STATE'],
 				'MR_WEIGHT_COEFFICIENT' => Tools::getValue('MR_weight_coefficient'),
-				'id_shop' => $this->context->shop->getID()
+				'id_shop' => $this->context->shop->id
 			);
 
 			if ($this->updateAccountShop())
@@ -703,8 +718,8 @@ class MondialRelay extends Module
 			$post_action['message_success'] = $this->l('Order state properly changed');
 		}
 
-		else if (($id_mr_method = Tools::getValue('delete_mr')) &&  $this->disableCarrier((int)$id_mr_method))
-			$post_action['message_success'] = $this->l('Carrier is currently disabled');
+		else if (($id_mr_method = Tools::getValue('delete_mr')) && $this->disableCarrier((int)$id_mr_method))
+			$post_action['message_success'] = $this->l('Carrier has been deleted (disabled under the prestashop database)');
 
 		if (count($this->_postErrors))
 			$post_action['had_errors'] = true;
@@ -783,7 +798,7 @@ class MondialRelay extends Module
 			$carrier->external_module_name = 'mondialrelay';
 			$carrier->shipping_method = 1;
 			$carrier->delay = array($this->context->language->id => $delay);
-			$carrier->is_module = (_PS_VERSION_ > '1.3') ? 1 : 0;
+			$carrier->is_module = (_PS_VERSION_ < '1.4') ? 0 : 1;
 
 			$ret = $carrier->add();
 		}
@@ -954,19 +969,20 @@ class MondialRelay extends Module
 	 */
 	public function disableCarrier($id_mr_method)
 	{
-		$success = false;
-
 		if (($id_carrier = Db::getInstance()->getValue(
-			'SELECT `id_carrier`
-					FROM `'._DB_PREFIX_ .'mr_method`
-					WHERE `id_mr_method` = '.(int)($id_mr_method))) &&
+				'SELECT `id_carrier`
+				FROM `'._DB_PREFIX_ .'mr_method`
+				WHERE `id_mr_method` = '.(int)($id_mr_method))) &&
 			Db::getInstance()->execute(
-				'UPDATE `'._DB_PREFIX_ .'carrier`
-					SET `active` = 0, `deleted` = 1 WHERE `id_carrier` = '.(int)$id_carrier))
-			$success = true;
+				'UPDATE `'._DB_PREFIX_ .'carrier` c, `'._DB_PREFIX_ .'mr_method` m
+				SET c.`active` = 0, c.`deleted` = 1, m.`is_deleted` = 1
+				WHERE
+				 	c.`id_carrier` = m.`id_carrier`
+					AND c.`id_carrier` = '.(int)$id_carrier))
+			return true;
 
-		if (!$success)
-			$this->_postErrors = $this->l('Carrier can\'t be deleted yet');
+		$this->_postErrors = $this->l('Carrier can\'t be deleted yet');
+		return false;
 	}
 
 	/**
@@ -1104,7 +1120,7 @@ class MondialRelay extends Module
 	 *
 	 * @param $params
 	 */
-	public function hookpaymentTop($params)
+	public function hookPaymentTop($params)
 	{
 		if ($this->isMondialRelayCarrier($params['cart']->id_carrier) &&
 			!$this->getRelayPointSelected($params['cart']->id))

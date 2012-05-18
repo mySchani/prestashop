@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14645 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -380,7 +380,8 @@ class AdminImport extends AdminTab
 	{
 		$res = array();
 		foreach (self::$column_mask AS $type => $nb)
-			$res[$type] = isset($row[$nb]) ? $row[$nb] : null;
+			if ($type != '')
+				$res[$type] = isset($row[$nb]) ? $row[$nb] : null;
 		return $res;
 	}
 
@@ -517,7 +518,7 @@ class AdminImport extends AdminTab
 					}
 				}
 			}
-			if (isset($category->link_rewrite) AND !empty($category->link_rewrite[$defaultLanguageId]))
+			if (isset($category->link_rewrite) && !empty($category->link_rewrite[$defaultLanguageId]))
 				$valid_link = Validate::isLinkRewrite($category->link_rewrite[$defaultLanguageId]);
 			else
 				$valid_link = false;
@@ -1614,7 +1615,8 @@ class AdminImport extends AdminTab
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price_priority');
 				Image::deleteAllImages(_PS_PROD_IMG_DIR_);
-				mkdir(_PS_PROD_IMG_DIR_);
+				if (!file_exists(_PS_PROD_IMG_DIR_))
+					mkdir(_PS_PROD_IMG_DIR_);
 				break;
 			case $this->entities[$this->l('Customers')]:
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'customer');

@@ -20,14 +20,14 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14628 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderStateCore extends ObjectModel
 {
- 	/** @var string Name */
+	/** @var string Name */
 	public 		$name;
 
 	/** @var string Template name if there is any e-mail to send */
@@ -53,13 +53,13 @@ class OrderStateCore extends ObjectModel
 	/** @var boolean Hidden */
 	public		$hidden;
 
-    /** @var boolean deleted */
-   public $deleted;
+	/** @var boolean deleted */
+	public $deleted;
 
- 	protected 	$fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
-	protected 	$fieldsRequiredLang = array('name');
- 	protected 	$fieldsSizeLang = array('name' => 64, 'template' => 64);
- 	protected 	$fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
+	protected $fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
+	protected $fieldsRequiredLang = array('name');
+	protected $fieldsSizeLang = array('name' => 64, 'template' => 64);
+	protected $fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
 
 	protected 	$table = 'order_state';
 	protected 	$identifier = 'id_order_state';
@@ -71,6 +71,10 @@ class OrderStateCore extends ObjectModel
 			'hidden' => array(),
 		),
 	);
+	
+	const FLAG_NO_HIDDEN	= 1; /* 001 */
+	const FLAG_LOGABLE		= 2; /* 010 */
+	const FLAG_DELIVERY		= 4; /* 100 */
 
 	public function getFields()
 	{
@@ -82,7 +86,7 @@ class OrderStateCore extends ObjectModel
 		$fields['logable'] = (int)($this->logable);
 		$fields['delivery'] = (int)($this->delivery);
 		$fields['hidden'] = (int)($this->hidden);
-        $fields['deleted'] = (int)$this->deleted;
+		$fields['deleted'] = (int)$this->deleted;
 		return $fields;
 	}
 

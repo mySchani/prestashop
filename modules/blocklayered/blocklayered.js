@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14189 $
+*  @version  Release: $Revision: 14971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
@@ -77,7 +77,7 @@ $(document).ready(function()
 		}, 500, this));
 	});
 
-	$('.radio').live('click', function() {
+	$('#layered_block_left .radio').live('click', function() {
 		var name = $(this).attr('name');
 		$.each($(this).parent().parent().find('input[type=button]'), function (it, item) {
 			if ($(item).hasClass('on') && $(item).attr('name') != name) {
@@ -88,9 +88,12 @@ $(document).ready(function()
 	});
 	
 	// Click on label
-	$('label a').live({
+	$('#layered_block_left label a').live({
 		click: function() {
-			if ($(this).parent().parent().find('input').attr('disabled') == '')
+			var disable = $(this).parent().parent().find('input').attr('disabled');
+			if (disable == ''
+			|| typeof(disable) == 'undefined'
+			|| disable == false)
 			{
 				$(this).parent().parent().find('input').click();
 				reloadContent();
@@ -180,8 +183,8 @@ function initSliders()
 {
 	$(sliderList).each(function(i, slider){
 		$('#layered_'+slider['type']+'_slider').slider(slider['data']);
-		$('#layered_'+slider['type']+'_range').html($('#layered_'+slider['type']+'_slider').slider('values', 0)+slider['unit']+
-			' - ' + $('#layered_'+slider['type']+'_slider').slider('values', 1 )+slider['unit']);
+		$('#layered_'+slider['type']+'_range').html($('#layered_'+slider['type']+'_slider').slider('values', 0)+
+			' - ' + $('#layered_'+slider['type']+'_slider').slider('values', 1 ));
 	});
 }
 
@@ -369,6 +372,7 @@ function reloadContent(params_plus)
 		url: baseDir + 'modules/blocklayered/blocklayered-ajax.php',
 		data: data+params_plus+n,
 		dataType: 'json',
+		cache: false, // @todo see a way to use cache and to add a timestamps parameter to refresh cache each 10 minutes for example
 		success: function(result)
 		{
 			$('#layered_block_left').replaceWith(result.filtersBlock);
@@ -385,9 +389,20 @@ function reloadContent(params_plus)
 				$('#product_list').css('filter', '');
 
 			if ($(result.pagination).find('ul.pagination').length)
+			{
+				$('div#pagination').show();
 				$('ul.pagination').replaceWith($(result.pagination).find('ul.pagination'));
-			else
+			}
+			else if (!$('ul.pagination').length)
+			{
+				$('div#pagination').show();
 				$('div#pagination').html($(result.pagination));
+			}
+			else
+			{
+				$('ul.pagination').html('');
+				$('div#pagination').hide();
+			}
 			
 			paginationButton();
 			ajaxLoaderOn = 0;

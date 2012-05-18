@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14506 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -320,8 +320,10 @@ class UpgraderCore
 	{
 		$checksum1 = $this->getXmlMd5File($version1);
 		$checksum2 = $this->getXmlMd5File($version2);
-		$v1 = $this->md5FileAsArray($checksum1->ps_root_dir[0]);
-		$v2 = $this->md5FileAsArray($checksum2->ps_root_dir[0]);
+		if ($checksum1)
+			$v1 = $this->md5FileAsArray($checksum1->ps_root_dir[0]);
+		if ($checksum2)
+			$v2 = $this->md5FileAsArray($checksum2->ps_root_dir[0]);
 		if (empty($v1) || empty($v2))
 			return false;
 		$filesList = $this->compareReleases($v1, $v2, $show_modif);

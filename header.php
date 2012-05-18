@@ -20,20 +20,16 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14007 $
+*  @version  Release: $Revision: 14352 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 // Save the value of $useSSL ($useSSL will be overwritten by FrontController::__contruct())
-$saveSSL = false;
-if (isset($useSSL) and $useSSL)
-	$saveSSL = true;
-	
 $controller = new FrontController();
 
-// If $useSSL was set to "true", then overwrite its value to true 
-if ($saveSSL)
+if (Tools::usingSecureMode())
 	$useSSL = $controller->ssl = true;
 	
 $controller->displayHeader();
+

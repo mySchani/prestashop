@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @version  Release: $Revision: 14430 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -88,7 +88,7 @@
 			],
 			'formated_fields_values':{ldelim}
 					{foreach from=$type.formated_fields_values key=pattern_name item=field_name name=inv_loop}
-						{if !$smarty.foreach.inv_loop.first},{/if}"{$pattern_name}":"{$field_name}"
+						{if !$smarty.foreach.inv_loop.first},{/if}"{$pattern_name}":"{$field_name|escape:'htmlall':'UTF-8'}"
 					{/foreach}
 				{rdelim}
 		{rdelim}

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14703 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -41,8 +41,12 @@ $dir = Tools::getValue('dir', 0); // Should be a String : Either ASC or DESC
 $id_employee = (int)(Tools::getValue('id_employee'));
 $id_lang = (int)(Tools::getValue('id_lang'));
 
-if ($cookie->id_employee != $id_employee)
-	die;
+if (!Validate::isModuleName($module))
+    die(Tools::displayError());
+
+if (!isset($cookie->id_employee) || !$cookie->id_employee  || $cookie->id_employee != $id_employee)
+    die(Tools::displayError());
+
 
 if (!Validate::isModuleName($module))
 	die(Tools::displayError());

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @version  Release: $Revision: 14490 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -274,6 +274,13 @@ if (isFormValid())
 
 	//select the version of Smarty for the version of php
 	Tools::selectionVersionSmarty();
+}
+
+// Active only the country selected by the merchant
+if (isFormValid())
+{
+	if ($id_country = Tools::getValue('infosCountry'))
+		Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'country SET active = 0 WHERE id_country != '.(int)$id_country);
 }
 
 //////////////////////////

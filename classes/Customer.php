@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14850 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -96,6 +96,7 @@ class CustomerCore extends ObjectModel
  	protected 	$fieldsSize = array('lastname' => 32, 'passwd' => 32, 'firstname' => 32, 'email' => 128, 'note' => 65000);
  	protected 	$fieldsValidate = array('secure_key' => 'isMd5', 'lastname' => 'isName', 'firstname' => 'isName', 'email' => 'isEmail', 'passwd' => 'isPasswd',
 		 'id_gender' => 'isUnsignedId', 'birthday' => 'isBirthDate', 'newsletter' => 'isBool', 'optin' => 'isBool', 'active' => 'isBool', 'note' => 'isCleanHtml', 'is_guest' => 'isBool');
+	protected	$exclude_copy_post = array('secure_key', 'active', 'date_add', 'date_upd', 'last_passwd_gen', 'newsletter_date_add', 'id_default_group', 'ip_registration_newsletter', 'note', 'is_guest', 'deleted');
 
 	protected	$webserviceParameters = array(
 		'fields' => array(
@@ -196,13 +197,14 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Return customer instance from its e-mail (optionnaly check password)
-	  *
-	  * @param string $email e-mail
-	  * @param string $passwd Password is also checked if specified
-	  * @return Customer instance
-	  */
-	public function getByEmail($email, $passwd = NULL)
+	 * Return customer instance from its e-mail (optionnaly check password)
+	 *
+	 * @param string $email e-mail
+	 * @param string $passwd Password is also checked if specified
+	 * @param bool $include_guest allows to consider guest user
+	 * @return Customer instance
+	 */
+	public function getByEmail($email, $passwd = null, $include_guest = false)
 	{
 	 	if (!Validate::isEmail($email) OR ($passwd AND !Validate::isPasswd($passwd)))
 	 		die (Tools::displayError());
@@ -214,7 +216,7 @@ class CustomerCore extends ObjectModel
 		AND `email` = \''.pSQL($email).'\'
 		'.(isset($passwd) ? 'AND `passwd` = \''.md5(pSQL(_COOKIE_KEY_.$passwd)).'\'' : '').'
 		AND `deleted` = 0
-		AND `is_guest` = 0');
+		'.(!$include_guest ? 'AND `is_guest` = 0' : ''));
 
 		if (!$result)
 			return false;

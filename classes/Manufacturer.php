@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14619 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -221,8 +221,9 @@ class ManufacturerCore extends ObjectModel
 				$manufacturers[$key]['nb_products'] = sizeof($result);
 			}
 		}
+		$rewrite_settings = (int)Configuration::get('PS_REWRITING_SETTINGS');
 		for ($i = 0; $i < sizeof($manufacturers); $i++)
-			if ((int)(Configuration::get('PS_REWRITING_SETTINGS')))
+			if ($rewrite_settings)
 				$manufacturers[$i]['link_rewrite'] = Tools::link_rewrite($manufacturers[$i]['name'], false);
 			else
 				$manufacturers[$i]['link_rewrite'] = 0;

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15238 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,11 +31,12 @@ class Autoupgrade extends Module
 	{
 		$this->name = 'autoupgrade';
 		$this->tab = 'administration';
+		$this->author = 'PrestaShop';
 		// version number x.y.z 
 		// x=0 means not yet considered as fully stable
 		// y+1 means a major bugfix or improvement
 		// z+1 means a bugfix, optimization or minor improvements
-		$this->version = '0.3.1';
+		$this->version = '0.3.4';
 
 		if (!defined('_PS_ADMIN_DIR_'))
 		{

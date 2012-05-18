@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15119 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -53,7 +53,7 @@ class UspsCarrier extends CarrierModule
 	{
 		$this->name = 'uspscarrier';
 		$this->tab = 'shipping_logistics';
-		$this->version = '1.2.2';
+		$this->version = '1.2.3';
 		$this->author = 'PrestaShop';
 		$this->limited_countries = array('us');
 
@@ -1758,27 +1758,38 @@ class UspsCarrier extends CarrierModule
 
 
 			// Get xml from HTTP Result
-			$data = strstr($result, '<?');
+			$data = trim($result);
+			if (strpos($result, '<?'))
+				$data = strstr($result, '<?');
 
 			// Parsing XML
 			$resultTabTmp = simplexml_load_string($data);
 			$resultTabTmpDebug[] = $resultTabTmp;
-			foreach ($resultTabTmp->Package as $package)
+
+			if (!isset($resultTabTmp->Package) && isset($resultTabTmp->Description) && isset($resultTabTmp->Number))
 			{
-				if (isset($package->Error))
-				{
-					if (!isset($resultTab['Error']))
-						$resultTab['Error'] = '';
-					$tmp = (array)$package;
-					$resultTab['Error'] .= (isset($package->Error->Description) ? 'Error <b>'.(string)$package->Error->HelpContext.'</b> on package <b>'.(string)$tmp['@attributes']['ID'].'</b> : '.(string)$package->Error->Description : 'Error')."\n";
-				}
-				if (isset($package->Postage->Rate))
-				{
-					if (!isset($resultTab['Rate']))
-						$resultTab['Rate'] = 0;
-					$resultTab['Rate'] += (string)$package->Postage->Rate;
-				}
+				if (!isset($resultTab['Error']))
+					$resultTab['Error'] = '';
+				$resultTab['Error'] .= '<b>'.(string)$resultTabTmp->Number.'</b> : '.(string)$resultTabTmp->Description."\n";
 			}
+
+			if (isset($resultTabTmp->Package))
+				foreach ($resultTabTmp->Package as $package)
+				{
+					if (isset($package->Error))
+					{
+						if (!isset($resultTab['Error']))
+							$resultTab['Error'] = '';
+						$tmp = (array)$package;
+						$resultTab['Error'] .= (isset($package->Error->Description) ? 'Error <b>'.(string)$package->Error->HelpContext.'</b> on package <b>'.(string)$tmp['@attributes']['ID'].'</b> : '.(string)$package->Error->Description : 'Error')."\n";
+					}
+					if (isset($package->Postage->Rate))
+					{
+						if (!isset($resultTab['Rate']))
+							$resultTab['Rate'] = 0;
+						$resultTab['Rate'] += (string)$package->Postage->Rate;
+					}
+				}
 		}
 
 		// Log

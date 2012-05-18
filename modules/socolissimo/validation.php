@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15257 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -58,14 +58,18 @@ if (isset($return['SIGNATURE']) AND isset($return['CENAME']) AND isset($return['
 				{
 					$cart = Context::getContext()->cart;
 					$TRPARAMPLUS = explode('|', Tools::getValue('TRPARAMPLUS'));
-					$cart->id_carrier = $TRPARAMPLUS[0];
-					$cart->gift = (int)$TRPARAMPLUS[1];
+					if (count($TRPARAMPLUS) > 1)
+					{
+						$cart->id_carrier = $TRPARAMPLUS[0];
+						$cart->gift = (int)$TRPARAMPLUS[1];
+					}
+						
 					if ((int)$cart->gift)
 						if (Validate::isMessage($TRPARAMPLUS[2]))
 							$cart->gift_message = strip_tags($TRPARAMPLUS[2]);
 
 					if (!$cart->update())
-						Tools::redirect();
+						Tools::redirect('/');
 					else
 					{
 						$url = (_PS_VERSION_ < '1.5') ? 'order.php?' : 'index.php?controller=order&';
@@ -97,7 +101,7 @@ if (isset($return['SIGNATURE']) AND isset($return['CENAME']) AND isset($return['
 			 </a></p></div>';	}
 }
 else
-	Tools::redirect();
+	Tools::redirect('/');
 
 include('../../footer.php');
 

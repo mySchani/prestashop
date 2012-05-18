@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14920 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,7 +31,7 @@ if (Configuration::get('VATNUMBER_MANAGEMENT') AND file_exists(_PS_MODULE_DIR_.'
 class AdminAddresses extends AdminTab
 {
 	/** @var array countries list */
-	private $countriesArray = array();
+	protected $countriesArray = array();
 
 	public function __construct()
 	{
@@ -77,7 +77,7 @@ class AdminAddresses extends AdminTab
 				if (Validate::isEmail(Tools::getValue('email')))
 				{
 					$customer = new Customer();
-					$customer->getByEmail(Tools::getValue('email'));
+					$customer->getByEmail(Tools::getValue('email'), null, true);
 					if (Validate::isLoadedObject($customer))
 						$_POST['id_customer'] = $customer->id;
 					else
@@ -364,7 +364,7 @@ class AdminAddresses extends AdminTab
 				echo '
 					<label>'.$this->l('Postcode/ Zip Code').'</label>
 					<div class="margin-form">
-					<input type="text" size="33" name="postcode" value="'.htmlentities($this->getFieldValue($obj, 'postcode'), ENT_COMPAT, 'UTF-8').'" />
+					<input type="text" size="33" name="postcode" value="'.htmlentities($this->getFieldValue($obj, 'postcode'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					</div>';
 			}
 			elseif ($addr_field_item == 'city')

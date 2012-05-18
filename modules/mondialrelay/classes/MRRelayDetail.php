@@ -119,7 +119,7 @@ class MRRelayDetail implements IMondialRelayWSMethod
 				{
 					// Mac server make an empty string instead of a cleaned string
 					// TODO : test on windows and linux server
-					$cleanedString = MRTools::replaceAccentedCharacters($valueDetailed['value']);
+					$cleanedString = MRTools::removeAccents($valueDetailed['value']);
 					$valueDetailed['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($valueDetailed['value']);
 					
 					// Call a pointer function if exist to do different test
@@ -242,19 +242,20 @@ class MRRelayDetail implements IMondialRelayWSMethod
 	{
 		if (!($address = new Address($id_address_delivery)))
 			return array();
+
+		$mondialrelay = new MondialRelay();
 		
-		$permaList = array();
+		$list = array();
 		$iso = strtoupper(Country::getIsoById($address->id_country));
-		$ens = strtoupper(Configuration::get('MR_ENSEIGNE_WEBSERVICE').Configuration::get('MR_CODE_MARQUE'));
-		$url = 'http://www.mondialrelay.com/public/permanent/details_relais.aspx?ens='.
-			Configuration::get('MR_ENSEIGNE_WEBSERVICE').Configuration::get('MR_CODE_MARQUE');
-		foreach($relayList as $num => $relayNum)
+		$ens = $mondialrelay->account_shop['MR_ENSEIGNE_WEBSERVICE'].$mondialrelay->account_shop['MR_CODE_MARQUE'];
+		$url = 'http://www.mondialrelay.com/public/permanent/details_relais.aspx?ens='.$ens;
+		foreach($relayList as $relayNum)
 		{
-			$crc = strtoupper(MD5('<'.$ens.'>'.$relayNum.$iso.'<'.Configuration::get('MR_KEY_WEBSERVICE').'>'));
-			$permaList[$relayNum] = $url.'&num='.$relayNum.'&pays='.$iso.'&crc='.$crc;
+			$crc = strtoupper(MD5('<'.strtoupper($ens).'>'.$relayNum.$iso.'<'.$mondialrelay->account_shop['MR_KEY_WEBSERVICE'].'>'));
+			$list[$relayNum] = $url.'&num='.$relayNum.'&pays='.$iso.'&crc='.$crc;
 		}
-		unset($address);
-		return $permaList;
+		unset($address, $mondialrelay);
+		return $list;
 	}
 	
 	/*

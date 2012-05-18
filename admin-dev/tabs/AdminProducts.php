@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14703 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -376,7 +376,7 @@ class AdminProducts extends AdminTab
 						}
 						elseif ($object->delete())
 							Tools::redirectAdmin($currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url);
-						$this->_errors[] = Tools::displayError('An error occurred during deletion.');
+						$this->_errors[] = Tools::displayError('An error occurred during deletion: this product is contained in an order.');
 					}
 				}
 				else
@@ -1768,7 +1768,7 @@ class AdminProducts extends AdminTab
 					<td class="cell border">'.$period.'</td>
 					<td class="cell border">'.$specificPrice['from_quantity'].'</th>
 					<td class="cell border"><b>'.Tools::displayPrice(Tools::ps_round((float)($this->_getFinalPrice($specificPrice, (float)($obj->price), $taxRate)), 2), $current_specific_currency).'</b></td>
-					<td class="cell border"><a href="'.$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&id_specific_price='.(int)($specificPrice['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a></td>
+					<td class="cell border"><a href="'.$currentIndex.(Tools::getValue('id_category') ? '&id_category='.(int)Tools::getValue('id_category') : '').'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&id_specific_price='.(int)($specificPrice['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a></td>
 				</tr>';
 				$i++;
 			}

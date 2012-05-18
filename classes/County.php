@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14891 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -165,8 +165,8 @@ class CountyCore extends ObjectModel
 			SELECT DISTINCT c.`id_county` FROM `'._DB_PREFIX_.'county` c
 			LEFT JOIN `'._DB_PREFIX_.'county_zip_code` cz ON (c.`id_county` = cz.`id_county`)
 			WHERE `id_state` = '.(int)$id_state.'
-			AND cz.`from_zip_code` >= '.(int)$zip_code.'
-			AND cz.`to_zip_code` <= '.(int)$zip_code
+			AND cz.`from_zip_code` <= '.(int)$zip_code.'
+			AND cz.`to_zip_code` >= '.(int)$zip_code
 			);
 		}
 

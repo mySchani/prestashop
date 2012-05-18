@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14903 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -106,7 +106,7 @@ class AddressCore extends ObjectModel
 										'firstname' => 'isName', 'address1' => 'isAddress', 'address2' => 'isAddress', 'postcode'=>'isPostCode',
 										'city' => 'isCityName', 'other' => 'isMessage',
 										'phone' => 'isPhoneNumber', 'phone_mobile' => 'isPhoneNumber', 'deleted' => 'isBool', 'dni' => 'isDniLite');
-
+	protected	$exclude_copy_post = array('id_manufacturer', 'id_supplier', 'date_add', 'date_upd');
 	protected 	$table = 'address';
 	protected 	$identifier = 'id_address';
 	protected	$_includeVars = array('addressType' => 'table');
@@ -212,9 +212,9 @@ class AddressCore extends ObjectModel
 		return $fields;
 	}
 
-	public function validateController($htmlentities = true)
+	public function validateController($htmlentities = true, $copy_post = false)
 	{
-		$errors = parent::validateController($htmlentities);
+		$errors = parent::validateController($htmlentities, $copy_post);
 		if (!Configuration::get('VATNUMBER_CHECKING'))
 			return $errors;
 		include_once(_PS_MODULE_DIR_.'vatnumber/vatnumber.php');

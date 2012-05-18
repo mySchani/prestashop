@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 15069 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -211,25 +211,71 @@ class AdminTranslations extends AdminTab
 	
 	public function checkAndAddMailsFiles ($iso_code, $files_list)
 	{
+		// 1 - Scan mails files
 		$mails = scandir(_PS_MAIL_DIR_.'en/');
 		$mails_new_lang = array();
+
+		// Get all email files
 		foreach ($files_list as $file)
-		{
 			if (preg_match('#^mails\/([a-z0-9]+)\/#Ui', $file['filename'], $matches))
 			{
 				$slash_pos = strrpos($file['filename'], '/');
-				$mails_new_lang[] = substr($file['filename'], -(strlen($file['filename'])-$slash_pos-1));
+				$mails_new_lang[] = substr($file['filename'], -(strlen($file['filename']) - $slash_pos - 1));
+			}
+
+		// Get the difference
+		$arr_mails_needed = array_diff($mails, $mails_new_lang);
+
+		// Add mails files
+		foreach ($arr_mails_needed as $mail_to_add)
+			if (!in_array($mail_to_add, array('.', '..', '.svn', '.htaccess')))
+				@copy(_PS_MAIL_DIR_.'en/'.$mail_to_add, _PS_MAIL_DIR_.$iso_code.'/'.$mail_to_add);
+
+
+		// 2 - Scan modules files
+		$modules = scandir(_PS_MODULE_DIR_);
+
+		$module_mail_en = array();
+		$module_mail_iso_code = array();
+
+		foreach ($modules as $module)
+		{
+			if (!in_array($module, array('.', '..', '.svn', '.htaccess')) && file_exists(_PS_MODULE_DIR_.$module.'/mails/en/'))
+			{
+				$arr_files = scandir(_PS_MODULE_DIR_.$module.'/mails/en/');
+
+				foreach ($arr_files as $file)
+				{
+					if (!in_array($file, array('.', '..', '.svn', '.htaccess')))
+					{
+						if (file_exists(_PS_MODULE_DIR_.$module.'/mails/en/'.$file))
+							$module_mail_en[] = _PS_MODULE_DIR_.$module.'/mails/ISO_CODE/'.$file;
+
+						if (file_exists(_PS_MODULE_DIR_.$module.'/mails/'.$iso_code.'/'.$file))
+							$module_mail_iso_code[] = _PS_MODULE_DIR_.$module.'/mails/ISO_CODE/'.$file;
+					}
+				}
 			}
 		}
-		$arr_mails_needed = array_diff($mails, $mails_new_lang);
-		foreach ($arr_mails_needed as $mail_to_add)
+
+		// Get the difference in this modules
+		$arr_modules_mails_needed = array_diff($module_mail_en, $module_mail_iso_code);
+
+		// Add mails files for this modules
+		foreach ($arr_modules_mails_needed as $file)
 		{
-			if ($mail_to_add !== '.' && $mail_to_add !== '..' && $mail_to_add !== '.svn')
-			{
-				@copy(_PS_MAIL_DIR_.'en/'.$mail_to_add, _PS_MAIL_DIR_.$iso_code.'/'.$mail_to_add);
-			}
+			$file_en = str_replace('ISO_CODE', 'en', $file);
+			$file_iso_code = str_replace('ISO_CODE', $iso_code, $file);
+			$dir_iso_code = substr($file_iso_code, 0, -(strlen($file_iso_code) - strrpos($file_iso_code, '/') - 1));
+
+			if (!file_exists($dir_iso_code))
+				mkdir($dir_iso_code);
+
+			if (file_exists($file_en))
+				copy($file_en, $file_iso_code);
 		}
 	}
+
 	public function submitImportLang()
 	{
 		global $currentIndex;
@@ -241,9 +287,11 @@ class AdminTranslations extends AdminTab
 			$gz = new Archive_Tar($_FILES['file']['tmp_name'], true);
 			$iso_code = str_replace('.gzip', '', $_FILES['file']['name']);
 			$files_list = $gz->listContent();
+
 			if ($gz->extract(_PS_TRANSLATIONS_DIR_.'../', false))
 			{
 				$this->checkAndAddMailsFiles($iso_code, $files_list);
+
 				if (Validate::isLanguageFileName($_FILES['file']['name']))
 				{
 					if (!Language::checkAndAddLanguage($iso_code))
@@ -251,7 +299,8 @@ class AdminTranslations extends AdminTab
 				}
 				Tools::redirectAdmin($currentIndex.'&conf='.(isset($conf) ? $conf : '15').'&token='.$this->token);
 			}
-			$this->_errors[] = Tools::displayError('Archive cannot be extracted.');
+			else
+				$this->_errors[] = Tools::displayError('Archive cannot be extracted.');
 		}
 	}
 	
@@ -624,15 +673,20 @@ class AdminTranslations extends AdminTab
 		{
 			foreach ($all_content as $type_content=>$mails)
 			{
+				if (!in_array($type_content, array('txt', 'html')))
+					die(Tools::displayError());
 				foreach ($mails as $mail_name=>$content)
 				{
-					
 					$module_name = false;
 					$module_name_pipe_pos = stripos($mail_name, '|');
 					if ($module_name_pipe_pos)
 					{
 						$module_name = substr($mail_name, 0, $module_name_pipe_pos);
+						if (!Validate::isModuleName($module_name))
+							die(Tools::displayError());
 						$mail_name = substr($mail_name, $module_name_pipe_pos+1);
+						if (!Validate::isTplName($mail_name))
+							die(Tools::displayError());
 					}
 					
 					if ($type_content == 'html')
@@ -920,6 +974,10 @@ class AdminTranslations extends AdminTab
 	public function displayFormFront($lang)
 	{
 		global $currentIndex;
+
+		if (!Validate::isLangIsoCode($lang))
+			die(Tools::displayError());
+
 		$_LANG = $this->fileExists(_PS_THEME_DIR_.'lang', Tools::strtolower($lang).'.php', '_LANG');
 		$str_output = '';
 		
@@ -1002,6 +1060,10 @@ class AdminTranslations extends AdminTab
 	public function displayFormBack($lang)
 	{
 		global $currentIndex;
+
+		if (!Validate::isLangIsoCode($lang))
+			die(Tools::displayError());
+			
 		$_LANGADM = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'admin.php', '_LANGADM');
 		$str_output = '';
 		/* List templates to parse */
@@ -1075,6 +1137,10 @@ class AdminTranslations extends AdminTab
 	public function displayFormErrors($lang)
 	{
 		global $currentIndex;
+
+		if (!Validate::isLangIsoCode($lang))
+			die(Tools::displayError());
+			
 		$_ERRORS = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'errors.php', '_ERRORS');
 		
 		$str_output = '';
@@ -1108,7 +1174,7 @@ class AdminTranslations extends AdminTab
 				{
 					if (!filesize($fn))
 						continue;
-					preg_match_all('/Tools::displayError\(\''._PS_TRANS_PATTERN_.'\'(, (true|false))?\)/U', fread(fopen($fn, 'r'), filesize($fn)), $matches);
+					preg_match_all('/Tools::displayError\(\''._PS_TRANS_PATTERN_.'\'(, ?(true|false))?\)/U', fread(fopen($fn, 'r'), filesize($fn)), $matches);
 					foreach($matches[1] AS $key)
 						$stringToTranslate[$key] = (key_exists(md5($key), $_ERRORS)) ? html_entity_decode($_ERRORS[md5($key)], ENT_COMPAT, 'UTF-8') : '';
 				}
@@ -1133,6 +1199,10 @@ class AdminTranslations extends AdminTab
 	public function displayFormFields($lang)
 	{
 		global $currentIndex;
+		
+		if (!Validate::isLangIsoCode($lang))
+			die(Tools::displayError());
+		
 		$_FIELDS = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'fields.php', '_FIELDS');
 
 		$str_output = '';
@@ -1592,9 +1662,8 @@ class AdminTranslations extends AdminTab
 							if ($tab2 && isset($tab2[1]))
 							{
 								$tab2[1] = trim(str_replace('\'', '', $tab2[1]));
-								if (preg_match('/Mail::l\(\''._PS_TRANS_PATTERN_.'\'/s', $tab2[2], $tab3))
-									$tab2[2] = $tab3[1];
-								$subject_mail[$tab2[1]] = $tab2[2];
+								if (preg_match('/Mail::l\(\''._PS_TRANS_PATTERN_.'\'/s', $tab2[2], $matches))
+									$subject_mail[$tab2[1]] = $matches[1];
 							}
 						}
 					}
@@ -1835,12 +1904,13 @@ class AdminTranslations extends AdminTab
 		global $currentIndex;
 
 		$lang = Tools::strtolower(Tools::getValue('lang'));
-		$_LANG = array();
+		$_LANGPDF = array();
 		$str_output = '';
-		
+		if (!Validate::isLangIsoCode($lang))
+			die(Tools::displayError());
 		if (!file_exists(_PS_TRANSLATIONS_DIR_.$lang))
 			if (!mkdir(_PS_TRANSLATIONS_DIR_.$lang, 0700))
-				die('Please create a "'.$iso.'" directory in '._PS_TRANSLATIONS_DIR_);
+				die('Please create a "'.$lang.'" directory in '._PS_TRANSLATIONS_DIR_);
 		if (!file_exists(_PS_TRANSLATIONS_DIR_.$lang.'/pdf.php'))
 			if (!file_put_contents(_PS_TRANSLATIONS_DIR_.$lang.'/pdf.php', "<?php\n\nglobal \$_LANGPDF;\n\$_LANGPDF = array();\n\n?>"))
 				die('Please create a "'.Tools::strtolower($lang).'.php" file in '.realpath(PS_ADMIN_DIR.'/'));

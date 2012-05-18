@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15060 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,7 +38,7 @@ var ajaxCart = {
 			return false;
 		});
 		//for product page 'add' button...
-		$('body#product p#add_to_cart input').unbind('click').click(function(){
+		$('body#product #add_to_cart input').unbind('click').click(function(){
 			ajaxCart.add( $('#product_page_product_id').val(), $('#idCombination').val(), true, null, $('#quantity_wanted').val(), null);
 			return false;
 		});
@@ -168,7 +168,7 @@ var ajaxCart = {
 
 		//reactive the button when adding has finished
 		if (addedFromProductPage)
-			$('body#product p#add_to_cart input').removeAttr('disabled').addClass('exclusive').removeClass('exclusive_disabled');
+			$('body#product #add_to_cart input').removeAttr('disabled').addClass('exclusive').removeClass('exclusive_disabled');
 		else
 			$('.ajax_add_to_cart_button').removeAttr('disabled');
 	},
@@ -184,7 +184,7 @@ var ajaxCart = {
 		//disabled the button when adding to do not double add if user double click
 		if (addedFromProductPage)
 		{
-			$('body#product p#add_to_cart input').attr('disabled', 'disabled').removeClass('exclusive').addClass('exclusive_disabled');
+			$('body#product #add_to_cart input').attr('disabled', 'disabled').removeClass('exclusive').addClass('exclusive_disabled');
 			$('.filled').removeClass('filled');
 		}
 		else
@@ -237,7 +237,7 @@ var ajaxCart = {
 				alert("TECHNICAL ERROR: unable to add the product.\n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
 				//reactive the button when adding has finished
 				if (addedFromProductPage)
-					$('body#product p#add_to_cart input').removeAttr('disabled').addClass('exclusive').removeClass('exclusive_disabled');
+					$('body#product #add_to_cart input').removeAttr('disabled').addClass('exclusive').removeClass('exclusive_disabled');
 				else
 					$(callerElement).removeAttr('disabled');
 			}

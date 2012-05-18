@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14009 $
+*  @version  Release: $Revision: 14645 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -518,6 +518,12 @@ function askFeatureName(selected, selector)
 		$('#features_' + selector).show();
 		$('#feature_name_' + selector).attr('name', selected.name);
 	}
+	else
+	{
+		$('#features_' + selector).hide();
+		$('#feature_name_' + selector).removeAttr('name');
+	}
+
 }
 
 function replaceFeature(toReplace, selector)

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14921 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -1717,7 +1717,7 @@ class Tools14
 		return self::getHttpHost();
 	}
 
-	public static function generateHtaccess($path, $rewrite_settings, $cache_control, $specific = '', $disableMuliviews = false)
+	public static function generateHtaccess($path, $rewrite_settings, $cache_control, $specific = '', $disableMultiviews = false)
 	{
 		$tab = array('ErrorDocument' => array(), 'RewriteEngine' => array(), 'RewriteRule' => array());
 		$multilang = (Language::countActiveLanguages() > 1);
@@ -1824,7 +1824,7 @@ class Tools14
 		// RewriteEngine
 		fwrite($writeFd, "\n<IfModule mod_rewrite.c>\n");
 
-		if ($disableMuliviews)
+		if ($disableMultiviews)
 			fwrite($writeFd, "\n# Disable Multiviews\nOptions -Multiviews\n\n");
 
 		fwrite($writeFd, $tab['RewriteEngine']['comment']."\nRewriteEngine on\n\n");

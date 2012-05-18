@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15267 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -381,12 +381,12 @@ class Socolissimo extends CarrierModule
 
 		if (isset($carrierSo) AND $carrierSo->active)
 		{
-			$signature = $this->make_key(substr($this->lower($params['address']->lastname),0,34),
+			$signature = self::make_key(substr($this->lower($params['address']->lastname),0,34),
 						 (int)(Configuration::Get('SOCOLISSIMO_PREPARATION_TIME')),
 						 number_format((float)(version_compare(_PS_VERSION_, '1.5', '>') ? $params['cart']->getTotalShippingCost() : $params['cart']->getOrderShippingCost($carrierSo->id, true)), 2, ',', ''),
 						 (int)($params['address']->id_customer),(int)($params['address']->id));
 
-			$orderId = $this->formatOrderId((int)($params['address']->id));
+			$orderId = self::formatOrderId((int)($params['address']->id));
 			$inputs = array('PUDOFOID' => Configuration::get('SOCOLISSIMO_ID'),
 							'ORDERID' => $orderId,
 							'CENAME' => substr($this->lower($params['address']->lastname),0, 34),
@@ -545,13 +545,21 @@ class Socolissimo extends CarrierModule
 			Configuration::updateValue('SOCOLISSIMO_CARRIER_ID', (int)($params['carrier']->id));
 			Configuration::updateValue('SOCOLISSIMO_CARRIER_ID_HIST', Configuration::get('SOCOLISSIMO_CARRIER_ID_HIST').'|'.(int)($params['carrier']->id));
 		}
-
 	}
 
 	public function hookpaymentTop($params)
 	{
 		if ($params['cart']->id_carrier == Configuration::get('SOCOLISSIMO_CARRIER_ID') AND !$this->getDeliveryInfos((int)$params['cookie']->id_cart, (int)$params['cookie']->id_customer))
 		{
+			if (!Db::getInstance()->getValue('SELECT count(*) FROM '._DB_PREFIX_.'socolissimo_delivery_info WHERE id_cart =\''.(int)($params['cart']->id).'\' AND id_customer =\''.(int)($params['cart']->id_customer).'\''))
+			{
+				echo '<div class="error">
+						<p>'.$this->l('Fatal Error: Please check JavaScript is activated and').'<a href=".'.$_SERVER['REQUEST_URI'].'?step=2">'.$this->l('retry').'</a>'.$this->l(' the operation.').'</p>
+					</div>';
+				// A proper way would be to go back to the previous page
+				// We cannot did it, because the hook is called before starting the render of the page
+				die(); // Die, to assure the payment method are not showed
+			}
 		
 			$params['cart']->id_carrier = 0;
 			if (method_exists($params['cart'], 'setDeliveryOption'))
@@ -563,7 +571,7 @@ class Socolissimo extends CarrierModule
 		}
 	}
 
-	public function make_key($ceName, $dyPraparationTime, $dyForwardingCharges, $trClientNumber, $orderId)
+	public static function make_key($ceName, $dyPraparationTime, $dyForwardingCharges, $trClientNumber, $orderId)
 	{
 		return sha1(Configuration::get('SOCOLISSIMO_ID').$ceName.$dyPraparationTime.$dyForwardingCharges.$trClientNumber.self::formatOrderId($orderId).Configuration::get('SOCOLISSIMO_KEY'));
 	}
@@ -736,13 +744,13 @@ class Socolissimo extends CarrierModule
 		return strtolower(str_replace('-',' ',$strOut));
 	}
 
-	public function formatOrderId($id)
+	public static function formatOrderId($id)
 	{
 		if(strlen($id)<5)
 			while (strLen($id) != 5)
 			{
-            	$id = '0'.$id;
-            }
+				$id = '0'.$id;
+			}
 		return $id;
 	}
 
@@ -793,7 +801,7 @@ class Socolissimo extends CarrierModule
 		if ($carrier->range_behavior)
 		{
 			// Get id zone
-	        if (isset($this->context->cart->id_address_delivery) AND $this->context->cart->id_address_delivery)
+			if (isset($this->context->cart->id_address_delivery) AND $this->context->cart->id_address_delivery)
 				$id_zone = Address::getZoneById((int)($this->context->cart->id_address_delivery));
 			else
 				$id_zone = (int)$this->context->country->id_zone;

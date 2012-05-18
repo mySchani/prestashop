@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14483 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -123,9 +123,18 @@ class SearchCore
 
 		if (!$indexation)
 		{
-			$alias = new Alias(NULL, $string);
-			if (Validate::isLoadedObject($alias))
-				$string = $alias->search;
+			$words = explode(' ', $string);
+			$processed_words = array();
+			// search for aliases for each word of the query
+			foreach ($words as $word)
+			{
+				$alias = new Alias(null, $word);
+				if (Validate::isLoadedObject($alias))
+					$processed_words[] = $alias->search;
+				else
+					$processed_words[] = $word;
+			}
+			$string = implode(' ', $processed_words);
 		}
 
 		if ($indexation)

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 15258 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,13 +36,17 @@ require_once(dirname(__FILE__).'/library/googleresult.php');
 require_once(dirname(__FILE__).'/library/googlerequest.php');
 require_once(dirname(__FILE__).'/library/googlecart.php');
 
+if (!$this->active)
+	die(Tools::displayError());
 
 $merchant_id = Configuration::get('GCHECKOUT_MERCHANT_ID');
 $merchant_key = Configuration::get('GCHECKOUT_MERCHANT_KEY');
 $server_type = Configuration::get('GCHECKOUT_MODE');
 
+if (!$merchant_id || !$merchant_key)
+	die(Tools::displayError())
+
 $Gresponse = new GoogleResponse($merchant_id, $merchant_key);
-//$Grequest = new GoogleRequest($merchant_id, $merchant_key, $server_type, $currency);
 
 //Setup the log file
 if (Configuration::get('GCHECKOUT_LOGS'))

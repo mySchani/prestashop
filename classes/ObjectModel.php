@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14248 $
+*  @version  Release: $Revision: 14850 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -465,12 +465,12 @@ abstract class ObjectModelCore
 	/**
 	* TODO: refactor rename all calls to this to validateController
 	*/
-	public function validateControler($htmlentities = true)
+	public function validateControler($htmlentities = true, $copy_post = false)
 	{
-		return $this->validateController($htmlentities);
+		return $this->validateController($htmlentities, $copy_post);
 	}
 
-	public function validateController($htmlentities = true)
+	public function validateController($htmlentities = true, $copy_post = false)
 	{
 		$errors = array();
 
@@ -490,6 +490,10 @@ abstract class ObjectModelCore
 		/* Checking for fields validity */
 		foreach ($this->fieldsValidate AS $field => $function)
 		{
+			
+			if ($copy_post && is_array($this->exclude_copy_post) && in_array($field, $this->exclude_copy_post))
+				continue;
+
 			// Hack for postcode required for country which does not have postcodes
 			if ($value = Tools::getValue($field, $this->{$field}) OR ($field == 'postcode' AND $value == '0'))
 			{

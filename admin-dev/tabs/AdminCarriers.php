@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14915 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -268,9 +268,13 @@ class AdminCarriers extends AdminTab
 		if ($delete)
 			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id_carrier);
 		$groups = Db::getInstance()->ExecuteS('SELECT id_group FROM `'._DB_PREFIX_.'group`');
-		foreach ($groups as $group)
-			if (in_array($group['id_group'], $_POST['groupBox']))
-				Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier) VALUES('.(int)$group['id_group'].','.(int)$id_carrier.')');
+		if (Tools::isSubmit('groupBox') && Tools::getValue('groupBox'))
+			foreach ($groups as $group)
+				if (in_array($group['id_group'], Tools::getValue('groupBox')))
+					Db::getInstance()->Execute('
+						INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier)
+						VALUES('.(int)$group['id_group'].','.(int)$id_carrier.')
+					');
 	}
 
 	public function postProcess()

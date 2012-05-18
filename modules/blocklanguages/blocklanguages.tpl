@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @version  Release: $Revision: 14985 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -30,11 +30,11 @@
 		{foreach from=$languages key=k item=language name="languages"}
 			<li {if $language.iso_code == $lang_iso}class="selected_language"{/if}>
 				{if $language.iso_code != $lang_iso}
-				    {assign var=indice_lang value=$language.id_lang}
+					{assign var=indice_lang value=$language.id_lang}
 					{if isset($lang_rewrite_urls.$indice_lang)}
-						<a href="{$lang_rewrite_urls.$indice_lang}" title="{$language.name}">
+						<a href="{$lang_rewrite_urls.$indice_lang|escape:htmlall}" title="{$language.name}">
 					{else}
-						<a href="{$link->getLanguageLink($language.id_lang)}" title="{$language.name}">
+						<a href="{$link->getLanguageLink($language.id_lang)|escape:htmlall}" title="{$language.name}">
 					{/if}
 
 				{/if}

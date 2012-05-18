@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14703 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,8 +39,11 @@ $height = Tools::getValue('height');
 $id_employee = Tools::getValue('id_employee');
 $id_lang = Tools::getValue('id_lang');
 
-if ($cookie->id_employee != $id_employee)
-	die;
+if (!Validate::isModuleName($module))
+    die(Tools::displayError());
+
+if (!isset($cookie->id_employee) || !$cookie->id_employee  || $cookie->id_employee != $id_employee)
+    die(Tools::displayError());
 
 if (!Tools::file_exists_cache($module_path = dirname(__FILE__).'/../modules/'.$module.'/'.$module.'.php'))
 	die(Tools::displayError());

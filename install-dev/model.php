@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14278 $
+*  @version  Release: $Revision: 15287 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -44,7 +44,7 @@ if ($tmp = strpos($_SERVER['REQUEST_URI'], '?'))
 	$_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 0, $tmp);
 $_SERVER['REQUEST_URI'] = str_replace('//', '/', $_SERVER['REQUEST_URI']);
 
-define('INSTALL_VERSION', '1.4.7.2');
+define('INSTALL_VERSION', '1.4.8.2');
 define('INSTALL_PATH', dirname(__FILE__));
 define('PS_INSTALLATION_IN_PROGRESS', true);
 require_once(INSTALL_PATH.'/classes/ToolsInstall.php');

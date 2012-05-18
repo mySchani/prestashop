@@ -70,7 +70,7 @@ function upgrade_module_1_8_0($object)
 	Configuration::updateValue('MONDIAL_RELAY', $object->version);
 
 	$methods = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'mr_method`');
-	if ($count($methods))
+	if (count($methods))
 	{
 		$query = '
 			INSERT INTO `'._DB_PREFIX_.'mr_method_shop`
@@ -99,15 +99,16 @@ function upgrade_module_1_8_0($object)
 				WHERE `id_carrier`
 				IN (SELECT `id_carrier`
 						FROM `'._DB_PREFIX_.'mr_method`)');
-
-		if (!$object->isRegisteredInHook('newOrder'))
-			$object->registerHook('newOrder');
-		if (!$object->isRegisteredInHook('BackOfficeHeader'))
-			$object->registerHook('BackOfficeHeader');
-
-		if (!$object->isRegisteredInHook('header'))
-			$object->registerHook('header');
 	}
+
+	// Try to register the new hook since 1.7
+	if (!$object->isRegisteredInHook('newOrder'))
+		$object->registerHook('newOrder');
+	if (!$object->isRegisteredInHook('BackOfficeHeader'))
+		$object->registerHook('BackOfficeHeader');
+
+	if (!$object->isRegisteredInHook('header'))
+		$object->registerHook('header');
 
 	return true;
 }

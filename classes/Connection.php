@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14903 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -104,10 +104,10 @@ class ConnectionCore extends ObjectModel
 		$result = Db::getInstance()->getRow('
 		SELECT c.`id_guest`
 		FROM `'._DB_PREFIX_.'connections` c
-		WHERE c.`id_guest` = '.(int)($cookie->id_guest).'
+		WHERE c.`id_guest` = '.(int)$cookie->id_guest.'
 		AND DATE_ADD(c.`date_add`, INTERVAL 30 MINUTE) > \''.pSQL(date('Y-m-d H:i:00')).'\'
 		ORDER BY c.`date_add` DESC');
-		if (!$result['id_guest'] AND (int)($cookie->id_guest))
+		if (!$result['id_guest'] && (int)$cookie->id_guest)
 		{
 			// The old connections details are removed from the database in order to spare some memory
 			Connection::cleanConnectionsPages();
@@ -117,7 +117,7 @@ class ConnectionCore extends ObjectModel
 			if (!isset($arrayUrl['host']) OR preg_replace('/^www./', '', $arrayUrl['host']) == preg_replace('/^www./', '', Tools::getHttpHost(false, false)))
 				$referer = '';
 			$connection = new Connection();
-			$connection->id_guest = (int)($cookie->id_guest);
+			$connection->id_guest = (int)$cookie->id_guest;
 			$connection->id_page = Page::getCurrentId();
 			$connection->ip_address = Tools::getRemoteAddr() ? ip2long(Tools::getRemoteAddr()) : '';
 			if (Validate::isAbsoluteUrl($referer))

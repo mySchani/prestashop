@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 15246 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -94,6 +94,9 @@ abstract class PaymentModuleCore extends Module
 
 		$cart = new Cart((int)($id_cart));
 		// Does order already exists ?
+		if (!$this->active)
+			die(Tools::displayError());
+
 		if (Validate::isLoadedObject($cart) AND $cart->OrderExists() == false)
 		{
 			if ($secure_key !== false AND $secure_key != $cart->secure_key)

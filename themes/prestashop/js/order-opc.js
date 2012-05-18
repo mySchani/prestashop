@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @version  Release: $Revision: 14785 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,7 @@ function updateCarrierList(json)
 	var carriers = json.carriers;
 	
 	/* contains all carrier available for this address */
-	if (carriers.length == 0)
+	if ((typeof carriers == undefined) || carriers.length == 0)
 	{
 		checkedCarrier = 0;
 		$('input[name=id_carrier]:checked').attr('checked', false);

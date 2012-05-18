@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14905 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -71,9 +71,9 @@ class CombinationCore extends ObjectModel
 		'ean13' => 'isEan13',
 		'upc' => 'isUpc',
 		'wholesale_price' => 'isPrice',
-		'price' => 'isPrice',
+		'price' => 'isNegativePrice',
 		'ecotax' => 'isPrice',
-		'quantity' => 'isUnsignedInt',
+		'quantity' => 'isInt',
 		'weight' => 'isFloat',
 		'default_on' => 'isBool',
 	);

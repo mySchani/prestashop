@@ -20,7 +20,7 @@
  *
  *  @author PrestaShop SA <contact@prestashop.com>
  *  @copyright 2007-2012 PrestaShop SA : 6 rue lacepede, 75005 PARIS
- *  @version  Release: $Revision: 14011 $
+ *  @version  Release: $Revision: 15238 $
  *  @license	http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  **/
@@ -123,6 +123,7 @@ class Twenga extends PaymentModule
 	 	$this->name = 'twenga';
 	 	$this->tab = 'smart_shopping';
 	 	$this->version = '1.8';
+		$this->author = 'PrestaShop';
 		
 	 	parent::__construct();
 	

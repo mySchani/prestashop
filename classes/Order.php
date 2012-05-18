@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @version  Release: $Revision: 14927 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -357,15 +357,30 @@ class OrderCore extends ObjectModel
 	 * Get order history
 	 *
 	 * @param integer $id_lang Language id
+	 * @param integer $id_order_state Filter a specific order state
+	 * @param integer $no_hidden Filter no hidden status
+	 * @param integer $filters Flag to use specific field filter
 	 *
 	 * @return array History entries ordered by date DESC
 	 */
-	public function getHistory($id_lang, $id_order_state = false, $no_hidden = false)
+	public function getHistory($id_lang, $id_order_state = false, $no_hidden = false, $filters = 0)
 	{
 		if (!$id_order_state)
 			$id_order_state = 0;
+		
+		$logable = false;
+		$delivery = false;
+		if ($filters > 0)
+		{
+			if ($filters & OrderState::FLAG_NO_HIDDEN)
+				$no_hidden = true;
+			if ($filters & OrderState::FLAG_DELIVERY)
+				$delivery = true;
+			if ($filters & OrderState::FLAG_LOGABLE)
+				$logable = true;
+		}
 
-		if (!isset(self::$_historyCache[$this->id.'_'.$id_order_state]) OR $no_hidden)
+		if (!isset(self::$_historyCache[$this->id.'_'.$id_order_state.'_'.$filters]) || $no_hidden)
 		{
 			$id_lang = $id_lang ? (int)($id_lang) : 'o.`id_lang`';
 			$result = Db::getInstance()->ExecuteS('
@@ -377,13 +392,15 @@ class OrderCore extends ObjectModel
 			LEFT JOIN `'._DB_PREFIX_.'employee` e ON e.`id_employee` = oh.`id_employee`
 			WHERE oh.id_order = '.(int)($this->id).'
 			'.($no_hidden ? ' AND os.hidden = 0' : '').'
+			'.($logable ? ' AND os.logable = 1' : '').'
+			'.($delivery ? ' AND os.delivery = 1' : '').'
 			'.((int)($id_order_state) ? ' AND oh.`id_order_state` = '.(int)($id_order_state) : '').'
 			ORDER BY oh.date_add DESC, oh.id_order_history DESC');
 			if ($no_hidden)
 				return $result;
-			self::$_historyCache[$this->id.'_'.$id_order_state] = $result;
+			self::$_historyCache[$this->id.'_'.$id_order_state.'_'.$filters] = $result;
 		}
-		return self::$_historyCache[$this->id.'_'.$id_order_state];
+		return self::$_historyCache[$this->id.'_'.$id_order_state.'_'.$filters];
 	}
 
 	public function getProductsDetail()
@@ -502,10 +519,30 @@ class OrderCore extends ObjectModel
 		return $resultArray;
 	}
 
+	/**
+	 * Returns the taxes rates average by using the historized products
+   */
 	public function getTaxesAverageUsed()
-	{
-		return Cart::getTaxesAverageUsed((int)($this->id_cart));
-	}
+	{	
+		$products = $this->getProducts();
+		$total_products_moy = 0;
+		$ratio_tax = 0;
+
+		if (!count($products))
+			return 0;
+
+		foreach ($products as $product)
+		{
+			$product['total_wt'] = Tools::ps_round($product['product_price'] * (float)$product['product_quantity'] * (1 + (float)($product['tax_rate']) / 100), 2);
+			$total_products_moy += $product['total_wt'];
+			$ratio_tax += $product['total_wt'] * $product['tax_rate'];
+		}
+
+		if ($total_products_moy > 0)
+			return $ratio_tax / $total_products_moy;
+
+		return 0;
+	} 
 
 	/**
 	 * Count virtual products in order
@@ -613,12 +650,12 @@ class OrderCore extends ObjectModel
 
 	public function hasBeenDelivered()
 	{
-		return sizeof($this->getHistory((int)($this->id_lang), Configuration::get('PS_OS_DELIVERED')));
+		return count($this->getHistory((int)($this->id_lang), false, false, OrderState::FLAG_DELIVERY));
 	}
 
 	public function hasBeenPaid()
 	{
-		return sizeof($this->getHistory((int)($this->id_lang), Configuration::get('PS_OS_PAYMENT')));
+		return count($this->getHistory((int)($this->id_lang), false, false, OrderState::FLAG_LOGABLE));
 	}
 
 	public function hasBeenShipped()
@@ -782,7 +819,7 @@ class OrderCore extends ObjectModel
 			if ($row['reduction_percent'])
 				$price -= $price * ($row['reduction_percent'] * 0.01);
 			if ($row['reduction_amount'])
-				$price -= $row['reduction_amount'] * (1 + ($row['tax_rate'] * 0.01));
+				$price -= $row['reduction_amount'];
 			if ($row['group_reduction'])
 				$price -= $price * ($row['group_reduction'] * 0.01);
 			$price += $row['ecotax'] * (1 + $row['ecotax_tax_rate'] / 100);

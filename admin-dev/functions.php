@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @version  Release: $Revision: 14289 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -92,6 +92,7 @@ function rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 	$defines['_DB_TYPE_'] = (($arrayDB AND isset($arrayDB['_DB_TYPE_'])) ? $arrayDB['_DB_TYPE_'] : _DB_TYPE_);
 	$defines['_COOKIE_KEY_'] = addslashes(_COOKIE_KEY_);
 	$defines['_COOKIE_IV_'] = addslashes(_COOKIE_IV_);
+	$defines['_PS_CREATION_DATE_'] = defined(_PS_CREATION_DATE_) ? _PS_CREATION_DATE_ : date('Y-m-d');
 	if (defined('_RIJNDAEL_KEY_'))
 		$defines['_RIJNDAEL_KEY_'] = addslashes(_RIJNDAEL_KEY_);
 	if (defined('_RIJNDAEL_IV_'))
