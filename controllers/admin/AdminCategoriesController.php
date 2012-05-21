@@ -175,9 +175,9 @@ class AdminCategoriesControllerCore extends AdminController
 		$guest = new Group(Configuration::get('PS_GUEST_GROUP'));
 		$default = new Group(Configuration::get('PS_CUSTOMER_GROUP'));
 
-		$unidentified_group_information = sprintf($this->l('%s - This group is for visitors.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
-		$guest_group_information = sprintf($this->l('%s - This group is for the guest customers. They have ordered a cart as guest.'), "<b>".$guest->name[$this->context->language->id]."</b>");
-		$default_group_information = sprintf($this->l('%s - This group is the default group customer.'), "<b>".$default->name[$this->context->language->id]."</b>");
+		$unidentified_group_information = sprintf($this->l('%s - All persons without a customer account or unauthenticated.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
+		$guest_group_information = sprintf($this->l('%s - Customer who placed an order with the Guest Checkout.'), "<b>".$guest->name[$this->context->language->id]."</b>");
+		$default_group_information = sprintf($this->l('%s - All persons who created an account on this site.'), "<b>".$default->name[$this->context->language->id]."</b>");
 
 		$this->fields_form = array(
 			'tinymce' => true,
@@ -308,15 +308,21 @@ class AdminCategoriesControllerCore extends AdminController
 		);
 
 		// Added values of object Group
-		$carrier_groups = $obj->getGroups();
-		$carrier_groups_ids = array();
-		if (is_array($carrier_groups))
-			foreach ($carrier_groups as $carrier_group)
-				$carrier_groups_ids[] = $carrier_group['id_group'];
+		$category_groups = $obj->getGroups();
+		$category_groups_ids = array();
+		if (is_array($category_groups))
+			foreach ($category_groups as $category_group)
+				$category_groups_ids[] = $category_group['id_group'];
 
 		$groups = Group::getGroups($this->context->language->id);
+		// if empty $carrier_groups_ids : object creation : we set the default groups
+		if (empty($category_groups_ids))
+		{
+			$preselected = array(Configuration::get('PS_UNIDENTIFIED_GROUP'), Configuration::get('PS_GUEST_GROUP'), Configuration::get('PS_CUSTOMER_GROUP'));
+			$category_groups_ids = array_merge($category_groups_ids, $preselected);
+		}
 		foreach ($groups as $group)
-			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], (in_array($group['id_group'], $carrier_groups_ids)));
+			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], (in_array($group['id_group'], $category_groups_ids)));
 
 		return parent::renderForm();
 	}

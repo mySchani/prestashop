@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11829 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,5 +33,11 @@
  */
 class InstallFixturesApple extends InstallXmlLoader
 {
+	public function createEntityCustomer($identifier, array $data, array $data_lang)
+	{
+		if ($identifier == 'John')
+			$data['passwd'] = Tools::encrypt('123456789');
 
+		return $this->createEntity('customer', $identifier, 'Customer', $data, $data_lang);
+	}
 }

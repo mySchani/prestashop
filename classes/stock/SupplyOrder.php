@@ -153,6 +153,32 @@ class SupplyOrderCore extends ObjectModel
 	);
 
 	/**
+	 * @see ObjectModel::$webserviceParameters
+	 */
+ 	protected $webserviceParameters = array(
+ 		'fields' => array(
+ 			'id_supplier' => array('xlink_resource' => 'suppliers'),
+ 			'id_lang' => array('xlink_resource' => 'languages'),
+ 			'id_warehouse' => array('xlink_resource' => 'warehouses'),
+ 			'id_supply_order_state' => array('xlink_resource' => 'supply_order_states'),
+ 			'id_currency' => array('xlink_resource' => 'currencies'),
+ 		),
+ 		'hidden_fields' => array(
+ 			'id_ref_currency',
+ 		),
+ 		'associations' => array(
+			'supply_order_details' => array(
+				'resource' => 'supply_order_detail',
+				'fields' => array(
+					'id' => array(),
+ 					'supplier_reference' => array(),
+ 					'product_name' => array(),
+				),
+			),
+		),
+ 	);
+
+	/**
 	 * @see ObjectModel::update()
 	 */
 	public function update($null_values = false)
@@ -401,6 +427,62 @@ class SupplyOrderCore extends ObjectModel
 
 		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 		return ($res > 0);
+	}
+
+	/**
+	 * For a given id or reference, tells if the supply order exists
+	 * @param int|string $match
+	 * @return int id
+	 */
+	public static function exists($match)
+	{
+		if (!$match)
+			return false;
+
+		$query = new DbQuery();
+		$query->select('id_supply_order');
+		$query->from('supply_order', 'so');
+		$query->where('so.id_supply_order = '.(int)$match.' OR so.reference = "'.pSQL($match).'"');
+
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+		return ((int)$res);
+	}
+
+	/**
+	 * For a given reference, returns the corresponding supply order
+	 *
+	 * @param striing $reference
+	 * @return bool|SupplyOrder
+	 */
+	public static function getSupplyOrderByReference($reference)
+	{
+		if (!$reference)
+			return false;
+
+		$query = new DbQuery();
+		$query->select('id_supply_order');
+		$query->from('supply_order', 'so');
+		$query->where('so.reference = "'.pSQL($match).'"');
+		$id = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+
+		if ($id === false)
+			return false;
+
+		return (new SupplyOrder((int)$id));
+	}
+
+	/**
+	 * Webservice : gets the ids supply_order_detail associated to this order
+	 * @return array
+	 */
+	public function getWsSupplyOrderDetails()
+	{
+		$query = new DbQuery();
+		$query->select('sod.id_supply_order_detail as id, sod.name as product_name, supplier_reference');
+		$query->from('supply_order_detail', 'sod');
+		$query->where('id_supply_order = '.(int)$this->id);
+
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
 	}
 
 }

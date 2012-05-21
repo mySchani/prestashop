@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11439 $
+*  @version  Release: $Revision: 11802 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -159,7 +159,12 @@ class AdminStockCoverControllerCore extends AdminController
 				else // infinity
 					$data['coverage'] = '--';
 
-				$data['qty_sold'] = $this->getQuantitySold($data['id_product'], $data['id'], $this->getCurrentCoveragePeriod());
+				// computes quantity sold
+				$qty_sold = $this->getQuantitySold($data['id_product'], $data['id'], $this->getCurrentCoveragePeriod());
+				if (!$qty_sold)
+					$data['qty_sold'] = '--';
+				else
+					$data['qty_sold'] = $qty_sold;
 			}
 
 			echo Tools::jsonEncode(array('data'=> $datas, 'fields_display' => $this->fieldsDisplay));
@@ -236,7 +241,11 @@ class AdminStockCoverControllerCore extends AdminController
 					$item['coverage'] = '--';
 
 				// computes quantity sold
-				$item['qty_sold'] = $this->getQuantitySold($item['id'], 0, $this->getCurrentCoveragePeriod());
+				$qty_sold = $this->getQuantitySold($item['id'], 0, $this->getCurrentCoveragePeriod());
+				if (!$qty_sold)
+					$item['qty_sold'] = '--';
+				else
+					$item['qty_sold'] = $qty_sold;
 
 				// removes 'details' action on products without attributes
 				$this->addRowActionSkipList('details', array($item['id']));

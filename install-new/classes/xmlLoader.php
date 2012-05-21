@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11733 $
+*  @version  Release: $Revision: 11829 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -53,6 +53,10 @@ class InstallXmlLoader
 	public $path_type;
 
 	protected $ids = array();
+
+	protected $primaries = array();
+
+	protected $delayed_inserts = array();
 
 	public function __construct()
 	{
@@ -281,7 +285,15 @@ class InstallXmlLoader
 			}
 
 			$data = $this->rewriteRelationedData($entity, $data);
-			$this->createEntity($entity, $identifier, (string)$xml->fields['class'], $data, $data_lang);
+			if (method_exists($this, 'createEntity'.Tools::toCamelCase($entity)))
+			{
+				// Create entity with custom method in current class
+				$method = 'createEntity'.Tools::toCamelCase($entity);
+				$this->$method($identifier, $data, $data_lang);
+			}
+			else
+				$this->createEntity($entity, $identifier, (string)$xml->fields['class'], $data, $data_lang);
+
 			if ($xml->fields['image'])
 			{
 				if (method_exists($this, 'copyImages'.Tools::toCamelCase($entity)))
@@ -290,6 +302,8 @@ class InstallXmlLoader
 					$this->copyImages($entity, $identifier, (string)$xml->fields['image'], $data);
 			}
 		}
+
+		$this->flushDelayedInserts();
 	}
 
 	/**
@@ -346,7 +360,7 @@ class InstallXmlLoader
 			if (!file_exists($path))
 				throw new PrestashopInstallerException('XML data file '.$entity.'.xml not found');
 
-			if (!$this->cache_xml_entity[$this->path_type][$cache_id] = @simplexml_load_file($path))
+			if (!$this->cache_xml_entity[$this->path_type][$cache_id] = @simplexml_load_file($path, 'InstallSimplexmlElement'))
 				throw new PrestashopInstallerException('XML data file '.$entity.'.xml invalid');
 		}
 
@@ -373,6 +387,20 @@ class InstallXmlLoader
 		return $data;
 	}
 
+	public function flushDelayedInserts()
+	{
+		foreach ($this->delayed_inserts as $entity => $queries)
+		{
+			$type = 'INSERT IGNORE';
+			if ($entity == 'access')
+				$type = 'REPLACE';
+
+			if (!Db::getInstance()->autoExecute(_DB_PREFIX_.$entity, $queries, $type))
+				$this->setError($this->language->l('An SQL error occured for entity <i>%1$s</i>: <i>%2$s</i>', $entity, Db::getInstance()->getMsgError()));
+			unset($this->delayed_inserts[$entity]);
+		}
+	}
+
 	/**
 	 * Create a simple entity with all its data and lang data
 	 * If a methode createEntity$entity exists, use it. Else if $classname is given, use it. Else do a simple insert in database.
@@ -385,16 +413,9 @@ class InstallXmlLoader
 	 */
 	public function createEntity($entity, $identifier, $classname, array $data, array $data_lang = array())
 	{
-		if (method_exists($this, 'createEntity'.Tools::toCamelCase($entity)))
+		$xml = $this->loadEntity($entity);
+		if ($classname)
 		{
-			// Create entity with custom method in current class
-			$method = 'createEntity'.Tools::toCamelCase($entity);
-			$entity_id = $this->$method($data, $data_lang);
-		}
-		else if ($classname)
-		{
-			$xml = $this->loadEntity($entity);
-
 			// Create entity with ObjectModel class
 			$object = new $classname();
 			$object->hydrate($data);
@@ -405,15 +426,22 @@ class InstallXmlLoader
 		}
 		else
 		{
-			// Create entity in database);
-			$execute_type = 'INSERT IGNORE';
-			if ($entity == 'access')
-				$execute_type = 'REPLACE';
+			// Generate primary key manually
+			$primary = '';
+			$entity_id = 0;
+			if (!$xml->fields['primary'])
+				$primary = 'id_'.$entity;
+			else if (strpos((string)$xml->fields['primary'], ',') === false)
+				$primary = (string)$xml->fields['primary'];
 
-			if (!Db::getInstance()->autoExecute(_DB_PREFIX_.$entity, array_map('pSQL', $data), $execute_type))
-				$this->setError($this->language->l('An SQL error occured for entity <i>%1$s</i>: <i>%2$s</i>', $entity, Db::getInstance()->getMsgError()));
-			$entity_id = Db::getInstance()->Insert_ID();
+			if ($primary)
+			{
+				$entity_id = $this->generatePrimary($entity, $primary);
+				$data[$primary] = $entity_id;
+			}
 
+			// Store INSERT queries in order to optimize install with grouped inserts
+			$this->delayed_inserts[$entity][] = array_map('pSQL', $data);
 			if ($data_lang)
 			{
 				$real_data_lang = array();
@@ -425,8 +453,7 @@ class InstallXmlLoader
 				{
 					$insert_data_lang['id_'.$entity] = $entity_id;
 					$insert_data_lang['id_lang'] = $id_lang;
-					if (!Db::getInstance()->autoExecute(_DB_PREFIX_.$entity.'_lang',  array_map('pSQL', $insert_data_lang), 'INSERT IGNORE'))
-						$this->setError($this->language->l('An SQL error occured for entity <i>%1$s</i>: <i>%2$s</i>', $entity, Db::getInstance()->getMsgError()));
+					$this->delayed_inserts[$entity.'_lang'][] = array_map('pSQL', $insert_data_lang);
 				}
 			}
 		}
@@ -434,11 +461,56 @@ class InstallXmlLoader
 		$this->storeId($entity, $identifier, $entity_id);
 	}
 
-	public function createEntityConfiguration(array $data, array $data_lang = array())
+	public function createEntityTab($identifier, array $data, array $data_lang)
 	{
-		if (!Configuration::get($data['name']))
-			Configuration::updateGlobalValue($data['name'], ($data_lang) ? $data_lang['value'] : $data['value']);
-		return Configuration::getIdByName($data['name']);
+		static $position = array();
+
+		$entity = 'tab';
+		$xml = $this->loadEntity($entity);
+
+		if (!isset($position[$data['id_parent']]))
+			$position[$data['id_parent']] = 0;
+		$data['position'] = $position[$data['id_parent']]++;
+
+		// Generate primary key manually
+		$primary = '';
+		$entity_id = 0;
+		if (!$xml->fields['primary'])
+			$primary = 'id_'.$entity;
+		else if (strpos((string)$xml->fields['primary'], ',') === false)
+			$primary = (string)$xml->fields['primary'];
+
+		if ($primary)
+		{
+			$entity_id = $this->generatePrimary($entity, $primary);
+			$data[$primary] = $entity_id;
+		}
+
+		// Store INSERT queries in order to optimize install with grouped inserts
+		$this->delayed_inserts[$entity][] = array_map('pSQL', $data);
+		if ($data_lang)
+		{
+			$real_data_lang = array();
+			foreach ($data_lang as $field => $list)
+				foreach ($list as $id_lang => $value)
+					$real_data_lang[$id_lang][$field] = $value;
+
+			foreach ($real_data_lang as $id_lang => $insert_data_lang)
+			{
+				$insert_data_lang['id_'.$entity] = $entity_id;
+				$insert_data_lang['id_lang'] = $id_lang;
+				$this->delayed_inserts[$entity.'_lang'][] = array_map('pSQL', $insert_data_lang);
+			}
+		}
+
+		$this->storeId($entity, $identifier, $entity_id);
+	}
+
+	public function generatePrimary($entity, $primary)
+	{
+		if (!isset($this->primaries[$entity]))
+			$this->primaries[$entity] = (int)Db::getInstance()->getValue('SELECT '.$primary.' FROM '._DB_PREFIX_.$entity.' ORDER BY '.$primary.' DESC');
+		return ++$this->primaries[$entity];
 	}
 
 	public function copyImages($entity, $identifier, $path, array $data, $extension = 'jpg')
@@ -683,7 +755,7 @@ class InstallXmlLoader
 		if (!$this->entityExists($entity))
 			return $info;
 
-		$xml = @simplexml_load_file($this->data_path.$entity.'.xml');
+		$xml = @simplexml_load_file($this->data_path.$entity.'.xml', 'InstallSimplexmlElement');
 		if (!$xml)
 			return $info;
 
@@ -746,7 +818,7 @@ class InstallXmlLoader
 		if ($this->entityExists($entity))
 			$xml = $this->loadEntity($entity);
 		else
-			$xml = new SimpleXMLElement('<entity_'.$entity.' />');
+			$xml = new InstallSimplexmlElement('<entity_'.$entity.' />');
 		unset($xml->fields);
 
 		// Fill <fields> attributes (config)
@@ -764,7 +836,12 @@ class InstallXmlLoader
 				$field['relation'] = $info['relation'];
 		}
 
-		$this->writeNiceAndSweetXML($xml, $this->data_path.$entity.'.xml');
+		// Recreate entities nodes, in order to have the <entities> node after the <fields> node
+		$store_entities = clone $xml->entities;
+		unset($xml->entities);
+		$xml->addChild('entities', $store_entities);
+
+		$xml->asXML($this->data_path.$entity.'.xml');
 	}
 
 	/**
@@ -825,7 +902,7 @@ class InstallXmlLoader
 		unset($xml->entities);
 		$entities = $xml->addChild('entities');
 		$this->createXmlEntityNodes($entity, $content['nodes'], $entities);
-		$this->writeNiceAndSweetXML($xml, $this->data_path.$entity.'.xml');
+		$xml->asXML($this->data_path.$entity.'.xml');
 
 		// Generate multilang XML files
 		if ($content['nodes_lang'])
@@ -838,9 +915,9 @@ class InstallXmlLoader
 				if (!is_dir($this->lang_path.$iso.'/data'))
 					mkdir($this->lang_path.$iso.'/data');
 
-				$xml_node = new SimpleXMLElement('<entity_'.$entity.' />');
+				$xml_node = new InstallSimplexmlElement('<entity_'.$entity.' />');
 				$this->createXmlEntityNodes($entity, $nodes, $xml_node);
-				$this->writeNiceAndSweetXML($xml_node, $this->lang_path.$iso.'/data/'.$entity.'.xml');
+				$xml_node->asXML($this->lang_path.$iso.'/data/'.$entity.'.xml');
 			}
 
 		if ($xml->fields['image'])
@@ -1048,8 +1125,7 @@ class InstallXmlLoader
 			foreach ($node as $k => $v)
 			{
 				if (isset($types[$k]) && $types[$k])
-					// Sadly SimpleXML is really stupid ...
-					$entity_node->addChild($k, str_replace('&', '&amp;', $v));
+					$entity_node->addChild($k, $v);
 				else
 					$entity_node[$k] = $v;
 			}
@@ -1116,9 +1192,12 @@ class InstallXmlLoader
 		{
 			$image = new Image($image['id_image']);
 			$image_path = $image->getExistingImgPath();
-			copy($from_path.$image_path.'.'.$image->image_format, $backup_path.$this->generateId('image', $image->id).'.'.$image->image_format);
+			if (file_exists($from_path.$image_path.'.'.$image->image_format))
+				copy($from_path.$image_path.'.'.$image->image_format, $backup_path.$this->generateId('image', $image->id).'.'.$image->image_format);
+
 			foreach ($types as $type)
-				copy($from_path.$image_path.'-'.$type.'.'.$image->image_format, $backup_path.$this->generateId('image', $image->id).'-'.$type.'.'.$image->image_format);
+				if (file_exists($from_path.$image_path.'-'.$type.'.'.$image->image_format))
+					copy($from_path.$image_path.'-'.$type.'.'.$image->image_format, $backup_path.$this->generateId('image', $image->id).'-'.$type.'.'.$image->image_format);
 		}
 	}
 
@@ -1136,17 +1215,5 @@ class InstallXmlLoader
 		foreach ($xml->entities->tab as $tab)
 			if (file_exists($from_path.$tab->class_name.'.gif'))
 				copy($from_path.$tab->class_name.'.gif', $backup_path.$tab->class_name.'.gif');
-	}
-
-	/**
-	 * ONLY FOR DEVELOPMENT PURPOSE
-	 */
-	public function writeNiceAndSweetXML(SimpleXMLElement $xml, $filename)
-	{
-		$dom = new DOMDocument('1.0');
-		$dom->preserveWhiteSpace = false;
-		$dom->formatOutput = true;
-		$dom->loadXML($xml->asXML());
-		file_put_contents($filename, $dom->saveXML());
 	}
 }

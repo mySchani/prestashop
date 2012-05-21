@@ -195,6 +195,13 @@ class AdminCustomersControllerCore extends AdminController
 			LIMIT 1
 		) as connect';
 
+		if (Tools::isSubmit('submitBulkdelete'.$this->table) OR Tools::isSubmit('delete'.$this->table))
+			$this->tpl_list_vars = array(
+				'delete_customer' => true,
+				'REQUEST_URI' => $_SERVER['REQUEST_URI'],
+				'POST' => $_POST
+			);
+
 		return parent::renderList();
 	}
 
@@ -257,6 +264,7 @@ class AdminCustomersControllerCore extends AdminController
 					'label' => $this->l('Password:'),
 					'name' => 'passwd',
 					'size' => 33,
+					'required' => ($obj->id ? false : true),
 					'desc' => ($obj->id ? $this->l('Leave blank if no change') : $this->l('5 characters min., only letters, numbers, or').' -_')
 				),
 				array(
@@ -360,6 +368,15 @@ class AdminCustomersControllerCore extends AdminController
 				)
 			)
 		);
+
+		// if customer is a guest customer, password hasn't to be there
+		if ($obj->id && ($obj->is_guest && $obj->id_default_group == Configuration::get('PS_GUEST_GROUP')))
+		{
+			foreach ($this->fields_form['input'] as $k => $field)
+				if ($field['type'] == 'password')
+					array_splice($this->fields_form['input'], $k, 1);
+		}
+
 
 		if (Shop::isFeatureActive())
 		{
@@ -482,6 +499,14 @@ class AdminCustomersControllerCore extends AdminController
 		if (is_array($customer_groups))
 			foreach ($customer_groups as $customer_group)
 				$customer_groups_ids[] = $customer_group;
+
+		// if empty $carrier_groups_ids : object creation : we set the default groups
+		if (empty($customer_groups_ids))
+		{
+			$preselected = array(Configuration::get('PS_UNIDENTIFIED_GROUP'), Configuration::get('PS_GUEST_GROUP'), Configuration::get('PS_CUSTOMER_GROUP'));
+			$customer_groups_ids = array_merge($customer_groups_ids, $preselected);
+		}
+
 		foreach ($groups as $group)
 			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], in_array($group['id_group'], $customer_groups_ids));
 
@@ -688,25 +713,6 @@ class AdminCustomersControllerCore extends AdminController
 		parent::processDelete($token);
 	}
 
-	public function processBulkDelete($token)
-	{
-		if ($this->delete_mode == 'real')
-		{
-			$this->deleted = false;
-			foreach (Tools::getValue('customerBox') as $id_customer)
-				Discount::deleteByIdCustomer((int)$id_customer);
-		}
-		elseif ($this->delete_mode == 'deleted')
-			$this->deleted = true;
-		else
-		{
-			$this->_errors[] = Tools::displayError('Unknown delete mode:'.' '.$this->deleted);
-			return;
-		}
-
-		parent::processBulkDelete($token);
-	}
-
 	public function processSave($token)
 	{
 		// Check that the new email is not already in use
@@ -715,7 +721,8 @@ class AdminCustomersControllerCore extends AdminController
 		{
 			$customer_email = strval(Tools::getValue('email'));
 			$customer = new Customer();
-			$customer->getByEmail($customer_email);
+			if (Validate::isEmail($customer_email))
+				$customer->getByEmail($customer_email);
 			if ($customer->id)
 				$this->_errors[] = Tools::displayError('An account already exists for this e-mail address:').' '.$customer_email;
 		}
@@ -748,6 +755,18 @@ class AdminCustomersControllerCore extends AdminController
 		parent::processSave($token);
 	}
 
+	public function afterDelete($object, $oldId)
+	{
+		$customer = new Customer($oldId);
+		$addresses = $customer->getAddresses($this->default_form_language);
+		foreach ($addresses as $k => $v)
+		{
+			$address = new Address($v['id_address']);
+			$address->id_customer = $object->id;
+			$address->save();
+		}
+		return true;
+	}
 	/**
 	 * Transform a guest account into a registered customer account
 	 *

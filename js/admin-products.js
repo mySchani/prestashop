@@ -18,7 +18,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11521 $
+*  @version  Release: $Revision: 11752 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -113,7 +113,8 @@ function defaultProductAttribute(ids, token, parent)
 					{
 						$(this).attr('style', '');
 						var ids = $(this).find('a.edit').attr('ids');
-						$(this).find('a.edit').after("<a title=\"Default\" onclick=\"javascript:defaultProductAttribute("+ids+", 'b3a62213044bad81d091b225780ba544', $(this).parent('td').parent('tr'));\" class=\"pointer default\"><img alt=\"Default\" src=\"../img/admin/asterisk.gif\"></a>");
+						var token = $(this).find('a.edit').attr('token');
+						$(this).find('a.edit').after("<a title=\"Default\" onclick=\"javascript:defaultProductAttribute('"+ids+"', '"+token+"', $(this).parent('td').parent('tr'));\" class=\"pointer default\"><img alt=\"Default\" src=\"../img/admin/asterisk.gif\"></a>");
 					}
 				});
 				parent.find('a.default').hide();

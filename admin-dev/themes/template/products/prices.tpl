@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11575 $
+*  @version  Release: $Revision: 11818 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -101,22 +101,6 @@ var Customer = {
 };
 jQuery(document).ready(Customer.init);
 </script>
-<style type="text/css">
-#content #customers .warn {
-	margin: 10px 0 0 0;
-}
-#customers li {
-	background-color: #ABDFF7;
-	border: 1px solid #ccc;
-	float: left;
-	margin: 5px;
-	padding: 5px;
-}
-#customers li .button {
-	display: block;
-	margin-top: 5px;
-}
-</style>
 {/literal}
 {* END CUSTOMER AUTO-COMPLETE / TO REFACTO *}
 
@@ -147,7 +131,7 @@ jQuery(document).ready(Customer.init);
 		<tr>
 			<td class="col-left"><label>{l s='Pre-tax retail price:'}</label></td>
 			<td style="padding-bottom:5px;">
-				{$currency->prefix}<input size="11" maxlength="14" id="priceTE" name="price" type="text" value="{$product->price}" onchange="this.value = this.value.replace(/,/g, '.');" onkeyup="if (isArrowKey(event)) return; calcPriceTI();" />{$currency->suffix}<sup> *</sup>
+				{$currency->prefix}<input size="11" maxlength="14" id="priceTE" name="price" type="text" value="{$product->price}" onchange="this.value = this.value.replace(/,/g, '.');" onkeyup="$('#priceType').val('TE');if (isArrowKey(event)) return; calcPriceTI();" />{$currency->suffix}<sup> *</sup>
 				<p class="preference_description">{l s='The pre-tax retail price to sell this product'}</p>
 			</td>
 		</tr>
@@ -169,13 +153,13 @@ jQuery(document).ready(Customer.init);
 				</script>
 	
 				<span {if $tax_exclude_taxe_option}style="display:none;"{/if} >
-				 <select onChange="javascript:calcPriceTI(); unitPriceWithTax('unit');" name="id_tax_rules_group" id="id_tax_rules_group" {if $tax_exclude_taxe_option}disabled="disabled"{/if} >
-				     <option value="0">{l s='No Tax'}</option>
-					{foreach from=$tax_rules_groups item=tax_rules_group}
-						<option value="{$tax_rules_group.id_tax_rules_group}" {if $product->id_tax_rules_group == $tax_rules_group.id_tax_rules_group}selected="selected"{/if} >
-							{$tax_rules_group['name']|htmlentitiesUTF8}
-						</option>
-					{/foreach}
+					 <select onChange="javascript:calcPrice(); unitPriceWithTax('unit');" name="id_tax_rules_group" id="id_tax_rules_group" {if $tax_exclude_taxe_option}disabled="disabled"{/if} >
+						<option value="0">{l s='No Tax'}</option>
+						{foreach from=$tax_rules_groups item=tax_rules_group}
+							<option value="{$tax_rules_group.id_tax_rules_group}" {if $product->id_tax_rules_group == $tax_rules_group.id_tax_rules_group}selected="selected"{/if} >
+								{$tax_rules_group['name']|htmlentitiesUTF8}
+							</option>
+						{/foreach}
 					</select>
 					<a href="{$link->getAdminLink('AdminTaxRulesGroup')}&addtax_rules_group&id_product={$product->id}" class="confirm_leave">
 					<img src="../img/admin/add.gif" alt="{l s='Create'}" title="{l s='Create'}" /> <b>{l s='Create'}</b>
@@ -191,7 +175,7 @@ jQuery(document).ready(Customer.init);
 			<tr>
 				<td class="col-left"><label>{l s='Eco-tax (tax incl.):'}</label></td>
 				<td style="padding-bottom:5px;">
-					{$currency->prefix}<input size="11" maxlength="14" id="ecotax" name="ecotax" type="text" value="{$product->ecotax}" onkeyup="if (isArrowKey(event))return; calcPriceTE(); this.value = this.value.replace(/,/g, '.'); if (parseInt(this.value) > getE('priceTE').value) this.value = getE('priceTE').value; if (isNaN(this.value)) this.value = 0;" />{$currency->suffix}
+					{$currency->prefix}<input size="11" maxlength="14" id="ecotax" name="ecotax" type="text" value="{$product->ecotax}" onkeyup="$('#priceType').val('TI');if (isArrowKey(event))return; calcPriceTE(); this.value = this.value.replace(/,/g, '.'); if (parseInt(this.value) > getE('priceTE').value) this.value = getE('priceTE').value; if (isNaN(this.value)) this.value = 0;" />{$currency->suffix}
 					<span style="margin-left:10px">({l s='already included in price'})</span>
 				</td>
 			</tr>
@@ -199,13 +183,14 @@ jQuery(document).ready(Customer.init);
 		<tr {if !$country_display_tax_label || $tax_exclude_taxe_option}style="display:none"{/if} >
 			<td class="col-left"><label>{l s='Retail price with tax:'}</label></td>
 			<td style="padding-bottom:5px;">
-				{$currency->prefix}<input size="11" maxlength="14" id="priceTI" type="text" value="" onchange="noComma('priceTI');" onkeyup="if (isArrowKey(event)) return;  calcPriceTE();" />{$currency->suffix}
+				{$currency->prefix}<input size="11" maxlength="14" id="priceTI" type="text" value="" onchange="noComma('priceTI');" onkeyup="$('#priceType').val('TI');if (isArrowKey(event)) return;  calcPriceTE();" />{$currency->suffix}
+				<input id="priceType" name="priceType" type="hidden" value="TE" />
 			</td>
 		</tr>
 		<tr id="tr_unit_price">
 			<td class="col-left"><label>{l s='Unit price:'}</label></td>
 			<td style="padding-bottom:5px;">
-				{$currency->prefix} <input size="11" maxlength="14" id="unit_price" name="unit_price" type="text" value="{$unit_price}"
+				{$currency->prefix} <input size="11" maxlength="14" id="unit_price" name="unit_price" type="text" value="{$unit_price|number_format:6}"
 					onkeyup="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.'); unitPriceWithTax('unit');"/>{$currency->suffix}
 				{l s='/'} <!--<input size="6" maxlength="10" id="unity" name="unity" type="text" value="{$product->unity|htmlentitiesUTF8}" onkeyup="if (isArrowKey(event)) return ;unitySecond();" onchange="unitySecond();"/> -->
 				<select onchange="unitySecond();" name="unity" id="unity">

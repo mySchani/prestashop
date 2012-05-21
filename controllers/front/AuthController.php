@@ -281,7 +281,15 @@ class AuthControllerCore extends FrontController
 			{
 				// Handle brute force attacks
 				sleep(1);
-				$this->errors[] = Tools::displayError('Authentication failed');
+
+				if (!Customer::customerExists($email))
+				{
+					$this->create_account = true;
+					$this->context->smarty->assign('email_create', Tools::safeOutput($email));
+					$_POST['email'] = $email;
+				}
+				else
+					$this->errors[] = Tools::displayError('Authentication failed');
 			}
 			else
 			{
@@ -388,7 +396,7 @@ class AuthControllerCore extends FrontController
 						if (!$customer->is_guest)
 						{
 							$customer->cleanGroups();
-							// we add the guest customer in the default customer group
+							// we add the customer in the default customer group
 							$customer->addGroups(array((int)Configuration::get('PS_CUSTOMER_GROUP')));
 							if (!$this->sendConfirmationMail($customer))
 								$this->errors[] = Tools::displayError('Cannot send email');

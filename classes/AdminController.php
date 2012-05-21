@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11675 $
+*  @version  Release: $Revision: 11867 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -546,7 +546,7 @@ class AdminControllerCore extends Controller
 				{
 					if (!empty($this->fieldImageSettings))
 						$res = $object->deleteImage();
-					
+
 					if (!$res)
 						$this->_errors[] = Tools::displayError('Unable to delete associated images');
 
@@ -596,12 +596,13 @@ class AdminControllerCore extends Controller
 		/* Checking fields validity */
 		$this->validateRules();
 
-		if (!count($this->_errors))
+		if (count($this->_errors) <= 0)
 		{
 			$object = new $this->className();
+
 			$this->copyFromPost($object, $this->table);
 			$this->beforeAdd($object);
-			if (!$object->add())
+			if (method_exists($object, 'add') && !$object->add())
 			{
 				$this->_errors[] = Tools::displayError('An error occurred while creating object.').
 					' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
@@ -625,8 +626,9 @@ class AdminControllerCore extends Controller
 		}
 
 		$this->_errors = array_unique($this->_errors);
-		if (count($this->_errors) > 0)
+		if (count($this->_errors) > 0) {
 			return;
+		}
 
 		return $object;
 	}
@@ -642,7 +644,7 @@ class AdminControllerCore extends Controller
 		/* Checking fields validity */
 		$this->validateRules();
 
-		if (!count($this->_errors))
+		if (count($this->_errors) <= 0)
 		{
 			$id = (int)Tools::getValue($this->identifier);
 
@@ -713,12 +715,12 @@ class AdminControllerCore extends Controller
 						' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			}
 		}
-
 		$this->_errors = array_unique($this->_errors);
 		if (count($this->_errors) > 0)
 			return;
-
-		return $object;
+		if (isset($object))
+			return $object;
+		return;
 	}
 
 	/**
@@ -931,7 +933,6 @@ class AdminControllerCore extends Controller
 							}
 						}
 					}
-					//d('after ');
 				}
 			}
 			if (count($this->_errors) <= 0)
@@ -2216,7 +2217,7 @@ class AdminControllerCore extends Controller
 	 */
 	protected function beforeDelete($object)
 	{
-		return true;
+		return false;
 	}
 
 	/**

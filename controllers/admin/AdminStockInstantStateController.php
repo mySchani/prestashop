@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11351 $
+*  @version  Release: $Revision: 11803 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -202,6 +202,8 @@ class AdminStockInstantStateControllerCore extends AdminController
 			$query->select('SUM(price_te * physical_quantity) as valuation');
 			$query->from('stock');
 			$query->where('id_product = '.(int)$item['id_product'].' AND id_product_attribute = '.(int)$item['id_product_attribute']);
+			if ($this->getCurrentCoverageWarehouse() != -1)
+				$query->where('id_warehouse = '.(int)$this->getCurrentCoverageWarehouse());
 			$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($query);
 
 			$item['physical_quantity'] = $res['physical_quantity'];

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11653 $
+*  @version  Release: $Revision: 11814 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -125,13 +125,13 @@ class CollectionCore implements Iterator, ArrayAccess, Countable
 			{
 				case '=' :
 				case 'in' :
-					$this->query->where($this->parseField($field).' IN('.implode(', ', $this->formatValue($value, $field)));
+					$this->query->where($this->parseField($field).' IN('.implode(', ', $this->formatValue($value, $field)).')');
 				break;
 
 				case '!=' :
 				case '<>' :
 				case 'notin' :
-					$this->query->where($this->parseField($field).' NOT IN('.implode(', ', $this->formatValue($value, $field)));
+					$this->query->where($this->parseField($field).' NOT IN('.implode(', ', $this->formatValue($value, $field)).')');
 				break;
 
 				default :
@@ -415,7 +415,7 @@ class CollectionCore implements Iterator, ArrayAccess, Countable
 	}
 
 	/**
-	 * Obtain some informations on a field (alias, name, type, etc.)
+	 * Obtain some information on a field (alias, name, type, etc.)
 	 *
 	 * @param string $field Field name
 	 * @return array
@@ -433,14 +433,21 @@ class CollectionCore implements Iterator, ArrayAccess, Countable
 			}
 
 			$fieldname = $split[$i];
-			if (!isset($definition['fields'][$fieldname]))
-				throw new PrestashopException('Field '.$fieldname.' not found in class '.$this->classname);
+			if ($fieldname == $definition['primary'])
+				$type = ObjectModel::TYPE_INT;
+			else
+			{
+				if (!isset($definition['fields'][$fieldname]))
+					throw new PrestashopException('Field '.$fieldname.' not found in class '.$this->classname);
+
+				$type = $definition['fields'][$fieldname]['type'];
+			}
 
 			$this->fields[$field] = array(
 				'name' => 			$fieldname,
 				'association' =>	$association,
 				'alias' =>			$this->generateAlias($association),
-				'type' =>			$definition['fields'][$fieldname]['type'],
+				'type' =>			$type,
 			);
 		}
 		return $this->fields[$field];

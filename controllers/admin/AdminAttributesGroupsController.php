@@ -242,7 +242,7 @@ class AdminAttributesGroupsControllerCore extends AdminController
 
 		$this->fields_form = array(
 			'legend' => array(
-				'title' => $this->l('Attributes group'),
+				'title' => $this->l('Attribute'),
 				'image' => '../img/admin/asterisk.gif'
 			),
 			'input' => array(
@@ -435,6 +435,56 @@ class AdminAttributesGroupsControllerCore extends AdminController
 		}
 	}
 
+	public function initToolbarTitle()
+	{
+		// Breadcrumbs
+		$tabs = array();
+		$tabs = Tab::recursiveTab($this->id, $tabs);
+		$tabs = array_reverse($tabs);
+
+		$bread = '';
+		switch ($this->display)
+		{
+			case 'edit':
+				$current_tab = array_pop($tabs);
+				$tabs[] = array('name' => $this->l('Edit new Group'));
+				break;
+
+			case 'add':
+				$current_tab = array_pop($tabs);
+				$tabs[] = array('name' => $this->l('Add new Group'));
+				break;
+
+			case 'editAttributes':
+				$current_tab = array_pop($tabs);
+				$tabs[] = array('name' => $this->l('Add new Attribute'));
+				break;
+		}
+		// note : this should use a tpl file
+		foreach ($tabs as $key => $item)
+			$bread .= '<span class="breadcrumb item-'.$key.' ">'.$item['name'].'</span> : ';
+
+		$bread = rtrim($bread, ': ');
+
+		$this->toolbar_title = $bread;
+	}
+
+	/**
+	 * Call the right method for creating or updating object
+	 *
+	 * @param $token
+	 * @return mixed
+	 */
+	public function processSave()
+	{
+		$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
+
+		if ((int)Tools::getValue('id_attribute') <= 0)
+			return $this->processAdd($token);
+		else
+			return $this->processUpdate($token);
+	}
+
 	public function postProcess()
 	{
 		if (!Combination::isFeatureActive())
@@ -486,7 +536,7 @@ class AdminAttributesGroupsControllerCore extends AdminController
 					$_POST['position'] = DB::getInstance()->getValue($sql);
 				}
 				$_POST['id_parent'] = 0;
-				parent::postProcess();
+				$this->processSave();
 			}
 		}
 		else

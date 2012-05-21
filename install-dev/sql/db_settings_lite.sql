@@ -340,7 +340,9 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (163, 'PS_GUEST_GROUP', '2', NOW(), NOW()),
 (164, 'PS_CUSTOMER_GROUP', '3', NOW(), NOW()),
 (165, 'PS_SMARTY_CONSOLE', 0, NOW(), NOW()),
-(166, 'PS_INVOICE_MODEL', 'invoice', NOW(), NOW());
+(166, 'PS_INVOICE_MODEL', 'invoice', NOW(), NOW()),
+(167, 'PS_LIMIT_UPLOAD_IMAGE_VALUE', 2, NOW(), NOW()),
+(168, 'PS_LIMIT_UPLOAD_FILE_VALUE', 2 , NOW(), NOW());
 
 INSERT INTO `PREFIX_configuration_lang` (`id_configuration`, `id_lang`, `value`, `date_upd`) VALUES
 (36, 1, 'IN', NOW()),(36, 2, 'FA', NOW()),(36, 3, 'CU', NOW()),(36, 4, 'FA', NOW()),(36, 5, 'FA', NOW()),
@@ -1463,9 +1465,9 @@ INSERT INTO `PREFIX_timezone` (`name`) VALUES ('Africa/Abidjan'),('Africa/Accra'
 INSERT INTO `PREFIX_group` (`id_group`, `reduction`, `date_add`, `date_upd`) VALUES	(1, 0, NOW(), NOW()), (2, 0, NOW(), NOW()), (3, 0, NOW(), NOW());
 
 INSERT INTO `PREFIX_group_lang` (`id_group`, `id_lang`, `name`) VALUES
-(1, 1, 'Unidentified'),(1, 2, 'Non identifié'),(1, 3, 'Unidentified'),(1, 4, 'Unidentified'),(1, 5, 'Unidentified'),
+(1, 1, 'Visitor'),(1, 2, 'Visiteur'),(1, 3, 'Visitor'),(1, 4, 'Visitor'),(1, 5, 'Visitor'),
 (2, 1, 'Guest'),(2, 2, 'Invité'),(2, 3, 'Guest'),(2, 4, 'Guest'),(2, 5, 'Guest'),
-(3, 1, 'Default'),(3, 2, 'Défaut'),(3, 3, 'Predeterminado'),(3, 4, 'Default'),(3, 5, 'Default');
+(3, 1, 'Customer'),(3, 2, 'Client'),(3, 3, 'Customer'),(3, 4, 'Customer'),(3, 5, 'Customer');
 INSERT INTO `PREFIX_group_group_shop` (`id_group`, `id_group_shop`) (SELECT `id_group`, 1 FROM `PREFIX_group`);
 
 INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) (SELECT 1, `id_group` FROM `PREFIX_group`);
@@ -1535,7 +1537,8 @@ phone' where `id_country`=21;
 INSERT INTO `PREFIX_group_shop` (`id_group_shop`, `name`, `active`, `deleted`, `share_stock`, `share_customer`, `share_order`) VALUES (1, 'Default', 1, 0, 0, 0, 0);
 INSERT INTO `PREFIX_shop` (`id_shop`, `id_group_shop`, `name`, `id_category`, `id_theme`, `active`, `deleted`) VALUES (1, 1, 'Default', 1, 1, 1, 0);
 
-INSERT INTO `PREFIX_theme` (`id_theme`, `name`) VALUES (1, 'default');
+INSERT INTO `PREFIX_theme` (`id_theme`, `name`, `directory`) 
+	VALUES (1, 'default', 'default');
 
 UPDATE `PREFIX_address_format` set `format`= 'firstname lastname
 company

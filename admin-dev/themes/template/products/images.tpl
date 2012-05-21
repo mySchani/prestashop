@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11599 $
+*  @version  Release: $Revision: 11778 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -118,6 +118,7 @@
 		var upbutton = '{l s='Upload a file'}';
 		var token = '{$token}';
 		var come_from = '{$table}';
+		var success_add =  '{l s='image has been successfully added'}';
 		var id_tmp = 0;
 		{literal}
 		//Ready Function
@@ -173,7 +174,7 @@
 					token : "{/literal}{$token}{literal}",
 					tab : "AdminProducts",
 					action : 'addImage',
-					ajax: 1,
+					ajax: 1
 				},
 				onComplete: function(id, fileName, responseJSON)
 				{
@@ -204,13 +205,10 @@
 						$("#countImage").html(parseInt($("#countImage").html()) + 1);
 						$("#img" + id).remove();
 						$("#imageTable").tableDnDUpdate();
+						showSuccessMessage(responseJSON.name + " " + success_add);
 					}
 					else
-					{
-						$("#img" + id).addClass("red");
-						$("#img" + id + " .errorImg").html(responseJSON.error);
-						$("#img" + id + " .errorImg").show();
-					}
+						showErrorMessage(responseJSON.error);
 					filecheck++;
 				},
 				onSubmit: function(id, filename)

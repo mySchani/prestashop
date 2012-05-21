@@ -656,13 +656,14 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				'search' => false,
 			),
 			'quantity_received_today' => array(
-				'title' => $this->l('Quantity received today'),
+				'title' => $this->l('Quantity to receive today ?'),
 				'align' => 'center',
 				'width' => 20,
 				'type' => 'editable',
 				'orderby' => false,
 				'filter' => false,
 				'search' => false,
+				'hint' => $this->l('Enter here the quantity you received today'),
 			),
 			'quantity_received' => array(
 				'title' => $this->l('Quantity received'),
@@ -671,6 +672,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				'orderby' => false,
 				'filter' => false,
 				'search' => false,
+				'hint' => 'Note that you can see details on the receptions - per products',
 			),
 			'quantity_expected' => array(
 				'title' => $this->l('Quantity expected'),
@@ -681,12 +683,13 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				'search' => false,
 			),
 			'quantity_left' => array(
-				'title' => $this->l('Quantity left to receive'),
+				'title' => $this->l('Quantity left'),
 				'align' => 'center',
 				'width' => 20,
 				'orderby' => false,
 				'filter' => false,
 				'search' => false,
+				'hint' => $this->l('This is the quantity left to receive'),
 			)
 		);
 
@@ -724,11 +727,17 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		// defines action for POST
 		$action = '&id_supply_order='.$id_supply_order;
 
+		// unsets some buttons
+		unset($this->toolbar_btn['export-csv-orders']);
+		unset($this->toolbar_btn['export-csv-details']);
+		unset($this->toolbar_btn['new']);
+
 		// renders list
 		$helper = new HelperList();
 		$this->setHelperDisplay($helper);
 		$helper->actions = array('details');
 		$helper->override_folder = 'supply_orders_receipt_history/';
+		$helper->toolbar_btn = $this->toolbar_btn;
 
 		$helper->currentIndex = self::$currentIndex.$action;
 
@@ -927,6 +936,18 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			$this->_errors[] = Tools::displayError($this->l('You do not have the required permission to add a supply order.'));
 		if (Tools::isSubmit('submitBulkUpdatesupply_order_detail') && !($this->tabAccess['edit'] === '1'))
 			$this->_errors[] = Tools::displayError($this->l('You do not have the required permission to edit an order.'));
+
+		// checks if supply order reference is unique
+		if (Tools::isSubmit('reference'))
+		{
+			$ref = pSQL(Tools::getValue('reference'));
+			if ((int)SupplyOrder::exists($ref) != (int)Tools::getValue('id_supply_order'))
+				$this->_errors[] = Tools::displayError($this->l('The reference has to be unique.'));
+		}
+
+		if ($this->_errors)
+			return;
+
 		// Global checks when add / update a supply order
 		if (Tools::isSubmit('submitAddsupply_order') || Tools::isSubmit('submitAddsupply_orderAndStay'))
 		{
@@ -1711,11 +1732,17 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				$item['id_currency'] = $currency->id;
 			}
 
+			// unsets some buttons
+			unset($this->toolbar_btn['export-csv-orders']);
+			unset($this->toolbar_btn['export-csv-details']);
+			unset($this->toolbar_btn['new']);
+
 			// renders list
 			$helper = new HelperList();
 			$this->setHelperDisplay($helper);
 			$helper->actions = array();
 			$helper->show_toolbar = false;
+			$helper->toolbar_btn = $this->toolbar_btn;
 
 			$content = $helper->generateList($this->_list, $this->fieldsDisplay);
 
@@ -1864,7 +1891,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		$query->leftJoin('stock', 's', '
 			s.id_product = ps.id_product
 			AND s.id_product_attribute = ps.id_product_attribute
-		');
+			AND s.id_warehouse = '.(int)$supply_order->id_warehouse);
 		$query->innerJoin('warehouse_product_location', 'wpl', '
 			wpl.id_product = ps.id_product
 			AND wpl.id_product_attribute = ps.id_product_attribute

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11740 $
+*  @version  Release: $Revision: 11809 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -196,7 +196,7 @@ class InstallModelInstall extends InstallAbstractModel
 			}
 		}
 
-		// Copy language default images (we do this action after database in populated because we need image types informations)
+		// Copy language default images (we do this action after database in populated because we need image types information)
 		foreach ($languages as $iso)
 			$this->copyLanguageImages($iso);
 

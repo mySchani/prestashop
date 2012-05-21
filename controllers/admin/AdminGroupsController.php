@@ -72,7 +72,7 @@ class AdminGroupsControllerCore extends AdminController
 			),
 			'show_prices' => array(
 				'title' => $this->l('Show prices'),
-				'width' => 25,
+				'width' => 120,
 				'align' => 'center',
 				'type' => 'bool',
 				'callback' => 'printShowPricesIcon',
@@ -254,7 +254,7 @@ class AdminGroupsControllerCore extends AdminController
 			'Uncheck All'  => $this->l('Uncheck All'),
 			'search' => $this->l('Search a category')
 		);
-		$this->tpl_form_vars['categoryTreeView'] = Helper::renderAdminCategorieTree($trads, array(), 'id_category', true);
+		$this->tpl_form_vars['categoryTreeView'] = Helper::renderAdminCategorieTree($trads, array(), 'id_category', true, false, array(), true);
 
 		return parent::renderForm();
 
@@ -472,9 +472,9 @@ class AdminGroupsControllerCore extends AdminController
 		$guest = new Group(Configuration::get('PS_GUEST_GROUP'));
 		$default = new Group(Configuration::get('PS_CUSTOMER_GROUP'));
 
-		$unidentified_group_information = sprintf($this->l('%s - This group is for visitors.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
-		$guest_group_information = sprintf($this->l('%s - This group is for the guest customers. They have ordered a cart as guest.'), "<b>".$guest->name[$this->context->language->id]."</b>");
-		$default_group_information = sprintf($this->l('%s - This group is the default group customer.'), "<b>".$default->name[$this->context->language->id]."</b>");
+		$unidentified_group_information = sprintf($this->l('%s - All persons without a customer account or unauthenticated.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
+		$guest_group_information = sprintf($this->l('%s - Customer who placed an order with the Guest Checkout.'), "<b>".$guest->name[$this->context->language->id]."</b>");
+		$default_group_information = sprintf($this->l('%s - All persons who created an account on this site.'), "<b>".$default->name[$this->context->language->id]."</b>");
 
 		$this->displayInformation($this->l('You have now three default customer groups.'));
 		$this->displayInformation($unidentified_group_information);

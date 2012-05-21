@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11835 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -112,10 +112,10 @@ class InstallControllerHttpSystem extends InstallControllerHttp
 					'title' => $this->l('PHP parameters:'),
 					'checks' => array(
 						'fopen' => $this->l('Can open external URLs ?'),
-						'register_globals' => $this->l('Is PHP register global option desactivated (recommended) ?'),
+						'register_globals' => $this->l('Is PHP register global option deactivated (recommended) ?'),
 						'gz' => $this->l('Is GZIP compression activated (recommended) ?'),
 						'mcrypt' => $this->l('Is Mcrypt extension available (recommended) ?'),
-						'magicquotes' => $this->l('Is PHP magic quotes option desactivated (recommended) ?'),
+						'magicquotes' => $this->l('Is PHP magic quotes option deactivated (recommended) ?'),
 						'dom' => $this->l('Is Dom extension loaded ?'),
 						'pdo_mysql' => $this->l('Is PDO MySQL extension loaded ?'),
 					)

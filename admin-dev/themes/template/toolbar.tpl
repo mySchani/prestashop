@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11075 $
+*  @version  Release: $Revision: 11849 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,7 +28,7 @@
 	<ul class="cc_button">
 		{foreach from=$toolbar_btn item=btn key=k}
 			<li>
-				<a id="desc-{$table}-{$btn.imgclass|default:$k}" class="toolbar_btn" {if isset($btn.href)}href="{$btn.href}"{/if} title="{$btn.desc}" {if isset($btn.target) && $btn.target}target="_blank"{/if}>
+				<a id="desc-{$table}-{$btn.imgclass|default:$k}" class="toolbar_btn" {if isset($btn.href)}href="{$btn.href}"{/if} title="{$btn.desc}" {if isset($btn.target) && $btn.target}target="_blank"{/if}{if isset($btn.js) && $btn.js}onclick="{$btn.js}"{/if}>
 					<span class="process-icon-{$btn.imgclass|default:$k} {$btn.class|default:'' }" ></span>
 					<div>{$btn.desc}</div>
 				</a>

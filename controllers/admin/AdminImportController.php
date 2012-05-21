@@ -83,7 +83,8 @@ class AdminImportControllerCore extends AdminController
 			$this->l('Customers'),
 			$this->l('Addresses'),
 			$this->l('Manufacturers'),
-			$this->l('Suppliers')
+			$this->l('Suppliers'),
+			$this->l('SupplyOrders'),
 		));
 
 		switch ((int)Tools::getValue('entity'))
@@ -312,7 +313,7 @@ class AdminImportControllerCore extends AdminController
 				//Overwrite validators AS name is not MultiLangField
 				self::$validators = array(
 					'description' => array('AdminImportController', 'createMultiLangField'),
-					'description_short' => array('AdminImportController', 'createMultiLangField'),
+					'short_description' => array('AdminImportController', 'createMultiLangField'),
 					'meta_title' => array('AdminImportController', 'createMultiLangField'),
 					'meta_keywords' => array('AdminImportController', 'createMultiLangField'),
 					'meta_description' => array('AdminImportController', 'createMultiLangField'),
@@ -338,6 +339,33 @@ class AdminImportControllerCore extends AdminController
 					'shop' => Shop::getGroupFromShop(Configuration::get('PS_SHOP_DEFAULT')),
 				);
 			break;
+			// @since 1.5.0
+			case $this->entities[$this->l('SupplyOrders')]:
+				// required fields
+				$this->required_fields = array(
+					'id_supplier',
+					'id_warehouse',
+					'reference',
+					'date_delivery_expected',
+				);
+				// available fields
+				$this->available_fields = array(
+					'no' => array('label' => $this->l('Ignore this column')),
+					'id' => array('label' => $this->l('ID')),
+					'id_supplier' => array('label' => $this->l('Supplier ID *')),
+					'id_lang' => array('label' => $this->l('Lang ID')),
+					'id_warehouse' => array('label' => $this->l('Warehouse ID *')),
+					'id_currency' => array('label' => $this->l('Currency ID *')),
+					'reference' => array('label' => $this->l('Supply Order Reference *')),
+					'date_delivery_expected' => array('label' => $this->l('Delivery Date (Y-M-D)*')),
+					'discount_rate' => array('label' => $this->l('Discount Rate')),
+				);
+				// default values
+				self::$default_values = array(
+					'id_lang' => (int)Configuration::get('PS_LANG_DEFAULT'),
+					'id_currency' => Currency::getDefaultCurrency()->id,
+					'discount_rate' => '0',
+				);
 		}
 
 		parent::__construct();
@@ -368,6 +396,10 @@ class AdminImportControllerCore extends AdminController
 
 		$this->toolbar_fix = false;
 		$this->toolbar_btn = array();
+
+		// adds fancybox
+		$this->addCSS(_PS_CSS_DIR_.'jquery.fancybox-1.3.4.css', 'screen');
+		$this->addJqueryPlugin(array('fancybox'));
 
 		$this->tpl_form_vars = array(
 			'module_confirmation' => (Tools::getValue('import')) && (isset($this->warnings) && !count($this->warnings)),
@@ -1640,6 +1672,50 @@ class AdminImportControllerCore extends AdminController
 		$this->closeCsvFile($handle);
 	}
 
+	/**
+	 * @since 1.5.0
+	 */
+	public function supplyOrdersImport()
+	{
+		// opens CSV & sets locale
+		$this->receiveTab();
+		$handle = $this->openCsvFile();
+		self::setLocale();
+
+		// main loop, for each lines
+		for ($current_line = 0; $line = fgetcsv($handle, MAX_LINE_SIZE, Tools::getValue('separator')); $current_line++)
+		{
+			// if convert requested
+			if (Tools::getValue('convert'))
+				$line = $this->utf8EncodeArray($line);
+			$info = self::getMaskedRow($line);
+
+			// sets default values if needed
+			self::setDefaultValues($info);
+
+			// if an id is set, instanciates a supply order with this id if possible
+			if (array_key_exists('id', $info) && (int)$info['id'] && SupplyOrder::exists((int)$info['id']))
+				$supply_order = new Supplier((int)$info['id']);
+			// if an reference is set, instanciates a supply order with this reference if possible
+			else if (array_key_exists('reference', $info) && $info['reference'] && SupplyOrder::exists(pSQL($info['reference'])))
+				$supply_order = SupplyOrder::getSupplyOrderByReference(pSQL($info['reference']));
+			else // new supply order
+				$supply_order = new SupplyOrder();
+
+			/*
+			 * @TODO Checks $info
+			 *
+			 */
+
+			/**
+			 * @TODO If check is OK, sets the Supply Order
+			 */
+		}
+
+		// closes
+		$this->closeCsvFile($handle);
+	}
+
 	public function utf8EncodeArray($array)
 	{
 		if (is_array($array))
@@ -1824,6 +1900,9 @@ class AdminImportControllerCore extends AdminController
 				break;
 				case $this->entities[$this->l('Suppliers')]:
 					$this->supplierImport();
+				break;
+				case $this->entities[$this->l('SupplyOrders')]:
+					$this->supplyOrdersImport();
 				break;
 				default:
 					$this->_errors[] = $this->l('no entity selected');

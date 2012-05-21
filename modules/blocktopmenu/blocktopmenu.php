@@ -98,7 +98,7 @@ class blocktopmenu extends Module
 		global $cookie;
 		if(Tools::isSubmit('submitBlocktopmenu'))
 		{
-			if(Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', Tools::getValue('items')))
+			if (Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', Tools::getValue('items'), false, (int)$this->context->shop->id_group_shop, (int)$this->context->shop->id))
 				$this->_html .= $this->displayConfirmation($this->l('Settings Updated'));
 			else
 				$this->_html .= $this->displayError($this->l('Unable to update settings'));
@@ -324,8 +324,10 @@ class blocktopmenu extends Module
 	{
 		if (Context::shop() == Shop::CONTEXT_SHOP)
 		{
-			if (!Configuration::isOverridenByCurrentContext('MOD_BLOCKTOPMENU_ITEMS'))	
+			if (!Configuration::isOverridenByCurrentContext('MOD_BLOCKTOPMENU_ITEMS'))
+			{
 				$items_shop = Configuration::get('MOD_BLOCKTOPMENU_ITEMS');
+			}
 		}
 		if (!isset($items_shop))
 			$items_shop = '';

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11560 $
+*  @version  Release: $Revision: 11795 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -121,7 +121,7 @@ class HelperCore
 	 * @param type $input_name name of input
 	 * @return string
 	 */
-	public static function renderAdminCategorieTree($trads, $selected_cat = array(), $input_name = 'categoryBox', $use_radio = false, $use_search = false, $disabled_categories = array())
+	public static function renderAdminCategorieTree($trads, $selected_cat = array(), $input_name = 'categoryBox', $use_radio = false, $use_search = false, $disabled_categories = array(), $use_in_popup = false)
 	{
 		if (!$use_radio)
 			$input_name = $input_name.'[]';
@@ -156,11 +156,15 @@ class HelperCore
 		$html .= '
 			var selectedLabel = \''.$trads['selected'].'\';
 			var home = \''.$trads['Home'].'\';
-			var use_radio = '.(int)$use_radio.';
+			var use_radio = '.(int)$use_radio.';';
+		if (!$use_in_popup)
+			$html .= '
 			$(document).ready(function(){
 				buildTreeView();
-			});
-		</script>';
+			});';
+		else
+			$html .= 'buildTreeView();';
+		$html .= '</script>';
 
 		$html .= '
 		<div class="category-filter">
@@ -210,73 +214,6 @@ class HelperCore
 	}
 
 	/**
-	* Create a select input field
-	*
-	* @param array $values
-	* @param array $html_options any key => value options
-	* @param array $select_options
-	* - key: the array value that will be used as a key in my select (optional)
-	* - value: the array value that will be used as a label in my select (optional)
-	* - empty: the label displayed as an empty value (optional)
-	* - selected: the key corresponding to the selected value  (optional)
-	*
-	* @return string html content
-	*/
-	public static function selectInput(array $values, array $html_options = array(), array $select_options = array())
-	{
-		// options management
-		$options = self::buildHtmlOptions($html_options);
-		$select_html = '<select '.$options.'>';
-
-		if (isset($select_options['key']))
-			$use_key = $select_options['key'];
-
-		if (isset($select_options['value']))
-			$use_value = $select_options['value'];
-
-		if (isset($select_options['empty']))
-			$select_html .= '<option value="">'.$select_options['empty'].'</option>';
-
-		if (isset($select_options['selected']) && !is_array($select_options['selected']))
-			$select_options['selected'] = array($select_options['selected']);
-		// render options fields
-		foreach ($values as $key => $value)
-		{
-			$current_key = isset($use_key) ? $value[$use_key] : $key;
-			$current_value = isset($use_value) ? $value[$use_value] : $value;
-
-			if (isset($select_options['selected']) && in_array($current_key, $select_options['selected']))
-				$selected = 'selected="selected"';
-			else
-				$selected = '';
-
-			$select_html .= '<option value="'.Tools::htmlentitiesUTF8($current_key).'" '.$selected.'>'.Tools::htmlentitiesUTF8($current_value).'</option>';
-		}
-
-		$select_html .= '</select>';
-		return $select_html;
-	}
-
-	/**
-	* Create html a string containing html options
-	* eg: buildHtmlOptions(array('name' => 'myInputName', 'id' => 'myInputId'));
-	*     return => 'name="myInputName" id="myInputId"'
-	*
-	* @param array $html_options
-	*
-	* @return string
-	*/
-	protected static function buildHtmlOptions(array $html_options)
-	{
-		$html = '';
-
-		foreach ($html_options as $html_option => $value)
-				$html .= Tools::htmlentitiesUTF8($html_option).'="'.Tools::htmlentitiesUTF8($value).'" ';
-
-		return rtrim($html, ' ');
-	}
-
-	/**
 	 * use translations files to replace english expression.
 	 *
 	 * @param mixed $string term or expression in english
@@ -314,7 +251,7 @@ class HelperCore
 	 */
 	public function renderAssoShop($type = 'shop')
 	{
-		if (!Shop::isFeatureActive() || (!$this->id && $this->context->shop->getContextType() != Shop::CONTEXT_ALL))
+		if (!Shop::isFeatureActive())
 			return;
 
 		if ($type != 'shop' && $type != 'group_shop')

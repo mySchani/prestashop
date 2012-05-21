@@ -27,11 +27,10 @@
 
 class AdminProductsControllerCore extends AdminController
 {
-	protected $max_file_size = NULL;
-
 	/** @var integer Max image size for upload
 	 * As of 1.5 it is recommended to not set a limit to max image size
 	 **/
+	protected $max_file_size = NULL;
 	protected $max_image_size = NULL;
 
 	private $_category;
@@ -90,8 +89,8 @@ class AdminProductsControllerCore extends AdminController
 		$this->imageType = 'jpg';
 		$this->context = Context::getContext();
 		$this->_defaultOrderBy = 'position';
-		$this->max_file_size = (Configuration::get('PS_LIMIT_UPLOAD_IMAGE_VALUE') * 1000000);
-		$this->max_image_size = (Configuration::get('PS_LIMIT_UPLOAD_FILE_VALUE') * 1000000);
+		$this->max_file_size = (int)(Configuration::get('PS_LIMIT_UPLOAD_FILE_VALUE') * 1000000);
+		$this->max_image_size = (int)Configuration::get('PS_PRODUCT_PICTURE_MAX_SIZE');
 
 		$categoriesArray = array();
 		$categories = Category::getSimpleCategories($this->context->language->id);
@@ -1041,13 +1040,13 @@ class AdminProductsControllerCore extends AdminController
 		self::$currentIndex = 'index.php?tab=AdminProducts';
 		$allowedExtensions = array("jpeg", "gif", "png", "jpg");
 		// max file size in bytes
-		$sizeLimit = $this->max_file_size;
-		$uploader = new FileUploader($allowedExtensions, $sizeLimit);
+		$uploader = new FileUploader($allowedExtensions, $this->max_image_size);
 		$result = $uploader->handleUpload();
 		if (isset($result['success']))
 		{
 			$obj = new Image($result['success']['id_image']);
 			$json = array(
+				'name' => $result['success']['name'],
 				'status' => 'ok',
 				'id'=>$obj->id,
 				'path' => $obj->getExistingImgPath(),
@@ -1408,7 +1407,7 @@ class AdminProductsControllerCore extends AdminController
 					$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
 				else if (!$this->updateTags($languages, $object))
 					$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
-				else if ($id_image = $this->addProductImage($object))
+				else
 				{
 					Hook::exec('addProduct', array('product' => $object));
 					Search::indexation(false, $object->id);
@@ -1490,7 +1489,7 @@ class AdminProductsControllerCore extends AdminController
 						$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
 					else if (!$this->updateTags($languages, $object))
 						$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
-					else //if (Tools::getValue('id_image') && $id_image = $this->addProductImage($object, Tools::getValue('resizer')))
+					else
 					{
 						//self::$currentIndex .= '&image_updated='.$id_image;
 						Hook::exec('updateProduct', array('product' => $object));
@@ -2031,9 +2030,10 @@ class AdminProductsControllerCore extends AdminController
 					if ($this->tabAccess['add'] && $this->display != 'add')
 						$this->toolbar_btn['duplicate'] = array(
 							'short' => 'Duplicate',
-							'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
+							//'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id.'&amp;duplicateproduct',
 							'desc' => $this->l('Duplicate'),
-							'confirm' => 1
+							'confirm' => 1,
+							'js' => 'if (confirm(\''.$this->l('Also copy images').' ?\')) document.location = \''.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id.'&amp;duplicateproduct\'; else document.location = \''.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id.'&amp;duplicateproduct&amp;noimage=1\';'
 						);
 
 					// adding button for preview this product
@@ -2066,13 +2066,13 @@ class AdminProductsControllerCore extends AdminController
 				{
 					$this->toolbar_btn['save'] = array(
 						'short' => 'Save',
-						'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
+						'href' => '#',
 						'desc' => $this->l('Save'),
 					);
 
 					$this->toolbar_btn['save-and-stay'] = array(
 						'short' => 'SaveAndStay',
-						'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
+						'href' => '#',
 						'desc' => $this->l('Save and stay'),
 					);
 				}
@@ -2442,21 +2442,21 @@ class AdminProductsControllerCore extends AdminController
 			{
 				$params = explode('_', $key);
 
-				$wpl_id = WarehouseProductLocation::getIdByProductAndWarehouse($params[1], $params[2], $params[0]);
+				$wpl_id = (int)WarehouseProductLocation::getIdByProductAndWarehouse((int)$params[1], (int)$params[2], (int)$params[0]);
 
 				if (empty($wpl_id))
 				{
 					//create new record
 					$warehouse_location_entity = new WarehouseProductLocation();
-					$warehouse_location_entity->id_product = $params[1];
-					$warehouse_location_entity->id_product_attribute = $params[2];
-					$warehouse_location_entity->id_warehouse = $params[0];
+					$warehouse_location_entity->id_product = (int)$params[1];
+					$warehouse_location_entity->id_product_attribute = (int)$params[2];
+					$warehouse_location_entity->id_warehouse = (int)$params[0];
 					$warehouse_location_entity->location = pSQL($location);
 					$warehouse_location_entity->save();
 				}
 				else
 				{
-					$warehouse_location_entity = new WarehouseProductLocation($wpl_id);
+					$warehouse_location_entity = new WarehouseProductLocation((int)$wpl_id);
 
 					$location = pSQL($location);
 
@@ -2465,10 +2465,8 @@ class AdminProductsControllerCore extends AdminController
 						$warehouse_location_entity->location = pSQL($location);
 						$warehouse_location_entity->update();
 					}
-					break;
 				}
 			}
-
 			$this->confirmations[] = $this->l('Warehouses and location(s) of the product have been updated');
 		}
 	}
@@ -3239,7 +3237,7 @@ class AdminProductsControllerCore extends AdminController
 
 			$data->assign('token', $this->token);
 			$data->assign('table', $this->table);
-			$data->assign('max_image_size', (int)Configuration::get('PS_PRODUCT_PICTURE_MAX_SIZE') / 1000);
+			$data->assign('max_image_size', $this->max_image_size / 1000);
 
 			$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename_attribute')));
 			$data->assign('currency', $this->context->currency);

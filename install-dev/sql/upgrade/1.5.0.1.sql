@@ -8,24 +8,8 @@ CREATE TABLE IF NOT EXISTS `PREFIX_module_access` (
   PRIMARY KEY (`id_profile`,`id_module`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
-INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (5);
-
 /* Create SuperAdmin */
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 2 WHERE `id_profile` = 1;
-INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1, 'SuperAdmin'),(1, 2, 'SuperAdmin'),(1, 3, 'SuperAdmin'),(1, 4, 'SuperAdmin'),(1, 5, 'SuperAdmin');
-UPDATE `PREFIX_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`,	`delete`) (SELECT 1, `id_tab`, 1, 1, 1, 1 FROM `PREFIX_tab`);
-UPDATE `PREFIX_module_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_module_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_module_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_module_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
-INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 1, `id_module`, 1, 1 FROM `PREFIX_module`);
+UPDATE `PREFIX_profile_lang` SET `name` = 'SuperAdmin' WHERE `id_profile` = 1;
 
 CREATE TABLE IF NOT EXISTS `PREFIX_accounting_zone_shop` (
   `id_accounting_zone_shop` int(11) NOT NULL AUTO_INCREMENT,
@@ -544,8 +528,6 @@ ALTER TABLE `PREFIX_orders` ADD COLUMN `id_warehouse` int(10) unsigned DEFAULT 0
 ALTER TABLE `PREFIX_cart` ADD COLUMN `order_reference` varchar(9) AFTER `id_cart`;
 ALTER TABLE `PREFIX_cart` ADD COLUMN `delivery_option` varchar(100) AFTER `id_carrier`;
 
-ALTER TABLE `PREFIX_hook` ADD `is_native` TINYINT( 1 ) NOT NULL DEFAULT '0';
-
 ALTER TABLE `PREFIX_tax` ADD COLUMN `account_number` VARCHAR(64) NOT NULL;
 
 /* PHP:add_new_tab(AdminAttributeGenerator, fr:Générateur de déclinaisons|es:Combinations generator|en:Combinations generator|de:Combinations generator|it:Combinations generator, -1); */;
@@ -564,7 +546,7 @@ UPDATE `PREFIX_access` SET `view` = '0', `add` = '0', `edit` = '0', `delete` = '
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES ('PS_CUSTOMER_GROUP', '1', NOW(), NOW());
 
-/* PHP:add_new_groups('Non identifié', 'Unidentified'); */;
+/* PHP:add_new_groups('Visiteur', 'Visitor'); */;
 /* PHP:add_new_groups('Invité', 'Guest'); */;
 
 UPDATE `PREFIX_employee` SET `bo_theme` = 'default';
