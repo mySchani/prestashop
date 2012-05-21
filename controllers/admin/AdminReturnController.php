@@ -123,16 +123,10 @@ class AdminReturnControllerCore extends AdminController
 
 		$order = new Order($this->object->id_order);
 		$quantityDisplayed = array();
-		/* Customized products */
+		// Customized products */
 		if ($returnedCustomizations = OrderReturn::getReturnedCustomizedProducts((int)($this->object->id_order)))
-		{
-			$allCustomizedDatas = Product::getAllCustomizedDatas((int)($order->id_cart));
-			foreach ($returnedCustomizations AS $returnedCustomization)
-			{
-				$customizationDatas = &$allCustomizedDatas[(int)($returnedCustomization['product_id'])][(int)($returnedCustomization['product_attribute_id'])][(int)($returnedCustomization['id_customization'])]['datas'];
+			foreach ($returnedCustomizations as $returnedCustomization)
 				$quantityDisplayed[(int)($returnedCustomization['id_order_detail'])] = isset($quantityDisplayed[(int)($returnedCustomization['id_order_detail'])]) ? $quantityDisplayed[(int)($returnedCustomization['id_order_detail'])] + (int)($returnedCustomization['product_quantity']) : (int)($returnedCustomization['product_quantity']);
-			}
-		}
 
 		// Classic products
 		$products = OrderReturn::getOrdersReturnProducts($this->object->id, $order);
@@ -171,9 +165,9 @@ class AdminReturnControllerCore extends AdminController
 		{
 			if ($this->tabAccess['delete'] === '1')
 			{
-				if (($id_order_detail = (int)(Tools::getValue('id_order_detail'))) AND Validate::isUnsignedId($id_order_detail))
+				if (($id_order_detail = (int)(Tools::getValue('id_order_detail'))) && Validate::isUnsignedId($id_order_detail))
 				{
-					if (($id_order_return = (int)(Tools::getValue('id_order_return'))) AND Validate::isUnsignedId($id_order_return))
+					if (($id_order_return = (int)(Tools::getValue('id_order_return'))) && Validate::isUnsignedId($id_order_return))
 					{
 						$orderReturn = new OrderReturn($id_order_return);
 						if (!Validate::isLoadedObject($orderReturn))
@@ -183,25 +177,25 @@ class AdminReturnControllerCore extends AdminController
 							if (OrderReturn::deleteOrderReturnDetail($id_order_return, $id_order_detail, (int)(Tools::getValue('id_customization', 0))))
 								Tools::redirectAdmin(self::$currentIndex.'&conf=4token='.$this->token);
 							else
-								$this->_errors[] = Tools::displayError('An error occurred while deleting an order return detail.');
+								$this->errors[] = Tools::displayError('An error occurred while deleting an order return detail.');
 						}
 						else
-							$this->_errors[] = Tools::displayError('You need at least one product.');
+							$this->errors[] = Tools::displayError('You need at least one product.');
 					}
 					else
-						$this->_errors[] = Tools::displayError('The order return is invalid.');
+						$this->errors[] = Tools::displayError('The order return is invalid.');
 				}
 				else
-					$this->_errors[] = Tools::displayError('The order return detail is invalid.');
+					$this->errors[] = Tools::displayError('The order return detail is invalid.');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+				$this->errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
 		elseif (Tools::isSubmit('submitAddorder_return'))
 		{
 			if ($this->tabAccess['edit'] === '1')
 			{
-				if (($id_order_return = (int)(Tools::getValue('id_order_return'))) AND Validate::isUnsignedId($id_order_return))
+				if (($id_order_return = (int)(Tools::getValue('id_order_return'))) && Validate::isUnsignedId($id_order_return))
 				{
 					$orderReturn = new OrderReturn($id_order_return);
 					$order = new Order($orderReturn->id_order);
@@ -216,16 +210,16 @@ class AdminReturnControllerCore extends AdminController
 						'{id_order_return}' => $id_order_return,
 						'{state_order_return}' => (isset($orderReturnState->name[(int)$order->id_lang]) ? $orderReturnState->name[(int)$order->id_lang] : $orderReturnState->name[(int)Configuration::get('PS_LANG_DEFAULT')]));
 						Mail::Send((int)$order->id_lang, 'order_return_state', Mail::l('Your order return state has changed', $order->id_lang),
-						$vars, $customer->email, $customer->firstname.' '.$customer->lastname, NULL, NULL, NULL,
-							NULL, _PS_MAIL_DIR_, true);
+						$vars, $customer->email, $customer->firstname.' '.$customer->lastname, null, null, null,
+							null, _PS_MAIL_DIR_, true);
 						Tools::redirectAdmin(self::$currentIndex.'&conf=4&token='.$this->token);
 					}
 				}
 				else
-					$this->_errors[] = Tools::displayError('No order return ID.');
+					$this->errors[] = Tools::displayError('No order return ID.');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 		parent::postProcess();
 	}

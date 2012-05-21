@@ -68,13 +68,13 @@ class BlockCart extends Module
 
 		$products = $params['cart']->getProducts(true);
 		$nbTotalProducts = 0;
-		foreach ($products AS $product)
+		foreach ($products as $product)
 			$nbTotalProducts += (int)$product['cart_quantity'];
 
 		$wrappingCost = (float)($params['cart']->getOrderTotal($useTax, Cart::ONLY_WRAPPING));
 		$totalToPay = $params['cart']->getOrderTotal($useTax);
 
-		if ($useTax AND Configuration::get('PS_TAX_DISPLAY') == 1)
+		if ($useTax && Configuration::get('PS_TAX_DISPLAY') == 1)
 		{
 			$totalToPayWithoutTaxes = $params['cart']->getOrderTotal(false);
 			$this->smarty->assign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
@@ -97,9 +97,9 @@ class BlockCart extends Module
 			'ajax_allowed' => (int)(Configuration::get('PS_BLOCK_CART_AJAX')) == 1 ? true : false,
 			'static_token' => Tools::getToken(false)
 		));
-		if (sizeof($errors))
+		if (count($errors))
 			$this->smarty->assign('errors', $errors);
-		if(isset($this->context->cookie->ajax_blockcart_display))
+		if (isset($this->context->cookie->ajax_blockcart_display))
 			$this->smarty->assign('colapseExpandStatus', $this->context->cookie->ajax_blockcart_display);
 	}
 
@@ -108,13 +108,11 @@ class BlockCart extends Module
 		$output = '<h2>'.$this->displayName.'</h2>';
 		if (Tools::isSubmit('submitBlockCart'))
 		{
-			$ajax = Tools::getValue('ajax');
-			if ($ajax != 0 AND $ajax != 1)
+			$ajax = Tools::getValue('cart_ajax');
+			if ($ajax != 0 && $ajax != 1)
 				$output .= '<div class="alert error">'.$this->l('Ajax : Invalid choice.').'</div>';
 			else
-			{
 				Configuration::updateValue('PS_BLOCK_CART_AJAX', (int)($ajax));
-			}
 			$output .= '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Settings updated').'</div>';
 		}
 		return $output.$this->displayForm();
@@ -129,9 +127,9 @@ class BlockCart extends Module
 
 				<label>'.$this->l('Ajax cart').'</label>
 				<div class="margin-form">
-					<input type="radio" name="ajax" id="ajax_on" value="1" '.(Tools::getValue('ajax', Configuration::get('PS_BLOCK_CART_AJAX')) ? 'checked="checked" ' : '').'/>
+					<input type="radio" name="cart_ajax" id="ajax_on" value="1" '.(Tools::getValue('cart_ajax', Configuration::get('PS_BLOCK_CART_AJAX')) ? 'checked="checked" ' : '').'/>
 					<label class="t" for="ajax_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
-					<input type="radio" name="ajax" id="ajax_off" value="0" '.(!Tools::getValue('ajax', Configuration::get('PS_BLOCK_CART_AJAX')) ? 'checked="checked" ' : '').'/>
+					<input type="radio" name="cart_ajax" id="ajax_off" value="0" '.(!Tools::getValue('cart_ajax', Configuration::get('PS_BLOCK_CART_AJAX')) ? 'checked="checked" ' : '').'/>
 					<label class="t" for="ajax_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p class="clear">'.$this->l('Activate AJAX mode for cart (compatible with the default theme)').'</p>
 				</div>
@@ -143,13 +141,11 @@ class BlockCart extends Module
 
 	public function install()
 	{
-		if
-		(
+		if (
 			parent::install() == false
-			OR $this->registerHook('top') == false
-			OR $this->registerHook('header') == false
-			OR Configuration::updateValue('PS_BLOCK_CART_AJAX', 1) == false
-		)
+			|| $this->registerHook('top') == false
+			|| $this->registerHook('header') == false
+			|| Configuration::updateValue('PS_BLOCK_CART_AJAX', 1) == false)
 			return false;
 		return true;
 	}

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11087 $
+*  @version  Release: $Revision: 11944 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -48,6 +48,7 @@ class FavoriteProducts extends Module
 	{
 			if (!parent::install()
 				|| !$this->registerHook('displayMyAccountBlock')
+				|| !$this->registerHook('displayCustomerAccount')
 				|| !$this->registerHook('displayLeftColumnProduct')
 				|| !$this->registerHook('displayHeader'))
 					return false;
@@ -80,7 +81,7 @@ class FavoriteProducts extends Module
 
 		$favoriteProducts = FavoriteProduct::getFavoriteProducts($this->context->customer->id, $this->context->language->id);
 
-		$this->context->smarty->assign(array('favorite_products' => $favoriteProducts));
+		$this->smarty->assign(array('favorite_products' => $favoriteProducts));
 
 		return $this->display(__FILE__, 'my-account.tpl');
 	}
@@ -90,11 +91,11 @@ class FavoriteProducts extends Module
 		return $this->hookDisplayCustomerAccount($params);
 	}
 
-	public function hookDisplayaLeftColumnProduct($params)
+	public function hookDisplayLeftColumnProduct($params)
 	{
 		include_once(dirname(__FILE__).'/FavoriteProduct.php');
 
-		$this->context->smarty->assign(array(
+		$this->smarty->assign(array(
 			'isCustomerFavoriteProduct' => (FavoriteProduct::isCustomerFavoriteProduct($this->context->customer->id, Tools::getValue('id_product')) ? 1 : 0),
 			'isLogged' => (int)$this->context->customer->logged));
 		return $this->display(__FILE__, 'favoriteproducts-extra.tpl');

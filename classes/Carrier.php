@@ -119,7 +119,7 @@ class CarrierCore extends ObjectModel
 		'multilang' => true,
 		'multishop' => true,
 		'fields' => array(
-			// Classic fields
+			/* Classic fields */
 			'id_reference' => 			array('type' => self::TYPE_INT),
 			'id_tax_rules_group' => 	array('type' => self::TYPE_INT, 'validate' => 'isInt'),
 			'name' => 					array('type' => self::TYPE_STRING, 'validate' => 'isCarrierName', 'required' => true, 'size' => 64),
@@ -141,7 +141,7 @@ class CarrierCore extends ObjectModel
 			'position' => 				array('type' => self::TYPE_INT),
 			'deleted' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 
-			// Lang fields
+			/* Lang fields */
 			'delay' => 					array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 128),
 		),
 	);
@@ -456,7 +456,7 @@ class CarrierCore extends ObjectModel
 
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT cl.*,c.*, cl.`name` AS country, zz.`name` AS zone FROM `'._DB_PREFIX_.'country` c
-			LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country` AND cl.`id_lang` = 1)
+			LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country` AND cl.`id_lang` = '.(int)$id_lang.')
 			INNER JOIN (`'._DB_PREFIX_.'carrier_zone` cz INNER JOIN `'._DB_PREFIX_.'carrier` cr ON ( cr.id_carrier = cz.id_carrier AND cr.deleted = 0 '.
 			($active_carriers ? 'AND cr.active = 1) ' : ') ').'
 			LEFT JOIN `'._DB_PREFIX_.'zone` zz ON cz.id_zone = zz.id_zone) ON zz.`id_zone` = c.`id_zone`
@@ -504,11 +504,12 @@ class CarrierCore extends ObjectModel
 	 * @param Array $groups group of the customer
 	 * @return Array
 	 */
-	public static function getCarriersForOrder($id_zone, $groups = null)
+	public static function getCarriersForOrder($id_zone, $groups = null, $cart = null)
 	{
 		$context = Context::getContext();
 		$id_lang = $context->language->id;
-		$cart = $context->cart;
+		if (is_null($cart))
+			$cart = $context->cart;
 		$id_currency = $context->currency->id;
 
 		if (is_array($groups) && !empty($groups))
@@ -1023,11 +1024,13 @@ class CarrierCore extends ObjectModel
 	 * @param Product $product The id of the product, or an array with at least the package size and weight
 	 * @return array
 	 */
-	public static function getAvailableCarrierList(Product $product, $id_warehouse, $id_address_delivery = null, $id_shop = null)
+	public static function getAvailableCarrierList(Product $product, $id_warehouse, $id_address_delivery = null, $id_shop = null, $cart = null)
 	{
-
 		if (is_null($id_shop))
 			$id_shop = Context::getContext()->shop->getID(true);
+		if (is_null($cart))
+			$cart = Context::getContext()->cart;
+			
 
 		// Does the product is linked with carriers?
 		$query = new DbQuery();
@@ -1058,10 +1061,19 @@ class CarrierCore extends ObjectModel
 		if (empty($carrier_list)) // No carriers defined, get all available carriers
 		{
 			$carrier_list = array();
-			$id_address = (!is_null($id_address_delivery) && $id_address_delivery != 0) ? $id_address_delivery : Context::getContext()->cart->id_address_delivery;
-			$address = new Address($id_address);
-			$id_zone = Address::getZoneById($address->id);
-			$carriers = Carrier::getCarriersForOrder($id_zone, Context::getContext()->customer->getGroups());
+			$id_address = (int)((!is_null($id_address_delivery) && $id_address_delivery != 0) ? $id_address_delivery :  $cart->id_address_delivery);
+			if ($id_address)
+			{
+				$address = new Address($id_address);
+				$id_zone = Address::getZoneById($address->id);
+			}
+			else
+			{
+				$country = new Country(Configuration::get('PS_COUNTRY_DEFAULT'));
+				$id_zone = $country->id_zone;
+			}
+			$customer = new Customer($cart->id_customer);
+			$carriers = Carrier::getCarriersForOrder($id_zone, $customer->getGroups(), $cart);
 			foreach ($carriers as $carrier)
 				$carrier_list[] = $carrier['id_carrier'];
 		}
@@ -1079,6 +1091,44 @@ class CarrierCore extends ObjectModel
 			}
 		}
 		return $carrier_list;
+	}
+	
+	/**
+	 * Assign one (ore more) group to all carriers
+	 * 
+	 * @since 1.5.0
+	 * @param int|array $id_group_list group id or list of group ids
+	 * @param array $exception list of id carriers to ignore
+	 */
+	public static function assignGroupToAllCarriers($id_group_list, $exception = null)
+	{
+		if (!is_array($id_group_list))
+			$id_group_list = array($id_group_list);
+		
+		Db::getInstance()->execute('
+			DELETE FROM `'._DB_PREFIX_.'carrier_group`
+			WHERE `id_group` IN ('.join(',', $id_group_list).')');
+		
+		$carrier_list = Db::getInstance()->executeS('
+			SELECT id_carrier FROM `'._DB_PREFIX_.'carrier`
+			WHERE deleted = 0
+			'.(is_array($exception) ? 'AND id_carrier NOT IN ('.join(',', $exception).')' : ''));
+		
+		if ($carrier_list)
+		{
+			$data = array();
+			foreach ($carrier_list as $carrier)
+			{
+				foreach ($id_group_list as $id_group)
+					$data[] = array(
+						'id_carrier' => $carrier['id_carrier'],
+						'id_group' => $id_group,
+					);
+			}
+			return Db::getInstance()->insert('carrier_group', $data, false, false, Db::INSERT);
+		}
+		
+		return true;
 	}
 }
 

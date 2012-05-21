@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11173 $
+*  @version  Release: $Revision: 12658 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -63,7 +63,7 @@ class CompareProductCore extends ObjectModel
 		$compareProducts = null;
 
 		if ($results)
-			foreach($results as $result)
+			foreach ($results as $result)
 				$compareProducts[] = $result['id_product'];
 
 		return $compareProducts;

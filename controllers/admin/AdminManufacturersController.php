@@ -113,7 +113,7 @@ class AdminManufacturersControllerCore extends AdminController
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product` p ON (a.`id_manufacturer` = p.`id_manufacturer`)';
 		$this->_group = 'GROUP BY a.`id_manufacturer`';
 
-	 	$this->context->smarty->assign('title_list', $this->l('List of manufacturers:'));
+		$this->context->smarty->assign('title_list', $this->l('List of manufacturers:'));
 
 		$this->content .= parent::renderList();
 	}
@@ -126,13 +126,14 @@ class AdminManufacturersControllerCore extends AdminController
 		unset($this->fieldsDisplay, $this->_select, $this->_join, $this->_group, $this->_filterHaving, $this->_filter);
 
 		$this->table = 'address';
-	 	$this->identifier = 'id_address';
+		$this->identifier = 'id_address';
 		$this->deleted = true;
+		$this->_orderBy = null;
 
 		$this->addRowAction('editaddresses');
 		$this->addRowAction('delete');
 
-	 	// test if a filter is applied for this list
+		// test if a filter is applied for this list
 		if (Tools::isSubmit('submitFilter'.$this->table) || $this->context->cookie->{'submitFilter'.$this->table} !== false)
 			$this->filter = true;
 
@@ -187,12 +188,12 @@ class AdminManufacturersControllerCore extends AdminController
 		$this->_join = '
 			LEFT JOIN `'._DB_PREFIX_.'country_lang` cl
 				ON (cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)$this->context->language->id.') ';
-	 	$this->_join .= '
-	 		LEFT JOIN `'._DB_PREFIX_.'manufacturer` m
-	 			ON (a.`id_manufacturer` = m.`id_manufacturer`)';
-	 	$this->_where = 'AND a.`id_customer` = 0 AND a.`id_supplier` = 0 AND a.`id_warehouse` = 0';
+		$this->_join .= '
+			LEFT JOIN `'._DB_PREFIX_.'manufacturer` m
+				ON (a.`id_manufacturer` = m.`id_manufacturer`)';
+		$this->_where = 'AND a.`id_customer` = 0 AND a.`id_supplier` = 0 AND a.`id_warehouse` = 0';
 
-	 	$this->context->smarty->assign('title_list', $this->l('Manufacturers addresses:'));
+		$this->context->smarty->assign('title_list', $this->l('Manufacturers addresses:'));
 
 		// call postProcess() for take care about actions and filters
 		$this->postProcess();
@@ -208,7 +209,7 @@ class AdminManufacturersControllerCore extends AdminController
 		$this->initListManufacturerAddresses();
 	}
 
-	 /**
+	/**
 	 * Display editaddresses action link
 	 * @param string $token the token to add to the link
 	 * @param int $id the identifier to add to the link
@@ -216,17 +217,17 @@ class AdminManufacturersControllerCore extends AdminController
 	 */
 	public function displayEditaddressesLink($token = null, $id)
 	{
-        if (!array_key_exists('editaddresses', self::$cache_lang))
-            self::$cache_lang['editaddresses'] = $this->l('Edit Adresses');
+		if (!array_key_exists('editaddresses', self::$cache_lang))
+			self::$cache_lang['editaddresses'] = $this->l('Edit Adresses');
 
-        $this->context->smarty->assign(array(
-            'href' => self::$currentIndex.
-            	'&'.$this->identifier.'='.$id.
-            	'&editaddresses&token='.($token != null ? $token : $this->token),
-            'action' => self::$cache_lang['editaddresses'],
-        ));
+		$this->context->smarty->assign(array(
+			'href' => self::$currentIndex.
+				'&'.$this->identifier.'='.$id.
+				'&editaddresses&token='.($token != null ? $token : $this->token),
+			'action' => self::$cache_lang['editaddresses'],
+		));
 
-        return $this->context->smarty->fetch('helper/list/list_action_edit.tpl');
+		return $this->context->smarty->fetch('helpers/list/list_action_edit.tpl');
 	}
 
 	public function renderForm()
@@ -335,7 +336,7 @@ class AdminManufacturersControllerCore extends AdminController
 			'class' => 'button'
 		);
 
-		$image = cacheImage(_PS_MANU_IMG_DIR_.'/'.$manufacturer->id.'.jpg', $this->table.'_'.(int)$manufacturer->id.'.'.$this->imageType, 350, $this->imageType, true);
+		$image = ImageManager::thumbnail(_PS_MANU_IMG_DIR_.'/'.$manufacturer->id.'.jpg', $this->table.'_'.(int)$manufacturer->id.'.'.$this->imageType, 350, $this->imageType, true);
 
 		$this->fields_value = array(
 			'image' => $image ? $image : false,
@@ -360,7 +361,7 @@ class AdminManufacturersControllerCore extends AdminController
 		return parent::renderForm();
 	}
 
-	public function initFormAddress()
+	public function renderFormAddress()
 	{
 		// Change table and className for addresses
 	 	$this->table = 'address';
@@ -573,7 +574,7 @@ class AdminManufacturersControllerCore extends AdminController
 		{
 			$products[$i] = new Product($products[$i]['id_product'], false, $this->context->language->id);
 			/* Build attributes combinaisons */
-			$combinaisons = $products[$i]->getAttributeCombinaisons($this->context->language->id);
+			$combinaisons = $products[$i]->getAttributeCombinations($this->context->language->id);
 			foreach ($combinaisons as $k => $combinaison)
 			{
 				$comb_array[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
@@ -617,7 +618,7 @@ class AdminManufacturersControllerCore extends AdminController
 		// toolbar (save, cancel, new, ..)
 		$this->initToolbar();
 		if ($this->display == 'editaddresses' || $this->display == 'addaddress')
-			$this->content .= $this->initFormAddress();
+			$this->content .= $this->renderFormAddress();
 		else if ($this->display == 'edit' || $this->display == 'add')
 		{
 			if (!$this->loadObject(true))
@@ -661,19 +662,19 @@ class AdminManufacturersControllerCore extends AdminController
 			$this->action = 'delete';
 	}
 
-	public function postProcess()
+	public function initProcess()
 	{
 		if (Tools::getValue('submitAddaddress') || Tools::isSubmit('deleteaddress'))
 		{
 			$this->table = 'address';
 			$this->className = 'Address';
-	 		$this->identifier = 'id_address';
+			$this->identifier = 'id_address';
 			$this->deleted = true;
 		}
-		parent::postProcess();
+		parent::initProcess();
 	}
 
-	public function afterImageUpload()
+	protected function afterImageUpload()
 	{
 		/* Generate image with differents size */
 		if (($id_manufacturer = (int)Tools::getValue('id_manufacturer')) &&
@@ -685,7 +686,7 @@ class AdminManufacturersControllerCore extends AdminController
 			foreach ($images_types as $k => $image_type)
 			{
 				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
-				imageResize(
+				ImageManager::resize(
 					_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg',
 					_PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 					(int)$image_type['width'],

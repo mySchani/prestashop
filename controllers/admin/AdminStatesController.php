@@ -187,19 +187,15 @@ class AdminStatesControllerCore extends AdminController
 			// set token
 			$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
 
-			// Sub included tab postProcessing
-			$this->includeSubTab('postProcess', array('submitAdd1', 'submitDel', 'delete', 'submitFilter', 'submitReset'));
-
 			if ($this->tabAccess['delete'] === '1')
 			{
-
 				if (Validate::isLoadedObject($object = $this->loadObject()) && isset($this->fieldImageSettings))
 				{
 					if (!$object->isUsed())
 					{
 						// check if request at least one object with noZeroObject
 						if (isset($object->noZeroObject) && count($taxes = call_user_func(array($this->className, $object->noZeroObject))) <= 1)
-							$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
+							$this->errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
 						else
 						{
 							if ($this->deleted)
@@ -210,17 +206,17 @@ class AdminStatesControllerCore extends AdminController
 							}
 							else if ($object->delete())
 								Tools::redirectAdmin(self::$currentIndex.'&conf=1&token='.$token);
-							$this->_errors[] = Tools::displayError('An error occurred during deletion.');
+							$this->errors[] = Tools::displayError('An error occurred during deletion.');
 						}
 					}
 					else
-						$this->_errors[] = Tools::displayError('This state is currently in use');
+						$this->errors[] = Tools::displayError('This state is currently in use');
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+					$this->errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+				$this->errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
 		else
 			parent::postProcess();

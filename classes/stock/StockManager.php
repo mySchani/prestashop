@@ -207,12 +207,14 @@ class StockManagerCore implements StockManagerInterface
 		// Special case of a pack
 		if (Pack::isPack($id_product))
 		{
+			// Gets items
 			$products_pack = Pack::getItems($id_product, (int)Configuration::get('PS_LANG_DEFAULT'));
+			// Foreach item
 			foreach ($products_pack as $product_pack)
 			{
-				//@TODO is there a better way to retrieve the product attribute assciated to the pack ?
-				$pack_id_product_attribute = Product::getDefaultAttribute($id_product_attribute, 1);
-				$this->removeProduct($product_pack->id, $pack_id_product_attribute, $product_pack->pack_quantity * $quantity, $warehouse, $id_order);
+				//TODO $pack_id_product_attribute = Product::getDefaultAttribute($id_product_attribute, 1);
+				if ($product_pack->advanced_stock_management == 1)
+					$this->removeProduct($product_pack->id, 0, $warehouse, $product_pack->pack_quantity * $quantity, $id_stock_mvt_reason, $is_usable, $id_order);
 			}
 		}
 		else
@@ -473,7 +475,8 @@ class StockManagerCore implements StockManagerInterface
 
 		// Gets supply_orders_qty
 		$query = new DbQuery();
-		$query->select('SUM(sod.quantity_expected)');
+
+		$query->select('sod.quantity_expected, sod.quantity_received');
 		$query->from('supply_order', 'so');
 		$query->leftjoin('supply_order_detail', 'sod', 'sod.id_supply_order = so.id_supply_order');
 		$query->leftjoin('supply_order_state', 'sos', 'sos.id_supply_order_state = so.id_supply_order_state');
@@ -482,12 +485,17 @@ class StockManagerCore implements StockManagerInterface
 		if (count($ids_warehouse))
 			$query->where('so.id_warehouse IN('.implode(', ', $ids_warehouse).')');
 
-		$supply_orders_qty = (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+		$supply_orders_qties = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
+		$supply_orders_qty = 0;
+		foreach ($supply_orders_qties as $qty)
+			if ($qty['quantity_expected'] > $qty['quantity_received'])
+				$supply_orders_qty += ($qty['quantity_expected'] - $qty['quantity_received']);
 
 		// Gets {physical OR usable}_qty
 		$qty = $this->getProductPhysicalQuantities($id_product, $id_product_attribute, $ids_warehouse, $usable);
 
-		// real qty = actual qty in stock - current client orders + current supply orders
+		//real qty = actual qty in stock - current client orders + current supply orders
 		return ($qty - $client_orders_qty + $supply_orders_qty);
 	}
 
@@ -607,7 +615,7 @@ class StockManagerCore implements StockManagerInterface
 	 * @param float $price_te
 	 * @return int WA
 	 */
-	protected function calculateWA($stock, $quantity, $price_te)
+	protected function calculateWA(Stock $stock, $quantity, $price_te)
 	{
 		return (float)Tools::ps_round(((($stock->physical_quantity * $stock->price_te) + ($quantity * $price_te)) / ($stock->physical_quantity + $quantity)), 6);
 	}
@@ -617,7 +625,9 @@ class StockManagerCore implements StockManagerInterface
 	 *
 	 * @param int $id_product
 	 * @param int $id_product_attribute
-	 * @return Collection
+	 * @param int $id_warehouse Optional
+	 * @param int $price_te Optional
+	 * @return Collection of Stock
 	 */
 	protected function getStockCollection($id_product, $id_product_attribute, $id_warehouse = null, $price_te = null)
 	{
@@ -631,4 +641,5 @@ class StockManagerCore implements StockManagerInterface
 
 		return $stocks;
 	}
+
 }

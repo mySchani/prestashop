@@ -106,7 +106,8 @@ class AdminReferrersControllerCore extends AdminController
 				'title' => $this->l('Avg. cart'),
 				'width' => 50,
 				'align' => 'right',
-				'price' => true
+				'price' => true,
+				'havingFilter' => true
 			),
 			'cache_reg_rate' => array(
 				'title' => $this->l('Reg. rate'),
@@ -122,19 +123,22 @@ class AdminReferrersControllerCore extends AdminController
 				'title' => $this->l('Click'),
 				'width' => 30,
 				'align' => 'right',
-				'price' => true
+				'price' => true,
+				'havingFilter' => true
 			),
 			'fee1' => array(
 				'title' => $this->l('Base'),
 				'width' => 30,
 				'align' => 'right',
-				'price' => true
+				'price' => true,
+				'havingFilter' => true
 			),
 			'fee2' => array(
 				'title' => $this->l('Percent'),
 				'width' => 30,
 				'align' => 'right',
-				'price' => true
+				'price' => true,
+				'havingFilter' => true
 			)
 		);
 
@@ -353,7 +357,7 @@ class AdminReferrersControllerCore extends AdminController
 
 	public function displayCalendar($action = null, $table = null, $identifier = null, $id = null)
 	{
-		return AdminStatsTabController::displayCalendarForm(array(
+		return AdminReferrersController::displayCalendarForm(array(
 			'Calendar' => $this->l('Calendar'),
 			'Day' => $this->l('Today'),
 			'Month' => $this->l('Month'),
@@ -361,11 +365,33 @@ class AdminReferrersControllerCore extends AdminController
 		), $this->token, $action, $table, $identifier, $id);
 	}
 
+	public static function displayCalendarForm($translations, $token, $action = null, $table = null, $identifier = null, $id = null)
+	{
+		$context = Context::getContext();
+		$tpl = $context->controller->createTemplate('calendar.tpl');
+
+		$context->controller->addJqueryUI('ui.datepicker');
+
+		$tpl->assign(array(
+			'current' => self::$currentIndex,
+			'token' => $token,
+			'action' => $action,
+			'table' => $table,
+			'identifier' => $identifier,
+			'id' => $id,
+			'translations' => $translations,
+			'datepickerFrom' => Tools::getValue('datepickerFrom', $context->employee->stats_date_from),
+			'datepickerTo' => Tools::getValue('datepickerTo', $context->employee->stats_date_to)
+		));
+
+		return $tpl->fetch();
+	}
+
 	public function displaySettings()
 	{
 		if (!Tools::isSubmit('viewreferrer'))
 		{
-			$tpl = $this->context->smarty->createTemplate($this->tpl_folder.'form_settings.tpl');
+			$tpl = $this->createTemplate('form_settings.tpl');
 
 			$tpl->assign(array(
 				'current' => self::$currentIndex,
@@ -377,7 +403,7 @@ class AdminReferrersControllerCore extends AdminController
 		}
 	}
 
-	private function enableCalendar()
+	protected function enableCalendar()
 	{
 		return (!Tools::isSubmit('add'.$this->table) && !Tools::isSubmit('submitAdd'.$this->table) && !Tools::isSubmit('update'.$this->table));
 	}

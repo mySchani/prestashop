@@ -226,6 +226,11 @@ class SupplierCore extends ObjectModel
 
 		$nb_days_new_product = Validate::isUnsignedInt(Configuration::get('PS_NB_DAYS_NEW_PRODUCT')) ? Configuration::get('PS_NB_DAYS_NEW_PRODUCT') : 20;
 
+		if (strpos('.', $order_by) > 0)
+		{
+			$order_by = explode('.', $order_by);
+			$order_by = pSQL($order_by[0]).'.`'.pSQL($order_by[1]).'`';
+		}
 		$sql = 'SELECT p.*, stock.out_of_stock,
 					IFNULL(stock.quantity, 0) as quantity,
 					pl.`description`,
@@ -271,7 +276,7 @@ class SupplierCore extends ObjectModel
 						($active_category ? ' INNER JOIN `'._DB_PREFIX_.'category` ca ON cp.`id_category` = ca.`id_category` AND ca.`active` = 1' : '').'
 						WHERE cg.`id_group` '.$sql_groups.'
 					)
-				ORDER BY '.(($order_by == 'id_product') ? 'p.' : '').'`'.pSQL($order_by).'` '.pSQL($order_way).'
+				ORDER BY '.(($order_by == 'id_product') ? 'p.' : '').pSQL($order_by).' '.pSQL($order_way).'
 				LIMIT '.(((int)$p - 1) * (int)$n).','.(int)$n;
 
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -288,7 +293,8 @@ class SupplierCore extends ObjectModel
 	public function getProductsLite($id_lang)
 	{
 		$sql = '
-			SELECT p.`id_product`,  pl.`name`
+			SELECT p.`id_product`,
+				   pl.`name`
 			FROM `'._DB_PREFIX_.'product` p
 			LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 				p.`id_product` = pl.`id_product`
@@ -300,30 +306,57 @@ class SupplierCore extends ObjectModel
 			)
 			GROUP BY p.`id_product`';
 
-		return Db::getInstance()->executeS($sql);
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+		return $res;
 	}
 
 	/*
-	* Specify if a supplier already in base
+	* Tells if a supplier exists
 	*
 	* @param $id_supplier Supplier id
 	* @return boolean
 	*/
 	public static function supplierExists($id_supplier)
 	{
-		$row = Db::getInstance()->getRow('
-			SELECT `id_supplier`
-			FROM '._DB_PREFIX_.'supplier s
-			WHERE s.`id_supplier` = '.(int)$id_supplier
-		);
+		$query = new DbQuery();
+		$query->select('id_supplier');
+		$query->from('supplier');
+		$query->where('id_supplier = '.(int)$id_supplier);
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 
-		return isset($row['id_supplier']);
+		return ($res > 0);
 	}
 
+	/**
+	 * @see ObjectModel::delete()
+	 */
 	public function delete()
 	{
 		if (parent::delete())
 			return $this->deleteImage();
+	}
+
+	/**
+	 * Gets product informations
+	 *
+	 * @since 1.5.0
+	 * @param int $id_supplier
+	 * @param int $id_product
+	 * @param int $id_product_attribute
+	 * @return array
+	 */
+	public static function getProductInformationsBySupplier($id_supplier, $id_product, $id_product_attribute = 0)
+	{
+		$query = new DbQuery();
+		$query->select('product_supplier_reference, product_supplier_price_te, id_currency');
+		$query->from('product_supplier');
+		$query->where('id_supplier = '.(int)$id_supplier);
+		$query->where('id_product = '.(int)$id_product);
+		$query->where('id_product_attribute = '.(int)$id_product_attribute);
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
+		if (count($res))
+			return $res[0];
 	}
 }
 

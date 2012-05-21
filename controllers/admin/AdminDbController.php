@@ -101,9 +101,7 @@ class AdminDbControllerCore extends AdminController
 
 	public function initContent()
 	{
-		$this->warnings[] = $this->l('Be VERY CAREFUL with these settings, as changes may cause your PrestaShop online store to malfunction. 
-			For all issues, check the config/settings.inc.php file.');
-
+		$this->warnings[] = $this->l('Be VERY CAREFUL with these settings, as changes may cause your PrestaShop online store to malfunction. For all issues, check the config/settings.inc.php file.');
 		$this->display = 'options';
 		$this->initToolbar();
 		$this->content .= $this->renderOptions();
@@ -189,7 +187,7 @@ class AdminDbControllerCore extends AdminController
 		// PrestaShop demo mode
 		if (_PS_MODE_DEMO_)
 		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
 			return;
 		}
 
@@ -198,9 +196,9 @@ class AdminDbControllerCore extends AdminController
 			foreach ($this->options['database']['fields'] as $field => $values)
 				if (isset($values['required']) && $values['required'])
 					if (($value = Tools::getValue($field)) == false && (string)$value != '0')
-						$this->_errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is required.');
+						$this->errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is required.');
 
-			if (!count($this->_errors))
+			if (!count($this->errors))
 			{
 				/* Datas are not saved in database but in config/settings.inc.php */
 				$settings = array();
@@ -220,7 +218,7 @@ class AdminDbControllerCore extends AdminController
 			 		Tools::redirectAdmin(self::$currentIndex.'&conf=6'.'&token='.$this->token);
 				}
 				else
-					$this->_errors[] = Tools::displayError('Unable to connect to a database with these identifiers.');
+					$this->errors[] = Tools::displayError('Unable to connect to a database with these identifiers.');
 			}
 		}
 
@@ -228,7 +226,7 @@ class AdminDbControllerCore extends AdminController
 		if ($this->action == 'save')
 		{
 			if (!isset($_POST['tablesBox']) || !count($_POST['tablesBox']))
-				$this->_errors[] = Tools::displayError('You did not select any tables');
+				$this->errors[] = Tools::displayError('You did not select any tables');
 			else
 			{
 				$available_engines = $this->getEngines();
@@ -247,12 +245,12 @@ class AdminDbControllerCore extends AdminController
 				foreach ($_POST['tablesBox'] as $table)
 				{
 					if ($engine_type == $tables_engine[$table])
-						$this->_errors[] = $table.' '.$this->l('is already in').' '.$engine_type;
+						$this->errors[] = $table.' '.$this->l('is already in').' '.$engine_type;
 					else
 						if (!Db::getInstance()->execute('ALTER TABLE `'.bqSQL($table).'` ENGINE=`'.bqSQL($engine_type).'`'))
-							$this->_errors[] = $this->l('Can\'t change engine for').' '.$table;
+							$this->errors[] = $this->l('Can\'t change engine for').' '.$table;
 				}
-				if (!count($this->_errors))
+				if (!count($this->errors))
 			 		Tools::redirectAdmin(self::$currentIndex.'&conf=4'.'&token='.$this->token);
 			}
 		}

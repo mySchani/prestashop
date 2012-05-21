@@ -32,14 +32,14 @@ class PDFCore
 {
 	public $filename;
 	public $pdf_renderer;
-    public $objects;
-    public $template;
+	public $objects;
+	public $template;
 
-    const TEMPLATE_INVOICE = 'Invoice';
-    const TEMPLATE_ORDER_RETURN = 'OrderReturn';
-    const TEMPLATE_ORDER_SLIP = 'OrderSlip';
-    const TEMPLATE_DELIVERY_SLIP = 'DeliverySlip';
-    const TEMPLATE_SUPPLY_ORDER_FORM = 'SupplyOrderForm';
+	const TEMPLATE_INVOICE = 'Invoice';
+	const TEMPLATE_ORDER_RETURN = 'OrderReturn';
+	const TEMPLATE_ORDER_SLIP = 'OrderSlip';
+	const TEMPLATE_DELIVERY_SLIP = 'DeliverySlip';
+	const TEMPLATE_SUPPLY_ORDER_FORM = 'SupplyOrderForm';
 
 	public function __construct($objects, $template, $smarty)
 	{
@@ -48,26 +48,26 @@ class PDFCore
 		$this->smarty = $smarty;
 
 		$this->objects = $objects;
-		if (!($objects instanceof Iterator))
+		if (!($objects instanceof Iterator) && !is_array($objects))
 			$this->objects = array($objects);
 	}
 
 	public function render($display = true)
 	{
-		$render =  false;
+		$render = false;
 		$this->pdf_renderer->setFontForLang('fr');
 		foreach ($this->objects as $object)
 		{
-         $template = $this->getTemplateObject($object);
-         if (!$template)
-             continue;
+			$template = $this->getTemplateObject($object);
+			if (!$template)
+				continue;
 
-         if (empty($this->filename))
-         {
-             $this->filename = $template->getFilename();
-             if (count($this->objects) > 1)
-                 $this->filename = $template->getBulkFilename();
-         }
+			if (empty($this->filename))
+			{
+				$this->filename = $template->getFilename();
+				if (count($this->objects) > 1)
+					$this->filename = $template->getBulkFilename();
+			}
 
 			$template->assignHookData($object);
 
@@ -81,22 +81,21 @@ class PDFCore
 		}
 
 		if ($render)
-            return $this->pdf_renderer->render($this->filename, $display);
+			return $this->pdf_renderer->render($this->filename, $display);
 	}
 
-    public function getTemplateObject($object)
-    {
-        $class = false;
-        $classname = 'HTMLTemplate'.$this->template;
+	public function getTemplateObject($object)
+	{
+		$class = false;
+		$classname = 'HTMLTemplate'.$this->template;
 
 		if (class_exists($classname))
 		{
 			$class = new $classname($object, $this->smarty);
 			if (!($class instanceof HTMLTemplate))
-				throw new PrestashopException('Invalid class. It should be an instance of HTMLTemplate');
+				throw new PrestaShopException('Invalid class. It should be an instance of HTMLTemplate');
 		}
 
-        return $class;
-    }
+		return $class;
+	}
 }
-

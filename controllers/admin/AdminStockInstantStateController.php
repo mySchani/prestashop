@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11803 $
+*  @version  Release: $Revision: 13131 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,7 +30,7 @@
  */
 class AdminStockInstantStateControllerCore extends AdminController
 {
-	private $stock_instant_state_warehouses = array();
+	protected $stock_instant_state_warehouses = array();
 
 	public function __construct()
 	{
@@ -93,9 +93,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 				'width' => 80,
 				'orderby' => true,
 				'search' => false,
-				'hint' => $this->l('Pysical qty,
-									in combination with the quantity you ordered (atm) from your supplier,
-									minus what is ordered (atm) by clients.')
+				'hint' => $this->l('Pysical qty (usable) - Clients orders + Supply Orders'),
 			),
 		);
 
@@ -228,7 +226,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 	 *
 	 * @return int id_warehouse
 	 */
-	private function getCurrentCoverageWarehouse()
+	protected function getCurrentCoverageWarehouse()
 	{
 		static $warehouse = 0;
 

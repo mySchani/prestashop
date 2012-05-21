@@ -53,9 +53,9 @@ class AdminRangePriceControllerCore extends AdminController
 	public function renderForm()
 	{
 		$currency = $this->context->currency;
-		$carriers = Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
+		$carriers = Carrier::getCarriers((int)Configuration::get('PS_LANG_DEFAULT'), true, false, false, null, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
 
-		foreach ($carriers AS $carrier)
+		foreach ($carriers as $key => $carrier)
 			if ($carrier['is_free'])
 				unset($carriers[$key]);
 
@@ -70,7 +70,7 @@ class AdminRangePriceControllerCore extends AdminController
 					'label' => $this->l('Carrier:'),
 					'name' => 'id_carrier',
 					'required' => false,
-					'desc' => $this->l('Carrier to which this range will be applied'),
+					'desc' => $this->l('You can apply this range to a different carrier by selecting its name.'),
 					'options' => array(
 						'query' => $carriers,
 						'id' => 'id_carrier',
@@ -86,6 +86,7 @@ class AdminRangePriceControllerCore extends AdminController
 					'required' => true,
 					'suffix' => $currency->getSign('right'),
 					'desc' => $this->l('Range start (included)'),
+					'string_format' => '%.2f'
 				),
 				array(
 					'type' => 'text',
@@ -95,6 +96,7 @@ class AdminRangePriceControllerCore extends AdminController
 					'required' => true,
 					'suffix' => $currency->getSign('right'),
 					'desc' => $this->l('Range end (excluded)'),
+					'string_format' => '%.2f'
 				),
 			),
 			'submit' => array(
@@ -117,8 +119,8 @@ class AdminRangePriceControllerCore extends AdminController
 
 	public function postProcess()
 	{
-		if (isset($_POST['submitAdd'.$this->table]) AND Tools::getValue('delimiter1') >= Tools::getValue('delimiter2'))
-			$this->_errors[] = Tools::displayError('Invalid range');
+		if (Tools::getValue('submitAdd'.$this->table) && Tools::getValue('delimiter1') >= Tools::getValue('delimiter2'))
+			$this->errors[] = Tools::displayError('Invalid range');
 		else
 			parent::postProcess();
 	}

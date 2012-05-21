@@ -29,9 +29,9 @@ class AdminCarriersControllerCore extends AdminController
 {
 	public function __construct()
 	{
-	 	$this->table = 'carrier';
+		$this->table = 'carrier';
 		$this->className = 'Carrier';
-	 	$this->lang = false;
+		$this->lang = false;
 		$this->deleted = true;
 
 		$this->addRowAction('edit');
@@ -42,11 +42,11 @@ class AdminCarriersControllerCore extends AdminController
 
 		$this->context = Context::getContext();
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->fieldImageSettings = array(
 			'name' => 'logo',
-			'dir' => 'st'
+			'dir' => 's'
 		);
 
 		$this->fieldsDisplay = array(
@@ -156,19 +156,19 @@ class AdminCarriersControllerCore extends AdminController
 			<li>'.$this->l('Click "Add new".').'<br /></li>
 				<li>'.$this->l('Fill in the fields and click "Save".').'</li>
 				<li>'.
-					$this->l('You need to decide a price range or a weight range for which the new carrier will be available.
-					Under the "Shipping" tab, click either "Price Ranges" or "Weight Ranges".').'
+					$this->l('You need to decide a price range or a weight range for which the new carrier will be available.').' '.
+					$this->l('Under the "Shipping" tab, click either "Price Ranges" or "Weight Ranges".').'
 				</li>
 				<li>'.$this->l('Click "Add new".').'</li>
 				<li>'.
-					$this->l('Select the name of the carrier and define the price range or the weight range.
-					For example the carrier can be made available for a weight range between 0 and 5kgs. Another carrier will have a range between 5 and 10kgs.').'
+					$this->l('Select the name of the carrier and define the price range or the weight range.').' '.
+					$this->l('For example the carrier can be made available for a weight range between 0 and 5kgs. Another carrier will have a range between 5 and 10kgs.').'
 				</li>
 				<li>'.$this->l('When you are done, click "Save".').'</li>
 				<li>'.$this->l('Click on the "Shipping" tab.').'</li>
 				<li>'.
-					$this->l('You need to choose the fees that will be applied for this carrier.
-					At the bottom on the page, in the "Fees" section, select the name of the carrier.').'
+					$this->l('You need to choose the fees that will be applied for this carrier.').' '.
+					$this->l('At the bottom on the page, in the "Fees" section, select the name of the carrier.').'
 				</li>
 				<li>'.$this->l('For each zone, enter a price. Click "Save".').'</li>
 				<li>'.$this->l('You\'re set! The new carrier will be displayed to your customers.').'</li>
@@ -449,9 +449,9 @@ class AdminCarriersControllerCore extends AdminController
 	{
 		if (Tools::getValue('submitAdd'.$this->table))
 		{
-		 	/* Checking fields validity */
+			/* Checking fields validity */
 			$this->validateRules();
-			if (!count($this->_errors))
+			if (!count($this->errors))
 			{
 				$id = (int)Tools::getValue('id_'.$this->table);
 
@@ -474,11 +474,14 @@ class AdminCarriersControllerCore extends AdminController
 							if (Validate::isLoadedObject($object_new))
 							{
 								$this->afterDelete($object_new, $object->id);
-								Hook::updateCarrier((int)$object->id, $object_new);
+								Hook::exec('actionCarrierUpdate', array(
+									'id_carrier' => (int)$object->id,
+									'carrier' => $object_new,
+								));
 							}
 							$this->changeGroups($object_new->id);
 							if (!$result)
-								$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b>';
+								$this->errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b>';
 							else if ($this->postImage($object_new->id))
 							{
 								$this->changeZones($object_new->id);
@@ -486,11 +489,11 @@ class AdminCarriersControllerCore extends AdminController
 							}
 						}
 						else
-							$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.
+							$this->errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.
 												$this->table.'</b> '.Tools::displayError('(cannot load object)');
 					}
 					else
-						$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+						$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 				}
 
 				/* Object creation */
@@ -502,7 +505,7 @@ class AdminCarriersControllerCore extends AdminController
 						$this->copyFromPost($object, $this->table);
 						$object->position = Carrier::getHigherPosition() + 1;
 						if (!$object->add())
-							$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
+							$this->errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
 						else if (($_POST['id_'.$this->table] = $object->id /* voluntary */) && $this->postImage($object->id) && $this->_redirect)
 						{
 							$this->changeZones($object->id);
@@ -512,7 +515,7 @@ class AdminCarriersControllerCore extends AdminController
 						}
 					}
 					else
-						$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+						$this->errors[] = Tools::displayError('You do not have permission to add here.');
 				}
 			}
 		}
@@ -521,18 +524,18 @@ class AdminCarriersControllerCore extends AdminController
 			if ($this->tabAccess['edit'] === '1')
 			{
 				if (Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT'))
-					$this->_errors[] = Tools::displayError('You can\'t disable the default carrier, please change your default carrier first.');
+					$this->errors[] = Tools::displayError('You can\'t disable the default carrier, please change your default carrier first.');
 				else
 					parent::postProcess();
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 		else
 		{
 			if ((Tools::isSubmit('submitDel'.$this->table) && in_array(Configuration::get('PS_CARRIER_DEFAULT'), Tools::getValue('carrierBox')))
 				|| (isset($_GET['delete'.$this->table]) && Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT')))
-					$this->_errors[] = $this->l('Please set another carrier as default before deleting');
+					$this->errors[] = $this->l('Please set another carrier as default before deleting');
 			else
 			{
 				// if deletion : removes the carrier from the warehouse/carrier association
@@ -581,27 +584,22 @@ class AdminCarriersControllerCore extends AdminController
 				$carrier_groups_ids[] = $carrier_group['id_group'];
 
 		$groups = Group::getGroups($this->context->language->id);
-		// if empty $carrier_groups_ids : object creation : we set the default groups
-		if (empty($carrier_groups_ids))
-		{
-			$preselected = array(Configuration::get('PS_UNIDENTIFIED_GROUP'), Configuration::get('PS_GUEST_GROUP'), Configuration::get('PS_CUSTOMER_GROUP'));
-			$carrier_groups_ids = array_merge($carrier_groups_ids, $preselected);
-		}
+
 		foreach ($groups as $group)
-			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], (in_array($group['id_group'], $carrier_groups_ids)));
+			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], (in_array($group['id_group'], $carrier_groups_ids) || empty($carrier_groups_ids) && !$obj->id));
 	}
 
-	public function beforeDelete($object)
+	protected function beforeDelete($object)
 	{
 		return $object->isUsed();
 	}
 
-	public function afterDelete($object, $old_id)
+	protected function afterDelete($object, $old_id)
 	{
 		$object->copyCarrierData((int)$old_id);
 	}
 
-	private function changeGroups($id_carrier, $delete = true)
+	protected function changeGroups($id_carrier, $delete = true)
 	{
 		if ($delete)
 			Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id_carrier);
@@ -620,7 +618,7 @@ class AdminCarriersControllerCore extends AdminController
 		$carrier = new $this->className($id);
 		if (!Validate::isLoadedObject($carrier))
 			die (Tools::displayError('Object cannot be loaded'));
-		$zones = Zone::getZones(true);
+		$zones = Zone::getZones(false);
 		foreach ($zones as $zone)
 			if (count($carrier->getZone($zone['id_zone'])))
 			{

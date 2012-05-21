@@ -92,7 +92,7 @@ class BlockAdvertising extends Module
 			if (!file_exists(_PS_MODULE_DIR_.$this->name.'/advertising.jpg'))
 				$this->adv_imgname = '';
 			else
-				Configuration::updateValue('BLOCKADVERT_IMG_EXT','jpg');
+				Configuration::updateValue('BLOCKADVERT_IMG_EXT', 'jpg');
 		}
 
 		if (!empty($this->adv_imgname))
@@ -140,25 +140,24 @@ class BlockAdvertising extends Module
 
 		if (Tools::isSubmit('submitAdvConf'))
 		{
-			$file = false;
-			if (isset($_FILES['adv_img']) AND isset($_FILES['adv_img']['tmp_name']) AND !empty($_FILES['adv_img']['tmp_name']))
+			if (isset($_FILES['adv_img']) && isset($_FILES['adv_img']['tmp_name']) && !empty($_FILES['adv_img']['tmp_name']))
 			{
-				if ($error = checkImage($_FILES['adv_img'], Tools::convertBytes(ini_get('upload_max_filesize'))))
+				if ($error = ImageManager::validateUpload($_FILES['adv_img'], Tools::convertBytes(ini_get('upload_max_filesize'))))
 					$errors .= $error;
-				elseif ($dot_pos = strrpos($_FILES['adv_img']['name'],'.'))
+				elseif ($dot_pos = strrpos($_FILES['adv_img']['name'], '.'))
 				{
 					// as checkImage tell us it's a good image, we'll just copy the extension
 
 					$this->_deleteCurrentImg();
 					$this->adv_imgname = 'advertising';
-					$ext = substr($_FILES['adv_img']['name'], $dot_pos+1);
+					$ext = substr($_FILES['adv_img']['name'], $dot_pos + 1);
 					$newname = 'advertising_custom'.'-'.(int)$this->context->shop->id;
-					if (!move_uploaded_file($_FILES['adv_img']['tmp_name'],_PS_MODULE_DIR_.$this->name.'/'.$newname.'.'.$ext))
+					if (!move_uploaded_file($_FILES['adv_img']['tmp_name'], _PS_MODULE_DIR_.$this->name.'/'.$newname.'.'.$ext))
 						$errors .= $this->l('Error move uploaded file');
 					else
 						$this->adv_imgname = $newname;
 
-					Configuration::updateValue('BLOCKADVERT_IMG_EXT',$ext);
+					Configuration::updateValue('BLOCKADVERT_IMG_EXT', $ext);
 					$this->adv_img = Tools::getMediaServer($this->name)._MODULE_DIR_.$this->name.'/'.$this->adv_imgname.'.'.Configuration::get('BLOCKADVERT_IMG_EXT');
 				}
 			}
@@ -185,7 +184,6 @@ class BlockAdvertising extends Module
 	 */
 	public function getContent()
 	{
-
 		$this->postProcess();
 		$output = '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" enctype="multipart/form-data">
 							<fieldset>
@@ -226,9 +224,11 @@ class BlockAdvertising extends Module
 	*/
 	public function hookRightColumn($params)
 	{
-		$this->context->smarty->assign('image', $this->context->link->protocol_content.$this->adv_img);
-		$this->context->smarty->assign('adv_link', $this->adv_link);
-		$this->context->smarty->assign('adv_title', $this->adv_title);
+		$this->smarty->assign(array(
+			'image' =>		$this->context->link->protocol_content.$this->adv_img,
+			'adv_link' =>	$this->adv_link,
+			'adv_title' =>	$this->adv_title,
+		));
 
 		return $this->display(__FILE__, 'blockadvertising.tpl');
 	}

@@ -125,8 +125,8 @@ class AuthControllerCore extends FrontController
 
 		// Call a hook to display more information on form
 		$this->context->smarty->assign(array(
-			'HOOK_CREATE_ACCOUNT_FORM' => Hook::exec('createAccountForm'),
-			'HOOK_CREATE_ACCOUNT_TOP' => Hook::exec('createAccountTop')
+			'HOOK_CREATE_ACCOUNT_FORM' => Hook::exec('displayCustomerAccountForm'),
+			'HOOK_CREATE_ACCOUNT_TOP' => Hook::exec('displayCustomerAccountFormTop')
 		));
 		
 		if ($this->ajax)
@@ -231,7 +231,7 @@ class AuthControllerCore extends FrontController
 				$addressItems[] = trim($addressItem);
 
 		// Add missing require fields for a new user susbscription form
-		foreach($requireFormFieldsList as $fieldName)
+		foreach ($requireFormFieldsList as $fieldName)
 			if (!in_array($fieldName, $addressItems))
 				$addressItems[] = trim($fieldName);
 
@@ -260,7 +260,7 @@ class AuthControllerCore extends FrontController
 	 */
 	protected function processSubmitLogin()
 	{
-		Hook::exec('beforeAuthentication');
+		Hook::exec('actionBeforeAuthentication');
 		$passwd = trim(Tools::getValue('passwd'));
 		$email = trim(Tools::getValue('email'));
 		if (empty($email))
@@ -319,7 +319,7 @@ class AuthControllerCore extends FrontController
 				$this->context->cart->update();
 				$this->context->cart->autosetProductAddress();
 
-				Hook::exec('authentication');
+				Hook::exec('actionAuthentication');
 
 				// Login information have changed, so we check if the cart rules still apply
 				CartRule::autoRemoveFromCart();
@@ -411,7 +411,7 @@ class AuthControllerCore extends FrontController
 						$this->updateContext($customer);
 
 						$this->context->cart->update();
-						Hook::exec('createAccount', array(
+						Hook::exec('actionCustomerAccountAdd', array(
 							'_POST' => $_POST,
 							'newCustomer' => $customer
 						));
@@ -450,7 +450,7 @@ class AuthControllerCore extends FrontController
 			$this->errors = array_unique(array_merge($this->errors, $address->validateController()));
 
 			// US customer: normalize the address
-			if($address->id_country == Country::getByIso('US'))
+			if ($address->id_country == Country::getByIso('US'))
 			{
 				include_once(_PS_TAASC_PATH_.'AddressStandardizationSolution.php');
 				$normalize = new AddressStandardizationSolution;
@@ -481,7 +481,7 @@ class AuthControllerCore extends FrontController
 			if (Country::isNeedDniByCountryId($address->id_country) && (!Tools::getValue('dni') || !Validate::isDniLite(Tools::getValue('dni'))))
 				$this->errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
 			elseif (!Country::isNeedDniByCountryId($address->id_country))
-				$address->dni = NULL;
+				$address->dni = null;
 		}
 
 		if (!@checkdate(Tools::getValue('months'), Tools::getValue('days'), Tools::getValue('years')) && !(Tools::getValue('months') == '' && Tools::getValue('days') == '' && Tools::getValue('years') == ''))
@@ -502,7 +502,7 @@ class AuthControllerCore extends FrontController
 			{
 				// if registration type is in one step, we save the address
 				if (Configuration::get('PS_REGISTRATION_PROCESS_TYPE'))
-					if (!$country = new Country($address->id_country, Configuration::get('PS_LANG_DEFAULT')) || !Validate::isLoadedObject($country))
+					if (!($country = new Country($address->id_country, Configuration::get('PS_LANG_DEFAULT'))) || !Validate::isLoadedObject($country))
 						die(Tools::displayError());
 				$contains_state = isset($country) && is_object($country) ? (int)$country->contains_state: 0;
 				$id_state = isset($address) && is_object($address) ? (int)$address->id_state: 0;
@@ -546,7 +546,7 @@ class AuthControllerCore extends FrontController
 
 							// If a logged guest logs in as a customer, the cart secure key was already set and needs to be updated
 							$this->context->cart->update();
-							Hook::exec('createAccount', array(
+							Hook::exec('actionCustomerAccountAdd', array(
 								'_POST' => $_POST,
 								'newCustomer' => $customer
 							));

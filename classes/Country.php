@@ -86,13 +86,17 @@ class CountryCore extends ObjectModel
 			// Lang fields
 			'name' => 						array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
 		),
+		'associations' => array(
+			'zone' => 						array('type' => self::HAS_ONE),
+			'currency' => 					array('type' => self::HAS_ONE),
+		)
 	);
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'countries',
 		'fields' => array(
-			'id_zone' => array('sqlId' => 'id_zone', 'xlink_resource'=> 'zones'),
-			'id_currency' => array('sqlId' => 'id_currency', 'xlink_resource'=> 'currencies'),
+			'id_zone' => array('xlink_resource'=> 'zones'),
+			'id_currency' => array('xlink_resource'=> 'currencies'),
 		),
 	);
 
@@ -291,7 +295,7 @@ class CountryCore extends ObjectModel
 
 	public function isNeedDni()
 	{
-		return (bool)self::isNeedDniByCountryId($this->id);
+		return Country::isNeedDniByCountryId($this->id);
 	}
 
 	public static function isNeedDniByCountryId($id_country)

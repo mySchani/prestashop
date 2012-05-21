@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11554 $
+*  @version  Release: $Revision: 12059 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,10 +29,10 @@ include_once('../../init.php');
 include_once('homeslider.php');
 
 $context = Context::getContext();
-$homeSlider = new HomeSlider();
+$home_slider = new HomeSlider();
 $slides = array();
 
-if (!Tools::isSubmit('secure_key') || Tools::getValue('secure_key') != $homeSlider->secure_key || !Tools::getValue('action'))
+if (!Tools::isSubmit('secure_key') || Tools::getValue('secure_key') != $home_slider->secure_key || !Tools::getValue('action'))
 	die(1);
 
 if (Tools::getValue('action') == 'updateSlidesPosition' && Tools::getValue('slides'))

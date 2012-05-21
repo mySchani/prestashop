@@ -92,13 +92,13 @@ class ParentOrderControllerCore extends FrontController
 			{
 				if (Tools::isSubmit('submitAddDiscount'))
 				{
-					if (!($code = Tools::getValue('discount_name')))
+					if (!($code = trim(Tools::getValue('discount_name'))))
 						$this->errors[] = Tools::displayError('You must enter a voucher code');
 					elseif (!Validate::isDiscountName($code))
 						$this->errors[] = Tools::displayError('Voucher code invalid');
 					else
 					{
-						if ($cartRule = new CartRule(CartRule::getIdByCode($code)) AND Validate::isLoadedObject($cartRule))
+						if (($cartRule = new CartRule(CartRule::getIdByCode($code))) && Validate::isLoadedObject($cartRule))
 						{
 							if ($error = $cartRule->checkValidity($this->context))
 								$this->errors[] = $error;
@@ -116,7 +116,7 @@ class ParentOrderControllerCore extends FrontController
 						'discount_name' => Tools::safeOutput($code)
 					));
 				}
-				elseif ($id_cart_rule = (int)Tools::getValue('deleteDiscount') AND Validate::isUnsignedId($id_cart_rule))
+				elseif (($id_cart_rule = (int)Tools::getValue('deleteDiscount')) && Validate::isUnsignedId($id_cart_rule))
 				{
 					$this->context->cart->removeCartRule($id_cart_rule);
 					Tools::redirect('index.php?controller=order-opc');
@@ -236,7 +236,7 @@ class ParentOrderControllerCore extends FrontController
 			}
 		}
 
-		Hook::exec('processCarrier', array('cart' => $this->context->cart));
+		Hook::exec('actionCarrierProcess', array('cart' => $this->context->cart));
 
 		if (!$this->context->cart->update())
 			return false;
@@ -292,6 +292,9 @@ class ParentOrderControllerCore extends FrontController
 			else
 				$product['is_discounted'] = $product['price_without_specific_price'] != $product['price_wt'];
 		}
+		
+		$show_option_allow_sparate_package = !$this->context->cart->isAllProductsInStock(true)
+			&& Configuration::get('PS_SHIP_WHEN_AVAILABLE');
 
 		$this->context->smarty->assign($summary);
 		$this->context->smarty->assign(array(
@@ -309,10 +312,14 @@ class ParentOrderControllerCore extends FrontController
 			'currencySign' => $this->context->currency->sign,
 			'currencyRate' => $this->context->currency->conversion_rate,
 			'currencyFormat' => $this->context->currency->format,
-			'currencyBlank' => $this->context->currency->blank));
+			'currencyBlank' => $this->context->currency->blank,
+			'show_option_allow_sparate_package' => $show_option_allow_sparate_package,
+				
+		));
+
 		$this->context->smarty->assign(array(
-			'HOOK_SHOPPING_CART' => Hook::exec('shoppingCart', $summary),
-			'HOOK_SHOPPING_CART_EXTRA' => Hook::exec('shoppingCartExtra', $summary)
+			'HOOK_SHOPPING_CART' => Hook::exec('displayShoppingCartFooter', $summary),
+			'HOOK_SHOPPING_CART_EXTRA' => Hook::exec('displayShoppingCart', $summary)
 		));
 	}
 
@@ -404,15 +411,19 @@ class ParentOrderControllerCore extends FrontController
 			'checked' => $checked,
 			'delivery_option' => $this->context->cart->getDeliveryOption()
 		));
-		$this->context->smarty->assign(array(
-			'HOOK_EXTRACARRIER' => Hook::exec('extraCarrier', array('address' => $address)),
-			'HOOK_BEFORECARRIER' => Hook::exec('beforeCarrier', array(
+		
+		$vars = array(
+			'HOOK_BEFORECARRIER' => Hook::exec('displayBeforeCarrier', array(
 				'carriers' => $carriers,
 				'checked' => $checked,
 				'delivery_option_list' => $delivery_option_list,
 				'delivery_option' => $this->context->cart->getDeliveryOption()
 			))
-		));
+		);
+		
+		Cart::addExtraCarriers($vars);
+		
+		$this->context->smarty->assign($vars);
 	}
 
 	protected function _assignWrappingAndTOS()
@@ -451,8 +462,8 @@ class ParentOrderControllerCore extends FrontController
 	protected function _assignPayment()
 	{
 		$this->context->smarty->assign(array(
-			'HOOK_TOP_PAYMENT' => Hook::exec('paymentTop'),
-			'HOOK_PAYMENT' => Hook::exec('payment'),
+			'HOOK_TOP_PAYMENT' => Hook::exec('displayPaymentTop'),
+			'HOOK_PAYMENT' => Hook::exec('displayPayment'),
 		));
 	}
 

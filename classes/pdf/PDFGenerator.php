@@ -94,7 +94,7 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function setFontForLang($iso_lang)
 	{
-		$this->font = self::DEFAULT_FONT;
+		$this->font = PDFGenerator::DEFAULT_FONT;
 		if (array_key_exists($iso_lang, $this->font_by_lang))
 			$this->font = $this->font_by_lang[$iso_lang];
 
@@ -106,7 +106,7 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function Header()
 	{
-		$this->writehtml($this->header);
+		$this->writeHTML($this->header);
 	}
 
 	/**
@@ -114,7 +114,7 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function Footer()
 	{
-		$this->writehtml($this->footer);
+		$this->writeHTML($this->footer);
 	}
 
 	/**
@@ -122,17 +122,17 @@ class PDFGeneratorCore extends TCPDF
 	 *
 	 * @param string $filename
      * @param boolean $inline
-	 * @throws PrestashopException
+	 * @throws PrestaShopException
 	 */
 	public function render($filename, $display = true)
 	{
 		if (empty($filename))
-			throw new PrestashopException('Missing filename.');
+			throw new PrestaShopException('Missing filename.');
 
 		$this->lastPage();
 
-        $output = $display ? 'I' : 'S';
-        return $this->output($filename, $output);
+		$output = $display ? 'I' : 'S';
+		return $this->output($filename, $output);
 	}
 
 	/**
@@ -147,7 +147,6 @@ class PDFGeneratorCore extends TCPDF
 
 		$this->AddPage();
 
-		$this->writehtml($this->content, true, false, true, false, '');
+		$this->writeHTML($this->content, true, false, true, false, '');
 	}
 }
-

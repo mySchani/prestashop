@@ -277,6 +277,10 @@ class WebserviceRequestCore
 			'supply_order_histories' => array('description' => 'Supply Order Histories', 'class' => 'SupplyOrderHistory', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
 			'supply_order_receipt_histories' => array('description' => 'Supply Order Receipt Histories', 'class' => 'SupplyOrderReceiptHistory', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
 			'product_suppliers' => array('description' => 'Product Suppliers', 'class' => 'ProductSupplier', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
+			'tax_rules' => array('description' => 'Tax rules entity', 'class' => 'TaxRule'),
+			'tax_rule_groups' => array('description' => 'Tax rule groups', 'class' => 'TaxRulesGroup'),
+			'specific_prices' => array('description' => 'Specific price management', 'class' => 'SpecificPrice'),
+			'specific_price_rules' => array('description' => 'Specific price management', 'class' => 'SpecificPriceRule'),
 		);
 		ksort($resources);
 		return $resources;
@@ -738,9 +742,10 @@ class WebserviceRequestCore
 	{
 		$sql = 'SELECT 1
 				FROM '._DB_PREFIX_.'webservice_account wsa LEFT JOIN '._DB_PREFIX_.'webservice_account_shop wsas ON (wsa.id_webservice_account = wsas.id_webservice_account)
-				WHERE wsa.key = \''.$key.'\'';
+				WHERE wsa.key = \''.pSQL($key).'\'';
+
 		foreach (self::$shopIDs as $id_shop)
-			$OR[] = ' wsas.id_shop = '.$id_shop.' ';
+			$OR[] = ' wsas.id_shop = '.(int)$id_shop.' ';
 		$sql .= ' AND ('.implode('OR', $OR).') ';
 		if (!Db::getInstance()->getValue($sql))
 		{

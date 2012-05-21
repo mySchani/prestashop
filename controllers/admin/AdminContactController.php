@@ -38,16 +38,16 @@ class AdminContactControllerCore extends AdminController
 		$this->_buildOrderedFieldsShop($temporyArrayFields);
 	}
 
-	private function _getDefaultFieldsContent()
+	protected function _getDefaultFieldsContent()
 	{
 		$this->context = Context::getContext();
 		$countryList = array();
 		$countryList[] = array('id' => '0', 'name' => $this->l('Choose your country'));
-		foreach (Country::getCountries($this->context->language->id) AS $country)
+		foreach (Country::getCountries($this->context->language->id) as $country)
 			$countryList[] = array('id' => $country['id_country'], 'name' => $country['name']);
 		$stateList = array();
 		$stateList[] = array('id' => '0', 'name' => $this->l('Choose your state (if applicable)'));
-		foreach (State::getStates($this->context->language->id) AS $state)
+		foreach (State::getStates($this->context->language->id) as $state)
 			$stateList[] = array('id' => $state['id_state'], 'name' => $state['name']);
 
 		$formFields = array(
@@ -66,7 +66,7 @@ class AdminContactControllerCore extends AdminController
 		return $formFields;
 	}
 
-	private function _buildOrderedFieldsShop($formFields)
+	protected function _buildOrderedFieldsShop($formFields)
 	{
 		$associatedOrderKey = array(
 			'PS_SHOP_NAME' => 'company',
@@ -81,12 +81,12 @@ class AdminContactControllerCore extends AdminController
 		$fields = array();
 		$orderedFields = AddressFormat::getOrderedAddressFields(Configuration::get('PS_SHOP_COUNTRY_ID'), false, true);
 
-		foreach($orderedFields as $lineFields)
+		foreach ($orderedFields as $lineFields)
 			if (($patterns = explode(' ', $lineFields)))
-				foreach($patterns as $pattern)
+				foreach ($patterns as $pattern)
 					if (($key = array_search($pattern, $associatedOrderKey)))
 						$fields[$key] = $formFields[$key];
-		foreach($formFields as $key => $value)
+		foreach ($formFields as $key => $value)
 			if (!isset($fields[$key]))
 				$fields[$key] = $formFields[$key];
 
@@ -94,7 +94,6 @@ class AdminContactControllerCore extends AdminController
 			'general' => array(
 				'title' =>	$this->l('Contact details'),
 				'icon' =>	'tab-contact',
-				'class' =>	'width3',
 				'fields' =>	$fields,
 				'submit' => array('title' => $this->l('   Save   '), 'class' => 'button')
 			),
@@ -110,13 +109,13 @@ class AdminContactControllerCore extends AdminController
 						AND `id_state` = '.(int)Tools::getValue('PS_SHOP_STATE_ID');
 			$isStateOk = Db::getInstance()->getValue($sql);
 			if ($isStateOk != 1)
-				$this->_errors[] = Tools::displayError('This state is not in this country.');
+				$this->errors[] = Tools::displayError('This state is not in this country.');
 		}
 	}
 
 	public function updateOptionPsShopCountryId($value)
 	{
-		if (!$this->_errors && $value)
+		if (!$this->errors && $value)
 		{
 			$country = new Country($value, $this->context->language->id);
 			if ($country->id)
@@ -129,7 +128,7 @@ class AdminContactControllerCore extends AdminController
 
 	public function updateOptionPsShopStateId($value)
 	{
-		if (!$this->_errors && $value)
+		if (!$this->errors && $value)
 		{
 			$state = new State($value);
 			if ($state->id)

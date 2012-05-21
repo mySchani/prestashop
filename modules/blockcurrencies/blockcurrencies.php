@@ -46,7 +46,7 @@ class BlockCurrencies extends Module
 
 	public function install()
 	{
-		return (parent::install() AND $this->registerHook('top') AND $this->registerHook('header'));
+		return parent::install() && $this->registerHook('top') && $this->registerHook('header');
 	}
 
 	/**
@@ -58,19 +58,18 @@ class BlockCurrencies extends Module
 	public function hookTop($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
-			return ;
+			return;
 
 		if (!count(Currency::getCurrencies()))
 			return '';
-		// @todo remove this and use smartyTemplate
-		$this->context->smarty->assign('blockcurrencies_sign', $this->context->currency->sign);
+		$this->smarty->assign('blockcurrencies_sign', $this->context->currency->sign);
 		return $this->display(__FILE__, 'blockcurrencies.tpl');
 	}
 
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
-			return ;
+			return;
 		$this->context->controller->addCSS(($this->_path).'blockcurrencies.css', 'all');
 	}
 }

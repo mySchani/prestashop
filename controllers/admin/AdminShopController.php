@@ -31,7 +31,7 @@ class AdminShopControllerCore extends AdminController
 	public function __construct()
 	{
 		$this->context = Context::getContext();
-	 	$this->table = 'shop';
+		$this->table = 'shop';
 		$this->className = 'Shop';
 
 		$this->fieldsDisplay = array(
@@ -64,7 +64,7 @@ class AdminShopControllerCore extends AdminController
 			)
 		);
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'),'confirm' => $this->l('Delete selected items?')));
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'),'confirm' => $this->l('Delete selected items?')));
 
 		$this->options = array(
 			'general' => array(
@@ -96,7 +96,7 @@ class AdminShopControllerCore extends AdminController
 				if ((bool)$shop->id)
 				{
 					// adding button for delete this shop
-					if ($this->tabAccess['delete']  && $this->display != 'add'  && !Shop::has_dependency($shop->id))
+					if ($this->tabAccess['delete'] && $this->display != 'add' && !Shop::hasDependency($shop->id))
 						$this->toolbar_btn['delete'] = array(
 							'short' => 'Delete',
 							'href' => $this->context->link->getAdminLink('AdminShop').'&amp;id_shop='.$shop->id.'&amp;deleteshop',
@@ -143,13 +143,13 @@ class AdminShopControllerCore extends AdminController
 
 	public function initContent()
 	{
-		$shops =  Shop::getShopWithoutUrls();
-		if (count($shops))
+		$shops = Shop::getShopWithoutUrls();
+		if (count($shops) && !$this->ajax)
 		{
-		 	$shop_url_configuration = '';
 			foreach ($shops as $shop)
-				$shop_url_configuration .= sprintf($this->l('No url is configured for shop: %s'), '<b>'.$shop['name'].'</b>').' <a href="'.$this->context->link->getAdminLink('AdminShopUrl').'&addshop_url&id_shop='.$shop['id_shop'].'">'.$this->l('click here').'</a><br />';
-			$this->content .= '<div class="warn">'.$shop_url_configuration.'</div>';
+				$this->warnings[] = sprintf($this->l('No url is configured for shop: %s'), '<b>'.$shop['name'].'</b>')
+				.' <a href="'.$this->context->link->getAdminLink('AdminShopUrl').'&addshop_url&id_shop='.$shop['id_shop'].'">'
+				.$this->l('click here').'</a><br />';
 		}
 		parent::initContent();
 	}
@@ -160,30 +160,47 @@ class AdminShopControllerCore extends AdminController
 		$this->addRowAction('delete');
 
 		$this->_select = 'gs.name group_shop_name, cl.name category_name';
-	 	$this->_join = '
-	 		LEFT JOIN `'._DB_PREFIX_.'group_shop` gs
-	 			ON (a.id_group_shop = gs.id_group_shop)
-	 		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl
-	 			ON (a.id_category = cl.id_category AND cl.id_lang='.(int)$this->context->language->id.')';
-	 	$this->_group = 'GROUP BY a.id_shop';
+		$this->_join = '
+			LEFT JOIN `'._DB_PREFIX_.'group_shop` gs
+				ON (a.id_group_shop = gs.id_group_shop)
+			LEFT JOIN `'._DB_PREFIX_.'category_lang` cl
+				ON (a.id_category = cl.id_category AND cl.id_lang='.(int)$this->context->language->id.')';
+		$this->_group = 'GROUP BY a.id_shop';
 
-	 	return parent::renderList();
+		return parent::renderList();
+	}
+
+	public function displayAjaxGetCategoriesFromRootCategory()
+	{
+		if (Tools::isSubmit('id_category'))
+		{
+			$root_category = new Category((int)Tools::getValue('id_category'));
+			$root_category = array(
+				'id_category' => $root_category->id_category,
+				'name' => $root_category->name[$this->context->language->id]
+			);
+			$helper = new Helper();
+			$this->content = $helper->renderCategoryTree($root_category, array($root_category['id_category']));
+		}
+		parent::displayAjax();
 	}
 
 	public function postProcess()
 	{
+		if (Tools::isSubmit('id_category_default'))
+			$_POST['id_category'] = Tools::getValue('id_category_default');
 		if ((Tools::isSubmit('status') ||
 			Tools::isSubmit('status'.$this->table) ||
 			(Tools::isSubmit('submitAdd'.$this->table) && Tools::getValue($this->identifier) && !Tools::getValue('active'))) &&
 			$this->loadObject() && $this->loadObject()->active)
 		{
 			if (Tools::getValue('id_shop') == Configuration::get('PS_SHOP_DEFAULT'))
-				$this->_errors[] = Tools::displayError('You cannot disable the default shop.');
+				$this->errors[] = Tools::displayError('You cannot disable the default shop.');
 			else if (Shop::getTotalShops() == 1)
-				$this->_errors[] = Tools::displayError('You cannot disable the last shop.');
+				$this->errors[] = Tools::displayError('You cannot disable the last shop.');
 		}
 
-		if ($this->_errors)
+		if ($this->errors)
 			return false;
 		return parent::postProcess();
 	}
@@ -191,24 +208,28 @@ class AdminShopControllerCore extends AdminController
 	public function processDelete($token)
 	{
 		if (!Validate::isLoadedObject($object = $this->loadObject()))
-			$this->_errors[] = Tools::displayError('Unable to load this shop.');
-		else if(!Shop::has_dependency($object->id))
-			return parent::processDelete($token);
+			$this->errors[] = Tools::displayError('Unable to load this shop.');
+		else if (!Shop::hasDependency($object->id))
+			return Category::deleteCategoriesFromShop($object->id) && parent::processDelete($token);
 		else
-			$this->_errors[] = Tools::displayError('You can\'t delete this shop (customer and/or order dependency)');
+			$this->errors[] = Tools::displayError('You can\'t delete this shop (customer and/or order dependency)');
 
 		return false;
 	}
-	public function afterAdd($new_shop)
+
+	protected function afterAdd($new_shop)
 	{
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_shop->copyShopData((int)Tools::getValue('importFromShop'), $import_data);
+		return parent::afterAdd($new_shop);
 	}
 
-	public function afterUpdate($new_shop)
+	protected function afterUpdate($new_shop)
 	{
+		Category::updateFromShop(Tools::getValue('categoryBox'), $new_shop->id);
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_shop->copyShopData((int)Tools::getValue('importFromShop'), $import_data);
+		return parent::afterUpdate($new_shop);
 	}
 
 	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
@@ -216,10 +237,10 @@ class AdminShopControllerCore extends AdminController
 		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
 		$shop_delete_list = array();
 
-		// test store authorized to remove
+		// don't allow to remove shop which have dependencies (customers / orders / ... )
 		foreach ($this->_list as $shop)
 		{
-			if (Shop::has_dependency($shop['id_shop']))
+			if (Shop::hasDependency($shop['id_shop']))
 				$shop_delete_list[] = $shop['id_shop'];
 		}
 		$this->addRowActionSkipList('delete', $shop_delete_list);
@@ -279,7 +300,7 @@ class AdminShopControllerCore extends AdminController
 				)
 			);
 		}
-		$categories = Category::getCategories($this->context->language->id, false, false);
+		$categories = Category::getRootCategories($this->context->language->id);
 		$this->fields_form['input'][] = array(
 			'type' => 'select',
 			'label' => $this->l('Category root:'),
@@ -289,6 +310,20 @@ class AdminShopControllerCore extends AdminController
 				'id' => 'id_category',
 				'name' => 'name'
 			)
+		);
+
+		if (Tools::isSubmit('id_shop'))
+		{
+			$shop = new Shop(Tools::getValue('id_shop'));
+			$parent = $shop->id_category;
+		}
+		else
+			$parent = $categories[0]['id_category'];
+		$this->fields_form['input'][] = array(
+			'type' => 'categories_select',
+			'name' => 'categoryBox',
+			'label' => $this->l('Associated categories :'),
+			'category_tree' => $this->initCategoriesAssociation($parent)
 		);
 		$this->fields_form['input'][] = array(
 			'type' => 'radio',
@@ -313,8 +348,13 @@ class AdminShopControllerCore extends AdminController
 		);
 
 		$themes = Theme::getThemes();
-		foreach ($themes as $i => $theme)
-			$themes[$i]['checked'] = ((!$obj->id && $i == 0) || $obj->id_theme == $theme['id_theme']) ? true : false;
+		if (!isset($obj->id_theme))
+			foreach ($themes as $theme)
+				if (isset($theme->id))
+				{
+					$id_theme = $theme->id;
+					break;
+				}
 
 		$this->fields_form['input'][] = array(
 			'type' => 'theme',
@@ -391,7 +431,8 @@ class AdminShopControllerCore extends AdminController
 
 		$this->fields_value = array(
 			'id_group_shop' => $obj->id_group_shop,
-			'active' => true
+			'active' => true,
+			'id_theme_checked' => isset($obj->id_theme) ? $obj->id_theme : $id_theme
 		);
 
 		$this->tpl_form_vars = array(
@@ -413,21 +454,23 @@ class AdminShopControllerCore extends AdminController
 	 */
 	public function processAdd($token)
 	{
+		if (Tools::isSubmit('id_category_default'))
+			$_POST['id_category'] = (int)Tools::getValue('id_category_default');
 		/* Checking fields validity */
 		$this->validateRules();
 
-		if (!count($this->_errors))
+		if (!count($this->errors))
 		{
 			$object = new $this->className();
 			$this->copyFromPost($object, $this->table);
 			$this->beforeAdd($object);
 			if (!$object->add())
 			{
-				$this->_errors[] = Tools::displayError('An error occurred while creating object.').
+				$this->errors[] = Tools::displayError('An error occurred while creating object.').
 					' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
 			}
 			 /* voluntary do affectation here */
-			else if (($_POST[$this->identifier] = $object->id) && $this->postImage($object->id) && !count($this->_errors) && $this->_redirect)
+			else if (($_POST[$this->identifier] = $object->id) && $this->postImage($object->id) && !count($this->errors) && $this->_redirect)
 			{
 				$parent_id = (int)Tools::getValue('id_parent', 1);
 				$this->afterAdd($object);
@@ -444,11 +487,33 @@ class AdminShopControllerCore extends AdminController
 			}
 		}
 
-		$this->_errors = array_unique($this->_errors);
-		if (count($this->_errors) > 0)
+		$this->errors = array_unique($this->errors);
+		if (count($this->errors) > 0)
 			return;
 
-		$shop = new Shop($object->id);
+		// if we import datas from another shop, we do not update the shop categories
+		$import_data = Tools::getValue('importData');
+		if (!isset($import_data['category']))
+			Category::updateFromShop(Tools::getValue('categoryBox'), $object->id);
+
 		return $object;
+	}
+
+	public function initCategoriesAssociation($id_root = 1)
+	{
+		$id_shop = Tools::getValue('id_shop');
+		$shop = new Shop($id_shop);
+		$selected_cat = Shop::getCategories($id_shop);
+		if (empty($selected_cat))
+			$selected_cat = array(Category::getRootCategory()->id);
+
+		if ($this->context->shop() == Shop::CONTEXT_SHOP && Tools::isSubmit('id_shop'))
+			$root_category = new Category($shop->id_category);
+		else
+			$root_category = new Category($id_root);
+		$root_category = array('id_category' => $root_category->id_category, 'name' => $root_category->name[$this->context->language->id]);
+
+		$helper = new Helper();
+		return $helper->renderCategoryTree($root_category, $selected_cat, 'categoryBox', false, true);
 	}
 }

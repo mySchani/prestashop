@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminOutstandingController  extends AdminController
+class AdminOutstandingControllerCore  extends AdminController
 {
 	public function __construct()
 	{
@@ -48,9 +48,7 @@ class AdminOutstandingController  extends AdminController
 
 		$risks = array();
 		foreach (Risk::getRisks() as $risk)
-		{
 			$risks[$risk->id] = $risk->name;
-		}
 
 		$this->fieldsDisplay = array(
 			'number' => array(
@@ -135,36 +133,36 @@ class AdminOutstandingController  extends AdminController
 			'id_invoice' => $id_invoice
 		));
 
-		return $this->context->smarty->fetch('outstanding/_print_pdf_icon.tpl');
+		return $this->createTemplate('_print_pdf_icon.tpl')->fetch();
 	}
 
 	public function printOutstandingCalculation($id_invoice, $tr)
 	{
 		$order_invoice = new OrderInvoice($id_invoice);
 		if (!Validate::isLoadedObject($order_invoice))
-			throw new PrestashopException('object OrderInvoice can\'t be loaded');
+			throw new PrestaShopException('object OrderInvoice can\'t be loaded');
 		$order = new Order($order_invoice->id_order);
 		if (!Validate::isLoadedObject($order))
-			throw new PrestashopException('object Order can\'t be loaded');
+			throw new PrestaShopException('object Order can\'t be loaded');
 		$customer = new Customer((int)$order->id_customer);
 		if (!Validate::isLoadedObject($order_invoice))
-			throw new PrestashopException('object Customer can\'t be loaded');
+			throw new PrestaShopException('object Customer can\'t be loaded');
 
 		return '<b>'.$customer->getOutstanding().'</b>';
 	}
 
 	/**
 	 * View render
-	 * @throws PrestashopException Invalid objects
+	 * @throws PrestaShopException Invalid objects
 	 */
 	public function renderView()
 	{
-		$order_invoice = new OrderInvoice((int) Tools::getValue('id_order_invoice'));
+		$order_invoice = new OrderInvoice((int)Tools::getValue('id_order_invoice'));
 		if (!Validate::isLoadedObject($order_invoice))
-			throw new PrestashopException('object OrderInvoice can\'t be loaded');
+			throw new PrestaShopException('object OrderInvoice can\'t be loaded');
 		$order = new Order($order_invoice->id_order);
 		if (!Validate::isLoadedObject($order))
-			throw new PrestashopException('object Order can\'t be loaded');
+			throw new PrestaShopException('object Order can\'t be loaded');
 
 		$link = $this->context->link->getAdminLink('AdminOrders');
 		$link .= '&vieworder&id_order='.$order->id;

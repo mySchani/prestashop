@@ -80,14 +80,14 @@ class Editorial extends Module
 		{
 			$id_editorial = Db::getInstance()->Insert_ID();
 			foreach (Language::getLanguages(false) as $lang)
-				$res &= Db::getInstance()->autoExecute(_DB_PREFIX_.'editorial_lang', array(
+				$res &= Db::getInstance()->insert('editorial_lang', array(
 					'id_editorial' =>			$id_editorial,
 					'id_lang' =>				$lang['id_lang'],
 					'body_title' =>				'Lorem ipsum dolor sit amet',
 					'body_subheading' =>		'Excepteur sint occaecat cupidatat non proident',
 					'body_paragraph' =>			'<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>',
 					'body_logo_subheading' =>	'Lorem ipsum presta shop amet',
-					), 'INSERT');
+					));
 		}
 
 		if (!$res)
@@ -153,16 +153,16 @@ class Editorial extends Module
 			$editorial->update();
 
 			/* upload the image */
-			if (isset($_FILES['body_homepage_logo']) AND isset($_FILES['body_homepage_logo']['tmp_name']) AND !empty($_FILES['body_homepage_logo']['tmp_name']))
+			if (isset($_FILES['body_homepage_logo']) && isset($_FILES['body_homepage_logo']['tmp_name']) && !empty($_FILES['body_homepage_logo']['tmp_name']))
 			{
 				Configuration::set('PS_IMAGE_GENERATION_METHOD', 1);
 				if(file_exists(dirname(__FILE__).'/homepage_logo.jpg'))
 					unlink(dirname(__FILE__).'/homepage_logo.jpg');
-				if ($error = checkImage($_FILES['body_homepage_logo']))
+				if ($error = ImageManager::validateUpload($_FILES['body_homepage_logo']))
 					$errors .= $error;
-				elseif (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($_FILES['body_homepage_logo']['tmp_name'], $tmpName))
+				elseif (!($tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS')) || !move_uploaded_file($_FILES['body_homepage_logo']['tmp_name'], $tmpName))
 					return false;
-				elseif (!imageResize($tmpName, dirname(__FILE__).'/homepage_logo.jpg'))
+				elseif (!ImageManager::resize($tmpName, dirname(__FILE__).'/homepage_logo.jpg'))
 					$errors .= $this->displayError($this->l('An error occurred during the image upload.'));
 				if (isset($tmpName))
 					unlink($tmpName);
@@ -300,7 +300,7 @@ class Editorial extends Module
 	{
 
 		$editorial = new EditorialClass(1, $this->context->language->id);
-		$this->context->smarty->assign(array(
+		$this->smarty->assign(array(
 			'editorial' => $editorial,
 			'default_lang' => (int)$this->context->language->id,
 			'image_width' => Configuration::get('EDITORIAL_IMAGE_WIDTH'),

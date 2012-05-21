@@ -129,22 +129,21 @@ class OrderInvoiceCore extends ObjectModel
 		$customized_datas = Product::getAllCustomizedDatas($order->id_cart);
 
 		$resultArray = array();
-		foreach ($products AS $row)
+		foreach ($products as $row)
 		{
 			// Change qty if selected
 			if ($selectedQty)
 			{
 				$row['product_quantity'] = 0;
-				foreach ($selectedProducts AS $key => $id_product)
+				foreach ($selectedProducts as $key => $id_product)
 					if ($row['id_order_detail'] == $id_product)
 						$row['product_quantity'] = (int)($selectedQty[$key]);
 				if (!$row['product_quantity'])
-					continue ;
+					continue;
 			}
 
 			$this->setProductImageInformations($row);
 			$this->setProductCurrentStock($row);
-			$this->setProductPrices($row, $order);
 			$this->setProductCustomizedDatas($row, $customized_datas);
 
 			// Add information for virtual product
@@ -216,60 +215,6 @@ class OrderInvoiceCore extends ObjectModel
 
 		if ($id_image)
 			$product['image'] = new Image($id_image);
-	}
-
-	public function setProductPrices(&$row, $order)
-	{
-		$tax_calculator = OrderDetail::getTaxCalculatorStatic((int)$row['id_order_detail']);
-		$row['tax_calculator'] = $tax_calculator;
-		$row['tax_rate'] = $tax_calculator->getTotalRate();
-
-		if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-			$row['product_price'] = Tools::ps_round($row['product_price'], 2);
-		else
-			$row['product_price_wt'] = Tools::ps_round($tax_calculator->addTaxes($row['product_price']), 2);
-
-		$group_reduction = 1;
-		if ($row['group_reduction'] > 0)
-			$group_reduction =  1 - $row['group_reduction'] / 100;
-
-		if ($row['reduction_percent'] != 0)
-		{
-			if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-				$row['product_price'] = ($row['product_price'] - $row['product_price'] * ($row['reduction_percent'] * 0.01));
-			else
-				$row['product_price_wt'] = Tools::ps_round(($row['product_price_wt'] - $row['product_price_wt'] * ($row['reduction_percent'] * 0.01)), 2);
-		}
-
-		if ($row['reduction_amount'] != 0)
-		{
-			if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-				$row['product_price'] = ($row['product_price'] - ($tax_calculator->removeTaxes($row['reduction_amount'])));
-			else
-				$row['product_price_wt'] = Tools::ps_round(($row['product_price_wt'] - $row['reduction_amount']), 2);
-		}
-
-		if ($row['group_reduction'] > 0)
-		{
-			if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-				$row['product_price'] = $row['product_price'] * $group_reduction;
-			else
-				$row['product_price_wt'] = Tools::ps_round($row['product_price_wt'] * $group_reduction , 2);
-		}
-
-		if (($row['reduction_percent'] OR $row['reduction_amount'] OR $row['group_reduction']) AND $order->getTaxCalculationMethod() == PS_TAX_EXC)
-			$row['product_price'] = Tools::ps_round($row['product_price'], 2);
-
-		if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-			$row['product_price_wt'] = Tools::ps_round($tax_calculator->addTaxes($row['product_price']), 2) + Tools::ps_round($row['ecotax'] * (1 + $row['ecotax_tax_rate'] / 100), 2);
-		else
-		{
-			$row['product_price_wt_but_ecotax'] = $row['product_price_wt'];
-			$row['product_price_wt'] = Tools::ps_round($row['product_price_wt'] + $row['ecotax'] * (1 + $row['ecotax_tax_rate'] / 100), 2);
-		}
-
-		$row['total_wt'] = $row['product_quantity'] * $row['product_price_wt'];
-		$row['total_price'] = $row['product_quantity'] * $row['product_price'];
 	}
 
 	/**
@@ -422,8 +367,56 @@ class OrderInvoiceCore extends ObjectModel
 			LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_order` = oi.`id_order`)
 			WHERE DATE_ADD(oi.date_add, INTERVAL -1 DAY) <= \''.pSQL($date_to).'\'
 			AND oi.date_add >= \''.pSQL($date_from).'\'
-			'.Context::getContext()->shop->addSqlRestriction().
-			' ORDER BY oi.date_add ASC
+			'.Context::getContext()->shop->addSqlRestriction().'
+			ORDER BY oi.date_add ASC
+		');
+
+		return ObjectModel::hydrateCollection('OrderInvoice', $order_invoice_list);
+	}
+
+	/**
+	 * @since 1.5.0.3
+	 * @static
+	 * @param $id_order_state
+	 * @return array collection of OrderInvoice
+	 */
+	public static function getByStatus($id_order_state)
+	{
+		$order_invoice_list = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+			SELECT oi.*
+			FROM `'._DB_PREFIX_.'order_invoice` oi
+			LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_order` = oi.`id_order`)
+			WHERE '.(int)$id_order_state.' = (
+				SELECT id_order_state
+				FROM '._DB_PREFIX_.'order_history oh
+				WHERE oh.id_order = o.id_order
+				ORDER BY date_add DESC, id_order_history DESC
+				LIMIT 1
+			)
+			'.Context::getContext()->shop->addSqlRestriction(false, 'o').'
+			ORDER BY oi.`date_add` ASC
+		');
+
+		return ObjectModel::hydrateCollection('OrderInvoice', $order_invoice_list);
+	}
+
+	/**
+	 * @since 1.5.0.3
+	 * @static
+	 * @param $date_from
+	 * @param $date_to
+	 * @return array collection of invoice
+	 */
+	public static function getByDeliveryDateInterval($date_from, $date_to)
+	{
+		$order_invoice_list = Db::getInstance()->ExecuteS('
+			SELECT oi.*
+			FROM `'._DB_PREFIX_.'order_invoice` oi
+			LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_order` = oi.`id_order`)
+			WHERE DATE_ADD(oi.delivery_date, INTERVAL -1 DAY) <= \''.pSQL($date_to).'\'
+			AND oi.date_add >= \''.pSQL($date_from).'\'
+			'.Context::getContext()->shop->addSqlRestriction().'
+			ORDER BY oi.delivery_date ASC
 		');
 
 		return ObjectModel::hydrateCollection('OrderInvoice', $order_invoice_list);
@@ -466,7 +459,7 @@ class OrderInvoiceCore extends ObjectModel
 	{
 		$order_invoice = new OrderInvoice($id);
 		if (!Validate::isLoadedObject($order_invoice))
-			throw new PrestashopException('Can\'t load Order Invoice object for id: '.$id);
+			throw new PrestaShopException('Can\'t load Order Invoice object for id: '.$id);
 		return $order_invoice;
 	}
 
@@ -494,7 +487,7 @@ class OrderInvoiceCore extends ObjectModel
 	 */
 	public function getRestPaid()
 	{
-		return $this->total_paid_tax_incl - $this->getTotalPaid();
+		return round($this->total_paid_tax_incl - $this->getTotalPaid(), 2);
 	}
 
 	/**

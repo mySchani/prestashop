@@ -67,7 +67,7 @@ function cleanSelectAddressDelivery()
 			if (address_count < 2) // Need at least two address to allow skipping products to multiple address
 				$($(item).find('option[value=-2]')).remove();
 			else if($($(item).find('option[value=-2]')).length == 0)
-				$(item).append($('<option value="-2">Ship to an other address</option>')); // @todo add translation
+				$(item).append($('<option value="-2">' + ShipToAnOtherAddress + '</option>'));
 		});
 	}
 }
@@ -105,9 +105,8 @@ function changeAddressDelivery(obj)
 					updateCartSummary(jsonData.summary);
 					updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 					updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
-					if (jsonData.carriers != null)
-						if (typeof(getCarrierListAndUpdate) != 'undefined')
-							getCarrierListAndUpdate();
+					if (typeof(getCarrierListAndUpdate) != 'undefined')
+						getCarrierListAndUpdate();
 
 					// @todo reverse the remove order
 					// This effect remove the current line, but it's better to remove the other one, and refresshing this one
@@ -225,6 +224,9 @@ function updateQty(val)
 	}
 	else
 		$('input[name='+ id +']').val($('input[name='+ id +'_hidden]').val());
+	
+	if (typeof(getCarrierListAndUpdate) != 'undefined')
+		getCarrierListAndUpdate();
 }
 
 function deleteProductFromSummary(id)
@@ -296,9 +298,8 @@ function deleteProductFromSummary(id)
 				updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 				updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
 				updateCustomizedDatas(jsonData.customizedDatas);
-				if (jsonData.carriers != null)
-					if (typeof(getCarrierListAndUpdate) != 'undefined')
-						getCarrierListAndUpdate();
+				if (typeof(getCarrierListAndUpdate) != 'undefined')
+					getCarrierListAndUpdate();
 			}
 		},
 		error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save update quantity \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
@@ -347,9 +348,8 @@ function upQuantity(id, qty)
 				updateCartSummary(jsonData.summary);
 				updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 				updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
-				if (jsonData.carriers != null)
-					if (typeof(getCarrierListAndUpdate) != 'undefined')
-						getCarrierListAndUpdate();
+				if (typeof(getCarrierListAndUpdate) != 'undefined')
+					getCarrierListAndUpdate();
 			}
 		},
 		error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save update quantity \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
@@ -407,9 +407,8 @@ function downQuantity(id, qty)
 					updateCartSummary(jsonData.summary);
 					updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 					updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
-					if (jsonData.carriers != null)
-						if (typeof(getCarrierListAndUpdate) != 'undefined')
-							getCarrierListAndUpdate();
+					if (typeof(getCarrierListAndUpdate) != 'undefined')
+						getCarrierListAndUpdate();
 				}
 			},
 			error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save update quantity \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
@@ -616,7 +615,16 @@ function refreshDeliveryOptions()
 {
 	$.each($('.delivery_option_radio'), function() {
 		if ($(this).attr('checked'))
-			$(this).parent().find('.delivery_option_carrier').show();
+		{
+			if ($(this).parent().find('.delivery_option_carrier.not-displayable').length == 0)
+				$(this).parent().find('.delivery_option_carrier').show();
+			var carrier_id_list = $(this).val().split(',');
+			carrier_id_list.pop();
+			var it = this;
+			$(carrier_id_list).each(function() {
+				$(it).parent().find('input[value="'+this.toString()+'"]').change();
+			});
+		}
 		else
 			$(this).parent().find('.delivery_option_carrier').hide();
 	});
@@ -659,3 +667,24 @@ $(document).ready(function() {
 		}
 	);
 });
+
+function updateExtraCarrier(id_delivery_option, id_address)
+{
+	if(typeof(orderOpcUrl) != 'undefined')
+		var url = orderOpcUrl;
+	else
+		var url = orderUrl;
+	
+	$.ajax({
+		type: 'POST',
+		url: url,
+		async: true,
+		cache: false,
+		dataType : "json",
+		data: 'ajax=true&method=updateExtraCarrier&id_address='+id_address+'&id_delivery_option='+id_delivery_option+'&token=' + static_token,
+		success: function(jsonData)
+		{
+			$('#HOOK_EXTRACARRIER_'+id_address).html(jsonData['content']);
+		}
+	});
+}

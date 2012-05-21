@@ -42,7 +42,7 @@ class TabCore extends ObjectModel
 	public $position;
 
 	/** @var integer active */
-	public $active;
+	public $active = true;
 
 	/**
 	 * @see ObjectModel::$definition
@@ -56,7 +56,7 @@ class TabCore extends ObjectModel
 			'position' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
 			'module' => 	array('type' => self::TYPE_STRING, 'validate' => 'isTabName', 'size' => 64),
 			'class_name' => array('type' => self::TYPE_STRING, 'required' => true, 'size' => 64),
-			'active' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'active' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 
 			// Lang fields
 			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 32),
@@ -71,17 +71,17 @@ class TabCore extends ObjectModel
 	 * - add access for admin profile
 	 *
 	 * @param boolean $autodate
-	 * @param boolean $nullValues
+	 * @param boolean $null_values
 	 * @return int id_tab
 	 */
 	public function add($autodate = true, $null_values = false)
 	{
-		$this->position = self::getNewLastPosition($this->id_parent);
+		$this->position = Tab::getNewLastPosition($this->id_parent);
 		if (parent::add($autodate, $null_values))
 		{
 			// refresh cache when adding new tab
-			self::$_getIdFromClassName[$this->class_name] = $this->id;
-			return self::initAccess($this->id);
+			self::$_getIdFromClassName[strtolower($this->class_name)] = $this->id;
+			return Tab::initAccess($this->id);
 		}
 		return false;
 	}
@@ -90,6 +90,7 @@ class TabCore extends ObjectModel
 	 *
 	 * @todo this should not be public static but protected
 	 * @param int $id_tab
+	 * @param Context $context
 	 * @return boolean true if succeed
 	 */
 	public static function initAccess($id_tab, Context $context = null)
@@ -138,7 +139,11 @@ class TabCore extends ObjectModel
 	 */
 	public static function getCurrentTabId()
 	{
-		return self::getIdFromClassName(Tools::getValue('tab'));
+		$id_tab = Tab::getIdFromClassName(Tools::getValue('controller'));
+		// retro-compatibility 1.4/1.5 
+		if (empty ($id_tab))
+			$id_tab = Tab::getIdFromClassName(Tools::getValue('tab'));
+		return $id_tab;
 	}
 
 	/**
@@ -171,6 +176,26 @@ class TabCore extends ObjectModel
 				ON (t.`id_tab` = tl.`id_tab` AND tl.`id_lang` = '.(int)$id_lang.')
 			WHERE t.`id_tab` = '.(int)$id_tab
 		);
+	}
+
+	/**
+	 * Return the list of tab used by a module
+	 *
+	 * @static
+	 * @return array
+	 */
+	public static function getModuleTabList()
+	{
+		$list = array();
+
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+			SELECT t.`class_name`, t.`module`
+			FROM `'._DB_PREFIX_.'tab` t
+			WHERE t.`module` IS NOT NULL AND t.`module` != ""');
+
+		foreach ($result as $detail)
+			$list[strtolower($detail['class_name'])] = $detail;
+		return $list;
 	}
 
 	/**
@@ -216,12 +241,13 @@ class TabCore extends ObjectModel
 	 */
 	public static function getIdFromClassName($class_name)
 	{
+		$class_name = strtolower($class_name);
 		if (self::$_getIdFromClassName === null)
 		{
 			self::$_getIdFromClassName = array();
 			$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('SELECT id_tab, class_name FROM `'._DB_PREFIX_.'tab`');
 			foreach ($result as $row)
-				self::$_getIdFromClassName[$row['class_name']] = $row['id_tab'];
+				self::$_getIdFromClassName[strtolower($row['class_name'])] = $row['id_tab'];
 		}
 		return (isset(self::$_getIdFromClassName[$class_name]) ? (int)self::$_getIdFromClassName[$class_name] : false);
 	}
@@ -254,9 +280,11 @@ class TabCore extends ObjectModel
 	 */
 	public static function enablingForModule($module)
 	{
-		$tabs = self::getCollectionFromModule($module);
-		if (!empty($tabs)) {
-			foreach ($tabs as $tab) {
+		$tabs = Tab::getCollectionFromModule($module);
+		if (!empty($tabs))
+		{
+			foreach ($tabs as $tab)
+			{
 				$tab->active = 1;
 				$tab->save();
 			}
@@ -273,9 +301,11 @@ class TabCore extends ObjectModel
 	 */
 	public static function disablingForModule($module)
 	{
-		$tabs = self::getCollectionFromModule($module);
-		if (!empty($tabs)) {
-			foreach ($tabs as $tab) {
+		$tabs = Tab::getCollectionFromModule($module);
+		if (!empty($tabs))
+		{
+			foreach ($tabs as $tab)
+			{
 				$tab->active = 0;
 				$tab->save();
 			}
@@ -286,14 +316,14 @@ class TabCore extends ObjectModel
 
 	/**
 	 * Get Instance from tab class name
-	 * @static
-	 * @param $class_name Name of tab class
+	 *
+	 * @param $class_name string Name of tab class
 	 * @return Tab Tab object (empty if bad id or class name)
 	 */
 	public static function getInstanceFromClassName($class_name)
 	{
-		$id_tab = (int)self::getIdFromClassName($class_name);
-		return new self($id_tab);
+		$id_tab = (int)Tab::getIdFromClassName($class_name);
+		return new Tab($id_tab);
 	}
 
 	public static function getNbTabs($id_parent = null)
@@ -322,7 +352,7 @@ class TabCore extends ObjectModel
 
 	public function move($direction)
 	{
-		$nb_tabs = self::getNbTabs($this->id_parent);
+		$nb_tabs = Tab::getNbTabs($this->id_parent);
 		if ($direction != 'l' && $direction != 'r')
 			return false;
 		if ($nb_tabs <= 1)
@@ -405,7 +435,7 @@ class TabCore extends ObjectModel
 		if (isset($tabAccesses[(int)$id_tab]['view']))
 			return ($tabAccesses[(int)$id_tab]['view'] === '1');
 		return false;
-}
+	}
 
 	public static function recursiveTab($id_tab, $tabs)
 	{

@@ -48,7 +48,7 @@ if (empty($token) === false)
 			continue;
 		else
 		{
-			if ($products[$i]['id_product_attribute'] != 0)
+			if ($products[$i]['id_product_attribute'] != 0 && isset($combination_imgs[$products[$i]['id_product_attribute']][0]))
 			{
 				$combination_imgs = $obj->getCombinationImages($context->language->id);
 				$products[$i]['cover'] = $obj->id.'-'.$combination_imgs[$products[$i]['id_product_attribute']][0]['id_image'];
@@ -71,7 +71,7 @@ if (empty($token) === false)
 	}
 	WishList::incCounter((int)($wishlist['id_wishlist']));
 	$ajax = Configuration::get('PS_BLOCK_CART_AJAX');
-	$context->context->smarty->assign(array (
+	$context->smarty->assign(array (
 		'current_wishlist' => $wishlist,
 		'token' => $token,
 		'ajax' => ((isset($ajax) AND (int)($ajax) == 1) ? '1' : '0'),

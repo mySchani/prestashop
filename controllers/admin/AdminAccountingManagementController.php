@@ -49,21 +49,20 @@ class AdminAccountingManagementControllerCore extends AdminController
 			$id_shop = $this->context->shop->getID();
 
 			// Set default zone value to the shop	and sort it
-			foreach($zones as $zone)
+			foreach ($zones as $zone)
 			{
 					$shop['zones'][$zone['id_zone']]['name'] = $zone['name'];
 					$shop['zones'][$zone['id_zone']]['account_number'] = '';
 					$shop['name'] = $this->context->shop->name;
 			}
 			
-			$shop['default_account_number'] = Configuration::get('default_account_number', 
-					NULL, NULL, $id_shop);
+			$shop['default_account_number'] = Configuration::get('default_account_number', null, null, $id_shop);
 			ksort($shop['zones']);
 			
 			$zoneShopList = Accounting::getAccountNumberZoneShop($id_shop);
 	
 			// Set Account number to the id_zone for the id_shop if exist
-			foreach($zoneShopList as $zoneShop)
+			foreach ($zoneShopList as $zoneShop)
 				$shop['zones'][$zoneShop['id_zone']]['account_number'] = $zoneShop['account_number'];
 		}
 		
@@ -104,7 +103,7 @@ class AdminAccountingManagementControllerCore extends AdminController
 	/**
 	 * Update the account number for each shop liable to their zones
 	 */
-	private function updateAccountNumber()
+	protected function updateAccountNumber()
 	{
 		$id_shop = $this->context->shop->getID();
 
@@ -112,15 +111,15 @@ class AdminAccountingManagementControllerCore extends AdminController
 		Configuration::updateValue(
 			'default_account_number',
 			Tools::getValue('default_account_number'),
-			false, NULL, 
+			false, null,
 			$id_shop);
 		
 		// If zone still exist, then update the database with the new value
 		if (count($zones = Zone::getZones()))
 		{
 			$tab = array();
-			foreach($zones as $zone)
-				if (($num = Tools::getValue('zone_'.$zone['id_zone'])) !== NULL)
+			foreach ($zones as $zone)
+				if (($num = Tools::getValue('zone_'.$zone['id_zone'])) !== null)
 					$tab[] = array(
 						'id_zone' => $zone['id_zone'],
 						'id_shop' => $id_shop,
@@ -130,7 +129,7 @@ class AdminAccountingManagementControllerCore extends AdminController
 			if (count($tab) && Accounting::setAccountNumberByZoneShop($tab))
 				$this->confirmations[] = $this->l('Account numbers have been updated');
 			else
-				$this->_errors[] = $this->l('Account Numbers could not be updated or added in the database');
+				$this->errors[] = $this->l('Account Numbers could not be updated or added in the database');
 				//$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
 				//Tools::redirectAdmin(self::$currentIndex.'&token='.$token);
 		}

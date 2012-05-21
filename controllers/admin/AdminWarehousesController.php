@@ -113,7 +113,9 @@ class AdminWarehousesControllerCore extends AdminController
 		$this->displayInformation($this->l('Before adding stock in your warehouses, you should check the general default currency used.').'<br />');
 		$this->displayInformation($this->l('Futhermore, for each warehouse, you have to check :'));
 		$this->displayInformation($this->l('the management type (according to the law in your country), the valuation currency, its associated carriers and shops.').'<br />');
-		$this->displayInformation($this->l('Finally, you can see detailed informations on your stock per warehouse, such as its valuation, the number of products and quantities stored, ...'));
+		$this->displayInformation($this->l('Finally, you can see detailed informations on your stock per warehouse, such as its valuation, the number of products and quantities stored, ...').'<br /><br />');
+
+		$this->displayInformation($this->l('Be careful, products from different warehouses will need to be shipped in different packages.'));
 
 		return parent::renderList();
 	}
@@ -134,6 +136,12 @@ class AdminWarehousesControllerCore extends AdminController
 		$query->from('employee');
 		$query->where('active = 1');
 		$employees_array = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
+		// sets countries
+		$countries = Country::getCountries($this->context->language->id, false);
+		$id_default_country = Configuration::get('PS_SHOP_COUNTRY_ID');
+		if (isset($countries[$id_default_country]))
+			$countries = array($id_default_country => $countries[$id_default_country]) + $countries;
 
 		// sets the title of the toolbar
 		$this->toolbar_title = $this->l('Stock : Warehouse management');
@@ -166,7 +174,7 @@ class AdminWarehousesControllerCore extends AdminController
 					'maxlength' => 45,
 					'required' => true,
 					'desc' => $this->l('Name of this warehouse'),
-					'hint' => $this->l('Invalid characters:').' 0-9!<>,;?=+()@#"�{}_$%:',
+					'hint' => $this->l('Invalid characters:').' !<>,;?=+()@#"�{}_$%:',
 				),
 				array(
 					'type' => 'text',
@@ -214,7 +222,7 @@ class AdminWarehousesControllerCore extends AdminController
 					'name' => 'id_country',
 					'required' => true,
 					'options' => array(
-						'query' => Country::getCountries($this->context->language->id, false),
+						'query' => $countries,
 						'id' => 'id_country',
 						'name' => 'name'
 					),
@@ -226,6 +234,7 @@ class AdminWarehousesControllerCore extends AdminController
 					'name' => 'id_state',
 					'required' => true,
 					'options' => array(
+						'query' => array(),
 						'id' => 'id_state',
 						'name' => 'name'
 					)
@@ -245,7 +254,7 @@ class AdminWarehousesControllerCore extends AdminController
 					'type' => 'select',
 					'label' => $this->l('Carriers:'),
 					'name' => 'ids_carriers[]',
-					'required' => true,
+					'required' => false,
 					'multiple' => true,
 					'options' => array(
 						'query' => Carrier::getCarriers($this->context->language->id, true),
@@ -301,6 +310,13 @@ class AdminWarehousesControllerCore extends AdminController
 				'desc' => $this->l('Inventory valuation method')
 			);
 
+			//get currencies list
+			$currencies = Currency::getCurrencies();
+			$id_default_currency = Configuration::get('PS_CURRENCY_DEFAULT');
+			$default_currency = Currency::getCurrency($id_default_currency);
+			if ($default_currency)
+				$currencies = array_merge(array($default_currency, '-'), $currencies);
+
 			$this->fields_form['input'][] = array(
 				'type' => 'select',
 				'label' => $this->l('Stock valuation currency:'),
@@ -308,7 +324,7 @@ class AdminWarehousesControllerCore extends AdminController
 				'name' => 'id_currency',
 				'required' => true,
 				'options' => array(
-					'query' => Currency::getCurrencies(),
+					'query' => $currencies,
 					'id' => 'id_currency',
 					'name' => 'name'
 				)
@@ -372,88 +388,7 @@ class AdminWarehousesControllerCore extends AdminController
 	 */
 	public function postProcess()
 	{
-		// checks access
-		if (Tools::isSubmit('submitAdd'.$this->table) && !($this->tabAccess['add'] === '1'))
-		{
-			$this->_errors[] = Tools::displayError('You do not have the required permissions to add warehouses.');
-			return parent::postProcess();
-		}
-
-		if (Tools::isSubmit('submitAdd'.$this->table))
-		{
-			if (!($obj = $this->loadObject(true)))
-				return;
-
-			// handles shops associations
-			if (Tools::isSubmit('ids_shops'))
-				$obj->setShops(Tools::getValue('ids_shops'));
-
-			// handles carriers associations
-			$obj->setCarriers(Tools::getValue('ids_carriers'));
-
-			// updates/creates address if it does not exist
-			if (Tools::isSubmit('id_address') && (int)Tools::getValue('id_address') > 0)
-				$address = new Address((int)Tools::getValue('id_address')); // updates address
-			else
-				$address = new Address(); // creates address
-
-			$address->alias = Tools::getValue('reference', null);
-			$address->lastname = 'warehouse'; // skip problem with numeric characters in warehouse name
-			$address->firstname = 'warehouse'; // skip problem with numeric characters in warehouse name
-			$address->address1 = Tools::getValue('address', null);
-			$address->address2 = Tools::getValue('address2', null);
-			$address->postcode = Tools::getValue('postcode', null);
-			$address->phone = Tools::getValue('phone', null);
-			$address->id_country = Tools::getValue('id_country', null);
-			$address->id_state = Tools::getValue('id_state', null);
-			$address->city = Tools::getValue('city', null);
-
-			$validation = $address->validateController();
-
-			// checks address validity
-			if (count($validation) > 0)
-			{
-				foreach ($validation as $item)
-					$this->_errors[] = $item;
-				$this->_errors[] = Tools::displayError('The address is not correct. Check if all required fields are filled.');
-			}
-			else
-			{
-				if (Tools::isSubmit('id_address') && Tools::getValue('id_address') > 0)
-					$address->update();
-				else
-				{
-					$address->save();
-					$_POST['id_address'] = $address->id;
-				}
-			}
-
-			// hack for enable the possibility to update a warehouse without recreate new id
-			$this->deleted = false;
-
-			return parent::postProcess();
-		}
-		else if (Tools::isSubmit('delete'.$this->table))
-			if (!($obj = $this->loadObject(true)))
-				return;
-			else if ($obj->getQuantitiesOfProducts() > 0)
-				$this->_errors[] = $this->l('It is not possible to delete a Warehouse when there are products in it.');
-			else if (SupplyOrder::warehouseHasPendingOrders($obj->id))
-				$this->_errors[] = $this->l('It is not possible to delete a Warehouse if it has pending supply orders.');
-			else
-			{
-				// sets the address of the warehouse as deleted
-				$address = new Address($obj->id_address);
-				$address->deleted = 1;
-				$address->save();
-
-				// removes associations
-				$obj->setCarriers(array());
-				$obj->setShops(array());
-				$obj->resetProductsLocations();
-
-				return parent::postProcess();
-			}
+		return parent::postProcess();
 	}
 
 	/**
@@ -492,7 +427,7 @@ class AdminWarehousesControllerCore extends AdminController
 	/**
 	 * @see AdminController::afterAdd()
 	 */
-	public function afterAdd($object)
+	protected function afterAdd($object)
 	{
 		$address = new Address($object->id_address);
 		if (Validate::isLoadedObject($address))
@@ -500,6 +435,164 @@ class AdminWarehousesControllerCore extends AdminController
 			$address->id_warehouse = $object->id_address;
 			$address->save();
 		}
+
+		// handles shops associations
+		if (Tools::isSubmit('ids_shops'))
+			$object->setShops(Tools::getValue('ids_shops'));
+
+		// handles carriers associations
+		if (Tools::isSubmit('ids_carriers'))
+			$object->setCarriers(Tools::getValue('ids_carriers'));
+
 		return true;
 	}
+
+	/**
+	 * AdminController::getList() override
+	 * @see AdminController::getList()
+	 */
+	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
+	{
+		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
+
+		$nb_items = count($this->_list);
+		for ($i = 0; $i < $nb_items; ++$i)
+		{
+			$item = &$this->_list[$i];
+			switch ($item['management_type'])
+			{
+				case 'WA':
+					$item['management_type'] = $this->l('WA');
+				break;
+
+				case 'FIFO':
+					$item['management_type'] = $this->l('FIFO');
+				break;
+
+				case 'LIFO':
+					$item['management_type'] = $this->l('LIFO');
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Checks access of the employee
+	 */
+	public function processCheckAccess()
+	{
+		if (Tools::isSubmit('submitAdd'.$this->table) && !($this->tabAccess['add'] === '1'))
+		{
+			$this->errors[] = Tools::displayError('You do not have the required permissions to add warehouses.');
+			return parent::postProcess();
+		}
+	}
+
+	/**
+	 * @see AdminController::processAdd();
+	 */
+	public function processAdd($token)
+	{
+		if (Tools::isSubmit('submitAdd'.$this->table))
+		{
+			if (!($obj = $this->loadObject(true)))
+					return;
+
+			// updates/creates address if it does not exist
+			if (Tools::isSubmit('id_address') && (int)Tools::getValue('id_address') > 0)
+				$address = new Address((int)Tools::getValue('id_address')); // updates address
+			else
+				$address = new Address(); // creates address
+
+			$address->alias = Tools::getValue('reference', null);
+			$address->lastname = 'warehouse'; // skip problem with numeric characters in warehouse name
+			$address->firstname = 'warehouse'; // skip problem with numeric characters in warehouse name
+			$address->address1 = Tools::getValue('address', null);
+			$address->address2 = Tools::getValue('address2', null);
+			$address->postcode = Tools::getValue('postcode', null);
+			$address->phone = Tools::getValue('phone', null);
+			$address->id_country = Tools::getValue('id_country', null);
+			$address->id_state = Tools::getValue('id_state', null);
+			$address->city = Tools::getValue('city', null);
+
+			$validation = $address->validateController();
+
+			// checks address validity
+			if (count($validation) > 0)
+			{
+				foreach ($validation as $item)
+					$this->errors[] = $item;
+				$this->errors[] = Tools::displayError('The address is not correct. Check if all required fields are filled.');
+			}
+			else
+			{
+				if (Tools::isSubmit('id_address') && Tools::getValue('id_address') > 0)
+					$address->update();
+				else
+				{
+					$address->save();
+					$_POST['id_address'] = $address->id;
+				}
+			}
+
+			// if updating
+			if ($obj->id > 0)
+			{
+				// handles shops associations
+				if (Tools::isSubmit('ids_shops'))
+					$obj->setShops(Tools::getValue('ids_shops'));
+
+				// handles carriers associations
+				if (Tools::isSubmit('ids_carriers'))
+					$obj->setCarriers(Tools::getValue('ids_carriers'));
+			}
+
+			// hack for enable the possibility to update a warehouse without recreate new id
+			$this->deleted = false;
+
+			return parent::processAdd($token);
+		}
+	}
+
+	/**
+	 * @see AdminController::processDelete();
+	 */
+	public function processDelete($token)
+	{
+		if (Tools::isSubmit('delete'.$this->table))
+		{
+			if (!($obj = $this->loadObject(true)))
+				return;
+			else if ($obj->getQuantitiesOfProducts() > 0)
+				$this->errors[] = $this->l('It is not possible to delete a Warehouse when there are products in it.');
+			else if (SupplyOrder::warehouseHasPendingOrders($obj->id))
+				$this->errors[] = $this->l('It is not possible to delete a Warehouse if it has pending supply orders.');
+			else
+			{
+				// sets the address of the warehouse as deleted
+				$address = new Address($obj->id_address);
+				$address->deleted = 1;
+				$address->save();
+
+				// removes associations
+				$obj->setCarriers(array());
+				$obj->setShops(array());
+				$obj->resetProductsLocations();
+
+				return parent::processDelete($token);
+			}
+		}
+	}
+
+	/**
+	 * @see AdminController::initProcess()
+	 */
+	public function initProcess()
+	{
+		// checks access
+		$this->processCheckAccess();
+
+		return parent::initprocess();
+	}
+
 }

@@ -31,6 +31,13 @@
 class DispatcherCore
 {
 	/**
+	 * List of available front controllers types
+	 */
+	const FC_FRONT = 1;
+	const FC_ADMIN = 2;
+	const FC_MODULE = 3;
+
+	/**
 	 * @var Dispatcher
 	 */
 	public static $instance = null;
@@ -47,6 +54,7 @@ class DispatcherCore
 				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 				'ean13' =>			array('regexp' => '[a-zA-Z0-9-\pL]*'),
 				'category' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'categories' =>		array('regexp' => '[/a-zA-Z0-9-\pL]*'),
 				'reference' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
 				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
@@ -107,11 +115,14 @@ class DispatcherCore
 			),
 		),
 		'module' => array(
-			'controller' =>	'module',
-			'rule' =>		'module/{module}/{process}',
+			'controller' =>	null,
+			'rule' =>		'module/{module}{/:controller}',
 			'keywords' => array(
 				'module' =>			array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'module'),
-				'process' =>		array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'process'),
+				'controller' =>		array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'controller'),
+			),
+			'params' => array(
+				'fc' => 'module',
 			),
 		),
 	);
@@ -144,7 +155,7 @@ class DispatcherCore
 	/**
 	 * @var string Set default controller, which will be used if http parameter 'controller' is empty
 	 */
-	protected $default_controller = 'Index';
+	protected $default_controller = 'index';
 
 	/**
 	 * @var string Controller to use if found controller doesn't exist
@@ -152,9 +163,9 @@ class DispatcherCore
 	protected $controller_not_found = 'pagenotfound';
 
 	/**
-	 * @var array List of controllers where are stored controllers
+	 * @var string Front controller to use
 	 */
-	protected $controller_directories = array();
+	protected $front_controller = self::FC_FRONT;
 
 	/**
 	 * Get current instance of dispatcher (singleton)
@@ -173,8 +184,26 @@ class DispatcherCore
 	 */
 	protected function __construct()
 	{
-		$this->setDefaultController('index');
-		$this->setControllerDirectories(_PS_FRONT_CONTROLLER_DIR_);
+		// Select right front controller
+		if (defined('_PS_ADMIN_DIR_'))
+		{
+			$this->front_controller = self::FC_ADMIN;
+			$this->controller_not_found = 'adminnotfound';
+			$this->default_controller = 'adminhome';
+		}
+		else if (Tools::getValue('fc') == 'module')
+		{
+			$this->front_controller = self::FC_MODULE;
+			$this->controller_not_found = 'pagenotfound';
+			$this->default_controller = 'default';
+		}
+		else
+		{
+			$this->front_controller = self::FC_FRONT;
+			$this->controller_not_found = 'pagenotfound';
+			$this->default_controller = 'index';
+		}
+
 		$this->use_routes = (bool)Configuration::get('PS_REWRITING_SETTINGS');
 		$this->loadRoutes();
 
@@ -184,78 +213,6 @@ class DispatcherCore
 		else if (isset($_SERVER['HTTP_X_REWRITE_URL']))
 			$this->request_uri = $_SERVER['HTTP_X_REWRITE_URL'];
 		$this->request_uri = rawurldecode($this->request_uri);
-	}
-
-	/**
-	 * Set default controller, which will be used if http parameter 'controller' is empty
-	 *
-	 * @param string $controller
-	 */
-	public function setDefaultController($controller)
-	{
-		$this->default_controller = $controller;
-	}
-
-	/**
-	 * Controller to use if found controller doesn't exist
-	 *
-	 * @var string $controller
-	 */
-	public function setControllerNotFound($controller)
-	{
-		$this->controller_not_found = $controller;
-	}
-
-	/**
-	 * Set list of controllers where are stored controllers
-	 *
-	 * @param mixed A directory, or an array of directory
-	 */
-	public function setControllerDirectories($dir)
-	{
-		if (!is_array($dir))
-			$dir = array($dir);
-		$this->controller_directories = $dir;
-	}
-
-	/**
-	 * Get the controller row in db
-	 *
-	 * @param string $name
-	 */
-	public static function getAdminController($name)
-	{
-		if (!Validate::isTabName($name))
-		return false;
-
-		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT id_tab, class_name, module
-		FROM `'._DB_PREFIX_.'tab`
-		WHERE LOWER(class_name) = \''.pSQL($name).'\'');
-		return $row;
-	}
-
-	/**
-	 * Include the file containing a controller or tab from a mdodule
-	 *
-	 * @param string $module
-	 * @param string $name controller name
-	 * @return string|bool controller type or false if file not found
-	 */
-	public static function includeModuleClass($module, $name)
-	{
-		if (file_exists(_PS_MODULE_DIR_.$module.'/'.$name.'Controller.php'))
-		{
-			include(_PS_MODULE_DIR_.$module.'/'.$name.'Controller.php');
-			return 'controller';
-		}
-
-		if (file_exists(_PS_MODULE_DIR_.$module.'/'.$name.'.php'))
-		{
-			include(_PS_MODULE_DIR_.$module.'/'.$name.'.php');
-			return 'tab';
-		}
-		return false;
 	}
 
 	/**
@@ -273,67 +230,91 @@ class DispatcherCore
 				$this->request_uri = substr($this->request_uri, 3);
 			}
 
-		// Get current controller and list of controllers
+		// Get current controller
 		$this->getController();
-
 		if (!$this->controller)
 			$this->controller = $this->default_controller;
 
-		// FO dispatch
-		if (!defined('_PS_ADMIN_DIR_'))
+		// Dispatch with right front controller
+		switch ($this->front_controller)
 		{
-			$controllers = self::getControllers($this->controller_directories);
- 			if (!isset($controllers[$this->controller]))
- 				$this->controller = strtolower($this->controller_not_found);
- 			$controller_class = $controllers[$this->controller];
+			// Dispatch front office controller
+			case self::FC_FRONT :
+				$controllers = Dispatcher::getControllers(_PS_FRONT_CONTROLLER_DIR_);
 
-			// If module controller is called, we have to call the right module controller
-			if ($controller_class == 'ModuleController')
-			{
-				$module_name = Tools::getValue('module');
+				$controllers['index'] = 'IndexController';
+				if (isset($controllers['auth']))
+					$controllers['authentication'] = $controllers['auth'];
+				if (isset($controllers['compare']))
+					$controllers['productscomparison'] = $controllers['compare'];
+
+				if (!isset($controllers[$this->controller]))
+					$this->controller = 'pagenotfound';
+				$controller_class = $controllers[$this->controller];
+			break;
+
+			// Dispatch module controller for front office
+			case self::FC_MODULE :
+				$module_name = Validate::isModuleName(Tools::getValue('module')) ? Tools::getValue('module') : '';
 				$module = Module::getInstanceByName($module_name);
-				if (Validate::isLoadedObject($module) && $module->active && file_exists(_PS_MODULE_DIR_.$module_name.'/'.$module_name.'Controller.php'))
+				$controller_class = 'PageNotFoundController';
+				if (Validate::isLoadedObject($module) && $module->active)
 				{
-					include_once(_PS_MODULE_DIR_.$module_name.'/'.$module_name.'Controller.php');
-					$controller_class = 'Module'.$module_name.'Controller';
+					$controllers = Dispatcher::getControllers(_PS_MODULE_DIR_.$module_name.'/controllers/front/');
+					if (isset($controllers[$this->controller]))
+					{
+						include_once(_PS_MODULE_DIR_.$module_name.'/controllers/front/'.$this->controller.'.php');
+						$controller_class = $module_name.$this->controller.'ModuleFrontController';
+					}
+				}
+			break;
+
+			// Dispatch back office controller + module back office controller
+			case self::FC_ADMIN :
+				$tab = Tab::getInstanceFromClassName($this->controller);
+				$retrocompatibility_admin_tab = null;
+				if ($tab->module)
+				{
+					if (file_exists(_PS_MODULE_DIR_.$tab->module.'/'.$tab->class_name.'.php'))
+						$retrocompatibility_admin_tab = _PS_MODULE_DIR_.$tab->module.'/'.$tab->class_name.'.php';
+					else
+					{
+						$controllers = Dispatcher::getControllers(_PS_MODULE_DIR_.$tab->module.'/controllers/admin/');
+						if (!isset($controllers[$this->controller]))
+						{
+							$this->controller = 'adminnotfound';
+							$controller_class = 'AdminNotFoundController';
+						}
+						else
+						{
+							include_once(_PS_MODULE_DIR_.$tab->module.'/controllers/admin/'.$this->controller.'.php');
+							$controller_class = $controllers[$this->controller].'Controller';
+						}
+					}
 				}
 				else
-					$controller_class = $controllers[$this->controller_not_found];
-			}
-		}
-		// BO dispatch
-		else
-		{
-			// Get controller class name
-			$controller_row = self::getAdminController($this->controller);
-			if (empty($controller_row))
-			{
-				// We need controller_not_found to be the camelcase controller name
-				$this->controller = strtolower($this->controller_not_found);
-				$controller_class = $this->controller_not_found;
-			}
-			else
-				$controller_class = $controller_row['class_name'];
+				{
+					$controllers = Dispatcher::getControllers(array(_PS_ADMIN_DIR_.'/tabs/', _PS_ADMIN_CONTROLLER_DIR_));
+					if (!isset($controllers[$this->controller]))
+						$this->controller = 'adminnotfound';
+					$controller_class = $controllers[$this->controller];
 
-			// If Tab/Controller is in module, include it
-			if (!empty($controller_row['module']))
-				$controller_type = self::includeModuleClass($controller_row['module'], $controller_class);
-			// If it is an AdminTab, include it
-			else if (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php'))
-			{
-				include(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php');
-				$controller_type = 'tab';
-			}
-			// For retrocompatibility with admin/tabs/ old system
-			if (isset($controller_type) && $controller_type == 'tab')
-			{
-				require_once(_PS_ADMIN_DIR_.'/functions.php');
-				$ajax_mode = !empty($_REQUEST['ajaxMode']);
-				runAdminTab($controller_class, $ajax_mode);
-				return;
-			}
+					if (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php'))
+						$retrocompatibility_admin_tab = _PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php';
+				}
 
-			$controller_class = $controller_class.'Controller';
+				// @retrocompatibility with admin/tabs/ old system
+				if ($retrocompatibility_admin_tab)
+				{
+					include_once($retrocompatibility_admin_tab);
+					include_once(_PS_ADMIN_DIR_.'/functions.php');
+					runAdminTab($this->controller, !empty($_REQUEST['ajaxMode']));
+					return;
+				}
+			break;
+
+			default :
+				throw new PrestaShopException('Bad front controller chosen');
 		}
 
 		// Instantiate controller
@@ -341,7 +322,7 @@ class DispatcherCore
 		{
 			Controller::getController($controller_class)->run();
 		}
-		catch (PrestashopException $e)
+		catch (PrestaShopException $e)
 		{
 			$e->displayMessage();
 		}
@@ -354,7 +335,13 @@ class DispatcherCore
 	{
 		$context = Context::getContext();
 		foreach ($this->default_routes as $id => $route)
-			$this->addRoute($id, $route['rule'], $route['controller'], $route['keywords']);
+			$this->addRoute(
+				$id,
+				$route['rule'],
+				$route['controller'],
+				$route['keywords'],
+				isset($route['params']) ? $route['params'] : array()
+			);
 
 		if ($this->use_routes)
 		{
@@ -380,7 +367,13 @@ class DispatcherCore
 			// Load custom routes
 			foreach ($this->default_routes as $route_id => $route_data)
 				if ($custom_route = Configuration::get('PS_ROUTE_'.$route_id))
-					$this->addRoute($route_id, $custom_route, $route_data['controller'], $route_data['keywords']);
+					$this->addRoute(
+						$route_id,
+						$custom_route,
+						$route_data['controller'],
+						$route_data['keywords'],
+						isset($route_data['params']) ? $route_data['params'] : array()
+					);
 		}
 	}
 
@@ -390,7 +383,7 @@ class DispatcherCore
 	 * @param string $rule Url rule
 	 * @param string $controller Controller to call if request uri match the rule
 	 */
-	public function addRoute($route_id, $rule, $controller, $keywords = array())
+	public function addRoute($route_id, $rule, $controller, array $keywords = array(), array $params = array())
 	{
 		$regexp = preg_quote($rule, '#');
 		if ($keywords)
@@ -417,12 +410,13 @@ class DispatcherCore
 			$keywords = $transform_keywords;
 		}
 
-		$regexp = '#^/'.$regexp.'#u';
+		$regexp = '#^/'.$regexp.'(\?.*)?$#u';
 		$this->routes[$route_id] = array(
 			'rule' =>		$rule,
 			'regexp' =>		$regexp,
 			'controller' =>	$controller,
 			'keywords' =>	$keywords,
+			'params' =>		$params,
 		);
 	}
 
@@ -469,11 +463,8 @@ class DispatcherCore
 	 * @param bool $use_routes If false, don't use to create this url
 	 * @param string $anchor Optional anchor to add at the end of this url
 	 */
-	public function createUrl($route_id, $params = array(), $use_routes = true, $anchor = '')
+	public function createUrl($route_id, array $params = array(), $use_routes = true, $anchor = '')
 	{
-		if (!is_array($params))
-			die('Dispatcher::createUrl() $params must be an array');
-
 		if (!isset($this->routes[$route_id]))
 		{
 			$query = http_build_query($params);
@@ -482,7 +473,7 @@ class DispatcherCore
 		$route = $this->routes[$route_id];
 
 		// Check required fields
-		$query_params = array();
+		$query_params = isset($route['params']) ? $route['params'] : array();
 		foreach ($route['keywords'] as $key => $data)
 		{
 			if (!$data['required'])
@@ -520,7 +511,16 @@ class DispatcherCore
 		}
 		// Build a classic url index.php?controller=foo&...
 		else
-			$url = 'index.php?controller='.$route['controller'].(($query_params) ? '&'.http_build_query($query_params) : '');
+		{
+			$add_params = array();
+			foreach ($params as $key => $value)
+				if (!isset($route['keywords'][$key]) && !isset($this->default_routes[$route_id]['keywords'][$key]))
+					$add_params[$key] = $value;
+
+			if (!empty($route['controller']))
+				$query_params['controller'] = $route['controller'];
+			$url = 'index.php?'.http_build_query(array_merge($add_params, $query_params));
+		}
 
 		return $url.$anchor;
 	}
@@ -537,7 +537,7 @@ class DispatcherCore
 
 		$controller = Tools::getValue('controller');
 
-		if (isset($controller) && preg_match('/^([0-9a-z_-]+)\?(.*)=(.*)$/Ui', $controller, $m))
+		if (isset($controller) && is_string($controller) && preg_match('/^([0-9a-z_-]+)\?(.*)=(.*)$/Ui', $controller, $m))
 		{
 			$controller = $m[1];
 			if (isset($_GET['controller']))
@@ -545,13 +545,14 @@ class DispatcherCore
 			else if (isset($_POST['controller']))
 				$_POST[$m[2]] = $m[3];
 		}
-
+		if (!Validate::isControllerName($controller))
+			$controller = false;
 		// Use routes ? (for url rewriting)
 		if ($this->use_routes && !$controller)
 		{
 			if (!$this->request_uri)
 				return strtolower($this->controller_not_found);
-			$controller = $this->default_controller;
+			$controller = $this->controller_not_found;
 
 			// Add empty route as last route to prevent this greedy regexp to match request uri before right time
 			if ($this->empty_route)
@@ -561,10 +562,17 @@ class DispatcherCore
 				if (preg_match($route['regexp'], $this->request_uri, $m))
 				{
 					// Route found ! Now fill $_GET with parameters of uri
-					$controller = $route['controller'];
 					foreach ($m as $k => $v)
 						if (!is_numeric($k))
 							$_GET[$k] = $v;
+
+					$controller = $route['controller'] ? $route['controller'] : $_GET['controller'];
+					if (!empty($route['params']))
+						foreach ($route['params'] as $k => $v)
+							$_GET[$k] = $v;
+
+					if (isset($_GET['fc']) && $_GET['fc'] == 'module')
+						$this->front_controller = self::FC_MODULE;
 					break;
 				}
 
@@ -595,14 +603,6 @@ class DispatcherCore
 		$controllers = array();
 		foreach ($dirs as $dir)
 			$controllers = array_merge($controllers, Dispatcher::getControllersInDirectory($dir));
-
-		// Add default controllers
-		$controllers['index'] = 'IndexController';
-		if (isset($controllers['auth']))
-			$controllers['authentication'] = $controllers['auth'];
-		if (isset($controllers['compare']))
-			$controllers['productscomparison'] = $controllers['compare'];
-
 		return $controllers;
 	}
 
@@ -614,6 +614,9 @@ class DispatcherCore
 	 */
 	public static function getControllersInDirectory($dir)
 	{
+		if (!is_dir($dir))
+			return array();
+
 		$controllers = array();
 		$controller_files = scandir($dir);
 		foreach ($controller_files as $controller_filename)

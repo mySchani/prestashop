@@ -23,6 +23,8 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+var ajax_running_timeout = null;
+
 if (!id_language)
 	var id_language = Number(1);
 
@@ -52,13 +54,16 @@ function str2url(str,encoding,ucfirst)
 	str = str.replace(/[\u0155]/g,'r');
 
 	str = str.replace(/[^a-z0-9\s\'\:\/\[\]-]\\u00A1-\\uFFFF/g,'');
+	str = str.replace(/[\u0028\u0029\u0021\u003F\u002E\u0026\u005E\u007E\u002B\u002A\u002F\u003A\u003B\u003C\u003D\u003E]/g,'');
 	str = str.replace(/[\s\'\:\/\[\]-]+/g,' ');
-	str = str.replace(/[ ]/g,'-');
-	str = str.replace(/[\/]/g,'-');
+
+	// Add special char not used for url rewrite
+	str = str.replace(/[ ]/g, '-');
+	str = str.replace(/[\/\\"'|,;]*/g, '');
 
 	if (ucfirst == 1) {
-		c = str.charAt(0);
-		str = c.toUpperCase()+str.slice(1);
+		var first_char = str.charAt(0);
+		str = first_char.toUpperCase()+str.slice(1);
 	}
 
 	return str;
@@ -90,8 +95,8 @@ function strToAltImgAttr(str,encoding,ucfirst)
 	str = str.replace(/[\s\'\:\/\[\]-]+/g,' ');
 
 	if (ucfirst == 1) {
-		c = str.charAt(0);
-		str = c.toUpperCase()+str.slice(1);
+		var first_char = str.charAt(0);
+		str = first_char.toUpperCase()+str.slice(1);
 	}
 
 	return str;
@@ -100,6 +105,8 @@ function strToAltImgAttr(str,encoding,ucfirst)
 function copy2friendlyURL()
 {
 	$('#link_rewrite_' + id_language).val(str2url($('#name_' + id_language).val().replace(/^[0-9]+\./, ''), 'UTF-8'));
+	if ($('#friendly-url'))
+		$('#friendly-url').html($('#link_rewrite_' + id_language).val());
 	return;
 }
 
@@ -407,11 +414,11 @@ if (helpboxes)
 		if ($('input'))
 		{
 			//Display by rollover
-			$('input').mouseover(function() { 
-			$(this).parent().find('.hint:first').css('display', 'block'); 
+			$('input').mouseover(function() {
+			$(this).parent().find('.hint:first').css('display', 'block');
 			});
 			$('input').mouseout(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
-			
+
 			//display when you press the tab key
 			$('input').keydown(function (e) {
 				if ( e.keyCode === 9 ){
@@ -419,15 +426,15 @@ if (helpboxes)
 					$('input').blur(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
 				}
 			});
-		}		
+		}
 		if ($('select'))
 		{
 			//Display by rollover
-			$('select').mouseover(function() { 
-			$(this).parent().find('.hint:first').css('display', 'block'); 
+			$('select').mouseover(function() {
+			$(this).parent().find('.hint:first').css('display', 'block');
 			});
 			$('select').mouseout(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
-			
+
 			//display when you press the tab key
 			$('select').keydown(function (e) {
 				if ( e.keyCode === 9 ){
@@ -439,26 +446,26 @@ if (helpboxes)
 		if ($('span.title_box'))
 		{
 			//Display by rollover
-			$('span.title_box').mouseover(function() { 
+			$('span.title_box').mouseover(function() {
 				//get reference to the hint box
 				var parent = $(this).parent();
-				var box = parent.find('.hint:first'); 
+				var box = parent.find('.hint:first');
 
 				if (box.length > 0)
 				{
 					//gets parent position
 					var left_position = parent.offset().left;
-				
+
 					//gets width of the box
 					var box_width = box.width();
-				
+
 					//gets width of the screen
 					var document_width = $(document).width();
-			
+
 					//changes position of the box if needed
 					if (document_width < (left_position + box_width))
 						box.css('margin-left', '-' + box_width + 'px');
-				
+
 					//shows the box
 					box.css('display', 'block');
 				}
@@ -470,7 +477,7 @@ if (helpboxes)
 
 /**
  * Deprecated
- * 
+ *
  * @param id_product
  * @param id_image
  */
@@ -874,36 +881,7 @@ function submitAddcmsAndPreview()
 	$('#cms').submit();
 }
 
-function showHelp(url, label, iso_lang, ps_version, doc_version, country)
-{
-    trackClickOnHelp(label, doc_version);
-    $('#help-'+label).attr('src','../img/admin/help2.png');
-    window.open(url +'/'+iso_lang+'/doc/'+label+'?version='+ps_version+'&country='+country+'#', '_blank', 'scrollbars=yes,menubar=no,toolbar=no,location=no,width=517,height=600');
-    return false;
-}
 
-
-function trackClickOnHelp(label, doc_version)
-{
-   	$.ajax({
-		url: 'ajax.php',
-		data: 'submitTrackClickOnHelp&label='+ label +'&version='+doc_version
-	});
-}
-
-$(document).ready(function()
-{
-	$('.isInvisible input, .isInvisible select, .isInvisible textarea').attr('disabled', true);
-	$('.isInvisible label.conf_title').addClass('isDisabled');
-	
-	// Disable options fields for each row with a multishop default checkbox
-	$('.preference_default_multishop input[type=checkbox]').each(function(k, v)
-	{
-		var key = $(v).attr('name');
-		var len = key.length;
-		checkMultishopDefaultValue(v, key.substr(17, len - 18));
-	});
-});
 
 function checkMultishopDefaultValue(obj, key)
 {
@@ -921,7 +899,7 @@ function checkMultishopDefaultValue(obj, key)
 }
 /**
  * Update the product image list position buttons
- * 
+ *
  * @param DOM table imageTable
  */
 function refreshImagePositions(imageTable)
@@ -958,7 +936,7 @@ function doAdminAjax(data, success_func, error_func)
 			if (error_func)
 				return error_func(data);
 
-			jAlert("[TECHNICAL ERROR]");
+			alert("[TECHNICAL ERROR]");
 		}
 	});
 }
@@ -966,27 +944,42 @@ function doAdminAjax(data, success_func, error_func)
 /** display a success message in a #ajax_confirmation container
  * @param string msg string to display
  */
-function showSuccessMessage(msg)
+function showSuccessMessage(msg, delay)
 {
+	if (!delay)
+		delay = 3000;
 	$("#ajax_confirmation")
-		.html("<div class=\"conf\">"+msg+"</div>").show().delay(3000).fadeOut("slow");
+		.html("<div class=\"conf\">"+msg+"</div>").show().delay(delay).fadeOut("slow");
 }
-			
+
 /** display a warning message in a #ajax_confirmation container
  * @param string msg string to display
  */
-function showErrorMessage(msg)
+function showErrorMessage(msg, delay)
 {
-	$("#ajax_confirmation").show()
-		.html("<div class=\"error\">"+msg+"</div>").delay(3000).fadeOut("slow");
+	if (!delay)
+		delay = 5000;
+	$("#ajax_confirmation")
+		.html("<div class=\"error\">"+msg+"</div>").show().delay(delay).fadeOut("slow");
 }
 
 $(document).ready(function(){
-	$(".copy2friendlyUrl").live('keyup',function(e){
-		if(!isArrowKey(e))
-			return copy2friendlyURL()
+	$('.isInvisible input, .isInvisible select, .isInvisible textarea').attr('disabled', true);
+	$('.isInvisible label.conf_title').addClass('isDisabled');
+
+	// Disable options fields for each row with a multishop default checkbox
+	$('.preference_default_multishop input[type=checkbox]').each(function(k, v)
+	{
+		var key = $(v).attr('name');
+		var len = key.length;
+		checkMultishopDefaultValue(v, key.substr(17, len - 18));
 	});
-	
+
+	$(".copy2friendlyUrl").live('keyup change',function(e){
+		if(!isArrowKey(e))
+			return copy2friendlyURL();
+	});
+
 	// on live will make this binded for dynamic content
 	$(".updateCurrentText").live('keyup change',function(e){
 		if(typeof e == KeyboardEvent)
@@ -996,7 +989,7 @@ $(document).ready(function(){
 		updateCurrentText()
 	});
 
-	$(".copyMeta2friendlyURL").live('keyup',function(e){
+	$(".copyMeta2friendlyURL").live('keyup change',function(e){
 		if(!isArrowKey(e))
 			return copyMeta2friendlyURL()
 	});
@@ -1011,11 +1004,28 @@ $(document).ready(function(){
 
 	view.bind("scroll", function(e) {
 		var heightView = view.height();
-		var btnPlace = scroll.offset().top;
+		if (scroll.offset())
+			var btnPlace = scroll.offset().top;
+		else
+			var btnPlace = 0;
 		if (heightView < btnPlace)
 			scroll.show();
 		else
 			scroll.hide();
+	});
+
+	$('#ajax_running').ajaxStart(function() {
+		ajax_running_timeout = setTimeout(function() {showAjaxOverlay()}, 1000);
+	});
+
+	$('#ajax_running').ajaxStop(function() {
+		$(this).slideUp('fast');
+		clearTimeout(ajax_running_timeout);
+	});
+
+	$('#ajax_running').ajaxError(function() {
+		$(this).slideUp('fast');
+		clearTimeout(ajax_running_timeout);
 	});
 });
 
@@ -1036,4 +1046,126 @@ function stripHTML(oldString)
 		if(!inTag) newString += oldString.charAt(i);
 	}
 	return newString;
+}
+
+/**
+ * Display a loading bar while an ajax call is ongoing.
+ *
+ * To prevent the loading bar display for a specific ajax call, set the beforeSend event in your ajax declaration:
+ * 		beforeSend : function(data)
+ 		{
+ 			// don't display the loading notification bar
+ 			clearTimeout(ajax_running_timeout);
+ 		}
+ */
+function showAjaxOverlay()
+{
+	$('#ajax_running').slideDown('fast');
+	clearTimeout(ajax_running_timeout);
+}
+
+function display_action_details(row_id, controller, token, action, params) {
+	var id = action+'_'+row_id;
+	var current_element = $('#details_'+id);
+	if (!current_element.data('dataMaped')) {
+		var ajax_params = {
+			'id': row_id,
+			'controller': controller,
+			'token': token,
+			'action': action,
+			'ajax': true
+		};
+
+		$.each(params, function(k, v)
+		{
+			ajax_params[k] = v;
+		});
+
+		$.ajax({
+			url: 'index.php',
+			data: ajax_params,
+			dataType: 'json',
+			context: current_element,
+			async: false,
+			success: function(data) {
+				if (typeof(data.use_parent_structure) == 'undefined' || (data.use_parent_structure == true))
+				{
+					if (current_element.parent().parent().hasClass('alt_row'))
+						var alt_row = true;
+					else
+						var alt_row = false;
+					current_element.parent().parent().after($('<tr class="details_'+id+' small '+(alt_row ? 'alt_row' : '')+'"></tr>')
+						.append($('<td style="border:none!important;" class="empty"></td>')
+						.attr('colspan', current_element.parent().parent().find('td').length)));
+					$.each(data.data, function(it, row)
+					{
+						var bg_color = ''; // Color
+						if (row.color)
+							bg_color = 'style="background:' + row.color +';"';
+
+						var content = $('<tr class="action_details details_'+id+' '+(alt_row ? 'alt_row' : '')+'"></tr>');
+						content.append($('<td class="empty"></td>'));
+						var first = true;
+						var count = 0; // Number of non-empty collum
+						$.each(row, function(it)
+						{
+							if(typeof(data.fields_display[it]) != 'undefined')
+								count++;
+						});
+						$.each(data.fields_display, function(it, line)
+						{
+							if (typeof(row[it]) == 'undefined')
+							{
+								if (first || count == 0)
+									content.append($('<td class="'+current_element.align+' empty"' + bg_color + '></td>'));
+								else
+									content.append($('<td class="'+current_element.align+'"' + bg_color + '></td>'));
+							}
+							else
+							{
+								count--;
+								if (first)
+								{
+									first = false;
+									content.append($('<td class="'+current_element.align+' first"' + bg_color + '>'+row[it]+'</td>'));
+								}
+								else if (count == 0)
+									content.append($('<td class="'+current_element.align+' last"' + bg_color + '>'+row[it]+'</td>'));
+								else
+									content.append($('<td class="'+current_element.align+' '+count+'"' + bg_color + '>'+row[it]+'</td>'));
+							}
+						});
+						content.append($('<td class="empty"></td>'));
+						current_element.parent().parent().after(content.show('slow'));
+					});
+				}
+				else
+				{
+					if (current_element.parent().parent().hasClass('alt_row'))
+						var content = $('<tr class="details_'+id+' alt_row"></tr>');
+					else
+						var content = $('<tr class="details_'+id+'"></tr>');
+					content.append($('<td style="border:none!important;">'+data.data+'</td>').attr('colspan', current_element.parent().parent().find('td').length));
+					current_element.parent().parent().after(content);
+					current_element.parent().parent().parent().find('.details_'+id).hide();
+				}
+				current_element.data('dataMaped',true);
+				current_element.data('opened', false);
+				initTableDnD('.details_'+id+' table.tableDnD');
+			}
+		});
+	}
+
+	if (current_element.data('opened'))
+	{
+		current_element.find('img').attr('src', '../img/admin/more.png');
+		current_element.parent().parent().parent().find('.details_'+id).hide('fast');
+		current_element.data('opened', false);
+	}
+	else
+	{
+		current_element.find('img').attr('src', '../img/admin/less.png');
+		current_element.parent().parent().parent().find('.details_'+id).show('fast');
+		current_element.data('opened', true);
+	}
 }

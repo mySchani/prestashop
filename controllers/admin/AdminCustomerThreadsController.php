@@ -111,11 +111,12 @@ class AdminCustomerThreadsControllerCore extends AdminController
 				'width' => 50,
 				'filter_key' => 'messages',
 				'tmpTableFilter' => true,
-				'maxlength' => 0
+				'maxlength' => 40
 			),
 			'date_upd' => array(
 				'title' => $this->l('Last message'),
-				'width' => 90
+				'width' => 90,
+				'havingFilter' => true
 			)
 		);
 
@@ -327,7 +328,7 @@ class AdminCustomerThreadsControllerCore extends AdminController
 					}
 				}
 				else
-					$this->_errors[] = '<div class="alert error">'.Tools::displayError('Email invalid.').'</div>';
+					$this->errors[] = '<div class="alert error">'.Tools::displayError('Email invalid.').'</div>';
 			}
 			if (Tools::isSubmit('submitReply'))
 			{
@@ -338,7 +339,7 @@ class AdminCustomerThreadsControllerCore extends AdminController
 				$cm->message = Tools::htmlentitiesutf8(Tools::nl2br(Tools::getValue('reply_message')));
 				$cm->ip_address = ip2long($_SERVER['REMOTE_ADDR']);
 				if (isset($_FILES) && !empty($_FILES['joinFile']['name']) && $_FILES['joinFile']['error'] != 0)
-					$this->_errors[] = Tools::displayError('An error occurred with the file upload.');
+					$this->errors[] = Tools::displayError('An error occurred with the file upload.');
 				else if ($cm->add())
 				{
 					$file_attachment = null;
@@ -371,7 +372,7 @@ class AdminCustomerThreadsControllerCore extends AdminController
 					);
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred, your message was not sent.  Please contact your system administrator.');
+					$this->errors[] = Tools::displayError('An error occurred, your message was not sent.  Please contact your system administrator.');
 			}
 		}
 
@@ -381,12 +382,12 @@ class AdminCustomerThreadsControllerCore extends AdminController
 	public function initContent()
 	{
 		if (isset($_GET['filename']) && file_exists(_PS_UPLOAD_DIR_.$_GET['filename']))
-			self::openUploadedFile();
+			AdminCustomerThreadsController::openUploadedFile();
 
 		return parent::initContent();
 	}
 
-	private function openUploadedFile()
+	protected function openUploadedFile()
 	{
 		$filename = $_GET['filename'];
 
@@ -522,9 +523,9 @@ class AdminCustomerThreadsControllerCore extends AdminController
 		return parent::renderView();
 	}
 
-	private function displayMessage($message, $email = false, $id_employee = null)
+	protected function displayMessage($message, $email = false, $id_employee = null)
 	{
-		$tpl = $this->context->smarty->createTemplate($this->tpl_folder.'message.tpl');
+		$tpl = $this->createTemplate('message.tpl');
 
 		$contacts = Contact::getContacts($this->context->language->id);
 
@@ -559,7 +560,7 @@ class AdminCustomerThreadsControllerCore extends AdminController
 		return $tpl->fetch();
 	}
 
-	private function displayButton($content)
+	protected function displayButton($content)
 	{
 		return '
 		<div style="margin-bottom:10px;border:1px solid #005500;width:200px;height:130px;padding:10px;background:#EFE">

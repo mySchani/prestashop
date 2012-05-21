@@ -74,7 +74,16 @@ class CategoryCore extends ObjectModel
 	/** @var string Object last modification date */
 	public $date_upd;
 
+	/** @var boolean is Category Root */
+	public $is_root_category;
+
 	public $groupBox;
+
+	/** @var boolean does the product have to be removed during the delete process */
+	public $remove_products = true;
+
+	/** @var boolean does the product have to be disable during the delete process */
+	public $disable_products = false;
 
 	protected static $_links = array();
 
@@ -92,6 +101,7 @@ class CategoryCore extends ObjectModel
 			'level_depth' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
 			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
 			'id_parent' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'is_root_category' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'position' => 			array('type' => self::TYPE_INT),
 			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 			'date_upd' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
@@ -140,43 +150,70 @@ class CategoryCore extends ObjectModel
 		return strip_tags(stripslashes($description));
 	}
 
-	public	function add($autodate = true, $nullValues = false)
+	public function add($autodate = true, $null_values = false)
 	{
-		$this->position = self::getLastPosition((int)$this->id_parent);
 		if (!isset($this->level_depth))
 			$this->level_depth = $this->calcLevelDepth();
-		$ret = parent::add($autodate);
+		$ret = parent::add($autodate, $null_values);
+		if (isset($_POST['checkBoxShopAsso_category']))
+			foreach ($_POST['checkBoxShopAsso_category'] as $row)
+			{
+				foreach ($row as $id_shop => $value)
+				{
+					$position = Category::getLastPosition((int)$this->id_parent, $id_shop);
+					$this->addPosition($position, $id_shop);
+				}
+			}
+		else
+			foreach (Shop::getShops(true) as $shop)
+			{
+				$position = Category::getLastPosition((int)$this->id_parent, $shop['id_shop']);
+				$this->addPosition($position, $shop['id_shop']);
+			}
 		if (!isset($this->doNotRegenerateNTree) || !$this->doNotRegenerateNTree)
-			self::regenerateEntireNtree();
+			Category::regenerateEntireNtree();
 		$this->updateGroup($this->groupBox);
-		Hook::exec('categoryAddition', array('category' => $this));
+		Hook::exec('actionCategoryAdd', array('category' => $this));
 		return $ret;
 	}
 
 	/**
 	 * update category positions in parent
 	 *
-	 * @param mixed $nullValues
+	 * @param mixed $null_values
 	 * @return void
 	 */
-	public function update($nullValues = false)
+	public function update($null_values = false)
 	{
 		if ($this->id_parent == $this->id)
-			throw new PrestashopException('a category cannot be it\'s own parent');
+			throw new PrestaShopException('a category cannot be it\'s own parent');
 		// Update group selection
 		$this->updateGroup($this->groupBox);
 		$this->level_depth = $this->calcLevelDepth();
-		$this->cleanPositions((int)$this->id_parent);
 		// If the parent category was changed, we don't want to have 2 categories with the same position
 		if ($this->getDuplicatePosition())
-			$this->position = self::getLastPosition((int)$this->id_parent);
-		$ret = parent::update($nullValues);
+		{
+			$assos = array();
+			if (Tools::isSubmit('checkBoxShopAsso_category'))
+			{
+				$check_box = Tools::getValue('checkBoxShopAsso_category');
+				foreach ($check_box as $id_asso_object => $row)
+				{
+					foreach ($row as $id_shop => $value)
+						$assos[] = array('id_object' => (int)$id_asso_object, 'id_shop' => (int)$id_shop);
+				}
+			}
+			foreach ($assos as $shop)
+				$this->addPosition(Category::getLastPosition((int)$this->id_parent, $shop['id_shop']), $shop['id_shop']);
+		}
+		$this->cleanPositions((int)$this->id_parent);
+		$ret = parent::update($null_values);
 		if (!isset($this->doNotRegenerateNTree) || !$this->doNotRegenerateNTree)
 		{
-			self::regenerateEntireNtree();
+			Category::regenerateEntireNtree();
 			$this->recalculateLevelDepth($this->id_category);
 		}
-		Hook::exec('categoryUpdate', array('category' => $this));
+		Hook::exec('actionCategoryUpdate', array('category' => $this));
 		return $ret;
 	}
 
@@ -186,20 +223,20 @@ class CategoryCore extends ObjectModel
 	public function toggleStatus()
 	{
 		$result = parent::toggleStatus();
-		Hook::exec('categoryUpdate');
+		Hook::exec('actionCategoryUpdate');
 		return $result;
 	}
 
 	/**
-	  * Recursive scan of subcategories
-	  *
-	  * @param integer $max_depth Maximum depth of the tree (i.e. 2 => 3 levels depth)
- 	  * @param integer $current_depth specify the current depth in the tree (don't use it, only for rucursivity!)
- 	  * @param integer $id_lang Specify the id of the language used
-	  * @param array $excluded_ids_array specify a list of ids to exclude of results
-	  *
- 	  * @return array Subcategories lite tree
-	  */
+	 * Recursive scan of subcategories
+	 *
+	 * @param integer $max_depth Maximum depth of the tree (i.e. 2 => 3 levels depth)
+ 	 * @param integer $current_depth specify the current depth in the tree (don't use it, only for rucursivity!)
+ 	 * @param integer $id_lang Specify the id of the language used
+	 * @param array $excluded_ids_array specify a list of ids to exclude of results
+	 *
+	 * @return array Subcategories lite tree
+	 */
 	public function recurseLiteCategTree($max_depth = 3, $current_depth = 0, $id_lang = null, $excluded_ids_array = null)
 	{
 		$id_lang = is_null($id_lang) ? Context::getContext()->language->id : (int)$id_lang;
@@ -236,20 +273,20 @@ class CategoryCore extends ObjectModel
 		str_repeat('&nbsp;', $current['infos']['level_depth'] * 5).stripslashes($current['infos']['name']).'</option>';
 		if (isset($categories[$id_category]))
 			foreach (array_keys($categories[$id_category]) as $key)
-				self::recurseCategory($categories, $categories[$id_category][$key], $key, $id_selected);
+				Category::recurseCategory($categories, $categories[$id_category][$key], $key, $id_selected);
 	}
 
 
 	/**
-	  * Recursively add specified category childs to $to_delete array
-	  *
-	  * @param array &$to_delete Array reference where categories ID will be saved
-	  * @param array $id_category Parent category ID
-	  */
+	 * Recursively add specified category childs to $to_delete array
+	 *
+	 * @param array &$to_delete Array reference where categories ID will be saved
+	 * @param array $id_category Parent category ID
+	 */
 	protected function recursiveDelete(&$to_delete, $id_category)
 	{
-	 	if (!is_array($to_delete) || !$id_category)
-	 		die(Tools::displayError());
+		if (!is_array($to_delete) || !$id_category)
+			die(Tools::displayError());
 
 		$result = Db::getInstance()->executeS('
 		SELECT `id_category`
@@ -280,8 +317,9 @@ class CategoryCore extends ObjectModel
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'category_lang` WHERE `id_category` IN ('.$list.')');
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'category_product` WHERE `id_category` IN ('.$list.')');
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'category_group` WHERE `id_category` IN ('.$list.')');
+		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'category_shop` WHERE `id_category` IN ('.$list.')');
 
-		self::cleanPositions($this->id_parent);
+		Category::cleanPositions($this->id_parent);
 
 		/* Delete category images and its children images */
 		$tmp_category = new Category();
@@ -291,7 +329,7 @@ class CategoryCore extends ObjectModel
 			$tmp_category->deleteImage();
 		}
 
-		/* Delete products which were not in others categories */
+		/* Delete or link products which were not in others categories */
 		$result = Db::getInstance()->executeS('
 			SELECT `id_product`
 			FROM `'._DB_PREFIX_.'product`
@@ -301,7 +339,18 @@ class CategoryCore extends ObjectModel
 		{
 			$product = new Product((int)$p['id_product']);
 			if (Validate::isLoadedObject($product))
-				$product->delete();
+			{
+				if ($this->remove_products || $this->id_parent == 0)
+					$product->delete();
+				else
+				{
+					if ($this->disable_products)
+						$product->active = 0;
+
+					$product->addToCategories($this->id_parent);
+					$product->save();
+				}
+			}
 		}
 
 		/* Set category default to 1 where categorie no more exists */
@@ -314,9 +363,9 @@ class CategoryCore extends ObjectModel
 
 		/* Rebuild the nested tree */
 		if (!isset($this->doNotRegenerateNTree) || !$this->doNotRegenerateNTree)
-			self::regenerateEntireNtree();
+			Category::regenerateEntireNtree();
 
-		Hook::exec('categoryDeletion', array('category' => $this));
+		Hook::exec('actionCategoryDelete', array('category' => $this));
 
 		/* Delete Categories in GroupReduction */
 		foreach ($to_delete as $category)
@@ -337,7 +386,10 @@ class CategoryCore extends ObjectModel
 		foreach ($categories as $id_category)
 		{
 			$category = new Category($id_category);
-			$return &= $category->delete();
+			if ($category->isRootCategoryForAShop())
+				return false;
+			else
+				$return &= $category->delete();
 		}
 		return $return;
 	}
@@ -364,20 +416,29 @@ class CategoryCore extends ObjectModel
 	  */
 	public static function regenerateEntireNtree()
 	{
-		$categories = Db::getInstance()->executeS('SELECT id_category, id_parent FROM '._DB_PREFIX_.'category ORDER BY id_category ASC');
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id: Configuration::get('PS_SHOP_DEFAULT');
+		$categories = Db::getInstance()->executeS('
+		SELECT c.`id_category`, c.`id_parent`
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+		ORDER BY c.`id_parent`, cs.`position` ASC');
 		$categories_array = array();
 		foreach ($categories as $category)
-			$categories_array[(int)$category['id_parent']]['subcategories'][(int)$category['id_category']] = 1;
-			$n = 1;
-		self::_subTree($categories_array, 1, $n);
+			$categories_array[$category['id_parent']]['subcategories'][] = $category['id_category'];
+		$n = 1;
+
+		if (isset($categories_array[0]) && $categories_array[0]['subcategories'])
+			Category::_subTree($categories_array, $categories_array[0]['subcategories'][0], $n);
 	}
 
 	protected static function _subTree(&$categories, $id_category, &$n)
 	{
-		$left = (int)$n++;
+		$left = $n++;
 		if (isset($categories[(int)$id_category]['subcategories']))
-			foreach (array_keys($categories[(int)$id_category]['subcategories']) as $id_subcategory)
-				self::_subTree($categories, (int)$id_subcategory, $n);
+			foreach ($categories[(int)$id_category]['subcategories'] as $id_subcategory)
+				Category::_subTree($categories, (int)$id_subcategory, $n);
 		$right = (int)$n++;
 
 		Db::getInstance()->execute('
@@ -395,7 +456,7 @@ class CategoryCore extends ObjectModel
 	public function recalculateLevelDepth($id_category)
 	{
 		if (!is_numeric($id_category))
-			throw new PrestashopException('id category is not numeric');
+			throw new PrestaShopException('id category is not numeric');
 		/* Gets all children */
 		$categories = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT id_category, id_parent, level_depth
@@ -639,12 +700,24 @@ class CategoryCore extends ObjectModel
 
 	public static function getRootCategory($id_lang = null, Shop $shop = null)
 	{
+		$context = Context::getContext();
 		if (is_null($id_lang))
-			$id_lang = Context::getContext()->language->id;
+			$id_lang = $context->language->id;
 		if (!$shop)
-			$shop = Context::getContext()->shop;
+			if (Shop::isFeatureActive() && $context->shop() != Shop::CONTEXT_SHOP)
+				$shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+			else
+				$shop = $context->shop;
+		else
+			return new Category($shop->getCategory(), $id_lang);
+		$is_more_than_one_root_category = count(Category::getCategoriesWithoutParent()) > 1;
+		if ((!Shop::isFeatureActive() && $is_more_than_one_root_category) ||
+			Shop::isFeatureActive() && $is_more_than_one_root_category && $context->shop() != Shop::CONTEXT_SHOP)
+			$category = Category::getTopCategory($id_lang);
+		else
+			$category = new Category($shop->getCategory(), $id_lang);
 
-		return new Category($shop->getCategory(), $id_lang);
+		return $category;
 	}
 
 	/**
@@ -659,14 +732,18 @@ class CategoryCore extends ObjectModel
 		if (!Validate::isBool($active))
 	 		die(Tools::displayError());
 
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id: Configuration::get('PS_SHOP_DEFAULT');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT c.`id_category`, cl.`name`, cl.`link_rewrite`
 		FROM `'._DB_PREFIX_.'category` c
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON c.`id_category` = cl.`id_category`'.Context::getContext()->shop->addSqlRestrictionOnLang('cl').'
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category`'.Context::getContext()->shop->addSqlRestrictionOnLang('cl').')
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 		WHERE `id_lang` = '.(int)$id_lang.'
+		AND cs.`id_shop` = '.(int)Context::getContext()->shop->getID(true).'
 		AND c.`id_parent` = '.(int)$id_parent.'
 		'.($active ? 'AND `active` = 1' : '').'
-		ORDER BY `position` ASC');
+		ORDER BY cs.`position` ASC');
 	}
 
 	/**
@@ -694,11 +771,13 @@ class CategoryCore extends ObjectModel
 	 * @param int $id_lang
 	 * @return array
 	 */
-	public static function getChildrenWithNbSelectedSubCat($id_parent, $selected_cat, $id_lang, Shop $shop = null)
+	public static function getChildrenWithNbSelectedSubCat($id_parent, $selected_cat, $id_lang, Shop $shop = null, $use_shop_context = true)
 	{
 		if (!$shop)
 			$shop = Context::getContext()->shop;
 
+		$id = $shop->id;
+		$id_shop = $id ? $id: Configuration::get('PS_SHOP_DEFAULT');
 		$selected_cat = explode(',', str_replace(' ', '', $selected_cat));
 		$sql = 'SELECT c.`id_category`, c.`level_depth`, cl.`name`, IF((
 						SELECT COUNT(*)
@@ -712,8 +791,16 @@ class CategoryCore extends ObjectModel
 			AND c3.`id_category`  IN ('.implode(',', array_map('intval', $selected_cat)).')
 					)' : '0').' AS nbSelectedSubCat
 				FROM `'._DB_PREFIX_.'category` c
-				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON c.`id_category` = cl.`id_category`'.$shop->addSqlRestrictionOnLang('cl').'
-				WHERE `id_lang` = '.(int)$id_lang.'
+				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON c.`id_category` = cl.`id_category`'.$shop->addSqlRestrictionOnLang('cl');
+		if (Context::getContext()->shop() == Shop::CONTEXT_SHOP && $use_shop_context)
+			$sql .= '
+				LEFT JOIN `'._DB_PREFIX_.'category_shop` cs ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')';
+		$sql .= '
+				WHERE `id_lang` = '.(int)$id_lang;
+		if (Context::getContext()->shop() == Shop::CONTEXT_SHOP && $use_shop_context)
+			$sql .= '
+					AND cs.`id_shop` = '.(int)$shop->getID(true);
+		$sql .= '
 					AND c.`id_parent` = '.(int)$id_parent.'
 				ORDER BY `position` ASC';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -863,32 +950,56 @@ class CategoryCore extends ObjectModel
 	}
 
 	/**
-	  * Get Each parent category of this category until the root category
-	  *
-	  * @param integer $id_lang Language ID
-	  * @return array Corresponding categories
-	  */
+	 * Get Each parent category of this category until the root category
+	 *
+	 * @param integer $id_lang Language ID
+	 * @return array Corresponding categories
+	 */
 	public function getParentsCategories($id_lang = null)
 	{
+		$context = Context::getContext();
 		if (is_null($id_lang))
-			$id_lang = Context::getContext()->language->id;
+			$id_lang = $context->language->id;
 
 		$categories = null;
 		$id_current = $this->id;
+		if (count(Category::getCategoriesWithoutParent()) > 1)
+			$context->shop->id_category = Category::getTopCategory()->id;
+		elseif (!$context->shop->id)
+			$context->shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+		$id_shop = $context->shop->id;
 		while (true)
 		{
-			$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-				SELECT c.*, cl.*
-				FROM `'._DB_PREFIX_.'category` c
-				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl
-					ON (c.`id_category` = cl.`id_category`
-					AND `id_lang` = '.(int)$id_lang.Context::getContext()->shop->addSqlRestrictionOnLang('cl').')
-				WHERE c.`id_category` = '.(int)$id_current.'
-					AND c.`id_parent` != 0
-			');
+			$sql = '
+			SELECT c.*, cl.*
+			FROM `'._DB_PREFIX_.'category` c
+			LEFT JOIN `'._DB_PREFIX_.'category_lang` cl
+				ON (c.`id_category` = cl.`id_category`
+				AND `id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('cl').')';
+			if (Shop::isFeatureActive() && $context->shop() == Shop::CONTEXT_SHOP)
+				$sql .= '
+			LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+				ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')';
+			$sql .= '
+			WHERE c.`id_category` = '.(int)$id_current;
+			if (Shop::isFeatureActive() && $context->shop() == Shop::CONTEXT_SHOP)
+				$sql .= '
+				AND cs.`id_shop` = '.(int)$context->shop->getID(true);
+			$root_category = Category::getRootCategory();
+			if (Shop::isFeatureActive() && $context->shop() == Shop::CONTEXT_SHOP &&
+				(!Tools::isSubmit('id_category') ||
+					(int)Tools::getValue('id_category') == (int)$root_category->id_category ||
+					(int)$root_category->id_category == (int)$context->shop->id_category))
+				$sql .= '
+					AND c.`id_parent` != 0';
 
-			isset($result[0]) ? $categories[] = $result[0] : $categories = array();
-			if (!$result || $result[0]['id_parent'] == 1)
+			$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+
+			if (isset($result[0]))
+				$categories[] = $result[0];
+			else if (!$categories)
+				$categories = array();
+			if (!$result || ($result[0]['id_category'] == $context->shop->id_category))
 				return $categories;
 			$id_current = $result[0]['id_parent'];
 		}
@@ -919,7 +1030,7 @@ class CategoryCore extends ObjectModel
 		foreach ($groups as $group)
 		{
 			$row = array('id_category' => (int)$this->id, 'id_group' => (int)$group);
-			Db::getInstance()->AutoExecute(_DB_PREFIX_.'category_group', $row, 'INSERT');
+			Db::getInstance()->insert('category_group', $row);
 		}
 	}
 
@@ -1000,11 +1111,15 @@ class CategoryCore extends ObjectModel
 
 	public function updatePosition($way, $position)
 	{
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id: Configuration::get('PS_SHOP_DEFAULT');
 		if (!$res = Db::getInstance()->executeS('
-			SELECT cp.`id_category`, cp.`position`, cp.`id_parent`
+			SELECT cp.`id_category`, cs.`position`, cp.`id_parent`
 			FROM `'._DB_PREFIX_.'category` cp
+			LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+				ON (cp.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 			WHERE cp.`id_parent` = '.(int)$this->id_parent.'
-			ORDER BY cp.`position` ASC'
+			ORDER BY cs.`position` ASC'
 		))
 			return false;
 
@@ -1017,19 +1132,23 @@ class CategoryCore extends ObjectModel
 		// < and > statements rather than BETWEEN operator
 		// since BETWEEN is treated differently according to databases
 		$result = (Db::getInstance()->execute('
-			UPDATE `'._DB_PREFIX_.'category`
-			SET `position`= `position` '.($way ? '- 1' : '+ 1').'
-			WHERE `position`
+			UPDATE `'._DB_PREFIX_.'category_shop` cs
+			LEFT JOIN `'._DB_PREFIX_.'category` c
+				ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+			SET cs.`position`= cs.`position` '.($way ? '- 1' : '+ 1').'
+			WHERE cs.`position`
 			'.($way
-				? '> '.(int)$moved_category['position'].' AND `position` <= '.(int)$position
-				: '< '.(int)$moved_category['position'].' AND `position` >= '.(int)$position).'
-			AND `id_parent`='.(int)$moved_category['id_parent'])
+				? '> '.(int)$moved_category['position'].' AND cs.`position` <= '.(int)$position
+				: '< '.(int)$moved_category['position'].' AND cs.`position` >= '.(int)$position).'
+			AND c.`id_parent`='.(int)$moved_category['id_parent'])
 		&& Db::getInstance()->execute('
-			UPDATE `'._DB_PREFIX_.'category`
-			SET `position` = '.(int)$position.'
-			WHERE `id_parent` = '.(int)$moved_category['id_parent'].'
-			AND `id_category`='.(int)$moved_category['id_category']));
-		Hook::exec('categoryUpdate');
+			UPDATE `'._DB_PREFIX_.'category_shop` cs
+			LEFT JOIN `'._DB_PREFIX_.'category` c
+				ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+			SET cs.`position` = '.(int)$position.'
+			WHERE c.`id_parent` = '.(int)$moved_category['id_parent'].'
+			AND c.`id_category`='.(int)$moved_category['id_category']));
+		Hook::exec('actionCategoryUpdate');
 		return $result;
 	}
 
@@ -1045,20 +1164,26 @@ class CategoryCore extends ObjectModel
 	{
 		$return = true;
 
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
 		$result = Db::getInstance()->executeS('
-			SELECT `id_category`
-			FROM `'._DB_PREFIX_.'category`
-			WHERE `id_parent` = '.(int)$id_category_parent.'
-			ORDER BY `position`
+			SELECT c.`id_category`
+			FROM `'._DB_PREFIX_.'category` c
+			LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+				ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+			WHERE c.`id_parent` = '.(int)$id_category_parent.'
+			ORDER BY cs.`position`
 		');
 		$count = count($result);
 		for ($i = 0; $i < $count; $i++)
 		{
 			$sql = '
-				UPDATE `'._DB_PREFIX_.'category`
-				SET `position` = '.(int)$i.'
-				WHERE `id_parent` = '.(int)$id_category_parent.'
-				AND `id_category` = '.(int)$result[$i]['id_category'];
+				UPDATE `'._DB_PREFIX_.'category` c
+				LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+					ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+				SET cs.`position` = '.(int)$i.'
+				WHERE c.`id_parent` = '.(int)$id_category_parent.'
+				AND c.`id_category` = '.(int)$result[$i]['id_category'];
 			$return &= Db::getInstance()->execute($sql);
 		}
 		return $return;
@@ -1068,15 +1193,21 @@ class CategoryCore extends ObjectModel
 	 *
 	 * @todo rename that function to make it understandable (getNewLastPosition for example)
 	 * @param int $id_category_parent the parent category
+	 * @param int $id_shop
 	 * @return int
 	 */
-	public static function getLastPosition($id_category_parent)
+	public static function getLastPosition($id_category_parent, $id_shop)
 	{
-		return (Db::getInstance()->getValue('SELECT MAX(position)+1 FROM `'._DB_PREFIX_.'category` WHERE `id_parent` = '.(int)$id_category_parent));
+		return (Db::getInstance()->getValue('
+		SELECT MAX(cs.`position`)+1
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+		WHERE c.`id_parent` = '.(int)$id_category_parent));
 	}
 
-    public static function getUrlRewriteInformations($id_category)
-    {
+	public static function getUrlRewriteInformations($id_category)
+	{
 		return Db::getInstance()->executeS('
 			SELECT l.`id_lang`, c.`link_rewrite`
 			FROM `'._DB_PREFIX_.'category_lang` AS c
@@ -1084,7 +1215,7 @@ class CategoryCore extends ObjectModel
 			WHERE c.`id_category` = '.(int)$id_category.'
 			AND l.`active` = 1'
 		);
-    }
+	}
 
 	/**
 	 * Return nleft and nright fields for a given category
@@ -1122,12 +1253,16 @@ class CategoryCore extends ObjectModel
 
 	public function getChildrenWs()
 	{
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT c.`id_category` as id
 		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 		WHERE c.`id_parent` = '.(int)$this->id.'
-		AND `active` = 1
-		ORDER BY `position` ASC');
+		AND c.`active` = 1
+		ORDER BY cs.`position` ASC');
 		return $result;
 	}
 
@@ -1148,11 +1283,15 @@ class CategoryCore extends ObjectModel
 	 */
 	public function getDuplicatePosition()
 	{
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
 		return Db::getInstance()->getRow('
 		SELECT c.`id_category` as id
 		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 		WHERE c.`id_parent` = '.(int)$this->id_parent.'
-		AND `position` = '.(int)$this->position.'
+		AND cs.`position` = '.(int)$this->position.'
 		AND c.`id_category` != '.(int)$this->id);
 	}
 
@@ -1197,5 +1336,186 @@ class CategoryCore extends ObjectModel
 
 		return $categories;
 	}
-}
 
+	/**
+	 * @param $id_shop
+	 * @return bool
+	 */
+	public function isParentCategoryAvailable($id_shop)
+	{
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
+		return (bool)Db::getInstance()->getValue('
+		SELECT c.`id_category`
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (c.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+		WHERE cs.`id_shop` = '.(int)$id_shop.'
+		AND c.`id_parent` = '.(int)$this->id_parent);
+	}
+
+	/**
+	 * Add association between shop and cateogries
+	 * @param int $id_shop
+	 * @return bool
+	 */
+	public function addShop($id_shop)
+	{
+		$sql = '';
+		if (!$id_shop)
+		{
+			foreach (Shop::getShops(true) as $shop)
+				$sql .= '('.(int)$this->id.', '.(int)$shop['id_shop'].'),';
+			// removing last comma to avoid SQL error
+			$sql = substr($sql, 0, strlen($sql) - 1);
+		} else
+			$sql .= '('.(int)$this->id.', '.(int)$id_shop.')';
+
+		return Db::getInstance()->execute('
+		INSERT INTO `'._DB_PREFIX_.'category_shop` (`id_category`, `id_shop`) VALUES
+		'.$sql);
+	}
+
+	public static function getRootCategories($id_lang = null, $active = true)
+	{
+		if (!$id_lang)
+			$id_lang = Context::getContext()->language->id;
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		SELECT DISTINCT(c.`id_category`), cl.`name`
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (cl.`id_category` = c.`id_category` AND cl.`id_lang`='.(int)$id_lang.')
+		WHERE `is_root_category` = 1
+		'.(($active) ? 'AND `active` = 1': ''));
+	}
+
+	public static function getCategoriesWithoutParent()
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		SELECT DISTINCT c.*
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category` AND cl.`id_lang` = '.(int)Context::getContext()->language->id.')
+		WHERE `level_depth` = 1
+		');
+	}
+
+	public function isRootCategoryForAShop()
+	{
+		return (bool)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT `id_shop`
+		FROM `'._DB_PREFIX_.'shop`
+		WHERE `id_category` = '.(int)$this->id);
+	}
+
+	/**
+	 * @static
+	 * @param null $id_lang
+	 * @return Category
+	 */
+	public static function getTopCategory($id_lang = null)
+	{
+		if (is_null($id_lang))
+			$id_lang = Context::getContext()->language->id;
+		$id_category = Db::getInstance()->getValue('
+		SELECT `id_category`
+		FROM `'._DB_PREFIX_.'category`
+		WHERE `id_parent` = 0');
+		return new Category($id_category, $id_lang);
+	}
+
+	public function addPosition($position, $id_shop = null)
+	{
+		if (is_null($id_shop))
+		{
+			$id = Context::getContext()->shop->id;
+			$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
+		}
+
+		return Db::getInstance()->execute('
+		UPDATE `'._DB_PREFIX_.'category_shop` cs
+		SET cs.`position` = '.(int)$position.'
+		WHERE cs.`id_shop` = '.(int)$id_shop.'
+		AND cs.`id_category` = '.(int)$this->id);
+	}
+
+	public static function getShopsByCategory($id_category)
+	{
+		return Db::getInstance()->executeS('
+			SELECT `id_shop`
+			FROM `'._DB_PREFIX_.'category_shop`
+			WHERE `id_category` = '.(int)$id_category);
+	}
+
+	/**
+	* Update categories for a shop
+	*
+	* @param string $categories Categories list to associate a shop
+	* @param string $id_shop Categories list to associate a shop
+	* @return array Update/insertion result
+	*/
+	public static function updateFromShop($categories, $id_shop)
+	{
+		$shop = new Shop($id_shop);
+		// if array is empty or if the default category is not selected, return false
+		if (empty($categories) || !in_array($shop->id_category, $categories))
+			return false;
+
+		// delete categories for this shop
+		Category::deleteCategoriesFromShop($id_shop);
+
+		// and add $categories to this shop
+		return Category::addToShop($categories, $id_shop);
+	}
+
+	/**
+	 * Delete category from shop $id_shop
+	 * @param int $id_shop
+	 * @return bool
+	 */
+	public function deleteFromShop($id_shop)
+	{
+		return Db::getInstance()->execute(
+			'DELETE FROM `'._DB_PREFIX_.'category_shop`
+			WHERE `id_shop` = '.(int)$id_shop.'
+			AND id_category = '.(int)$this->id.''
+		);
+	}
+
+	/**
+	 * Delete every categories
+	 * @return bool
+	 */
+	public static function deleteCategoriesFromShop($id_shop)
+	{
+		return Db::getInstance()->execute('
+		DELETE FROM `'._DB_PREFIX_.'category_shop` WHERE `id_shop` = '.(int)$id_shop.'
+		');
+	}
+
+	/**
+	 * Add some categories to a shop
+	 * @param array $categories
+	 * @return bool
+	 */
+	public static function addToShop(array $categories, $id_shop)
+	{
+		if (!is_array($categories))
+			return false;
+		$sql = '
+		INSERT INTO `'._DB_PREFIX_.'category_shop` (`id_category`, `id_shop`) VALUES';
+		$tab_categories = array();
+		foreach ($categories as $id_category)
+		{
+			$tab_categories[] = new Category($id_category);
+			$sql .= '("'.(int)$id_category.'", "'.(int)$id_shop.'"),';
+		}
+		// removing last comma to avoid SQL error
+		$sql = substr($sql, 0, strlen($sql) - 1);
+
+		$return = Db::getInstance()->execute($sql);
+		// we have to update position for every new entries
+		foreach ($tab_categories as $category)
+			$category->addPosition(Category::getLastPosition($category->id_parent, $id_shop), $id_shop);
+
+		return $return;
+	}
+}

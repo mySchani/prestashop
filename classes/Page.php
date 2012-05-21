@@ -50,11 +50,11 @@ class PageCore extends ObjectModel
 	public static function getCurrentId()
 	{
 		$controller = Dispatcher::getInstance()->getController();
-		$pageTypeID = Page::getPageTypeByName($controller);
+		$page_type_id = Page::getPageTypeByName($controller);
 
 		// Some pages must be distinguished in order to record exactly what is being seen
 		// @todo dispatcher module
-		$specialArray = array(
+		$special_array = array(
 			'product' => 'id_product',
 			'category' => 'id_category',
 			'order' => 'step',
@@ -62,25 +62,25 @@ class PageCore extends ObjectModel
 		);
 
 		$where = '';
-		$insertData = array(
-			'id_page_type' =>	$pageTypeID,
+		$insert_data = array(
+			'id_page_type' => $page_type_id,
 		);
 
-		if (array_key_exists($controller, $specialArray))
+		if (array_key_exists($controller, $special_array))
 		{
-			$objectID = Tools::getValue($specialArray[$controller], null);
-			$where = ' AND `id_object` = '.(int)$objectID;
-			$insertData['id_object'] = (int)$objectID;
+			$object_id = Tools::getValue($special_array[$controller], null);
+			$where = ' AND `id_object` = '.(int)$object_id;
+			$insert_data['id_object'] = (int)$object_id;
 		}
 
 		$sql = 'SELECT `id_page`
 				FROM `'._DB_PREFIX_.'page`
-				WHERE `id_page_type` = '.(int)$pageTypeID.$where;
+				WHERE `id_page_type` = '.(int)$page_type_id.$where;
 		$result = Db::getInstance()->getRow($sql);
 		if ($result['id_page'])
 			return $result['id_page'];
 
-		Db::getInstance()->autoExecuteWithNullValues(_DB_PREFIX_.'page', $insertData, 'INSERT');
+		Db::getInstance()->insert('page', $insert_data, true);
 		return Db::getInstance()->Insert_ID();
 	}
 
@@ -97,9 +97,9 @@ class PageCore extends ObjectModel
 		if ($value = Db::getInstance()->getValue($sql))
 			return $value;
 
-		Db::getInstance()->autoExecute(_DB_PREFIX_.'page_type', array(
+		Db::getInstance()->insert('page_type', array(
 			'name' =>	$name,
-		), 'INSERT');
+		));
 		return Db::getInstance()->Insert_ID();
 	}
 
@@ -118,12 +118,12 @@ class PageCore extends ObjectModel
 
 		// If no one has seen the page in this date range, it is added
 		if (Db::getInstance()->Affected_Rows() == 0)
-			Db::getInstance()->autoExecute(_DB_PREFIX_.'page_viewed', array(
+			Db::getInstance()->insert('page_viewed', array(
 				'id_date_range' =>	(int)$id_date_range,
 				'id_page' =>		(int)$id_page,
 				'counter' =>		1,
 				'id_shop' =>		(int)$context->shop->getID(),
 				'id_group_shop' =>	(int)$context->shop->getGroupID(),
-			), 'INSERT');
+			));
 	}
 }

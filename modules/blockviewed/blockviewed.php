@@ -33,7 +33,7 @@ class BlockViewed extends Module
 	private $_html = '';
 	private $_postErrors = array();
 
-	function __construct()
+	public function __construct()
 	{
 		$this->name = 'blockviewed';
 		$this->tab = 'front_office_features';
@@ -47,7 +47,7 @@ class BlockViewed extends Module
 		$this->description = $this->l('Adds a block displaying last-viewed products.');
 	}
 
-	function install()
+	public function install()
 	{
 		if (!parent::install()
 			OR !$this->registerHook('leftColumn')
@@ -62,13 +62,13 @@ class BlockViewed extends Module
 		$output = '<h2>'.$this->displayName.'</h2>';
 		if (Tools::isSubmit('submitBlockViewed'))
 		{
-			if (!$productNbr = Tools::getValue('productNbr') OR empty($productNbr))
+			if (!($productNbr = Tools::getValue('productNbr')) || empty($productNbr))
 				$output .= '<div class="alert error">'.$this->l('You must fill in the \'Products displayed\' field.').'</div>';
 			elseif ((int)($productNbr) == 0)
 				$output .= '<div class="alert error">'.$this->l('Invalid number.').'</div>';
 			else
 			{
-				Configuration::updateValue('PRODUCTS_VIEWED_NBR', (int)($productNbr));
+				Configuration::updateValue('PRODUCTS_VIEWED_NBR', (int)$productNbr);
 				$output .= '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Settings updated').'</div>';
 			}
 		}
@@ -91,10 +91,10 @@ class BlockViewed extends Module
 		return $output;
 	}
 
-	function hookRightColumn($params)
+	public function hookRightColumn($params)
 	{
-		$id_product = (int)(Tools::getValue('id_product'));
-		$productsViewed = (isset($params['cookie']->viewed) AND !empty($params['cookie']->viewed)) ? array_slice(explode(',', $params['cookie']->viewed), 0, Configuration::get('PRODUCTS_VIEWED_NBR')) : array();
+		$id_product = (int)Tools::getValue('id_product');
+		$productsViewed = (isset($params['cookie']->viewed) && !empty($params['cookie']->viewed)) ? array_slice(explode(',', $params['cookie']->viewed), 0, Configuration::get('PRODUCTS_VIEWED_NBR')) : array();
 
 		if (sizeof($productsViewed))
 		{
@@ -132,6 +132,8 @@ class BlockViewed extends Module
 					$obj->description_short = $productsImagesArray[$productViewed]['description_short'];
 					$obj->link_rewrite = $productsImagesArray[$productViewed]['link_rewrite'];
 					$obj->category_rewrite = $productsImagesArray[$productViewed]['category_rewrite'];
+					// $obj is not a real product so it cannot be used as argument for getProductLink()
+					$obj->product_link = $this->context->link->getProductLink($obj->id, $obj->link_rewrite, $obj->category_rewrite);
 
 					if (!isset($obj->cover) || !$productsImagesArray[$productViewed]['id_image'])
 					{
@@ -177,12 +179,12 @@ class BlockViewed extends Module
 		return ;
 	}
 
-	function hookLeftColumn($params)
+	public function hookLeftColumn($params)
 	{
 		return $this->hookRightColumn($params);
 	}
 
-	function hookHeader($params)
+	public function hookHeader($params)
 	{
 		$this->context->controller->addCSS(($this->_path).'blockviewed.css', 'all');
 	}

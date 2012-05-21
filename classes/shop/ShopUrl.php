@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11857 $
+*  @version  Release: $Revision: 12925 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -99,8 +99,8 @@ class ShopUrlCore extends ObjectModel
 
 	public function setMain()
 	{
-		$res = Db::getInstance()->autoExecute(_DB_PREFIX_.'shop_url', array('main' => 0), 'UPDATE', 'id_shop = '.(int)$this->id_shop);
-		$res &= Db::getInstance()->autoExecute(_DB_PREFIX_.'shop_url', array('main' => 1), 'UPDATE', 'id_shop_url = '.(int)$this->id);
+		$res = Db::getInstance()->update('shop_url', array('main' => 0), 'id_shop = '.(int)$this->id_shop);
+		$res &= Db::getInstance()->update('shop_url', array('main' => 1), 'id_shop_url = '.(int)$this->id);
 		$this->main = true;
 
 		// Reset main URL for all shops to prevent problems
@@ -112,7 +112,7 @@ class ShopUrlCore extends ObjectModel
 				) = 0
 				GROUP BY s1.id_shop';
 		foreach (Db::getInstance()->executeS($sql) as $row)
-			Db::getInstance()->autoExecute(_DB_PREFIX_.'shop_url', array('main' => 1), 'UPDATE', 'id_shop_url = '.$row['id_shop_url']);
+			Db::getInstance()->update('shop_url', array('main' => 1), 'id_shop_url = '.$row['id_shop_url']);
 
 		return $res;
 	}
@@ -149,15 +149,15 @@ class ShopUrlCore extends ObjectModel
 
 	public static function getMainShopDomainSSL()
 	{
-		if (!self::$main_domain)
+		if (!self::$main_domain_ssl)
 		{
-			$sql = 'SELECT domain
+			$sql = 'SELECT domain_ssl
 					FROM '._DB_PREFIX_.'shop_url
 					WHERE main = 1
 						AND id_shop='.Context::getContext()->shop->getID(true);
-			self::$main_domain = Db::getInstance()->getValue($sql);
+			self::$main_domain_ssl = Db::getInstance()->getValue($sql);
 		}
-		return	self::$main_domain_ssl;
+		return self::$main_domain_ssl;
 	}
 
 	/**

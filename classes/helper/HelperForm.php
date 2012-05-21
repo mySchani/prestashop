@@ -25,6 +25,9 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * @since 1.5.0
+ */
 class HelperFormCore extends Helper
 {
 	public $id;
@@ -52,7 +55,7 @@ class HelperFormCore extends Helper
 
 	public function __construct()
 	{
-		$this->base_folder = 'helper/form/';
+		$this->base_folder = 'helpers/form/';
 		$this->base_tpl = 'form.tpl';
 		parent::__construct();
 	}
@@ -95,12 +98,12 @@ class HelperFormCore extends Helper
 							{
 								// Added Jquery plugin treeview (css and js files)
 								$this->context->controller->addJqueryPlugin('treeview');
-	
+
 								// Added JS files
 								$this->context->controller->addJS(_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.async.js');
 								$this->context->controller->addJS(_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.edit.js');
 								$this->context->controller->addJS(_PS_JS_DIR_.'admin-categories-tree.js');
-	
+
 								if (isset($params['use_search']) && $params['use_search'])
 									$this->context->controller->addJS(_PS_JS_DIR_.'jquery/plugins/autocomplete/jquery.autocomplete.js');
 								$categories = false;
@@ -129,7 +132,7 @@ class HelperFormCore extends Helper
 								$this->tpl_vars['path_css'] = _THEME_CSS_DIR_;
 								$this->tpl_vars['ad'] = dirname($_SERVER['PHP_SELF']);
 								$this->tpl_vars['tinymce'] = true;
-	
+
 								$this->context->controller->addJS(_PS_JS_DIR_.'tiny_mce/tiny_mce.js');
 								$this->context->controller->addJS(_PS_JS_DIR_.'tinymce.inc.js');
 								$tinymce = false;
@@ -141,13 +144,6 @@ class HelperFormCore extends Helper
 		$this->tpl->assign(array(
 			'title' => $this->title,
 			'toolbar_btn' => $this->toolbar_btn,
-			
-			'ps_help_context' => $this->ps_help_context,
-			'class_name' => get_class($this->context->controller),
-			'iso_user' => $this->context->language->id,
-			'country_iso_code' => $this->context->country->iso_code,
-			'version' => _PS_VERSION_,
-
 			'show_toolbar' => $this->show_toolbar,
 			'toolbar_fix' => $this->toolbar_fix,
 			'submit_action' => $this->submit_action,
@@ -179,7 +175,7 @@ class HelperFormCore extends Helper
 		foreach ($this->fields_form as $fieldset)
 			if (isset($fieldset['form']['input']))
 				foreach ($fieldset['form']['input'] as $input)
-					if (array_key_exists('required', $input) && $input['required'] &&  $input['type'] != 'radio')
+					if (array_key_exists('required', $input) && $input['required'] && $input['type'] != 'radio')
 						return true;
 
 		return false;

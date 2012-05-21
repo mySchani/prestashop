@@ -37,8 +37,8 @@
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
 		<meta name="generator" content="PrestaShop" />
 		<meta name="robots" content="{if isset($nobots)}no{/if}index,follow" />
-		<link rel="icon" type="image/vnd.microsoft.icon" href="{$img_ps_dir}favicon.ico?{$img_update_time}" />
-		<link rel="shortcut icon" type="image/x-icon" href="{$img_ps_dir}favicon.ico?{$img_update_time}" />
+		<link rel="icon" type="image/vnd.microsoft.icon" href="{$favicon_url}?{$img_update_time}" />
+		<link rel="shortcut icon" type="image/x-icon" href="{$favicon_url}?{$img_update_time}" />
 		<script type="text/javascript">
 			var baseDir = '{$content_dir}';
 			var static_token = '{$static_token}';
@@ -60,7 +60,7 @@
 		{$HOOK_HEADER}
 	</head>
 	
-	<body {if isset($page_name)}id="{if $page_name eq '404'}pagenotfound{else}{$page_name|escape:'htmlall':'UTF-8'}{/if}"{/if}>
+	<body {if isset($page_name)}id="{$page_name|escape:'htmlall':'UTF-8'}"{/if}>
 	{if !$content_only}
 		{if isset($restricted_country_mode) && $restricted_country_mode}
 		<div id="restricted-country">
@@ -72,7 +72,7 @@
 			<!-- Header -->
 			<div id="header" class="grid_9 alpha omega">
 				<a id="header_logo" href="{$base_dir}" title="{$shop_name|escape:'htmlall':'UTF-8'}">
-					<img class="logo" src="{$img_ps_dir}logo.jpg?{$img_update_time}" alt="{$shop_name|escape:'htmlall':'UTF-8'}" {if $logo_image_width}width="{$logo_image_width}"{/if} {if $logo_image_height}height="{$logo_image_height}" {/if} />
+					<img class="logo" src="{$logo_url}" alt="{$shop_name|escape:'htmlall':'UTF-8'}" {if $logo_image_width}width="{$logo_image_width}"{/if} {if $logo_image_height}height="{$logo_image_height}" {/if} />
 				</a>
 				<div id="header_right" class="grid_6 omega">
 					{$HOOK_TOP}

@@ -25,6 +25,10 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * @deprecated 1.5.0 This file is deprecated, use moduleFrontController instead
+ */
+
 include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../header.php');
 include(dirname(__FILE__).'/bankwire.php');
@@ -48,7 +52,7 @@ if (!$authorized)
 $customer = new Customer((int)$cart->id_customer);
 
 if (!Validate::isLoadedObject($customer))
-	Tools::redirec('index.php?controller=order&step=1');
+	Tools::redirect('index.php?controller=order&step=1');
 
 $currency = Tools::getValue('currency_payement', false) ? new Currency(Tools::getValue('currency_payement')) : Context::getContext()->currency;
 $total = (float)($cart->getOrderTotal(true, Cart::BOTH));

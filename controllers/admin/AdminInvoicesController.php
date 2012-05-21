@@ -49,8 +49,7 @@ class AdminInvoicesControllerCore extends AdminController
 					),
 					'PS_INVOICE_START_NUMBER' => array(
 						'title' => $this->l('Invoice number:'),
-						'desc' => $this->l('The next invoice will begin with this number, and then increase with each additional invoice. 
-							Set to 0 if you want to keep the current number (#').(Order::getLastInvoiceNumber() + 1).').',
+						'desc' => $this->l('The next invoice will begin with this number, and then increase with each additional invoice. Set to 0 if you want to keep the current number (#').(Order::getLastInvoiceNumber() + 1).').',
 						'size' => 6,
 						'type' => 'text',
 						'cast' => 'intval'
@@ -150,7 +149,7 @@ class AdminInvoicesControllerCore extends AdminController
 		);
 
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT COUNT(*) as nbOrders, (
+			SELECT COUNT(o.id_order) as nbOrders, (
 				SELECT oh.id_order_state
 				FROM '._DB_PREFIX_.'order_history oh
 				WHERE oh.id_order = oi.id_order
@@ -210,32 +209,30 @@ class AdminInvoicesControllerCore extends AdminController
 		if (Tools::getValue('submitAddinvoice_date'))
 		{
 			if (!Validate::isDate(Tools::getValue('date_from')))
-				$this->_errors[] = $this->l('Invalid from date');
+				$this->errors[] = $this->l('Invalid from date');
 
 			if (!Validate::isDate(Tools::getValue('date_to')))
-				$this->_errors[] = $this->l('Invalid end date');
+				$this->errors[] = $this->l('Invalid end date');
 
-			if (!count($this->_errors))
+			if (!count($this->errors))
 			{
-				$order_invoice_list = OrderInvoice::getByDateInterval(Tools::getValue('date_from'), Tools::getValue('date_to'));
-
-				if (count($order_invoice_list))
+				if (count(OrderInvoice::getByDateInterval(Tools::getValue('date_from'), Tools::getValue('date_to'))))
 					Tools::redirectAdmin('pdf.php?invoices&date_from='.urlencode(Tools::getValue('date_from')).'&date_to='.urlencode(Tools::getValue('date_to')).'&token='.$this->token);
 
-				$this->_errors[] = $this->l('No invoice found for this period');
+				$this->errors[] = $this->l('No invoice found for this period');
 			}
 		}
 		else if (Tools::isSubmit('submitAddinvoice_status'))
 		{
 			if (!is_array($status_array = Tools::getValue('id_order_state')) || !count($status_array))
-				$this->_errors[] = $this->l('Invalid order statuses');
+				$this->errors[] = $this->l('You must select at least one order status');
 			else
 			{
 				foreach ($status_array as $id_order_state)
-					if (count($orders = Order::getOrderIdsByStatus((int)$id_order_state)))
+					if (count(OrderInvoice::getByStatus((int)$id_order_state)))
 						Tools::redirectAdmin('pdf.php?invoices2&id_order_state='.implode('-', $status_array).'&token='.$this->token);
 
-				$this->_errors[] = $this->l('No invoice found for this status');
+				$this->errors[] = $this->l('No invoice found for this status');
 			}
 		}
 		else
@@ -245,21 +242,25 @@ class AdminInvoicesControllerCore extends AdminController
 	public function beforeUpdateOptions()
 	{
 		if ((int)Tools::getValue('PS_INVOICE_START_NUMBER') != 0 && (int)Tools::getValue('PS_INVOICE_START_NUMBER') <= Order::getLastInvoiceNumber())
-				$this->_errors[] = $this->l('Invalid invoice number (must be > ').Order::getLastInvoiceNumber().')';
+			$this->errors[] = $this->l('Invalid invoice number (must be > ').Order::getLastInvoiceNumber().')';
 	}
 
 	protected function getInvoicesModels()
 	{
-		$models = array(array('value'=>'invoice', 'name'=>'invoice'));
+		$models = array(
+			array(
+				'value' => 'invoice',
+				'name' => 'invoice'
+			)
+		);
 		$d = dir(_PS_THEME_DIR_.'/pdf/');
 		while (false !== ($entry = $d->read()))
 		{
-			if (preg_match('`^(invoice-[a-z0-9]+)\.tpl$`', $entry, $matches)) {
+			if (preg_match('`^(invoice-[a-z0-9]+)\.tpl$`', $entry, $matches))
 				$models[] = array(
 					'value' => $matches[1],
 					'name' => $matches[1]
 				);
-			}
 		}
 		$d->close();
 		return $models;

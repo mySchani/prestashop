@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11029 $
+*  @version  Release: $Revision: 13431 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,16 +39,25 @@ class DbPDOCore extends Db
 	{
 		try
 		{
-			$this->link = new PDO('mysql:dbname='.$this->database.';host='.$this->server, $this->user, $this->password);
+			$dsn = 'mysql:dbname='.$this->database;
+			if (strpos($this->server, ':') !== false)
+			{
+				list($server, $port) = explode(':', $this->server);
+				$dsn .= ';host='.$server.';port='.$port;
+			}
+			else
+				$dsn .= ';host='.$this->server;
+
+			$this->link = new PDO($dsn, $this->user, $this->password);
 		}
 		catch (PDOException $e)
 		{
-			throw new PrestashopDatabaseException(Tools::displayError('Link to database cannot be established. ('.$e->getMessage().')'));
+			throw new PrestaShopDatabaseException(Tools::displayError('Link to database cannot be established. ('.$e->getMessage().')'));
 		}
 
 		// UTF-8 support
 		if ($this->link->exec('SET NAMES \'utf8\'') === false)
-			throw new PrestashopDatabaseException(Tools::displayError('PrestaShop Fatal error: no utf-8 support. Please check your server configuration.'));
+			throw new PrestaShopDatabaseException(Tools::displayError('PrestaShop Fatal error: no utf-8 support. Please check your server configuration.'));
 
 		return $this->link;
 	}
@@ -149,7 +158,26 @@ class DbPDOCore extends Db
 	}
 
 	/**
-	 * @see DbCore::tryToConnect()
+	 * @see Db::hasTableWithSamePrefix()
+	 */
+	public static function hasTableWithSamePrefix($server, $user, $pwd, $db, $prefix)
+	{
+		try
+		{
+			$link = @new PDO('mysql:dbname='.$db.';host='.$server, $user, $pwd);
+		}
+		catch (PDOException $e)
+		{
+			return false;
+		}
+
+		$sql = 'SHOW TABLES LIKE \''.$prefix.'%\'';
+		$result = $link->query($sql);
+		return (bool)$result->fetch();
+	}
+
+	/**
+	 * @see Db::checkConnection()
 	 */
 	static public function tryToConnect($server, $user, $pwd, $db, $newDbLink = true, $engine = null)
 	{
@@ -177,7 +205,7 @@ class DbPDOCore extends Db
 	}
 
 	/**
-	 * @see DbCore::tryUTF8()
+	 * @see Db::checkEncoding()
 	 */
 	static public function tryUTF8($server, $user, $pwd)
 	{

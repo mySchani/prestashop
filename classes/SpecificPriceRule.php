@@ -52,11 +52,23 @@ class SpecificPriceRuleCore extends ObjectModel
 			'id_currency' => 	array('type' => self::TYPE_INT, 'required' => true),
 			'id_group' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'from_quantity' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'price' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
 			'reduction' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
 			'reduction_type' => array('type' => self::TYPE_STRING, 'validate' => 'isReductionType', 'required' => true),
-			'from' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat', 'required' => true),
-			'to' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat', 'required' => true),
+			'from' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat', 'required' => false),
+			'to' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat', 'required' => false),
 		),
+	);
+
+	protected $webserviceParameters = array(
+		'objectsNodeName' => 'specific_price_rules',
+		'objectNodeName' => 'specific_price_rule',
+	        'fields' => array(
+			'id_shop' => 				array('xlink_resource' => 'shops', 'required' => true),
+			'id_country' => 			array('xlink_resource' => 'countries', 'required' => true),
+			'id_currency' => 			array('xlink_resource' => 'currencies', 'required' => true),
+			'id_group' => 				array('xlink_resource' => 'groups', 'required' => true),
+	      	),
 	);
 
 	public function delete()
@@ -80,14 +92,25 @@ class SpecificPriceRuleCore extends ObjectModel
 	{
 		if (!is_array($conditions))
 			return;
-		if (!Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'specific_price_rule_condition_group` (`id_specific_price_rule_condition_group`, `id_specific_price_rule`)
-						VALUES(\'\', '.(int)$this->id.')'))
+
+		$result = Db::getInstance()->insert('specific_price_rule_condition_group', array(
+			'id_specific_price_rule_condition_group' =>	'',
+			'id_specific_price_rule' =>	(int)$this->id
+		));
+		if (!$result)
 			return false;
 		$id_specific_price_rule_condition_group = (int)Db::getInstance()->Insert_ID();
 		foreach ($conditions as $condition)
-			if (!Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'specific_price_rule_condition (id_specific_price_rule_condition, id_specific_price_rule_condition_group, type, value)
-													VALUES(\'\', '.(int)$id_specific_price_rule_condition_group.', \''.pSQL($condition['type']).'\', \''.pSQL($condition['value']).'\')'))
+		{
+			$result = Db::getInstance()->insert('specific_price_rule_condition', array(
+				'id_specific_price_rule_condition' => '',
+				'id_specific_price_rule_condition_group' => (int)$id_specific_price_rule_condition_group,
+				'type' => $condition['type'],
+				'value' => $condition['value'],
+			));
+			if (!$result)
 				return false;
+		}
 		return true;
 	}
 
@@ -113,14 +136,17 @@ class SpecificPriceRuleCore extends ObjectModel
 
 	public function getConditions()
 	{
-		$conditions =  Db::getInstance()->executeS('SELECT sprd.*
-																FROM '._DB_PREFIX_.'specific_price_rule_condition_group sprdg
-																LEFT JOIN '._DB_PREFIX_.'specific_price_rule_condition sprd ON (sprd.id_specific_price_rule_condition_group = sprdg.id_specific_price_rule_condition_group)
-																WHERE sprdg.id_specific_price_rule='.(int)$this->id);
+		$conditions = Db::getInstance()->executeS('
+			SELECT g.*, c.*
+			FROM '._DB_PREFIX_.'specific_price_rule_condition_group g
+			LEFT JOIN '._DB_PREFIX_.'specific_price_rule_condition c
+				ON (c.id_specific_price_rule_condition_group = g.id_specific_price_rule_condition_group)
+			WHERE g.id_specific_price_rule='.(int)$this->id
+		);
 		$conditions_group = array();
 		if ($conditions)
 		{
-			foreach ($conditions AS &$condition)
+			foreach ($conditions as &$condition)
 			{
 				if ($condition['type'] == 'attribute')
 					$condition['id_attribute_group'] = Db::getInstance()->getValue('SELECT id_attribute_group
@@ -225,8 +251,8 @@ class SpecificPriceRuleCore extends ObjectModel
 		$specific_price->id_group = (int)$rule->id_group;
 		$specific_price->from_quantity = (int)$rule->from_quantity;
 		$specific_price->price = (int)$rule->price;
-		$specific_price->reduction_type = pSQL($rule->reduction_type);
-		$specific_price->reduction = ($rule->reduction_type == 'percentage' ? (float)($rule->reduction / 100) : (float)$rule->reduction);
+		$specific_price->reduction_type = $rule->reduction_type;
+		$specific_price->reduction = ($rule->reduction_type == 'percentage' ? $rule->reduction / 100 : (float)$rule->reduction);
 		$specific_price->from = $rule->from;
 		$specific_price->to = $rule->to;
 

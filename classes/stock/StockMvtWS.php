@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11390 $
+*  @version  Release: $Revision: 11940 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,7 @@
  * Webservice entity for stock movements
  * @since 1.5.0
  */
-class StockMvtWS extends ObjectModelCore
+class StockMvtWSCore extends ObjectModelCore
 {
 	public $id;
 

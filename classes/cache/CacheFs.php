@@ -131,14 +131,14 @@ class CacheFsCore extends Cache
 	{
 		if (!$directory)
 			$directory = _PS_CACHEFS_DIRECTORY_;
-		$chars = '0123456789abcdefghijklmnopqrstuvwxyz';
-		for ($i = 0; $i < strlen($chars); $i++)
+		$chars = '0123456789abcdef';
+		for ($i = 0, $length = strlen($chars); $i < $length; $i++)
 		{
 			$new_dir = $directory.$chars[$i].'/';
 			if (mkdir($new_dir))
 				if (chmod($new_dir, 0777))
 					if ($level_depth - 1 > 0)
-						self::createCacheDirectories($level_depth - 1, $new_dir);
+						CacheFs::createCacheDirectories($level_depth - 1, $new_dir);
 		}
 	}
 

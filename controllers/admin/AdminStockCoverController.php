@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11802 $
+*  @version  Release: $Revision: 13131 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,8 +30,8 @@
  */
 class AdminStockCoverControllerCore extends AdminController
 {
-	private $stock_cover_warehouses;
-	private $stock_cover_periods;
+	protected $stock_cover_warehouses;
+	protected $stock_cover_periods;
 
 	public function __construct()
 	{
@@ -267,7 +267,7 @@ class AdminStockCoverControllerCore extends AdminController
 	 *
 	 * @return int coverage period
 	 */
-	private function getCurrentCoveragePeriod()
+	protected function getCurrentCoveragePeriod()
 	{
 		static $coverage_period = 0;
 
@@ -285,7 +285,7 @@ class AdminStockCoverControllerCore extends AdminController
 	 *
 	 * @return int id_warehouse
 	 */
-	private function getCurrentCoverageWarehouse()
+	protected function getCurrentCoverageWarehouse()
 	{
 		static $warehouse = 0;
 
@@ -303,7 +303,7 @@ class AdminStockCoverControllerCore extends AdminController
 	 *
 	 * @return int warn_days
 	 */
-	private function getCurrentWarning()
+	protected function getCurrentWarning()
 	{
 		static $warning = 0;
 

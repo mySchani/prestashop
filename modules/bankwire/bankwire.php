@@ -33,9 +33,9 @@ class BankWire extends PaymentModule
 	private $_html = '';
 	private $_postErrors = array();
 
-	public  $details;
-	public  $owner;
-	public	$address;
+	public $details;
+	public $owner;
+	public $address;
 
 	public function __construct()
 	{
@@ -60,15 +60,15 @@ class BankWire extends PaymentModule
 		$this->displayName = $this->l('Bank Wire');
 		$this->description = $this->l('Accept payments by bank wire.');
 		$this->confirmUninstall = $this->l('Are you sure you want to delete your details?');
-		if (!isset($this->owner) OR !isset($this->details) OR !isset($this->address))
+		if (!isset($this->owner) || !isset($this->details) || !isset($this->address))
 			$this->warning = $this->l('Account owner and details must be configured in order to use this module correctly.');
-		if (!sizeof(Currency::checkPaymentCurrencies($this->id)))
+		if (!count(Currency::checkPaymentCurrencies($this->id)))
 			$this->warning = $this->l('No currency set for this module');
 	}
 
 	public function install()
 	{
-		if (!parent::install() OR !$this->registerHook('payment') OR !$this->registerHook('paymentReturn'))
+		if (!parent::install() || !$this->registerHook('payment') || !$this->registerHook('paymentReturn'))
 			return false;
 		return true;
 	}
@@ -76,9 +76,9 @@ class BankWire extends PaymentModule
 	public function uninstall()
 	{
 		if (!Configuration::deleteByName('BANK_WIRE_DETAILS')
-				OR !Configuration::deleteByName('BANK_WIRE_OWNER')
-				OR !Configuration::deleteByName('BANK_WIRE_ADDRESS')
-				OR !parent::uninstall())
+				|| !Configuration::deleteByName('BANK_WIRE_OWNER')
+				|| !Configuration::deleteByName('BANK_WIRE_ADDRESS')
+				|| !parent::uninstall())
 			return false;
 		return true;
 	}
@@ -147,11 +147,11 @@ class BankWire extends PaymentModule
 		if (Tools::isSubmit('btnSubmit'))
 		{
 			$this->_postValidation();
-			if (!sizeof($this->_postErrors))
+			if (!count($this->_postErrors))
 				$this->_postProcess();
 			else
-				foreach ($this->_postErrors AS $err)
-					$this->_html .= '<div class="alert error">'. $err .'</div>';
+				foreach ($this->_postErrors as $err)
+					$this->_html .= '<div class="alert error">'.$err.'</div>';
 		}
 		else
 			$this->_html .= '<br />';
@@ -165,12 +165,12 @@ class BankWire extends PaymentModule
 	public function hookPayment($params)
 	{
 		if (!$this->active)
-			return ;
+			return;
 		if (!$this->checkCurrency($params['cart']))
-			return ;
+			return;
 
 
-		$this->context->smarty->assign(array(
+		$this->smarty->assign(array(
 			'this_path' => $this->_path,
 			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
 		));
@@ -180,12 +180,12 @@ class BankWire extends PaymentModule
 	public function hookPaymentReturn($params)
 	{
 		if (!$this->active)
-			return ;
+			return;
 
 		$state = $params['objOrder']->getCurrentState();
-		if ($state == Configuration::get('PS_OS_BANKWIRE') OR $state == Configuration::get('PS_OS_OUTOFSTOCK'))
+		if ($state == Configuration::get('PS_OS_BANKWIRE') || $state == Configuration::get('PS_OS_OUTOFSTOCK'))
 		{
-			$this->context->smarty->assign(array(
+			$this->smarty->assign(array(
 				'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
 				'bankwireDetails' => Tools::nl2br($this->details),
 				'bankwireAddress' => Tools::nl2br($this->address),
@@ -194,10 +194,10 @@ class BankWire extends PaymentModule
 				'id_order' => $params['objOrder']->id
 			));
 			if (isset($params['objOrder']->reference) && !empty($params['objOrder']->reference))
-				$this->context->smarty->assign('reference', $params['objOrder']->reference);
+				$this->smarty->assign('reference', $params['objOrder']->reference);
 		}
 		else
-			$this->context->smarty->assign('status', 'failed');
+			$this->smarty->assign('status', 'failed');
 		return $this->display(__FILE__, 'payment_return.tpl');
 	}
 	

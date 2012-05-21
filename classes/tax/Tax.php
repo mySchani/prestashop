@@ -29,19 +29,19 @@
 class TaxCore extends ObjectModel
 {
  	/** @var string Name */
-	public 		$name;
+	public $name;
 
 	/** @var float Rate (%) */
-	public 		$rate;
+	public $rate;
 
 	/** @var bool active state */
-	public 		$active;
+	public $active;
 
 	/** @var boolean true if the tax has been historized */
-	public 		$deleted = 0;
+	public $deleted = 0;
 
 	/** @var string Account Number */
-	public 		$account_number;
+	public $account_number;
 
 	/**
 	 * @see ObjectModel::$definition
@@ -49,6 +49,7 @@ class TaxCore extends ObjectModel
 	public static $definition = array(
 		'table' => 'tax',
 		'primary' => 'id_tax',
+		'multilang' => true,
 		'fields' => array(
 			'rate' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
 			'account_number' => array('type' => self::TYPE_STRING),
@@ -193,7 +194,7 @@ class TaxCore extends ObjectModel
 	* @param id_address
 	* @return float $tax_rate
 	*/
-	public static function getProductEcotaxRate($id_address = NULL)
+	public static function getProductEcotaxRate($id_address = null)
 	{
 		$address = Address::initialize($id_address);
 
@@ -209,7 +210,7 @@ class TaxCore extends ObjectModel
 	* @param id_address
 	* @return float $tax_rate
 	*/
-	public static function getCarrierTaxRate($id_carrier, $id_address = NULL)
+	public static function getCarrierTaxRate($id_carrier, $id_address = null)
 	{
 		$address = Address::initialize($id_address);
 		$id_tax_rules = (int)Carrier::getIdTaxRulesGroupByIdCarrier((int)$id_carrier);
@@ -249,7 +250,7 @@ class TaxCore extends ObjectModel
 	 * @param integer $id_country
 	 * @return Tax
 	 */
-	public static function getProductTaxRate($id_product, $id_address = NULL)
+	public static function getProductTaxRate($id_product, $id_address = null)
 	{
 		$address = Address::initialize($id_address);
 		$id_tax_rules = (int)Product::getIdTaxRulesGroupByIdProduct($id_product);

@@ -55,12 +55,19 @@ class AdminAccessControllerCore extends AdminController
 
 		// Deleted id_tab that do not have access
 		foreach ($tabs as $key => $tab)
+		{
+			// Don't allow permissions for unnamed tabs (ie. AdminLogin)
+			if (empty($tab['name']))
+				unset($tabs[$key]);
+
 			foreach ($this->accesses_black_list as $id_tab)
 				if ($tab['id_tab'] == (int)$id_tab)
 					unset($tabs[$key]);
+		}
 
 		$modules = array();
 		foreach ($profiles as $profile)
+		{
 			$modules[$profile['id_profile']] = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 				SELECT ma.`id_module`, m.`name`, ma.`view`, ma.`configure`
 				FROM '._DB_PREFIX_.'module_access ma
@@ -69,6 +76,16 @@ class AdminAccessControllerCore extends AdminController
 				WHERE id_profile = '.(int)$profile['id_profile'].'
 				ORDER BY m.name
 			');
+			foreach ($modules[$profile['id_profile']] as &$module)
+			{
+				$m = Module::getInstanceById($module['id_module']);
+				// the following condition handles invalid modules
+				if ($m)
+					$module['name'] = $m->displayName;
+				else
+					$this->warnings[] = '<b>'.$module['name'].'</b>'.$this->l(': module is installed in database, but its files are missing or incompatible.');
+			}
+		}
 
 		$this->fields_form = array('');
 		$this->tpl_form_vars = array(
@@ -112,13 +129,13 @@ class AdminAccessControllerCore extends AdminController
 	public function ajaxProcessUpdateAccess()
 	{
 		if ($this->tabAccess['edit'] != '1')
-			throw new PrestashopException(Tools::displayError('You do not have permission to edit here.'));
+			throw new PrestaShopException(Tools::displayError('You do not have permission to edit here.'));
 
 		if (Tools::isSubmit('submitAddAccess'))
 		{
 			$perm = Tools::getValue('perm');
 			if (!in_array($perm, array('view', 'add', 'edit', 'delete', 'all')))
-				throw new PrestashopException('permission not exists');
+				throw new PrestaShopException('permission not exists');
 
 			$enabled = (int)Tools::getValue('enabled');
 			$id_tab = (int)Tools::getValue('id_tab');
@@ -165,7 +182,7 @@ class AdminAccessControllerCore extends AdminController
 	public function ajaxProcessUpdateModuleAccess()
 	{
 		if ($this->tabAccess['edit'] != '1')
-			throw new PrestashopException(Tools::displayError('You do not have permission to edit here.'));
+			throw new PrestaShopException(Tools::displayError('You do not have permission to edit here.'));
 			/* Update Access Modules */
 
 		if (Tools::isSubmit('changeModuleAccess'))
@@ -177,7 +194,7 @@ class AdminAccessControllerCore extends AdminController
 			$res = true;
 
 			if (!in_array($perm, array('view', 'configure')))
-				throw new PrestashopException('permission not exists');
+				throw new PrestaShopException('permission not exists');
 
 			if ($id_module == -1)
 			{

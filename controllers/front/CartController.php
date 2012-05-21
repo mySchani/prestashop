@@ -70,13 +70,12 @@ class CartControllerCore extends FrontController
 				$this->processChangeProductInCart();
 			else if (Tools::getIsset('delete'))
 				$this->processDeleteProductInCart();
-			else if(Tools::getIsset('changeAddressDelivery'))
+			else if (Tools::getIsset('changeAddressDelivery'))
 				$this->processChangeProductAddressDelivery();
-			else if(Tools::getIsset('allowSeperatedPackage'))
+			else if (Tools::getIsset('allowSeperatedPackage'))
 				$this->processAllowSeperatedPackage();
-			else if(Tools::getIsset('duplicate'))
+			else if (Tools::getIsset('duplicate'))
 				$this->processDuplicateProduct();
-
 			// Make redirection
 			if (!$this->errors && !$this->ajax)
 			{
@@ -148,16 +147,12 @@ class CartControllerCore extends FrontController
 		if (!Configuration::get('PS_ALLOW_MULTISHIPPING'))
 			return;
 		
-		if (
-			!$this->context->cart->duplicateProduct(
+		if (!$this->context->cart->duplicateProduct(
 				$this->id_product,
 				$this->id_product_attribute,
 				$this->id_address_delivery,
-				(int)Tools::getValue('new_id_address_delivery'),
-				1,
-				true
-			)
-		)
+				(int)Tools::getValue('new_id_address_delivery')
+			))
 		{
 			//$error_message = $this->l('Error durring product duplication');
 			// For the moment no translations
@@ -249,7 +244,8 @@ class CartControllerCore extends FrontController
 	public function initContent()
 	{
 		$this->setTemplate(_PS_THEME_DIR_.'errors.tpl');
-		parent::initContent();
+		if (!$this->ajax)
+			parent::initContent();
 	}
 
 	/**
@@ -270,12 +266,12 @@ class CartControllerCore extends FrontController
 					$deliveryAddress = new Address($this->context->cart->id_address_delivery);
 				$id_country = (isset($deliveryAddress) && $deliveryAddress->id) ? $deliveryAddress->id_country : Configuration::get('PS_COUNTRY_DEFAULT');
 
-				$result['HOOK_EXTRACARRIER'] = Hook::exec('extraCarrier', array('address' => (isset($deliveryAddress) && (int)$deliveryAddress->id) ? $deliveryAddress : null));
+				Cart::addExtraCarriers($result);
 			}
 			$result['summary'] = $this->context->cart->getSummaryDetails();
 			$result['customizedDatas'] = Product::getAllCustomizedDatas($this->context->cart->id, null, true);
-			$result['HOOK_SHOPPING_CART'] = Hook::exec('shoppingCart', $result['summary']);
-			$result['HOOK_SHOPPING_CART_EXTRA'] = Hook::exec('shoppingCartExtra', $result['summary']);
+			$result['HOOK_SHOPPING_CART'] = Hook::exec('displayShoppingCartFooter', $result['summary']);
+			$result['HOOK_SHOPPING_CART_EXTRA'] = Hook::exec('displayShoppingCart', $result['summary']);
 
 			// Display reduced price (or not) without quantity discount
 			if (Tools::getIsset('getproductprice'))

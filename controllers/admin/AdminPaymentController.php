@@ -34,7 +34,7 @@ class AdminPaymentControllerCore extends AdminController
 		$shop_id = Context::getContext()->shop->getID(true);
 
 		/* Get all modules then select only payment ones */
-		$modules = Module::getModulesOnDisk();
+		$modules = Module::getModulesOnDisk(true);
 
 		foreach ($modules as $module)
 			if ($module->tab == 'payments_gateways')
@@ -97,16 +97,16 @@ class AdminPaymentControllerCore extends AdminController
 			if (Tools::isSubmit('submitModulecountry'))
 				$this->action = 'country';
 			else if (Tools::isSubmit('submitModulecurrency'))
-				$this->action ='currency';
+				$this->action = 'currency';
 			else if (Tools::isSubmit('submitModulegroup'))
-				$this->action ='group';
+				$this->action = 'group';
 		}
 		else
-			$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+			$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 	}
 
 
-	private function saveRestrictions($type)
+	protected function saveRestrictions($type)
 	{
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'module_'.bqSQL($type).'` WHERE id_shop = '.Context::getContext()->shop->getID(true));
 		foreach ($this->payment_modules as $module)
@@ -181,7 +181,7 @@ class AdminPaymentControllerCore extends AdminController
 						&& isset($module->limited_countries)
 						&& !empty($module->limited_countries)
 						&& !(in_array(strtoupper($item['iso_code']), array_map('strtoupper', $module->limited_countries))))
-						$list['check_list'][$key_module] = null;
+						$list['items'][$key_item]['check_list'][$key_module] = null;
 				}
 			}
 			// update list

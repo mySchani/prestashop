@@ -250,8 +250,7 @@ class AdminCountriesControllerCore extends AdminController
 					'name' => 'zip_code_format',
 					'class' => 'uppercase',
 					'required' => true,
-					'desc' => $this->l('National zip code (L for a letter, N for a number and C for the Iso code), e.g., NNNNN for France.
-									No verification if undefined')
+					'desc' => $this->l('National zip code (L for a letter, N for a number and C for the Iso code), e.g., NNNNN for France. No verification if undefined')
 				),
 				array(
 					'type' => 'address_layout',
@@ -281,7 +280,7 @@ class AdminCountriesControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('Display or not this store')
+					'desc' => $this->l('Display or not this country')
 				),
 				array(
 					'type' => 'radio',
@@ -390,11 +389,11 @@ class AdminCountriesControllerCore extends AdminController
 				{
 					$error_list = $tmp_addr_format->getErrorList();
 					foreach ($error_list as $num_error => $error)
-						$this->_errors[] = $error;
+						$this->errors[] = $error;
 				}
 
 				if (!$save_status)
-					$this->_errors[] = Tools::displayError('Invalid address layout'.Db::getInstance()->getMsgError());
+					$this->errors[] = Tools::displayError('Invalid address layout'.Db::getInstance()->getMsgError());
 			}
 			unset($tmp_addr_format);
 		}
@@ -402,7 +401,7 @@ class AdminCountriesControllerCore extends AdminController
 		return parent::postProcess();
 	}
 
-	private function displayValidFields()
+	protected function displayValidFields()
 	{
 		$html = '<ul>';
 

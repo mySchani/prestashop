@@ -34,6 +34,7 @@
 	var currencyBlank = '{$currencyBlank|intval}';
 	var txtProduct = "{l s='product'}";
 	var txtProducts = "{l s='products'}";
+	var orderUrl = '{$link->getPageLink("order", true)}';
 
 	var msg = "{l s='You must agree to the terms of service before continuing.' js=1}";
 	{literal}
@@ -110,40 +111,48 @@
 		{foreach $delivery_option_list as $id_address => $option_list}
 			<h3>
 				{if isset($address_collection[$id_address])}
-					{$address_collection[$id_address]->alias}
+					{l s='Choose a shipping option for the address: '}{$address_collection[$id_address]->alias}
 				{else}
+					{l s='Choose a shipping option'}
 				{/if}
 			</h3>
 			<div class="delivery_options">
 			{foreach $option_list as $key => $option}
 				<div class="delivery_option {if ($option@index % 2)}alternate_{/if}item">
-					<input class="delivery_option_radio" type="radio" name="delivery_option[{$id_address}]" {if $opc}onclick="updateCarrierSelectionAndGift();"{/if} id="delivery_option_{$id_address}_{$option@index}" value="{$key}" {if $delivery_option[$id_address] == $key}checked="checked"{/if} />
+					<input class="delivery_option_radio" type="radio" name="delivery_option[{$id_address}]" onchange="{if $opc}updateCarrierSelectionAndGift();{else}updateExtraCarrier('{$key}', {$id_address});{/if}" id="delivery_option_{$id_address}_{$option@index}" value="{$key}" {if $delivery_option[$id_address] == $key}checked="checked"{/if} />
 					<label for="delivery_option_{$id_address}_{$option@index}">
 						<table class="resume">
 							<tr>
 								<td class="delivery_option_logo">
-									{* If there is only one carrier, show the logo of the carrier *}
-									{if $option.unique_carrier}
-										{foreach $option.carrier_list as $carrier}
-											{if $carrier.logo}
-												<img src="{$carrier.logo}" alt="{$carrier.instance->name}"/>
-											{else}
-												{$carrier.instance->name}
-											{/if}
-										{/foreach}
-									{else}
-									{/if}
+									{foreach $option.carrier_list as $carrier}
+										{if $carrier.logo}
+											<img src="{$carrier.logo}" alt="{$carrier.instance->name}"/>
+										{else if !$option.unique_carrier}
+											{$carrier.instance->name}
+											{if !$carrier@last} - {/if}
+										{/if}
+									{/foreach}
 								</td>
 								<td>
-								{if $option.is_best_grade}
-									{if $option.is_best_price}
-									<div class="delivery_option_best delivery_option_icon">{l s='The best price and grade'}</div>
-									{else}
-									<div class="delivery_option_fast delivery_option_icon">{l s='The faster'}</div>
+								{if $option.unique_carrier}
+									{foreach $option.carrier_list as $carrier}
+										<div class="delivery_option_title">{$carrier.instance->name}</div>
+									{/foreach}
+									{if isset($carrier.instance->delay[$cookie->id_lang])}
+										<div class="delivery_option_delay">{$carrier.instance->delay[$cookie->id_lang]}</div>
 									{/if}
-								{else}
-									{if $option.is_best_price}
-									<div class="delivery_option_best_price delivery_option_icon">{l s='The best price'}</div>
+								{/if}
+								{if count($option_list) > 1}
+									{if $option.is_best_grade}
+										{if $option.is_best_price}
+										<div class="delivery_option_best delivery_option_icon">{l s='The best price and grade'}</div>
+										{else}
+										<div class="delivery_option_fast delivery_option_icon">{l s='The faster'}</div>
+										{/if}
+									{else}
+										{if $option.is_best_price}
+										<div class="delivery_option_best_price delivery_option_icon">{l s='The best price'}</div>
+										{/if}
 									{/if}
 								{/if}
 								</td>
@@ -162,18 +171,22 @@
 								</td>
 							</tr>
 						</table>
-						<table class="delivery_option_carrier">
+						<table class="delivery_option_carrier {if $delivery_option[$id_address] == $key}selected{/if} {if $option.unique_carrier}not-displayable{/if}">
 							{foreach $option.carrier_list as $carrier}
 							<tr>
+								{if !$option.unique_carrier}
 								<td class="first_item">
-								{if $carrier.logo}
-									<img src="{$carrier.logo}" alt="{$carrier.instance->name}"/>
-								{/if}
+								<input type="hidden" value="{$carrier.instance->id}" name="id_carrier" />
+									{if $carrier.logo}
+										<img src="{$carrier.logo}" alt="{$carrier.instance->name}"/>
+									{/if}
 								</td>
 								<td>
 									{$carrier.instance->name}
 								</td>
-								<td>
+								{/if}
+								<td {if $option.unique_carrier}class="first_item" colspan="2"{/if}>
+									<input type="hidden" value="{$carrier.instance->id}" name="id_carrier" />
 									{if isset($carrier.instance->delay[$cookie->id_lang])}
 										{$carrier.instance->delay[$cookie->id_lang]}
 									{/if}
@@ -185,6 +198,7 @@
 				</div>
 			{/foreach}
 			</div>
+			<div class="hook_extracarrier" id="HOOK_EXTRACARRIER_{$id_address}">{$HOOK_EXTRACARRIER_ADDR.$id_address}</div>
 			{foreachelse}
 			<p class="warning" id="noCarrierWarning">
 				{if $cart->isMultiAddressDelivery()}

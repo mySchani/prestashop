@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11215 $
+*  @version  Release: $Revision: 12074 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -87,7 +87,7 @@ class CmsControllerCore extends FrontController
 		if (isset($this->cms->id_cms_category) && $this->cms->id_cms_category)
 			$path = Tools::getFullPath($this->cms->id_cms_category, $this->cms->meta_title, 'CMS');
 		else
-			$path = Tools::getFullPath(1, $this->cms->meta_title, 'CMS');
+			$path = Tools::getFullPath(1, $this->cms_category->meta_title, 'CMS');
 		if ($this->assignCase == 1)
 		{
 			$this->context->smarty->assign(array(

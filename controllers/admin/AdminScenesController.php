@@ -64,7 +64,7 @@ class AdminScenesControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function afterImageUpload()
+	protected function afterImageUpload()
 	{
 		/* Generate image with differents size */
 		if (!($obj = $this->loadObject(true)))
@@ -76,7 +76,7 @@ class AdminScenesControllerCore extends AdminController
 			{
 				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				if ($image_type['name'] == 'large_scene' && isset($_FILES['image']))
-					imageResize(
+					ImageManager::resize(
 						$_FILES['image']['tmp_name'],
 						_PS_SCENE_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 						(int)$image_type['width'],
@@ -88,7 +88,7 @@ class AdminScenesControllerCore extends AdminController
 						$tmp_name = $_FILES['thumb']['tmp_name'];
 					else
 						$tmp_name = $_FILES['image']['tmp_name'];
-					imageResize(
+					ImageManager::resize(
 						$tmp_name,
 						_PS_SCENE_THUMB_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 						(int)$image_type['width'],
@@ -238,8 +238,15 @@ class AdminScenesControllerCore extends AdminController
 				foreach (Scene::getIndexedCategories($obj->id) as $k => $row)
 					$selected_cat[] = $row['id_category'];
 
+			$root_category = Category::getRootCategory();
+			if (!$root_category->id_category)
+			{
+				$root_category->id_category = 0;
+				$root_category->name = $this->l('Root');
+			}
+			$root_category = array('id_category' => $root_category->id_category, 'name' => $root_category->name);
 			$trads = array(
-							'Home' => $this->l('Home'),
+							'Root' => $root_category,
 							'selected' => $this->l('selected'),
 							'Check all' => $this->l('Check all'),
 							'Check All' => $this->l('Check All'),
@@ -259,6 +266,7 @@ class AdminScenesControllerCore extends AdminController
 						'use_radio' => false,
 						'use_search' => true,
 						'disabled_categories' => array(4),
+						'top_category' => Category::getTopCategory(),
 					)
 				);
 		}
@@ -294,9 +302,9 @@ class AdminScenesControllerCore extends AdminController
 		if (Tools::isSubmit('save_image_map'))
 		{
 			if (!Tools::isSubmit('categories') || !count(Tools::getValue('categories')))
-				$this->_errors[] = Tools::displayError('You should select at least one category');
+				$this->errors[] = Tools::displayError('You should select at least one category');
 			if (!Tools::isSubmit('zones') || !count(Tools::getValue('zones')))
-				$this->_errors[] = Tools::displayError('You should make at least one zone');
+				$this->errors[] = Tools::displayError('You should make at least one zone');
 		}
 		parent::postProcess();
 	}

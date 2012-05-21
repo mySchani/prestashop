@@ -91,9 +91,8 @@ class AdminFeaturesControllerCore extends AdminController
 	 * method call when ajax request is made with the details row action
 	 * @see AdminController::postProcess()
 	 */
-	public function ajaxProcess()
+	public function ajaxProcessDetails()
 	{
-		// test if an id is submit
 		if (($id = Tools::getValue('id')))
 		{
 			$this->table = 'feature_value';
@@ -109,7 +108,7 @@ class AdminFeaturesControllerCore extends AdminController
 			$this->addRowAction('delete');
 
 			if (!Validate::isLoadedObject($obj = new Feature((int)$id)))
-				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+				$this->errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 
 			$this->fieldsDisplay = array(
 				'id_feature_value' => array(
@@ -117,8 +116,7 @@ class AdminFeaturesControllerCore extends AdminController
 					'width' => 25
 				),
 				'value' => array(
-					'title' => $this->l('Value'),
-					'width' => 100
+					'title' => $this->l('Value')
 				)
 			);
 
@@ -144,7 +142,8 @@ class AdminFeaturesControllerCore extends AdminController
 			$helper->bulk_actions = $this->bulk_actions;
 			$content = $helper->generateList($this->_list, $this->fieldsDisplay);
 
-			$this->content = Tools::jsonEncode(array('use_parent_structure' => false, 'data' => $content));
+			echo Tools::jsonEncode(array('use_parent_structure' => false, 'data' => $content));
+			exit;
 		}
 	}
 
@@ -200,9 +199,17 @@ class AdminFeaturesControllerCore extends AdminController
 		switch ($this->display)
 		{
 			case 'editFeatureValue':
+			case 'add':
+			case 'edit':
 				$this->toolbar_btn['save'] = array(
 					'href' => '#',
 					'desc' => $this->l('Save')
+				);
+
+				$this->toolbar_btn['save-and-stay'] = array(
+					'short' => 'SaveAndStay',
+					'href' => '#',
+					'desc' => $this->l('Save and stay'),
 				);
 
 				// Default cancel button - like old back link
@@ -227,6 +234,10 @@ class AdminFeaturesControllerCore extends AdminController
 	 */
 	public function initFormFeatureValue()
 	{
+		$this->table = 'feature_value';
+		$this->className = 'FeatureValue';
+		$this->identifier = 'id_feature_value';
+
 		$this->fields_form[0]['form'] = array(
 			'legend' => array(
 				'title' => $this->l('Feature value'),
@@ -260,11 +271,11 @@ class AdminFeaturesControllerCore extends AdminController
 			)
 		);
 
-	 	// Create Object FeatureValue
+		// Create Object FeatureValue
 		$feature_value = new FeatureValue(Tools::getValue('id_feature_value'));
 
 		$this->tpl_vars = array(
-			'hook' => Hook::exec('featureValueForm', array('id_feature_value' => $feature_value->id))
+			'feature_value' => $feature_value,
 		);
 
 		$this->getlanguages();
@@ -350,8 +361,8 @@ class AdminFeaturesControllerCore extends AdminController
 
 		if (Tools::isSubmit('deletefeature_value') || Tools::isSubmit('submitAddfeature_value'))
 		{
-			Hook::exec('postProcessFeatureValue',
-				array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessFeatureValue to stop saving process
+			Hook::exec('displayFeatureValuePostProcess',
+				array('errors' => &$this->errors)); // send errors as reference to allow displayFeatureValuePostProcess to stop saving process
 
 			if (Tools::isSubmit('deletefeature_value'))
 			{
@@ -363,33 +374,42 @@ class AdminFeaturesControllerCore extends AdminController
 						if ($object->delete())
 							Tools::redirectAdmin(self::$currentIndex.'&conf=2'.'&token='.$this->token);
 						else
-							$this->_errors[] = Tools::displayError('An error occurred during deletion.');
+							$this->errors[] = Tools::displayError('An error occurred during deletion.');
 					}
 				}
 				else
-					$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+					$this->errors[] = Tools::displayError('You do not have permission to delete here.');
 			}
-			else if (Tools::isSubmit('submitAddfeature_value'))
+			else if (Tools::isSubmit('submitAddfeature_value') || Tools::isSubmit('submitAddfeature_valueAndStay'))
 			{
+				$this->table = 'feature_value';
+				$this->className = 'FeatureValue';
+				$this->identifier = 'id_feature_value';
+
 				$id = (int)Tools::getValue('id_feature_value');
 				$feature_value = new FeatureValue($id);
 				$feature_value->value = array();
 
 				if (!Tools::getValue('value_'.$this->context->language->id))
-					$this->_errors[] = Tools::displayError('The value is required for the default language.');
+					$this->errors[] = Tools::displayError('The value is required for the default language.');
 
 				$languages = Language::getLanguages(false);
 					foreach ($languages as $language)
 						$feature_value->value[$language['id_lang']] = Tools::getValue('value_'.$language['id_lang']);
 				$feature_value->id_feature = Tools::getValue('id_feature');
 
-				if (count($this->_errors) > 0)
-					return false;
+				if (count($this->errors) > 0)
+				{
+					$this->display = 'editFeatureValue';
+					parent::postProcess();
+				}
 				else if (isset($id) && !empty($id))
 				{
 					// Update
 					if (!$feature_value->update())
-						$this->_errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+						$this->errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+					else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
+						Tools::redirectAdmin(self::$currentIndex.'&'.$this->identifier.'=&id_feature='.(int)Tools::getValue('id_feature').'&conf=3&update'.$this->table.'&token='.$this->token);
 					else
 						Tools::redirectAdmin(self::$currentIndex.'&conf=4&token='.$this->token);
 				}
@@ -397,7 +417,9 @@ class AdminFeaturesControllerCore extends AdminController
 				{
 					// Create
 					if (!$feature_value->add())
-						$this->_errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+						$this->errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+					else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
+						Tools::redirectAdmin(self::$currentIndex.'&'.$this->identifier.'=&id_feature='.(int)Tools::getValue('id_feature').'&conf=3&update'.$this->table.'&token='.$this->token);
 					else
 						Tools::redirectAdmin(self::$currentIndex.'&conf=4&token='.$this->token);
 				}
@@ -407,8 +429,8 @@ class AdminFeaturesControllerCore extends AdminController
 		}
 		else
 		{
-			Hook::exec('postProcessFeature',
-				array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessFeature to stop saving process
+			Hook::exec('displayFeaturePostProcess',
+				array('errors' => &$this->errors)); // send errors as reference to allow displayFeaturePostProcess to stop saving process
 
 			if (Tools::getValue('submitDel'.$this->table))
 			{
@@ -419,13 +441,13 @@ class AdminFeaturesControllerCore extends AdminController
 						$object = new $this->className();
 						if ($object->deleteSelection($_POST[$this->table.'Box']))
 							Tools::redirectAdmin(self::$currentIndex.'&conf=2'.'&token='.$this->token);
-						$this->_errors[] = Tools::displayError('An error occurred while deleting selection.');
+						$this->errors[] = Tools::displayError('An error occurred while deleting selection.');
 					}
 					else
-						$this->_errors[] = Tools::displayError('You must select at least one element to delete.');
+						$this->errors[] = Tools::displayError('You must select at least one element to delete.');
 				}
 				else
-					$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+					$this->errors[] = Tools::displayError('You do not have permission to delete here.');
 			}
 			else if (Tools::isSubmit('submitAdd'.$this->table))
 			{
@@ -452,4 +474,70 @@ class AdminFeaturesControllerCore extends AdminController
 				parent::postProcess();
 		}
 	}
+
+	/**
+	 * Override processAdd to change SaveAndStay button action
+	 * @see classes/AdminControllerCore::processAdd()
+	 */
+	public function processAdd($token)
+	{
+		parent::processAdd($token);
+
+		if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
+			$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'=&conf=3&update'.$this->table.'&token='.$token;
+	}
+
+	/**
+	 * Override processUpdate to change SaveAndStay button action
+	 * @see classes/AdminControllerCore::processUpdate()
+	 */
+	public function processUpdate($token)
+	{
+		parent::processUpdate($token);
+
+		if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
+			$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'=&conf=3&update'.$this->table.'&token='.$token;
+	}
+
+	/**
+	 * Call the right method for creating or updating object
+	 *
+	 * @param $token
+	 * @return mixed
+	 */
+	public function processSave($token)
+	{
+		if ((int)Tools::getValue('id_feature_value') <= 0 && $this->display == 'add'
+			|| (int)Tools::getValue('id_feature') <= 0 && $this->display != 'add')
+			return $this->processAdd($token);
+		else
+			return $this->processUpdate($token);
+	}
+
+	/**
+	 * AdminController::getList() override
+	 * @see AdminController::getList()
+	 */
+	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
+	{
+		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
+
+		if ($this->table == 'feature')
+		{
+			$nb_items = count($this->_list);
+			for ($i = 0; $i < $nb_items; ++$i)
+			{
+				$item = &$this->_list[$i];
+
+				$query = new DbQuery();
+				$query->select('COUNT(id_feature_value) as count_values');
+				$query->from('feature_value', 'fv');
+				$query->where('fv.id_feature ='.(int)$item['id_feature']);
+				$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+				$item['value'] = (int)$res;
+				unset($query);
+			}
+		}
+	}
+
 }

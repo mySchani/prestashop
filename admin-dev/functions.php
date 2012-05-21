@@ -30,7 +30,7 @@ require_once(dirname(__FILE__).'/../images.inc.php');
 function bindDatepicker($id, $time)
 {
 	if ($time)
-	echo '
+		echo '
 		var dateObj = new Date();
 		var hours = dateObj.getHours();
 		var mins = dateObj.getMinutes();
@@ -42,7 +42,7 @@ function bindDatepicker($id, $time)
 
 	echo '
 	$(function() {
-		$("#'.$id.'").datepicker({
+		$("#'.Tools::htmlentitiesUTF8($id).'").datepicker({
 			prevText:"",
 			nextText:"",
 			dateFormat:"yy-mm-dd"'.($time ? '+time' : '').'});
@@ -62,7 +62,7 @@ function includeDatepicker($id, $time = false)
 	echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery-ui-1.8.10.custom.min.js"></script>';
 	$iso = Db::getInstance()->getValue('SELECT iso_code FROM '._DB_PREFIX_.'lang WHERE `id_lang` = '.(int)Context::getContext()->language->id);
 	if ($iso != 'en')
-		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/ui/i18n/jquery.ui.datepicker-'.$iso.'.js"></script>';
+		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/ui/i18n/jquery.ui.datepicker-'.Tools::htmlentitiesUTF8($iso).'.js"></script>';
 	echo '<script type="text/javascript">';
 		if (is_array($id))
 			foreach ($id as $id2)
@@ -93,7 +93,6 @@ function	rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 	$defines['_DB_USER_'] = (($arrayDB AND isset($arrayDB['_DB_USER_'])) ? $arrayDB['_DB_USER_'] : _DB_USER_);
 	$defines['_DB_PREFIX_'] = (($arrayDB AND isset($arrayDB['_DB_PREFIX_'])) ? $arrayDB['_DB_PREFIX_'] : _DB_PREFIX_);
 	$defines['_DB_PASSWD_'] = (($arrayDB AND isset($arrayDB['_DB_PASSWD_'])) ? $arrayDB['_DB_PASSWD_'] : _DB_PASSWD_);
-	$defines['_DB_TYPE_'] = (($arrayDB AND isset($arrayDB['_DB_TYPE_'])) ? $arrayDB['_DB_TYPE_'] : _DB_TYPE_);
 	$defines['_COOKIE_KEY_'] = addslashes(_COOKIE_KEY_);
 	$defines['_COOKIE_IV_'] = addslashes(_COOKIE_IV_);
 	if (defined('_RIJNDAEL_KEY_'))
@@ -162,9 +161,9 @@ function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryT
 			$nCategories = (int)sizeof($categories);
 			foreach ($categories AS $category)
 			{
-				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'addcategory').'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$context->employee->id).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
+				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'updatecategory').'&token='.Tools::getAdminToken('AdminCategories'.(int)(Tab::getIdFromClassName('AdminCategories')).(int)$context->employee->id).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
 				$fullPath .= $edit.
-				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$context->employee->id).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
+				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCategories'.(int)(Tab::getIdFromClassName('AdminCategories')).(int)$context->employee->id).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
 				(!empty($highlight) ? str_ireplace($highlight, '<span class="highlight">'.htmlentities($highlight, ENT_NOQUOTES, 'UTF-8').'</span>', $category['name']) : $category['name']).
 				($n < $nCategories ? '</a>' : '').
 				(($n++ != $nCategories OR !empty($path)) ? ' > ' : '');

@@ -39,7 +39,7 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	private function addAttribute($arr, $price = 0, $weight = 0)
+	protected function addAttribute($arr, $price = 0, $weight = 0)
 	{
 		foreach ($arr as $attr)
 		{
@@ -69,7 +69,7 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 		$first = array_pop($list);
 		foreach ($first as $attribute)
 		{
-			$tab = self::createCombinations($list);
+			$tab = AdminAttributeGeneratorController::createCombinations($list);
 			foreach ($tab as $to_add)
 				$res[] = is_array($to_add) ? array_merge($to_add, array($attribute)) : array($to_add, $attribute);
 		}
@@ -79,18 +79,19 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 	public function postProcess()
 	{
 		$this->product = new Product((int)Tools::getValue('id_product'));
+		$this->product->loadStockData();
 
 		if (isset($_POST['generate']))
 		{
 			if (!is_array(Tools::getValue('options')))
-				$this->_errors[] = Tools::displayError('Please choose at least 1 attribute.');
+				$this->errors[] = Tools::displayError('Please choose at least 1 attribute.');
 			else
 			{
 				$tab = array_values($_POST['options']);
 				if (count($tab) && Validate::isLoadedObject($this->product))
 				{
-                    self::setAttributesImpacts($this->product->id, $tab);
-					$this->combinations = array_values(self::createCombinations($tab));
+					AdminAttributeGeneratorController::setAttributesImpacts($this->product->id, $tab);
+					$this->combinations = array_values(AdminAttributeGeneratorController::createCombinations($tab));
 					$values = array_values(array_map(array($this, 'addAttribute'), $this->combinations));
 
 					// @since 1.5.0
@@ -113,9 +114,10 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 						foreach ($attributes as $attribute)
 							StockAvailable::setQuantity($this->product->id, $attribute['id_product_attribute'], $quantity, $this->context->shop->id);
 					}
+					Tools::redirectAdmin($this->context->link->getAdminLink('AdminProducts').'&id_product='.(int)Tools::getValue('id_product').'&addproduct&action=Combinations');
 				}
 				else
-					$this->_errors[] = Tools::displayError('Unable to initialize parameters, combination is missing or object cannot be loaded.');
+					$this->errors[] = Tools::displayError('Unable to initialize parameters, combination is missing or object cannot be loaded.');
 			}
 		}
 		else if (isset($_POST['back']))
@@ -181,7 +183,7 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 	{
 		$combinations_groups = $this->product->getAttributesGroups($this->context->language->id);
 		$attributes = array();
-        $impacts = self::getAttributesImpacts($this->product->id);
+        $impacts = AdminAttributeGeneratorController::getAttributesImpacts($this->product->id);
 		foreach ($combinations_groups as &$combination)
 		{
             $target = &$attributes[$combination['id_attribute_group']][$combination['id_attribute']];
@@ -223,13 +225,13 @@ class AdminAttributeGeneratorControllerCore extends AdminController
 
 		$this->initGroupTable();
 
-		$js_attributes = self::displayAndReturnAttributeJs();
+		$js_attributes = AdminAttributeGeneratorController::displayAndReturnAttributeJs();
 		$attribute_groups = AttributeGroup::getAttributesGroups($this->context->language->id);
 		$this->product = new Product((int)Tools::getValue('id_product'));
 
 		$this->context->smarty->assign(array(
 			'tax_rates' => $this->product->getTaxesRate(),
-			'generate' => isset($_POST['generate']) && !count($this->_errors),
+			'generate' => isset($_POST['generate']) && !count($this->errors),
 			'combinations_size' => count($this->combinations),
 			'product_name' => $this->product->name[$this->context->language->id],
 			'product_reference' => $this->product->reference,

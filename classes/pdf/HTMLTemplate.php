@@ -33,9 +33,9 @@ abstract class HTMLTemplateCore
 {
 	public $title;
 	public $date;
-	public $address;
 	public $available_in_your_account = true;
 	public $smarty;
+	public $shop;
 
 	/**
 	 * Returns the template's HTML header
@@ -43,13 +43,17 @@ abstract class HTMLTemplateCore
 	 */
 	public function getHeader()
 	{
+		$shop_name = '';
+		if (Validate::isLoadedObject($this->shop))
+			$shop_name = $this->shop->name;
+
 		$this->smarty->assign(array(
 			'logo_path' => $this->getLogo(),
 			'img_ps_dir' => 'http://'.Tools::getMediaServer(_PS_IMG_)._PS_IMG_,
 			'img_update_time' => Configuration::get('PS_IMG_UPDATE_TIME'),
 			'title' => $this->title,
 			'date' => $this->date,
-			'shop_name' => Configuration::get('PS_SHOP_NAME')
+			'shop_name' => $shop_name
 		));
 
 		return $this->smarty->fetch(_PS_THEME_DIR_.'/pdf/header.tpl');
@@ -61,9 +65,7 @@ abstract class HTMLTemplateCore
 	 */
 	public function getFooter()
 	{
-		$shop_address = '';
-		if (isset($this->address) && $this->address instanceof Address)
-			$shop_address = AddressFormat::generateAddress($this->address, array(), ' - ', ' ');
+		$shop_address = $this->getShopAddress();
 
 		$this->smarty->assign(array(
 			'available_in_your_account' => $this->available_in_your_account,
@@ -73,23 +75,42 @@ abstract class HTMLTemplateCore
 			'shop_details' => Configuration::get('PS_SHOP_DETAILS'),
 			'free_text' => Configuration::get('PS_INVOICE_FREE_TEXT')
 		));
+
 		return $this->smarty->fetch(_PS_THEME_DIR_.'/pdf/footer.tpl');
+	}
+
+	/**
+	 * Returns the shop address
+	 * @return string
+	 */
+	protected function getShopAddress()
+	{
+		$shop_address = '';
+		if (Validate::isLoadedObject($this->shop))
+		{
+			$shop_address_obj = $this->shop->getAddress();
+			if (isset($shop_address_obj) && $shop_address_obj instanceof Address)
+				$shop_address = AddressFormat::generateAddress($shop_address_obj, array(), ' - ', ' ');
+			return $shop_address;
+		}
+
+		return $shop_address;
 	}
 
 	/**
 	 * Returns the invoice logo
 	 */
-    protected function getLogo()
-    {
+	protected function getLogo()
+	{
 		$logo = '';
 
-		if (file_exists(_PS_IMG_DIR_.'logo_invoice.jpg'))
-			$logo = _PS_IMG_.'logo_invoice.jpg';
-		else if (file_exists(_PS_IMG_DIR_.'logo.jpg'))
-			$logo = _PS_IMG_.'logo.jpg';
+		if (Configuration::get('PS_LOGO_INVOICE') != false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO_INVOICE')))
+			$logo = _PS_IMG_.Configuration::get('PS_LOGO_INVOICE');
+		else if (Configuration::get('PS_LOGO') != false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO')))
+			$logo = _PS_IMG_.Configuration::get('PS_LOGO');
 
 		return $logo;
-    }
+	}
 
 	/**
 	* Assign hook data
@@ -102,7 +123,7 @@ abstract class HTMLTemplateCore
 		$hook_name = 'displayPDF'.$template;
 
 		$this->smarty->assign(array(
-			'HOOK_DISPLAY_PDF' => Hook::exec($hook_name, array('object' => $object)),
+			'HOOK_DISPLAY_PDF' => Hook::exec($hook_name, array('object' => $object))
 		));
 	}
 
@@ -117,14 +138,13 @@ abstract class HTMLTemplateCore
 	 * Returns the template filename
 	 * @return string filename
 	 */
-    abstract public function getFilename();
+	abstract public function getFilename();
 
 	/**
 	 * Returns the template filename when using bulk rendering
 	 * @return string filename
 	 */
-    abstract public function getBulkFilename();
-
+	abstract public function getBulkFilename();
 
 	/**
 	 * Translatation method
@@ -135,16 +155,17 @@ abstract class HTMLTemplateCore
 	{
 		$iso = Context::getContext()->language->iso_code;
 
-        if (!Validate::isLangIsoCode($iso))
-            die('Invalid iso lang ('.$iso.')');
+		if (!Validate::isLangIsoCode($iso))
+			Tools::displayError(sprintf('Invalid iso lang (%s)', Tools::safeOutput($iso)));
 
-		if (@!include(_PS_THEME_DIR_.'pdf/'.$iso.'.php'))
-			die('Cannot include PDF translation language file : '._PS_THEME_DIR_.'pdf/'.$iso.'.php');
+		$file_name = _PS_THEME_DIR_.'pdf/lang/'.$iso.'.php';
+		if (!file_exists($file_name) || !include($file_name))
+			Tools::displayError(sprintf('Cannot include PDF translation language file : %s', $file_name));
 
-		if (!isset($_LANGPDF) OR !is_array($_LANGPDF))
+		if (!isset($_LANGPDF) || !is_array($_LANGPDF))
 			return str_replace('"', '&quot;', $string);
-		$key = md5(str_replace('\'', '\\\'', $string));
-		$str = (key_exists('PDF_invoice'.$key, $_LANGPDF) ? $_LANGPDF['PDF_invoice'.$key] : $string);
+			$key = md5(str_replace('\'', '\\\'', $string));
+		$str = (key_exists('PDF'.$key, $_LANGPDF) ? $_LANGPDF['PDF'.$key] : $string);
 
 		return $str;
 	}

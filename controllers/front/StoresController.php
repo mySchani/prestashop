@@ -40,7 +40,7 @@ class StoresControllerCore extends FrontController
 		if (!extension_loaded('Dom'))
 		{
 			$this->errors[] = Tools::displayError('Dom extension is not loaded.');
-			$smarty->assign('errors', $this->errors);
+			$this->context->smarty->assign('errors', $this->errors);
 		}
 	}
 
@@ -158,7 +158,7 @@ class StoresControllerCore extends FrontController
 	 */
 	protected function assignStores()
 	{
-		$this->context->smarty->assign('hasStoreIcon', file_exists(dirname(__FILE__).'/../img/logo_stores.gif'));
+		$this->context->smarty->assign('hasStoreIcon', file_exists(dirname(__FILE__).'/../img/'.Configuration::get('PS_STORES_ICON')));
 
 		$distanceUnit = Configuration::get('PS_DISTANCE_UNIT');
 		if (!in_array($distanceUnit, array('km', 'mi')))

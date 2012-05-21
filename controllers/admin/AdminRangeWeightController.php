@@ -52,8 +52,8 @@ class AdminRangeWeightControllerCore extends AdminController
 
 	public function renderForm()
 	{
-		$carriers = Carrier::getCarriers($this->context->language->id, true , false, false, NULL, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
-		foreach ($carriers AS $key => $carrier)
+		$carriers = Carrier::getCarriers($this->context->language->id, true, false, false, null, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
+		foreach ($carriers as $key => $carrier)
 			if ($carrier['is_free'])
 				unset($carriers[$key]);
 
@@ -68,7 +68,7 @@ class AdminRangeWeightControllerCore extends AdminController
 					'label' => $this->l('Carrier:'),
 					'name' => 'id_carrier',
 					'required' => false,
-					'desc' => $this->l('Carrier to which this range will be applied'),
+					'desc' => $this->l('You can apply this range to a different carrier by selecting its name.'),
 					'options' => array(
 						'query' => $carriers,
 						'id' => 'id_carrier',
@@ -116,7 +116,7 @@ class AdminRangeWeightControllerCore extends AdminController
 	public function postProcess()
 	{
 		if ($this->action == 'save' && Tools::getValue('delimiter1') >= Tools::getValue('delimiter2'))
-			$this->_errors[] = Tools::displayError('Invalid range');
+			$this->errors[] = Tools::displayError('Invalid range');
 		else
 			parent::postProcess();
 	}

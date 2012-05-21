@@ -51,7 +51,7 @@ class SupplyOrderCore extends ObjectModel
 	public $id_warehouse;
 
 	/**
-	 * @var int State of the order
+	 * @var int Current state of the order
 	 */
 	public $id_supply_order_state;
 
@@ -121,10 +121,6 @@ class SupplyOrderCore extends ObjectModel
 	public $is_template = 0;
 
 	/**
-	 * @var array Contains object definition
-	 * @see ObjectModel::definition
-	 */
-	/**
 	 * @see ObjectModel::$definition
 	 */
 	public static $definition = array(
@@ -132,7 +128,7 @@ class SupplyOrderCore extends ObjectModel
 		'primary' => 'id_supply_order',
 		'fields' => array(
 			'id_supplier' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
-			'supplier_name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isCatalogName', 'required' => true),
+			'supplier_name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isCatalogName', 'required' => false),
 			'id_lang' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'id_warehouse' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'id_supply_order_state' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
@@ -144,7 +140,7 @@ class SupplyOrderCore extends ObjectModel
 			'total_with_discount_te' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
 			'total_ti' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
 			'total_tax' =>				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
-			'discount_rate' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'discount_rate' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => false),
 			'discount_value_te' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
 			'is_template' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
@@ -171,6 +167,8 @@ class SupplyOrderCore extends ObjectModel
 				'resource' => 'supply_order_detail',
 				'fields' => array(
 					'id' => array(),
+ 					'id_product' => array(),
+ 					'id_product_attribute' => array(),
  					'supplier_reference' => array(),
  					'product_name' => array(),
 				),
@@ -209,10 +207,8 @@ class SupplyOrderCore extends ObjectModel
 	}
 
 	/**
-	 * Check all products in this order and calculate prices
-	 * Apply global discount if necessary
-	 *
-	 * @return array
+	 * Checks all products in this order and calculate prices
+	 * Applies the global discount if necessary
 	 */
 	protected function calculatePrices()
 	{
@@ -249,6 +245,7 @@ class SupplyOrderCore extends ObjectModel
 	/**
 	 * Retrieves the product entries for the current order
 	 *
+	 * @param int $id_lang Optional Id Lang - Uses Context::language::id by default
 	 * @return array
 	 */
 	public function getEntries($id_lang = null)
@@ -283,9 +280,9 @@ class SupplyOrderCore extends ObjectModel
 	}
 
 	/**
-	 * Retrieves the product entries collection for the current order
+	 * Retrieves the details entries (i.e. products) collection for the current order
 	 *
-	 * @return Collection
+	 * @return Collection of SupplyOrderDetail
 	 */
 	public function getEntriesCollection()
 	{
@@ -298,7 +295,7 @@ class SupplyOrderCore extends ObjectModel
 	/**
 	 * Check if the order has entries
 	 *
-	 * @return bool
+	 * @return bool Has/Has not
 	 */
 	public function hasEntries()
 	{
@@ -311,13 +308,12 @@ class SupplyOrderCore extends ObjectModel
 	}
 
 	/**
-	 * Check if the current state allow to edit the current order
+	 * Check if the current state allows to edit the current order
 	 *
 	 * @return bool
 	 */
 	public function isEditable()
 	{
-		// build query
 		$query = new DbQuery();
 		$query->select('s.editable');
 		$query->from('supply_order_state', 's');
@@ -333,7 +329,6 @@ class SupplyOrderCore extends ObjectModel
 	 */
 	public function isDeliveryNoteAvailable()
 	{
-		// build query
 		$query = new DbQuery();
 		$query->select('s.delivery_note');
 		$query->from('supply_order_state', 's');
@@ -343,13 +338,12 @@ class SupplyOrderCore extends ObjectModel
 	}
 
 	/**
-	 * Checks if the current state allows add products in stock
+	 * Checks if the current state allows to add products in stock
 	 *
 	 * @return bool
 	 */
 	public function isInReceiptState()
 	{
-		// build query
 		$query = new DbQuery();
 		$query->select('s.receipt_state');
 		$query->from('supply_order_state', 's');
@@ -410,7 +404,7 @@ class SupplyOrderCore extends ObjectModel
 	/**
 	 * For a given $id_supplier, tells if it has pending supply orders
 	 *
-	 * @param int $id_supplier
+	 * @param int $id_supplier Id Supplier
 	 * @return bool
 	 */
 	public static function supplierHasPendingOrders($id_supplier)
@@ -431,8 +425,9 @@ class SupplyOrderCore extends ObjectModel
 
 	/**
 	 * For a given id or reference, tells if the supply order exists
-	 * @param int|string $match
-	 * @return int id
+	 *
+	 * @param int|string $match Either the reference of the order, or the Id of the order
+	 * @return int SupplyOrder Id
 	 */
 	public static function exists($match)
 	{
@@ -451,7 +446,7 @@ class SupplyOrderCore extends ObjectModel
 	/**
 	 * For a given reference, returns the corresponding supply order
 	 *
-	 * @param striing $reference
+	 * @param string $reference Reference of the order
 	 * @return bool|SupplyOrder
 	 */
 	public static function getSupplyOrderByReference($reference)
@@ -462,23 +457,74 @@ class SupplyOrderCore extends ObjectModel
 		$query = new DbQuery();
 		$query->select('id_supply_order');
 		$query->from('supply_order', 'so');
-		$query->where('so.reference = "'.pSQL($match).'"');
+		$query->where('so.reference = "'.pSQL($reference).'"');
 		$id = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 
-		if ($id === false)
+		if ($id == false)
 			return false;
 
 		return (new SupplyOrder((int)$id));
 	}
 
 	/**
+	 * @see ObjectModel::hydrate()
+	 */
+	public function hydrate(array $data, $id_lang = null)
+	{
+		$this->id_lang = $id_lang;
+		if (isset($data[$this->def['primary']]))
+			$this->id = $data[$this->def['primary']];
+		foreach ($data as $key => $value)
+		{
+			if (array_key_exists($key, $this))
+			{
+				// formats prices and floats
+				if ($this->def['fields'][$key]['validate'] == 'isFloat' ||
+					$this->def['fields'][$key]['validate'] == 'isPrice')
+					$value = Tools::ps_round($value, 6);
+				$this->$key = $value;
+			}
+		}
+	}
+
+
+	/**
+	 * Gets the reference of a given order
+	 *
+	 * @param int $id_supply_order
+	 * @return bool|string
+	 */
+	public static function getReferenceById($id_supply_order)
+	{
+		if (!$id_supply_order)
+			return false;
+
+		$query = new DbQuery();
+		$query->select('so.reference');
+		$query->from('supply_order', 'so');
+		$query->where('so.id_supply_order = '.(int)$id_supply_order);
+		$ref = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+
+		return (pSQL($ref));
+	}
+
+	/*********************************\
+	 *
+	 * Webservices Specific Methods
+	 *
+	 *********************************/
+
+	/**
 	 * Webservice : gets the ids supply_order_detail associated to this order
+	 *
 	 * @return array
 	 */
 	public function getWsSupplyOrderDetails()
 	{
 		$query = new DbQuery();
-		$query->select('sod.id_supply_order_detail as id, sod.name as product_name, supplier_reference');
+		$query->select('sod.id_supply_order_detail as id, sod.id_product,
+						sod.id_product_attribute,
+					    sod.name as product_name, supplier_reference');
 		$query->from('supply_order_detail', 'sod');
 		$query->where('id_supply_order = '.(int)$this->id);
 

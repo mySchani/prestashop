@@ -452,36 +452,44 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 	</div>
 </div>
 
-{if isset($quantity_discounts) && $quantity_discounts}
+{if (isset($quantity_discounts) && count($quantity_discounts) > 0)}
 <!-- quantity discount -->
 <ul class="idTabs clearfix">
-	<li><a href="#" style="cursor: pointer" class="selected">{l s='Quantity discount'}</a></li>
+	<li><a href="#discount" style="cursor: pointer" class="selected">{l s='Quantity discount'}</a></li>
 </ul>
 <div id="quantityDiscount">
 	<table class="std">
-		<tr>
-			{foreach from=$quantity_discounts item='quantity_discount' name='quantity_discounts'}
-				<th>{$quantity_discount.quantity|intval}
-				{if $quantity_discount.quantity|intval > 1}
-					{l s='quantities'}
-				{else}
-					{l s='quantity'}
-				{/if}
-				{if $quantity_discount.attributes}{$quantity_discount.attributes}{/if}
-				</th>
-			{/foreach}
-		</tr>
-		<tr>
-			{foreach from=$quantity_discounts item='quantity_discount' name='quantity_discounts'}
-				<td>
-				{if $quantity_discount.price != 0 OR $quantity_discount.reduction_type == 'amount'}
-					-{convertPrice price=$quantity_discount.real_value|floatval}
-				{else}
-    				-{$quantity_discount.real_value|floatval}%
-				{/if}
-				</td>
-			{/foreach}
-		</tr>
+        <thead>
+            <tr>
+                <th>{l s='product'}</th>
+                <th>{l s='from (qty)'}</th>
+                <th>{l s='discount'}</th>
+            </tr>
+        </thead>
+		<tbody>
+            <tr id="noQuantityDiscount">
+                <td colspan='3'>{l s='There is not any quantity discount for this product.'}</td>
+            </tr>
+            {foreach from=$quantity_discounts item='quantity_discount' name='quantity_discounts'}
+            <tr id="quantityDiscount_{$quantity_discount.id_product_attribute}">
+                <td>
+                    {if (isset($quantity_discount.attributes) && ($quantity_discount.attributes))}
+                        {$product->getProductName($quantity_discount.id_product, $quantity_discount.id_product_attribute)}
+                    {else}
+                        {$product->getProductName($quantity_discount.id_product)}
+                    {/if}
+                </td>
+                <td>{$quantity_discount.quantity|intval}</td>
+                <td>
+                    {if $quantity_discount.price != 0 OR $quantity_discount.reduction_type == 'amount'}
+                       -{convertPrice price=$quantity_discount.real_value|floatval}
+                   {else}
+                       -{$quantity_discount.real_value|floatval}%
+                   {/if}
+                </td>
+            </tr>
+            {/foreach}
+        </tbody>
 	</table>
 </div>
 {/if}
@@ -507,7 +515,9 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 		<!-- product's features -->
 		<ul id="idTab2" class="bullet">
 		{foreach from=$features item=feature}
-			<li><span>{$feature.name|escape:'htmlall':'UTF-8'}</span> {$feature.value|escape:'htmlall':'UTF-8'}</li>
+            {if isset($feature.value)}
+			    <li><span>{$feature.name|escape:'htmlall':'UTF-8'}</span> {$feature.value|escape:'htmlall':'UTF-8'}</li>
+            {/if}
 		{/foreach}
 		</ul>
 	{/if}

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11457 $
+*  @version  Release: $Revision: 13021 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,7 @@ class AdminHomeControllerCore extends AdminController
 {
 	const TIPS_TIMEOUT = 5;
 
-	private function _displayOptimizationTips()
+	protected function _displayOptimizationTips()
 	{
 		$link = $this->context->link;
 
@@ -59,16 +59,16 @@ class AdminHomeControllerCore extends AdminController
 		{
 			$stat = stat(dirname(__FILE__).'/../../.htaccess');
 			$dateUpdHtaccess = Db::getInstance()->getValue('SELECT date_upd FROM '._DB_PREFIX_.'configuration WHERE name = "PS_HTACCESS_CACHE_CONTROL"');
-			if (Configuration::get('PS_HTACCESS_CACHE_CONTROL') AND strtotime($dateUpdHtaccess) > $stat['mtime'])
+			if (Configuration::get('PS_HTACCESS_CACHE_CONTROL') && strtotime($dateUpdHtaccess) > $stat['mtime'])
 				$htaccessOptimized = 1;
 
 			$dateUpdate = Configuration::get('PS_LAST_SHOP_UPDATE');
-			if ($dateUpdate AND strtotime($dateUpdate) > $stat['mtime'])
+			if ($dateUpdate && strtotime($dateUpdate) > $stat['mtime'])
 				$htaccessAfterUpdate = 0;
 		}
 		$indexRebuiltAfterUpdate = 0;
-		$needRebuild=Configuration::get('PS_NEED_REBUILD_INDEX');
-		if($needRebuild !='0');
+		$needRebuild = Configuration::get('PS_NEED_REBUILD_INDEX');
+		if ($needRebuild != '0');
 			$indexRebuiltAfterUpdate = 2;
 
 		$smartyOptimized = 0;
@@ -77,10 +77,10 @@ class AdminHomeControllerCore extends AdminController
 		if (Configuration::get('PS_SMARTY_CACHE'))
 			++$smartyOptimized;
 
-		$cccOptimized = Configuration::get('PS_CSS_THEME_CACHE')
-		+ Configuration::get('PS_JS_THEME_CACHE')
-		+ Configuration::get('PS_HTML_THEME_COMPRESSION')
-		+ Configuration::get('PS_JS_HTML_THEME_COMPRESSION');
+		$cccOptimized = Configuration::get('PS_CSS_THEME_CACHE');
+		$cccOptimized += Configuration::get('PS_JS_THEME_CACHE');
+		$cccOptimized += Configuration::get('PS_HTML_THEME_COMPRESSION');
+		$cccOptimized += Configuration::get('PS_JS_HTML_THEME_COMPRESSION');
 		if ($cccOptimized == 4)
 			$cccOptimized = 2;
 		else
@@ -89,14 +89,14 @@ class AdminHomeControllerCore extends AdminController
 		$shopEnabled = (Configuration::get('PS_SHOP_ENABLE') ? 2 : 1);
 
 		$lights = array(
-		0 => array('image'=>'bullet_red.png','color'=>'red'),
-		1 => array('image'=>'bullet_orange.png','color'=>'orange'),
-		2 => array('image'=>'bullet_green.png','color'=>'green'));
+		0 => array('image'=>'cross.png','color'=>'red'),
+		1 => array('image'=>'error.png','color'=>'orange'),
+		2 => array('image'=>'tick.png','color'=>'green'));
 
 
 		if ($rewrite + $htaccessOptimized + $smartyOptimized + $cccOptimized + $shopEnabled + $htaccessAfterUpdate + $indexRebuiltAfterUpdate != 14)
 		{
-			$this->context->smarty->assign('hide_tips',Configuration::get('PS_HIDE_OPTIMIZATION_TIPS'));
+			$this->context->smarty->assign('hide_tips', Configuration::get('PS_HIDE_OPTIMIZATION_TIPS'));
 			$opti_list[] = array(
 				'title' => $this->l('URL rewriting'),
 				'href' => $link->getAdminLink('AdminGenerator'),
@@ -146,51 +146,77 @@ class AdminHomeControllerCore extends AdminController
 				'image' => $lights[$htaccessAfterUpdate]['image'],
 			);
 		}
-		$this->context->smarty->assign('opti_list',$opti_list);
-		$this->context->smarty->assign('content',$content);
-		return $this->context->smarty->fetch('home/optimizationTips.tpl');
+		$this->context->smarty->assign('opti_list', $opti_list);
+		$this->context->smarty->assign('content', $content);
+		$template = $this->createTemplate('optimizationTips.tpl');
+		return $template->fetch();
 	}
 
 	public function setMedia()
 	{
 		parent::setMedia();
-		if (strpos($_SERVER['HTTP_USER_AGENT'],'MSIE') !== false)
+		if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE') !== false)
 			$this->addJqueryPlugin('excanvas');
 		$this->addJqueryPlugin('flot');
+		$this->addJqueryPlugin('fancybox');
 	}
 
 	protected function warnDomainName()
 	{
-		if ($_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN') AND $_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN_SSL'))
+		if ($_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN') && $_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN_SSL'))
 			$this->displayWarning($this->l('You are currently connected with the following domain name:').' <span style="color: #CC0000;">'.$_SERVER['HTTP_HOST'].'</span><br />'.
 			$this->l('This one is different from the main shop domain name set in "Preferences > SEO & URLs":').' <span style="color: #CC0000;">'.Configuration::get('PS_SHOP_DOMAIN').'</span><br />
 			<a href="index.php?tab=AdminMeta&token='.Tools::getAdminTokenLite('AdminMeta').'#SEO%20%26%20URLs">'.
 			$this->l('Click here if you want to modify the main shop domain name').'</a>');
 	}
 
-	private function getQuickLinks()
+	protected function getQuickLinks()
 	{
 		$quick_links['first'] = array(
-			'href' => $this->context->link->getAdminLink('AdminCategories').'&amp;addcategory',
-			'title' => $this->l('New category'),
+			'href' => $this->context->link->getAdminLink('AdminStats').'&amp;module=statsbestproducts',
+			'title' => $this->l('Product sold recently'),
 			'description' => $this->l('Create a new category and organize your products.'),
 		);
 
 		$quick_links['second'] = array(
-			'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;addproduct',
-			'title' => $this->l('New product'),
+			'href' => $this->context->link->getAdminLink('AdminOrders').'&amp;addorder',
+			'title' => $this->l('New order'),
 			'description' => $this->l('Fill up your catalog with new articles and attributes.'),
 		);
 
 		$quick_links['third'] = array(
-			'href' => $this->context->link->getAdminLink('AdminStats'),
-			'title' => $this->l('Statistics'),
+			'href' => $this->context->link->getAdminLink('AdminSpecificPriceRule').'&amp;addspecific_price_rule',
+			'title' => $this->l('New Price Rule for catalog'),
 			'description' => $this->l('Manage your activity with a thorough analysis of your e-shop.'),
 		);
 
 		$quick_links['fourth'] = array(
-			'href' => $this->context->link->getAdminLink('AdminEmployees').'&amp;addemployee',
-			'title' => $this->l('New employee'),
+			'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;addproduct',
+			'title' => $this->l('New Product'),
+			'description' => $this->l('Add a new employee account and discharge a part of your duties of shop owner.'),
+		);
+		
+		$quick_links['fifth'] = array(
+			'href' => $this->context->link->getAdminLink('AdminModules').'&amp;addcategory',
+			'title' => $this->l('New module'),
+			'description' => $this->l('Create a new category and organize your products.'),
+		);
+
+		$quick_links['sixth'] = array(
+			'href' => $this->context->link->getAdminLink('AdminCartRules').'&amp;addcart_rule',
+			'title' => $this->l('New Price Rule for cart'),
+			'description' => $this->l('Fill up your catalog with new articles and attributes.'),
+		);
+
+		$quick_links['seventh'] = array(
+			'href' => $this->context->link->getAdminLink('AdminCmsContent').'&amp;addcms',
+			'title' => $this->l('New Page CMS'),
+			'description' => $this->l('Manage your activity with a thorough analysis of your e-shop.'),
+		);
+
+		$quick_links['eighth'] = array(
+			'href' => $this->context->link->getAdminLink('AdminCarts').'&amp;id_cart',
+			'title' => $this->l('Abandoned Carts'),
 			'description' => $this->l('Add a new employee account and discharge a part of your duties of shop owner.'),
 		);
 		return $quick_links;
@@ -205,7 +231,11 @@ class AdminHomeControllerCore extends AdminController
 			$content = '
 			<div class="table_info" id="table_info_last">
 				<h5><a href="index.php?tab=AdminCustomerThreads&token='.Tools::getAdminTokenLite('AdminCustomerThreads').'">'.$this->l('View more').'</a> '.$this->l('Customers service').'</h5>
-				<table class="table_info_details">
+				<table class="table_info_details" style="width:100%;">
+					<colgroup>
+						<col width=""></col>
+						<col width="80px"></col>
+					</colgroup>
 					<tr class="tr_odd">
 						<td class="td_align_left">
 						'.$this->l('Thread unread').'
@@ -247,7 +277,7 @@ class AdminHomeControllerCore extends AdminController
 	{
 		$currency = Tools::setCurrency($this->context->cookie);
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT SUM(o.`total_paid_real` / o.conversion_rate) as total_sales, COUNT(*) as total_orders
+		SELECT IFNULL(SUM(o.`total_paid_real` / o.conversion_rate), "0") as total_sales, COUNT(*) as total_orders
 		FROM `'._DB_PREFIX_.'orders` o
 		WHERE o.valid = 1
 		AND o.`invoice_date` BETWEEN \''.date('Y-m').'-01 00:00:00\' AND \''.date('Y-m').'-31 23:59:59\' ');
@@ -268,7 +298,11 @@ class AdminHomeControllerCore extends AdminController
 
 		$content = '<div class="table_info">
 			<h5><a href="index.php?tab=AdminStats&token='.Tools::getAdminTokenLite('AdminStats').'">'.$this->l('View more').'</a> '.$this->l('Monthly Statistics').' </h5>
-			<table class="table_info_details">
+			<table class="table_info_details" style="width:100%;">
+					<colgroup>
+						<col width=""></col>
+						<col width="80px"></col>
+					</colgroup>
 				<tr class="tr_odd">
 					<td class="td_align_left">
 					'.$this->l('Sales').'
@@ -336,7 +370,7 @@ class AdminHomeControllerCore extends AdminController
 	public function getLastOrders()
 	{
 		$content = '
-			<table cellpadding="0" cellspacing="0" id="table_customer">
+			<table cellpadding="0" cellspacing="0" id="table_customer" style="width:100%;">
 				<thead>
 					<tr>
 						<th class="order_id"><span class="first">'.$this->l('ID').'</span></th>
@@ -350,7 +384,7 @@ class AdminHomeControllerCore extends AdminController
 
 		$orders = Order::getOrdersWithInformations(10);
 		$i = 0;
-		foreach ($orders AS $order)
+		foreach ($orders as $order)
 		{
 			$currency = Currency::getCurrency((int)$order['id_currency']);
 			$content .= '
@@ -370,7 +404,7 @@ class AdminHomeControllerCore extends AdminController
 		$content .= '
 				</tbody>
 			</table>
-		</div>';
+	';
 		return $content;
 	}
 
@@ -433,20 +467,19 @@ class AdminHomeControllerCore extends AdminController
 			Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', '');
 
 		// DISCOVER PRESTASHOP
-		$result['discover_prestashop'] = $this->getBlockDiscover();
+		$result['discover_prestashop'] = '<div id="block_tips">'.$this->getBlockDiscover().'</div>';
 
-
-			if (@fsockopen('api.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
-				$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://api.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
-			else
-				$result['discover_prestashop'] .= '';
+		if (@fsockopen('api.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
+			$result['discover_prestashop'] .= '<div class="row-news"><div id="block_discover"><iframe frameborder="no" style="margin: 0px; padding: 0px; width: 100%; height:250px; overflow:hidden;" src="'.$protocol.'://api.prestashop.com/rss2/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe></div>';
+		else
+			$result['discover_prestashop'] .= '';
 
 		// SHOW PAYPAL TIPS
 			$content = '';
 			$content = @file_get_contents($protocol.'://api.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 			$content = explode('|', $content);
 			if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
-				$result['discover_prestashop'] .= $content[1];
+				$result['discover_prestashop'] .= '<div id="block_partner_tips">'.$content[1].'</div></div>';
 
 		$this->content = Tools::jsonEncode($result);
 	}
@@ -515,11 +548,12 @@ class AdminHomeControllerCore extends AdminController
 		$isoCountry = Context::getContext()->country->iso_code;
 
 		$content = @file_get_contents($protocol.'://api.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
+
 		if (!$content)
 			return ''; // NOK
 		else
 		{
-			if(strpos($content, '|') !== false);
+			if (strpos($content, '|') !== false)
 				$content = explode('|', $content);
 			if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 				return $content[1];
@@ -534,20 +568,17 @@ class AdminHomeControllerCore extends AdminController
 
 		$this->warnDomainName();
 
-		$tab = get_class();
 		$protocol = Tools::usingSecureMode()?'https':'http';
-		$smarty->assign('protocol',$protocol);
+		$smarty->assign('protocol', $protocol);
 		$isoUser = $this->context->language->iso_code;
-		$smarty->assign('isoUser',$isoUser);
-		$currency = $this->context->currency;
+		$smarty->assign('isoUser', $isoUser);
 		$upgrade = null;
 		$tpl_vars['refresh_check_version'] = 0;
 		if (@ini_get('allow_url_fopen'))
 		{
 			$upgrade = new Upgrader(true);
 			// if this information is outdated, the version will be checked after page loading
-			if (Configuration::get('PS_LAST_VERSION_CHECK') 
-				< time() - (3600 * Upgrader::DEFAULT_CHECK_VERSION_DELAY_HOURS)) 
+			if (Configuration::get('PS_LAST_VERSION_CHECK') < time() - (3600 * Upgrader::DEFAULT_CHECK_VERSION_DELAY_HOURS))
 				$tpl_vars['refresh_check_version'] = 1;
 		}
 
@@ -561,14 +592,9 @@ class AdminHomeControllerCore extends AdminController
 		$tpl_vars['monthly_statistics'] = $this->getMonthlyStatistics();
 		$tpl_vars['customers_service'] = $this->getCustomersService();
 		$tpl_vars['stats_sales'] = $this->getStatsSales();
-		$tpl_vars['last_orders'] =$this->getLastOrders();
-		$tpl_vars['tips_optimization'] =  $this->_displayOptimizationTips();
+		$tpl_vars['last_orders'] = $this->getLastOrders();
+		$tpl_vars['tips_optimization'] = $this->_displayOptimizationTips();
 
-		$HOOK_BACKOFFICEHOME = Hook::exec('backOfficeHome');
-		$tpl_vars['HOOK_BACKOFFICEHOME'] = $HOOK_BACKOFFICEHOME;
 		$smarty->assign($tpl_vars);
-
 	}
 }
-
-

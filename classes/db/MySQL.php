@@ -36,14 +36,14 @@ class MySQLCore extends Db
 			define('_PS_MYSQL_REAL_ESCAPE_STRING_', function_exists('mysql_real_escape_string'));
 
 		if (!$this->link = mysql_connect($this->server, $this->user, $this->password))
-			throw new PrestashopDatabaseException(Tools::displayError('Link to database cannot be established.'));
+			throw new PrestaShopDatabaseException(Tools::displayError('Link to database cannot be established.'));
 
 		if (!$this->set_db($this->database))
-			throw new PrestashopDatabaseException(Tools::displayError('The database selection cannot be made.'));
+			throw new PrestaShopDatabaseException(Tools::displayError('The database selection cannot be made.'));
 
 		// UTF-8 support
 		if (!mysql_query('SET NAMES \'utf8\'', $this->link))
-			throw new PrestashopDatabaseException(Tools::displayError('PrestaShop Fatal error: no utf-8 support. Please check your server configuration.'));
+			throw new PrestaShopDatabaseException(Tools::displayError('PrestaShop Fatal error: no utf-8 support. Please check your server configuration.'));
 
 		return $this->link;
 	}
@@ -136,6 +136,24 @@ class MySQLCore extends Db
 		return mysql_select_db($db_name, $this->link);
 	}
 
+	/**
+	 * @see Db::hasTableWithSamePrefix()
+	 */
+	public static function hasTableWithSamePrefix($server, $user, $pwd, $db, $prefix)
+	{
+		if (!$link = @mysql_connect($server, $user, $pwd, true))
+			return false;
+		if (!@mysql_select_db($db, $link))
+			return false;
+
+		$sql = 'SHOW TABLES LIKE \''.$prefix.'%\'';
+		$result = mysql_query($sql);
+		return (bool)@mysql_fetch_assoc($result);
+	}
+
+	/**
+	 * @see Db::checkConnection()
+	 */
 	public static function tryToConnect($server, $user, $pwd, $db, $newDbLink = true, $engine = null)
 	{
 		if (!$link = @mysql_connect($server, $user, $pwd, $newDbLink))
@@ -157,6 +175,9 @@ class MySQLCore extends Db
 		return 0;
 	}
 
+	/**
+	 * @see Db::checkEncoding()
+	 */
 	static public function tryUTF8($server, $user, $pwd)
 	{
 		$link = @mysql_connect($server, $user, $pwd);

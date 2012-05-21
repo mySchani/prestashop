@@ -37,7 +37,6 @@ class AdminTagsControllerCore extends AdminController
 				'title' => $this->l('ID'),
 				'align' => 'center',
 				'width' => 25,
-				'filter_key' => 'a!id_seller_message'
 			),
 			'lang' => array(
 				'title' => $this->l('Language'),
@@ -79,7 +78,7 @@ class AdminTagsControllerCore extends AdminController
 	public function postProcess()
 	{
 		if ($this->tabAccess['edit'] === '1' && Tools::getValue('submitAdd'.$this->table))
-			if ($id = (int)Tools::getValue($this->identifier) && $obj = new $this->className($id) && Validate::isLoadedObject($obj))
+			if (($id = (int)Tools::getValue($this->identifier)) && ($obj = new $this->className($id)) && Validate::isLoadedObject($obj))
 				$obj->setProducts($_POST['products']);
 		return parent::postProcess();
 	}

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9771 $
+*  @version  Release: $Revision: 12883 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,6 +38,5 @@ if (!isset($_REQUEST['controller']) && isset($_REQUEST['tab']))
 	$_REQUEST['controller'] = strtolower($_REQUEST['tab']);
 // Retrocompatibility with 1.4
 $_REQUEST['ajaxMode'] = $_POST['ajaxMode'] = $_GET['ajaxMode'] = $_REQUEST['ajax'] = $_POST['ajax'] = $_GET['ajax'] = 1;
-	
-Dispatcher::getInstance()->setControllerDirectories(array(_PS_ADMIN_DIR_.'/tabs/', _PS_ADMIN_CONTROLLER_DIR_));
+
 Dispatcher::getInstance()->dispatch();

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11723 $
+*  @version  Release: $Revision: 12692 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -50,7 +50,6 @@ class AdminImagesControllerCore extends AdminController
 			'images' => array(
 				'title' =>	$this->l('Images'),
 				'icon' =>	'tab-orders',
-				'class' =>	'width4',
 				'top' => '',
 				'bottom' => '',
 				'description' => $this->l('JPEG images have a small file size and standard quality. PNG images have a bigger file size, a higher quality and support transparency. Note that in all cases the image files will have the .jpg extension.').'
@@ -76,17 +75,6 @@ class AdminImagesControllerCore extends AdminController
 					'name' => 'name',
 					'required' => true,
 					'desc' => $this->l('Letters only (e.g., small, medium, large, extra-large)')
-				),
-				array(
-					'type' => 'select',
-					'label' => $this->l('Theme:'),
-					'name' => 'id_theme',
-					'required' => true,
-					'options' => array(
-						'query' => Theme::getThemes(),
-						'id' => 'id_theme',
-						'name' => 'name'
-					)
 				),
 				array(
 					'type' => 'text',
@@ -261,35 +249,35 @@ class AdminImagesControllerCore extends AdminController
 					Tools::redirectAdmin(self::$currentIndex.'&conf=9'.'&token='.$this->token);
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}elseif (Tools::getValue('submitMoveImages'.$this->table))
 		{
 			if ($this->tabAccess['edit'] === '1')
 		 	{
-				if($this->_moveImagesToNewFileSystem())
+				if ($this->_moveImagesToNewFileSystem())
 					Tools::redirectAdmin(self::$currentIndex.'&conf=25'.'&token='.$this->token);
 		 	}
 		else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}elseif (Tools::getValue('submitImagePreferences'))
 		{
 			if ($this->tabAccess['edit'] === '1')
 			{
 				if ((int)Tools::getValue('PS_JPEG_QUALITY') < 0
 					|| (int)Tools::getValue('PS_JPEG_QUALITY') > 100)
-					$this->_errors[] = Tools::displayError('Incorrect value for JPEG image quality.');
+					$this->errors[] = Tools::displayError('Incorrect value for JPEG image quality.');
 				elseif ((int)Tools::getValue('PS_PNG_QUALITY') < 0
 					|| (int)Tools::getValue('PS_PNG_QUALITY') > 9)
-					$this->_errors[] = Tools::displayError('Incorrect value for PNG image quality.');
+					$this->errors[] = Tools::displayError('Incorrect value for PNG image quality.');
 				elseif (!Configuration::updateValue('PS_IMAGE_QUALITY', Tools::getValue('PS_IMAGE_QUALITY'))
 					|| !Configuration::updateValue('PS_JPEG_QUALITY', Tools::getValue('PS_JPEG_QUALITY'))
 					|| !Configuration::updateValue('PS_PNG_QUALITY', Tools::getValue('PS_PNG_QUALITY')))
-					$this->_errors[] = Tools::displayError('Unknown error.');
+					$this->errors[] = Tools::displayError('Unknown error.');
 				else
 					Tools::redirectAdmin(self::$currentIndex.'&token='.Tools::getValue('token').'&conf=4');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		else
@@ -298,8 +286,8 @@ class AdminImagesControllerCore extends AdminController
 
 	protected function _childValidation()
 	{
-		if (!Tools::getValue('id_image_type') AND Validate::isImageTypeName($typeName = Tools::getValue('name')) AND ImageType::typeAlreadyExists($typeName))
-			$this->_errors[] = Tools::displayError('This name already exists.');
+		if (!Tools::getValue('id_image_type') && Validate::isImageTypeName($typeName = Tools::getValue('name')) && ImageType::typeAlreadyExists($typeName))
+			$this->errors[] = Tools::displayError('This name already exists.');
 	}
 
 	/**
@@ -329,14 +317,14 @@ class AdminImagesControllerCore extends AdminController
 	/**
 	  * Delete resized image then regenerate new one with updated settings
 	  */
-	private function _deleteOldImages($dir, $type, $product = false)
+	protected function _deleteOldImages($dir, $type, $product = false)
 	{
 		if (!is_dir($dir))
 			return false;
 		$toDel = scandir($dir);
-		foreach ($toDel AS $d)
-			foreach ($type AS $imageType)
-				if (preg_match('/^[0-9]+\-'.($product ? '[0-9]+\-' : '').$imageType['name'].'\.jpg$/', $d) OR preg_match('/^([[:lower:]]{2})\-default\-(.*)\.jpg$/', $d))
+		foreach ($toDel as $d)
+			foreach ($type as $imageType)
+				if (preg_match('/^[0-9]+\-'.($product ? '[0-9]+\-' : '').$imageType['name'].'\.jpg$/', $d) || preg_match('/^([[:lower:]]{2})\-default\-(.*)\.jpg$/', $d))
 					if (file_exists($dir.$d))
 						unlink($dir.$d);
 
@@ -344,15 +332,15 @@ class AdminImagesControllerCore extends AdminController
 		if ($product)
 		{
 			$productsImages = Image::getAllImages();
-			foreach ($productsImages AS $k => $image)
+			foreach ($productsImages as $image)
 			{
 				$imageObj = new Image($image['id_image']);
 				$imageObj->id_product = $image['id_product'];
 				if (file_exists($dir.$imageObj->getImgFolder()))
 				{
 					$toDel = scandir($dir.$imageObj->getImgFolder());
-					foreach ($toDel AS $d)
-						foreach ($type AS $imageType)
+					foreach ($toDel as $d)
+						foreach ($type as $imageType)
 							if (preg_match('/^[0-9]+\-'.$imageType['name'].'\.jpg$/', $d))
 								if (file_exists($dir.$imageObj->getImgFolder().$d))
 									unlink($dir.$imageObj->getImgFolder().$d);
@@ -361,8 +349,15 @@ class AdminImagesControllerCore extends AdminController
 		}
 	}
 
-	// Regenerate images
-	private function _regenerateNewImages($dir, $type, $productsImages = false)
+	/**
+	 * Regenerate images
+	 *
+	 * @param $dir
+	 * @param $type
+	 * @param bool $productsImages
+	 * @return bool|string
+	 */
+	protected function _regenerateNewImages($dir, $type, $productsImages = false)
 	{
 		if (!is_dir($dir))
 			return false;
@@ -370,12 +365,10 @@ class AdminImagesControllerCore extends AdminController
 		$toRegen = scandir($dir);
 		if (!$productsImages)
 		{
-			foreach ($toRegen AS $image)
+			foreach ($toRegen as $image)
 				if (preg_match('/^[0-9]*\.jpg$/', $image))
-					foreach ($type AS $k => $imageType)
+					foreach ($type as $k => $imageType)
 					{
-
-						$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
 						// Customizable writing dir
 						$newDir = $dir;
 						if ($imageType['name'] == 'thumb_scene')
@@ -383,7 +376,7 @@ class AdminImagesControllerCore extends AdminController
 						if (!file_exists($newDir))
 							continue;
 						if (!file_exists($newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).'.jpg'))
-							if (!imageResize($dir.$image, $newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+							if (!ImageManager::resize($dir.$image, $newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
 								$errors = true;
 						if (time() - $this->start_time > $this->max_execution_time - 4) // stop 4 seconds before the tiemout, just enough time to process the end of the page on a slow server
 							return 'timeout';
@@ -392,15 +385,14 @@ class AdminImagesControllerCore extends AdminController
 		else
 		{
 			$productsImages = Image::getAllImages();
-			foreach ($productsImages AS $k => $image)
+			foreach ($productsImages as $image)
 			{
 				$imageObj = new Image($image['id_image']);
 				if (file_exists($dir.$imageObj->getExistingImgPath().'.jpg'))
-					foreach ($type AS $k => $imageType)
+					foreach ($type as $imageType)
 					{
-						$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
 						if (!file_exists($dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).'.jpg'))
-							if (!imageResize($dir.$imageObj->getExistingImgPath().'.jpg', $dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+							if (!ImageManager::resize($dir.$imageObj->getExistingImgPath().'.jpg', $dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
 								$errors = true;
 						if (time() - $this->start_time > $this->max_execution_time - 4) // stop 4 seconds before the tiemout, just enough time to process the end of the page on a slow server
 							return 'timeout';
@@ -411,28 +403,34 @@ class AdminImagesControllerCore extends AdminController
 		return $errors;
 	}
 
-	// Regenerate no-pictures images
-	private function _regenerateNoPictureImages($dir, $type, $languages)
+	/**
+	 * Regenerate no-pictures images
+	 *
+	 * @param $dir
+	 * @param $type
+	 * @param $languages
+	 * @return bool
+	 */
+	protected function _regenerateNoPictureImages($dir, $type, $languages)
 	{
 		$errors = false;
-		foreach ($type AS $k => $imageType)
+		foreach ($type as $imageType)
 		{
-			$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
-			foreach ($languages AS $language)
+			foreach ($languages as $language)
 			{
 				$file = $dir.$language['iso_code'].'.jpg';
 				if (!file_exists($file))
 					$file = _PS_PROD_IMG_DIR_.Language::getIsoById((int)(Configuration::get('PS_LANG_DEFAULT'))).'.jpg';
 				if (!file_exists($dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).'.jpg'))
-					if (!imageResize($file, $dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+					if (!ImageManager::resize($file, $dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).'.jpg', (int)$imageType['width'], (int)$imageType['height']))
 						$errors = true;
 			}
 		}
 		return $errors;
 	}
 
-	// Hook watermark optimization
-	private function _regenerateWatermark($dir)
+	/* Hook watermark optimization */
+	protected function _regenerateWatermark($dir)
 	{
 		$result = Db::getInstance()->executeS('
 		SELECT m.`name` FROM `'._DB_PREFIX_.'module` m
@@ -440,16 +438,16 @@ class AdminImagesControllerCore extends AdminController
 		LEFT JOIN `'._DB_PREFIX_.'hook` h ON hm.`id_hook` = h.`id_hook`
 		WHERE h.`name` = \'watermark\' AND m.`active` = 1');
 
-		if ($result AND sizeof($result))
+		if ($result && count($result))
 		{
 			$productsImages = Image::getAllImages();
-			foreach ($productsImages AS $k => $image)
+			foreach ($productsImages as $image)
 			{
 				$imageObj = new Image($image['id_image']);
 				if (file_exists($dir.$imageObj->getExistingImgPath().'.jpg'))
-					foreach ($result AS $k => $module)
+					foreach ($result as $module)
 					{
-						if ($moduleInstance = Module::getInstanceByName($module['name']) AND is_callable(array($moduleInstance, 'hookwatermark')))
+						if ($moduleInstance = Module::getInstanceByName($module['name']) && is_callable(array($moduleInstance, 'hookwatermark')))
 							call_user_func(array($moduleInstance, 'hookwatermark'), array('id_image' => $imageObj->id, 'id_product' => $imageObj->id_product));
 						if (time() - $this->start_time > $this->max_execution_time - 4) // stop 4 seconds before the tiemout, just enough time to process the end of the page on a slow server
 							return 'timeout';
@@ -458,7 +456,7 @@ class AdminImagesControllerCore extends AdminController
 	}
 	}
 
-	private function _regenerateThumbnails($type = 'all', $deleteOldImages = false)
+	protected function _regenerateThumbnails($type = 'all', $deleteOldImages = false)
 	{
 		$this->start_time = time();
 		ini_set('max_execution_time', $this->max_execution_time); // ini_set may be disabled, we need the real value
@@ -476,10 +474,10 @@ class AdminImagesControllerCore extends AdminController
 			);
 
 		// Launching generation process
-		foreach ($process AS $k => $proc)
+		foreach ($process as $proc)
 		{
 			if ($type != 'all' && $type != $proc['type'])
-				continue ;
+				continue;
 
 			// Getting format generation
 			$formats = ImageType::getImagesTypes($proc['type']);
@@ -487,7 +485,7 @@ class AdminImagesControllerCore extends AdminController
 			{
 				$format = strval(Tools::getValue('format_'.$type));
 				if ($format != 'all')
-					foreach ($formats AS $k => $form)
+					foreach ($formats as $k => $form)
 						if ($form['id_image_type'] != $format)
 							unset($formats[$k]);
 			}
@@ -495,20 +493,20 @@ class AdminImagesControllerCore extends AdminController
 			if ($deleteOldImages)
 				$this->_deleteOldImages($proc['dir'], $formats, ($proc['type'] == 'products' ? true : false));
 			if (($return = $this->_regenerateNewImages($proc['dir'], $formats, ($proc['type'] == 'products' ? true : false))) === true)
-				$this->_errors[] = Tools::displayError('Cannot write ').$proc['type'].Tools::displayError(' images. Please check the folder\'s writing permissions.');
+				$this->errors[] = Tools::displayError('Cannot write ').$proc['type'].Tools::displayError(' images. Please check the folder\'s writing permissions.');
 			elseif ($return == 'timeout')
-				$this->_errors[] = Tools::displayError('Only part of the images have been regenerated, server timed out before finishing.');
+				$this->errors[] = Tools::displayError('Only part of the images have been regenerated, server timed out before finishing.');
 			else
 			{
 				if ($proc['type'] == 'products')
 					if ($this->_regenerateWatermark($proc['dir']) == 'timeout')
-						$this->_errors[] = Tools::displayError('Server timed out, the watermark may not have been applied on all your images.');
-				if (!count($this->_errors))
+						$this->errors[] = Tools::displayError('Server timed out, the watermark may not have been applied on all your images.');
+				if (!count($this->errors))
 					if ($this->_regenerateNoPictureImages($proc['dir'], $formats, $languages))
-						$this->_errors[] = Tools::displayError('Cannot write no-picture image to').' ('.$proc['type'].') '.Tools::displayError('images folder. Please check the folder\'s writing permissions.');
+						$this->errors[] = Tools::displayError('Cannot write no-picture image to').' ('.$proc['type'].') '.Tools::displayError('images folder. Please check the folder\'s writing permissions.');
 			}
 		}
-		return (sizeof($this->_errors) > 0 ? false : true);
+		return (count($this->errors) > 0 ? false : true);
 	}
 
 	/**
@@ -525,21 +523,21 @@ class AdminImagesControllerCore extends AdminController
 	/**
 	 * Move product images to the new filesystem
 	 */
-	private function _moveImagesToNewFileSystem()
+	protected function _moveImagesToNewFileSystem()
 	{
 		if (!Image::testFileSystem())
-			$this->_errors[] =  Tools::displayError('Error: your server configuration is not compatible with the new image system. No images were moved');
+			$this->errors[] = Tools::displayError('Error: your server configuration is not compatible with the new image system. No images were moved');
 		else
 		{
 			ini_set('max_execution_time', $this->max_execution_time); // ini_set may be disabled, we need the real value
 			$this->max_execution_time = (int)ini_get('max_execution_time');
 			$result = Image::moveToNewFileSystem($this->max_execution_time);
 			if ($result === 'timeout')
-				$this->_errors[] =  Tools::displayError('Not all images have been moved, server timed out before finishing. Click on \"Move images\" again to resume moving images');
+				$this->errors[] = Tools::displayError('Not all images have been moved, server timed out before finishing. Click on \"Move images\" again to resume moving images');
 			else if ($result === false)
-				$this->_errors[] =  Tools::displayError('Error: some or all images could not be moved.');
+				$this->errors[] = Tools::displayError('Error: some or all images could not be moved.');
 		}
-		return (sizeof($this->_errors) > 0 ? false : true);
+		return (count($this->errors) > 0 ? false : true);
 	}
 
 	public function initContent()

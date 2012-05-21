@@ -37,8 +37,8 @@ class AdminSuppliersControllerCore extends AdminController
 		$this->addRowAction('delete');
 	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
-		$this->_select = 'COUNT(p.`id_product`) AS products';
-		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product` p ON (a.`id_supplier` = p.`id_supplier`)';
+		$this->_select = 'COUNT(ps.`id_product`) AS products';
+		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product_supplier` ps ON (a.`id_supplier` = ps.`id_supplier`)';
 		$this->_group = 'GROUP BY a.`id_supplier`';
 
  		$this->fieldImageSettings = array('name' => 'logo', 'dir' => 'su');
@@ -149,9 +149,9 @@ class AdminSuppliersControllerCore extends AdminController
 					'type' => 'select',
 					'label' => $this->l('State'),
 					'name' => 'id_state',
-					'required' => true,
 					'options' => array(
 						'id' => 'id_state',
+						'query' => array(),
 						'name' => 'name'
 					)
 				),
@@ -243,7 +243,7 @@ class AdminSuppliersControllerCore extends AdminController
 		}
 
 		// set logo image
-		$image = cacheImage(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg', $this->table.'_'.(int)$this->object->id.'.'.$this->imageType, 350, $this->imageType, true);
+		$image = ImageManager::thumbnail(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg', $this->table.'_'.(int)$this->object->id.'.'.$this->imageType, 350, $this->imageType, true);
 		$this->fields_value['image'] = $image ? $image : false;
 		$this->fields_value['size'] = $image ? filesize(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg') / 1000 : false;
 
@@ -258,9 +258,14 @@ class AdminSuppliersControllerCore extends AdminController
 		{
 			$products[$i] = new Product($products[$i]['id_product'], false, $this->context->language->id);
 			// Build attributes combinaisons
-			$combinaisons = $products[$i]->getAttributeCombinaisons($this->context->language->id);
+			$combinaisons = $products[$i]->getAttributeCombinations($this->context->language->id);
 			foreach ($combinaisons as $k => $combinaison)
 			{
+				$comb_infos = Supplier::getProductInformationsBySupplier($this->object->id,
+																		 $products[$i]->id,
+																		 $combinaison['id_product_attribute']);
+				$comb_array[$combinaison['id_product_attribute']]['product_supplier_reference'] = $comb_infos['product_supplier_reference'];
+				$comb_array[$combinaison['id_product_attribute']]['product_supplier_price_te'] = Tools::displayPrice($comb_infos['product_supplier_price_te'], new Currency($comb_infos['id_currency']));
 				$comb_array[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
 				$comb_array[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
 				$comb_array[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
@@ -284,6 +289,14 @@ class AdminSuppliersControllerCore extends AdminController
 				isset($comb_array) ? $products[$i]->combinaison = $comb_array : '';
 				unset($comb_array);
 			}
+			else
+			{
+				$product_infos = Supplier::getProductInformationsBySupplier($this->object->id,
+																		 	$products[$i]->id,
+																		 	0);
+				$products[$i]->product_supplier_reference = $product_infos['product_supplier_reference'];
+				$products[$i]->product_supplier_price_te = Tools::displayPrice($product_infos['product_supplier_price_te'], new Currency($product_infos['id_currency']));
+			}
 		}
 
 		$this->tpl_view_vars = array(
@@ -296,20 +309,22 @@ class AdminSuppliersControllerCore extends AdminController
 		return parent::renderView();
 	}
 
-	public function afterImageUpload()
+	protected function afterImageUpload()
 	{
+		$return = true;
 		/* Generate image with differents size */
-		if (($id_supplier = (int)Tools::getValue('id_supplier')) AND
-			 isset($_FILES) AND count($_FILES) AND file_exists(_PS_SUPP_IMG_DIR_.$id_supplier.'.jpg'))
+		if (($id_supplier = (int)Tools::getValue('id_supplier')) &&
+			 isset($_FILES) && count($_FILES) && file_exists(_PS_SUPP_IMG_DIR_.$id_supplier.'.jpg'))
 		{
 			$images_types = ImageType::getImagesTypes('suppliers');
 			foreach ($images_types as $k => $image_type)
 			{
 				$file = _PS_SUPP_IMG_DIR_.$id_supplier.'.jpg';
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
-				imageResize($file, _PS_SUPP_IMG_DIR_.$id_supplier.'-'.stripslashes($image_type['name']).$theme.'.jpg', (int)$image_type['width'], (int)$image_type['height']);
+				if (!ImageManager::resize($file, _PS_SUPP_IMG_DIR_.$id_supplier.'-'.stripslashes($image_type['name']).'.jpg', (int)$image_type['width'], (int)$image_type['height']))
+					$return = false;
 			}
 		}
+		return $return;
 	}
 
 	/**
@@ -321,7 +336,7 @@ class AdminSuppliersControllerCore extends AdminController
 		// checks access
 		if (Tools::isSubmit('submitAdd'.$this->table) && !($this->tabAccess['add'] === '1'))
 		{
-			$this->_errors[] = Tools::displayError('You do not have the required permissions to add suppliers.');
+			$this->errors[] = Tools::displayError('You do not have the required permissions to add suppliers.');
 			return parent::postProcess();
 		}
 
@@ -353,8 +368,8 @@ class AdminSuppliersControllerCore extends AdminController
 			if (count($validation) > 0)
 			{
 				foreach ($validation as $item)
-					$this->_errors[] = $item;
-				$this->_errors[] = Tools::displayError('The address is not correct. Check if all required fields are filled.');
+					$this->errors[] = $item;
+				$this->errors[] = Tools::displayError('The address is not correct. Check if all required fields are filled.');
 			}
 			else
 			{
@@ -373,12 +388,15 @@ class AdminSuppliersControllerCore extends AdminController
 			if (!($obj = $this->loadObject(true)))
 				return;
 			else if (SupplyOrder::supplierHasPendingOrders($obj->id))
-				$this->_errors[] = $this->l('It is not possible to delete a supplier if there is/are pending supply order(s).');
+				$this->errors[] = $this->l('It is not possible to delete a supplier if there is/are pending supply order(s).');
 			else
 			{
 				$address = new Address($obj->id_address);
-				$address->deleted = 1;
-				$address->save();
+				if (Validate::isLoadedObject($address))
+				{
+					$address->deleted = 1;
+					$address->save();
+				}
 				return parent::postProcess();
 			}
 		}
@@ -389,13 +407,31 @@ class AdminSuppliersControllerCore extends AdminController
 	/**
 	 * @see AdminController::afterAdd()
 	 */
-	public function afterAdd($object)
+	protected function afterAdd($object)
 	{
 		$address = new Address($object->id_address);
 		if (Validate::isLoadedObject($address))
 		{
-			$address->id_supplier = $object->id_address;
+			$address->id_supplier = $object->id;
 			$address->save();
+		}
+		return true;
+
+	}
+
+	/**
+	 * @see AdminController::afterUpdate()
+	 */
+	protected function afterUpdate($object)
+	{
+		$address = new Address($object->id_address);
+		if (Validate::isLoadedObject($address))
+		{
+			if ($address->id_supplier != $object->id)
+			{
+				$address->id_supplier = $object->id;
+				$address->save();
+			}
 		}
 		return true;
 	}

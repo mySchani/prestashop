@@ -164,7 +164,8 @@ class AdminStoresControllerCore extends AdminController
 					'type' => 'text',
 					'label' => $this->l('Postcode/ Zip Code:'),
 					'name' => 'postcode',
-					'size' => 6
+					'size' => 6,
+					'required' => true
 				),
 				array(
 					'type' => 'text',
@@ -268,7 +269,7 @@ class AdminStoresControllerCore extends AdminController
 		if (!($obj = $this->loadObject(true)))
 			return;
 
-		$image = cacheImage(_PS_STORE_IMG_DIR_.'/'.$obj->id.'.jpg', $this->table.'_'.(int)$obj->id.'.'.$this->imageType, 350, $this->imageType, true);
+		$image = ImageManager::thumbnail(_PS_STORE_IMG_DIR_.'/'.$obj->id.'.jpg', $this->table.'_'.(int)$obj->id.'.'.$this->imageType, 350, $this->imageType, true);
 
 		$days = array();
 		$days[1] = $this->l('Monday');
@@ -309,17 +310,17 @@ class AdminStoresControllerCore extends AdminController
 			$country = new Country((int)$id_country);
 
 			if ($id_country && $country && !(int)$country->contains_states && $id_state)
-				$this->_errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
+				$this->errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
 
 			/* If the selected country contains states, then a state have to be selected */
 			if ((int)$country->contains_states && !$id_state)
-				$this->_errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
+				$this->errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
 
 			$latitude = (float)Tools::getValue('latitude');
 			$longitude = (float)Tools::getValue('longitude');
 
 			if (empty($latitude) || empty($longitude))
-			   $this->_errors[] = Tools::displayError('Latitude and longitude are required.');
+			   $this->errors[] = Tools::displayError('Latitude and longitude are required.');
 
 			/* Check zip code */
 			if ($country->need_zip_code)
@@ -334,7 +335,7 @@ class AdminStoresControllerCore extends AdminController
 					$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
 					$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
 					if (!preg_match($zip_regexp, $postcode))
-						$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.
+						$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.
 											str_replace(
 												'C',
 												$country->iso_code,
@@ -350,9 +351,9 @@ class AdminStoresControllerCore extends AdminController
 											);
 				}
 				else if ($zip_code_format)
-					$this->_errors[] = Tools::displayError('Postcode required.');
+					$this->errors[] = Tools::displayError('Postcode required.');
 				else if ($postcode && !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-					$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.');
+					$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.');
 			}
 
 			/* Store hours */
@@ -362,7 +363,7 @@ class AdminStoresControllerCore extends AdminController
 			$_POST['hours'] = serialize($_POST['hours']);
 		}
 
-		if (!count($this->_errors))
+		if (!count($this->errors))
 			parent::postProcess();
 	}
 
@@ -375,7 +376,7 @@ class AdminStoresControllerCore extends AdminController
 			foreach ($images_types as $k => $image_type)
 			{
 				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
-				imageResize(_PS_STORE_IMG_DIR_.$id_store.'.jpg',
+				ImageManager::resize(_PS_STORE_IMG_DIR_.$id_store.'.jpg',
 							_PS_STORE_IMG_DIR_.$id_store.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 							(int)$image_type['width'], (int)$image_type['height']
 				);

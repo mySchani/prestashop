@@ -36,6 +36,9 @@ class AdminGroupShopControllerCore extends AdminController
 
 		$this->addRowAction('edit');
 
+		$this->addRowAction('delete');
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'),'confirm' => $this->l('Delete selected items?')));
+
 		$this->context = Context::getContext();
 
 		if (!Tools::getValue('realedit'))
@@ -76,7 +79,8 @@ class AdminGroupShopControllerCore extends AdminController
 				array(
 					'type' => 'text',
 					'label' => $this->l('GroupShop name:'),
-					'name' => 'name'
+					'name' => 'name',
+					'required' => true
 				),
 				array(
 					'type' => 'radio',
@@ -118,7 +122,8 @@ class AdminGroupShopControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('Share orders and carts between shops of this group (you can share orders only if you share customers and available quantities)')
+					'desc' =>
+						$this->l('Share orders and carts between shops of this group (you can share orders only if you share customers and available quantities)')
 				),
 				array(
 					'type' => 'radio',
@@ -222,10 +227,11 @@ class AdminGroupShopControllerCore extends AdminController
 				'desc' => $this->l('Use this option to associate data (products, modules, etc.) the same way as the selected shop')
 			);
 
+		$default_group_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
 		$this->tpl_form_vars = array(
 			'disabled' => $disabled,
 			'checked' => (Tools::getValue('addgroup_shop') !== false) ? true : false,
-			'defaultGroup' => Shop::getInstance(Configuration::get('PS_SHOP_DEFAULT'))->getGroupID(),
+			'defaultGroup' => $default_group_shop->getGroupID(),
 		);
 		if (isset($this->fields_import_form))
 			$this->tpl_form_vars = array_merge($this->tpl_form_vars, array('form_import' => $this->fields_import_form));
@@ -235,23 +241,38 @@ class AdminGroupShopControllerCore extends AdminController
 		return parent::renderForm();
 	}
 
+	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
+	{
+		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
+		$group_shop_delete_list = array();
+
+		// test store authorized to remove
+		foreach ($this->_list as $group_shop)
+		{
+			$shops = Shop::getShops(true, $group_shop['id_group_shop']);
+			if (!empty($shops))
+				$group_shop_delete_list[] = $group_shop['id_group_shop'];
+		}
+		$this->addRowActionSkipList('delete', $group_shop_delete_list);
+	}
+
 	public function postProcess()
 	{
 		if (Tools::isSubmit('delete'.$this->table) || Tools::isSubmit('status') || Tools::isSubmit('status'.$this->table))
 		{
 			$object = $this->loadObject();
 			if (GroupShop::getTotalGroupShops() == 1)
-				$this->_errors[] = Tools::displayError('You cannot delete or disable the last groupshop.');
+				$this->errors[] = Tools::displayError('You cannot delete or disable the last groupshop.');
 			else if ($object->haveShops())
-				$this->_errors[] = Tools::displayError('You cannot delete or disable a groupshop which have this shops using it.');
+				$this->errors[] = Tools::displayError('You cannot delete or disable a groupshop which have this shops using it.');
 
-			if (count($this->_errors))
+			if (count($this->errors))
 				return false;
 		}
 		return parent::postProcess();
 	}
 
-	public function afterAdd($new_group_shop)
+	protected function afterAdd($new_group_shop)
 	{
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_group_shop->copyGroupShopData(Tools::getValue('importFromShop'), $import_data);
@@ -260,7 +281,7 @@ class AdminGroupShopControllerCore extends AdminController
 		StockAvailable::resetProductFromStockAvailableByGroupShop($new_group_shop);
 	}
 
-	public function afterUpdate($new_group_shop)
+	protected function afterUpdate($new_group_shop)
 	{
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_group_shop->copyGroupShopData(Tools::getValue('importFromShop'), $import_data);

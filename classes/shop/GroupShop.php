@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11383 $
+*  @version  Release: $Revision: 12140 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -44,7 +44,7 @@ class GroupShopCore extends ObjectModel
 		'table' => 'group_shop',
 		'primary' => 'id_group_shop',
 		'fields' => array(
-			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 64),
+			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
 			'share_customer' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'share_order' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'share_stock' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
@@ -90,7 +90,7 @@ class GroupShopCore extends ObjectModel
 		if (!$res = parent::delete())
 			return false;
 
-		foreach (Shop::getAssoTables() as $table_name => $row)
+		foreach (GroupShop::getAssoTables() as $table_name => $row)
 		{
 			$id = 'id_'.$row['type'];
 			if ($row['type'] == 'fk_group_shop')

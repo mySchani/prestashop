@@ -35,7 +35,7 @@ class OrderControllerCore extends ParentOrderController
 	 */
 	public function init()
 	{
-		global $isVirtualCart, $orderTotal;
+		global $orderTotal;
 
 		parent::init();
 
@@ -92,6 +92,23 @@ class OrderControllerCore extends ParentOrderController
 	{
 		global $isVirtualCart;
 
+		if (Tools::isSubmit('ajax') && Tools::getValue('method') == 'updateExtraCarrier')
+		{
+			// Change virtualy the currents delivery options
+			$delivery_option = $this->context->cart->getDeliveryOption();
+			$delivery_option[(int)Tools::getValue('id_address')] = Tools::getValue('id_delivery_option');
+			$this->context->cart->setDeliveryOption($delivery_option);
+			$return = array(
+				'content' => Hook::exec(
+					'displayCarrierList',
+					array(
+						'address' => new Address((int)Tools::getValue('id_address'))
+					)
+				)
+			);
+			die(Tools::jsonEncode($return));
+		}
+		
 		if ($this->nbProducts)
 			$this->context->smarty->assign('virtual_cart', $isVirtualCart);
 
@@ -164,7 +181,7 @@ class OrderControllerCore extends ParentOrderController
 		parent::initContent();
 	}
 
-	private function processAddressFormat()
+	protected function processAddressFormat()
 	{
 		$addressDelivery = new Address((int)$this->context->cart->id_address_delivery);
 		$addressInvoice = new Address((int)$this->context->cart->id_address_invoice);
@@ -295,7 +312,7 @@ class OrderControllerCore extends ParentOrderController
 		global $orderTotal;
 
 		// Redirect instead of displaying payment modules if any module are grefted on
-		Hook::backBeforePayment('order.php?step=3');
+		Hook::exec('displayBeforePayment', array('module' => 'order.php?step=3'));
 
 		/* We may need to display an order summary */
 		$this->context->smarty->assign($this->context->cart->getSummaryDetails());

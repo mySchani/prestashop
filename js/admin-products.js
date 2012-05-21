@@ -18,7 +18,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11752 $
+*  @version  Release: $Revision: 12963 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,7 +40,6 @@ function removeButtonCombination(item)
 	$('#add_new_combination').show();
 	$('.process-icon-newCombination').removeClass('toolbar-new');
 	$('.process-icon-newCombination').addClass('toolbar-cancel');
-	$('#submitProductAttribute').val($('#submitProductAttribute').attr(item));
 	$('#desc-product-newCombination div').html($('#ResetBtn').val());
 	$('id_product_attribute').val(0);
 	init_elems();
@@ -52,8 +51,7 @@ function addButtonCombination(item)
 	$('#add_new_combination').hide();
 	$('.process-icon-newCombination').removeClass('toolbar-cancel');
 	$('.process-icon-newCombination').addClass('toolbar-new');
-	$('#submitProductAttribute').val($('#submitProductAttribute').attr(item));
-	$('#desc-product-newCombination div').html($('#submitProductAttribute').val());
+	$('#desc-product-newCombination div').html(msg_new_combination);
 	posC = true;
 }
 
@@ -215,22 +213,58 @@ function editProductAttribute(ids, token)
 }
 /* END Combination */
 
-function displayTabProductById(el, id, selected)
+/**
+ * Get a single tab or recursively get tabs in stack then display them
+ *
+ * @param int id position of the tab in the product page
+ * @param boolean selected is the tab selected
+ * @param int index current index in the stack (or 0)
+ * @param array stack list of tab ids to load (or null)
+ */
+function displayTabProductById(id, selected, index, stack)
 {
-	myurl = $(el).attr("href")+"&ajax=1";
+	var myurl = $('#link-'+id).attr("href")+"&ajax=1";
+	var tab_selector = $("#product-tab-content-"+id);
+	// Used to check if the tab is already in the process of being loaded
+	tab_selector.addClass('loading');
+
+	if (selected)
+		$('#product-tab-content-wait').show();
+
 	$.ajax({
 		url : myurl,
 		async : true,
-		success :function(data)
+		cache: false, // cache needs to be set to false or IE will cache the page with outdated product values
+		data: post_data,
+		type: 'POST',
+		success : function(data)
 		{
-			$("#product-tab-content-"+id).html(data);
-			$("#product-tab-content-"+id).removeClass('not-loaded');
+			tab_selector.html(data);
+			tab_selector.removeClass('not-loaded');
 
 			if (selected)
 			{
 				$("#link-"+id).addClass('selected');
-				$("#product-tab-content-"+id).show();
+				tab_selector.show();
 			}
+		},
+		complete : function(data)
+		{
+			$("#product-tab-content-"+id).removeClass('loading');
+			if (selected)
+			{
+				$('#product-tab-content-wait').hide();
+				tab_selector.trigger('displayed');
+			}
+			tab_selector.trigger('loaded');
+			if (stack && stack[index + 1])
+				displayTabProductById(stack[index + 1], selected, index + 1, stack);
+		},
+		beforeSend : function(data)
+		{
+			// don't display the loading notification bar
+			if (typeof(ajax_running_timeout) !== 'undefined')
+				clearTimeout(ajax_running_timeout);
 		}
 	});
 }
@@ -256,7 +290,7 @@ function getManufacturers()
 				if (j)
 				for (var i = 0; i < j.length; i++)
 					options += '<option value="' + j[i].optionValue + '">' + j[i].optionDisplay + '</option>';
-				$("select#id_manufacturer").replaceWith("<select id=\"id_manufacturer\">"+options+"</select>");
+				$("select#id_manufacturer").html(options);
 			},
 			error: function(XMLHttpRequest, textStatus, errorThrown)
 			{
@@ -265,10 +299,83 @@ function getManufacturers()
 	});
 }
 
+/**
+ * hide save and save-and-stay buttons
+ * 
+ * @access public
+ * @return void
+ */
+function disableSave()
+{
+		$('#desc-product-save').hide();
+		$('#desc-product-save-and-stay').hide();
+}
+
+/**
+ * show save and save-and-stay buttons
+ *
+ * @access public
+ * @return void
+ */
+function enableSave()
+{
+		// if no item left in the pack, disable save buttons
+		if ($("#disablePackMessage").length)
+			$("#disablePackMessage").remove();
+
+		$('#desc-product-save').show();
+		$('#desc-product-save-and-stay').show();
+}
+
+function handleSaveForPack()
+{
+	// if no item left in the pack, disable save buttons
+	$("#disablePackMessage").remove();
+	if ($("#inputPackItems").val() == "")
+	{
+		disableSave();
+		$(".leadin").append('<div id="disablePackMessage" class="warn">' + empty_pack_msg + '</div>');
+	}
+	else
+		enableSave();
+}
+
+function enableProductName()
+{
+	$('.copy2friendlyUrl').removeAttr('disabled');
+}
+
+/**
+ * Execute a callback function when a specific tab has finished loading or right now if the tab is already loaded
+ *
+ * @param tab_name name of the tab that is checked for loading
+ * @param callback_function function to call
+ */
+function onTabLoad(tab_name, callback_function)
+{
+	var target_tab = $('#product-tab-content-' + tab_name);
+	if (!target_tab)
+		return false;
+	if (target_tab.hasClass('not-loaded'))
+		target_tab.bind('loaded', callback_function);
+	else
+		callback_function();
+}
+
 /* function autocomplete */
 urlToCall = null;
 
 $(document).ready(function() {
 	updateCurrentText();
 	updateFriendlyURL();
+
+	// Pressing enter in an input field should not submit the form
+	$('#product_form').delegate('input', 'keypress', function(e){
+			var code = null;
+		code = (e.keyCode ? e.keyCode : e.which);
+		return (code == 13) ? false : true;
+	});
+
+	// Enable writing of the product name when the friendly url field in tab SEO is loaded
+	onTabLoad('Seo', enableProductName);
 });

@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10869 $
+*  @version  Release: $Revision: 12951 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -31,7 +31,6 @@ $('document').ready(function(){
 	});
 
 	$('#sendEmail').click(function(){
-		//console.log('aaa');
 		var datas = [];
 		$('#fancybox-content').find('input').each(function(index){
 			var o = {}
@@ -40,8 +39,6 @@ $('document').ready(function(){
 			if (o.value != '')
 				datas.push(o);
 		});
-	//console.log(datas.length);
-	//console.log(datas);
 		if (datas.length >= 3)
 		{
 			$.ajax({

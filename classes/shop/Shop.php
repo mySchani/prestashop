@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11831 $
+*  @version  Release: $Revision: 13135 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -71,7 +71,8 @@ class ShopCore extends ObjectModel
 	private	static $asso_tables = array(
 		'carrier' => array('type' => 'shop'),
 		'carrier_lang' => array('type' => 'fk_shop'),
-		'category_lang' => 	array('type' => 'fk_shop'),
+		'category' => array('type' => 'shop'),
+		'category_lang' => array('type' => 'fk_shop'),
 		'cms' => array('type' => 'shop'),
 		'contact' => array('type' => 'shop'),
 		'country' => array('type' => 'shop'),
@@ -120,20 +121,21 @@ class ShopCore extends ObjectModel
 	public function __construct($id = null, $id_lang = null, $id_shop = null)
 	{
 		parent::__construct($id, $id_lang, $id_shop);
-
 		if ($this->id)
 		{
-			$sql = 'SELECT su.physical_uri, su.virtual_uri, su.domain, su.domain_ssl, t.name, t.directory
+			$sql = 'SELECT su.physical_uri, su.virtual_uri, 
+				su.domain, su.domain_ssl, t.id_theme, t.name, t.directory
 					FROM '._DB_PREFIX_.'shop s
 					LEFT JOIN '._DB_PREFIX_.'shop_url su ON (s.id_shop = su.id_shop)
 					LEFT JOIN '._DB_PREFIX_.'theme t ON (t.id_theme = s.id_theme)
-					WHERE s.id_shop = '.$this->id.'
+					WHERE s.id_shop = '.(int)$this->id.'
 						AND s.active = 1
 						AND s.deleted = 0
 						AND su.main = 1';
 			if (!$row = Db::getInstance()->getRow($sql))
 				return;
 
+			$this->theme_id = $row['id_theme'];
 			$this->theme_name = $row['name'];
 			$this->theme_directory = $row['directory'];
 			$this->physical_uri = $row['physical_uri'];
@@ -152,7 +154,7 @@ class ShopCore extends ObjectModel
 
 	public function delete()
 	{
-		if (self::has_dependency($this->id) || !$res = parent::delete())
+		if (Shop::hasDependency($this->id) || !$res = parent::delete())
 			return false;
 
 		foreach (Shop::getAssoTables() as $table_name => $row)
@@ -183,7 +185,7 @@ class ShopCore extends ObjectModel
 	 *
 	 * @return bool
 	 */
-	public static function has_dependency($id_shop)
+	public static function hasDependency($id_shop)
 	{
 		$has_dependency = false;
 		$nbr_customer = (int)Db::getInstance()->getValue('
@@ -271,28 +273,29 @@ class ShopCore extends ObjectModel
 				}
 		}
 
-		if($id_shop)
+		if (!$id_shop && defined('_PS_ADMIN_DIR_'))
 		{
-			// Get instance of found shop
-			$shop = new Shop($id_shop);
-			if (!Validate::isLoadedObject($shop) || !$shop->active)
-			{
-				// No shop found ... too bad, let's redirect to default shop
-				$default_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
-				// Hmm there is something really bad in your Prestashop !
-				if (!Validate::isLoadedObject($default_shop))
-					throw new PrestashopException('Shop not found');
-
-				$url = 'http://'.$default_shop->domain.$default_shop->getBaseURI().ltrim($_SERVER['SCRIPT_NAME'], '/').'?'.$_SERVER['QUERY_STRING'];
-				header('location: '.$url);
-				exit;
-			}
+			// If in admin, we can access to the shop without right URL
+			$shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+			$shop->physical_uri = str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME']))).'/';
+			$shop->virtual_uri = '';
+			return $shop;
 		}
-		else
-			if (defined('INSTALL_VERSION'))
-				$shop = new Shop();
-			else
-				throw new PrestashopException('Shop not found');
+
+		$shop = new Shop($id_shop);
+		if (!Validate::isLoadedObject($shop) || !$shop->active || !$id_shop)
+		{
+			// No shop found ... too bad, let's redirect to default shop
+			$default_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+
+			// Hmm there is something really bad in your Prestashop !
+			if (!Validate::isLoadedObject($default_shop))
+				throw new PrestaShopException('Shop not found');
+
+			$url = 'http://'.$default_shop->domain.$default_shop->getBaseURI().'index.php?'.$_SERVER['QUERY_STRING'];
+			header('location: '.$url);
+			exit;
+		}
 
 		return $shop;
 	}
@@ -387,7 +390,7 @@ class ShopCore extends ObjectModel
 	{
 		if (defined('_PS_ADMIN_DIR_'))
 			return Shop::getContextGroupID();
-		return (int)$this->id_group_shop;
+		return (isset($this->id_group_shop)) ? (int)$this->id_group_shop : null;
 	}
 
 	/**
@@ -483,7 +486,7 @@ class ShopCore extends ObjectModel
 						'name' => 			$row['group_name'],
 						'share_customer' =>	$row['share_customer'],
 						'share_order' =>	$row['share_order'],
-						'totalShops' =>		self::getTotalShopsByIdGroupShop($row['id_group_shop']),
+						'totalShops' =>		Shop::getTotalShopsByIdGroupShop($row['id_group_shop']),
 						'shops' => 			array(),
 					);
 
@@ -658,8 +661,8 @@ class ShopCore extends ObjectModel
 		$sql = sprintf('
 			SELECT `id_shop`, `%s`
 			FROM `'._DB_PREFIX_.'%s_shop`
-			WHERE `%s` = %d'
-		, $identifier, $table, $identifier, $id);
+			WHERE `%s` = %d',
+		$identifier, $table, $identifier, $id);
 
 		return Db::getInstance()->executeS($sql);
 	}
@@ -885,10 +888,84 @@ class ShopCore extends ObjectModel
 	public static function getShopWithoutUrls($id_shop = false)
 	{
 		$without = array();
-		$shops = self::getShops();
+		$shops = Shop::getShops();
 		foreach ($shops as $shop)
 			if ((!$id_shop || $shop['id_shop'] == $id_shop) && empty($shop['domain']) && empty($shop['uri']))
 				$without[] = $shop;
 		return $without;
+	}
+
+	/**
+	 * @deprecated 1.5.0 Use shop->getID()
+	 */
+	public static function getCurrentShop()
+	{
+		Tools::displayAsDeprecated();
+		return Context::getContext()->shop->getID(true);
+	}
+
+	/**
+	 * @static
+	 * @param int $id
+	 * @return array
+	 */
+	public static function getCategories($id = 0, $only_id = true)
+	{
+		// build query
+		$query = new DbQuery();
+		if ($only_id)
+			$query->select('cs.`id_category`');
+		else
+			$query->select('DISTINCT cs.`id_category`, cl.`name`, cl.`link_rewrite`');
+		$query->from('category_shop', 'cs');
+		$query->leftJoin('category_lang', 'cl', 'cl.`id_category` = cs.`id_category` AND cl.`id_lang` = '.(int)Context::getContext()->language->id);
+		$query->where('cs.`id_shop` = '.(int)$id);
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
+		if ($only_id)
+		{
+			$array = array();
+			foreach ($result as $row)
+				$array[] = $row['id_category'];
+			$array = array_unique($array);
+		}
+		else
+			return $result;
+
+		return $array;
+	}
+
+	/**
+	 * @static
+	 * @param $id_category
+	 * @return bool
+	 */
+	public static function isCategoryAvailable($id_category)
+	{
+		return (bool)Db::getInstance()->getValue('
+		SELECT `id_category`
+		FROM `'._DB_PREFIX_.'category_shop`
+		WHERE `id_category` = '.(int)$id_category.'
+		AND `id_shop` = '.(int)Context::getContext()->shop->getID(true));
+	}
+
+	/**
+	 * @static
+	 * @param $id_product
+	 * @return bool
+	 */
+	public static function isProductAvailable($id_product)
+	{
+		$id = Context::getContext()->shop->id;
+		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
+		return (bool)Db::getInstance()->getValue('
+		SELECT p.`id_product`
+		FROM `'._DB_PREFIX_.'product` p
+		LEFT JOIN `'._DB_PREFIX_.'category_product` cp
+			ON p.`id_product` = cp.`id_product`
+		LEFT JOIN `'._DB_PREFIX_.'category_shop` cs
+			ON (cp.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
+		WHERE p.`id_product` = '.(int)$id_product.'
+		AND cs.`id_shop` = '.(int)Context::getContext()->shop->getID(true));
 	}
 }

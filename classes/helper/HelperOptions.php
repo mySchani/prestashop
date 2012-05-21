@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11605 $
+*  @version  Release: $Revision: 13151 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -34,7 +34,7 @@ class HelperOptionsCore extends Helper
 
 	public function __construct()
 	{
-		$this->base_folder = 'helper/options/';
+		$this->base_folder = 'helpers/options/';
 		$this->base_tpl = 'options.tpl';
 		parent::__construct();
 	}
@@ -53,7 +53,7 @@ class HelperOptionsCore extends Helper
 
 		foreach ($option_list as $category => $category_data)
 		{
-			if(!is_array($category_data))
+			if (!is_array($category_data))
 				continue;
 
 			if (!isset($category_data['image']))
@@ -92,7 +92,6 @@ class HelperOptionsCore extends Helper
 				// Fill values for all languages for all lang fields
 				if (substr($field['type'], -4) == 'Lang')
 				{
-
 					foreach ($languages as $language)
 					{
 						if ($field['type'] == 'textLang')
@@ -107,6 +106,7 @@ class HelperOptionsCore extends Helper
 				}
 
 				// pre-assign vars to the tpl
+				// @todo move this
 				if ($field['type'] == 'maintenance_ip')
 				{
 					$field['script_ip'] = '
@@ -120,7 +120,7 @@ class HelperOptionsCore extends Helper
 									$(\'input[name=PS_MAINTENANCE_IP]\').attr(\'value\',\''.Tools::getRemoteAddr().'\');
 							}
 						</script>';
-					$field['link_remove_ip'] = ' &nbsp<a href="#" class="button" onclick="addRemoteAddr(); return false;">'.$this->l('Add my IP', 'helper').'</a>';
+					$field['link_remove_ip'] = ' &nbsp<a href="#" class="button" onclick="addRemoteAddr(); return false;">'.$this->l('Add my IP', 'Helper').'</a>';
 					if (!isset($category_data['bottom']))
 						$category_data['bottom'] = '<script type="text/javascript">changeCMSActivationAuthorization();</script>';
 				}
@@ -133,8 +133,7 @@ class HelperOptionsCore extends Helper
 
 				// Is at least one required field present?
 				if (isset($field['required']) && $field['required'])
-					$required_fields = true;
-
+					$category_data['required_fields'] = true;
 			}
 			// Assign the modifications back to parent array
 			$option_list[$category] = $category_data;
@@ -150,7 +149,6 @@ class HelperOptionsCore extends Helper
 			'token' => $this->token,
 			'option_list' => $option_list,
 			'current_id_lang' => $this->context->language->id,
-			'required_fields' => isset($required_fields) ? $required_fields : false,
 			'languages' => isset($languages) ? $languages : null,
 			'currency_left_sign' => $this->context->currency->getSign('left'),
 			'currency_right_sign' => $this->context->currency->getSign('right'),
@@ -161,7 +159,6 @@ class HelperOptionsCore extends Helper
 
 	/**
 	 * Type = image
-	 * @ TODO
 	 */
 	public function displayOptionTypeImage($key, $field, $value)
 	{
@@ -179,7 +176,7 @@ class HelperOptionsCore extends Helper
 					echo '<img src="../themes/'.$theme['name'].'/preview.jpg" alt="'.Tools::strtolower($theme['name']).'">';
 				echo '</label>';
 			echo '</td>';
-			if (isset($field['max']) && ($i +1 ) % $field['max'] == 0)
+			if (isset($field['max']) && ($i + 1) % $field['max'] == 0)
 				echo '</tr><tr>';
 			$i++;
 		}
@@ -189,19 +186,16 @@ class HelperOptionsCore extends Helper
 
 	/**
 	 * Type = price
-	 * @ TODO
 	 */
 	public function displayOptionTypePrice($key, $field, $value)
 	{
 		echo $this->context->currency->getSign('left');
 		$this->displayOptionTypeText($key, $field, $value);
-		echo $this->context->currency->getSign('right').' '.$this->l('(tax excl.)', 'helper');
+		echo $this->context->currency->getSign('right').' '.$this->l('(tax excl.)', 'Helper');
 	}
 
 	/**
 	 * Type = disabled
-	 *
-	 * @ TODO
 	 */
 	public function displayOptionTypeDisabled($key, $field, $value)
 	{

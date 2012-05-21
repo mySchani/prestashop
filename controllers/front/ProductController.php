@@ -70,15 +70,15 @@ class ProductControllerCore extends FrontController
 		else
 			$this->canonicalRedirection();
 
-		if (Pack::isPack((int)$this->product->id) && !Pack::isInStock((int)$this->product->id))
-			$this->product->quantity = 0;
-
-		$this->product->description = $this->transformDescriptionWithImg($this->product->description);
-
 		if (!Validate::isLoadedObject($this->product))
 			$this->errors[] = Tools::displayError('Product not found');
 		else
 		{
+			if (Pack::isPack((int)$this->product->id) && !Pack::isInStock((int)$this->product->id))
+				$this->product->quantity = 0;
+
+			$this->product->description = $this->transformDescriptionWithImg($this->product->description);
+
 			/*
 			 * If the product is associated to the shop
 			 * and is active or not active but preview mode (need token + file_exists)
@@ -178,12 +178,12 @@ class ProductControllerCore extends FrontController
 				'attachments' => (($this->product->cache_has_attachments) ? $this->product->getAttachments($this->context->language->id) : array()),
 				'allow_oosp' => $this->product->isAvailableWhenOutOfStock((int)$this->product->out_of_stock),
 				'last_qties' =>  (int)Configuration::get('PS_LAST_QTIES'),
-				'HOOK_EXTRA_LEFT' => Hook::exec('extraLeft'),
-				'HOOK_EXTRA_RIGHT' => Hook::exec('extraRight'),
-				'HOOK_PRODUCT_OOS' => Hook::exec('productOutOfStock', array('product' => $this->product)),
-				'HOOK_PRODUCT_ACTIONS' => Hook::exec('productActions'),
-				'HOOK_PRODUCT_TAB' =>  Hook::exec('productTab'),
-				'HOOK_PRODUCT_TAB_CONTENT' =>  Hook::exec('productTabContent'),
+				'HOOK_EXTRA_LEFT' => Hook::exec('displayLeftColumnProduct'),
+				'HOOK_EXTRA_RIGHT' => Hook::exec('displayRightColumnProduct'),
+				'HOOK_PRODUCT_OOS' => Hook::exec('actionProductOutOfStock', array('product' => $this->product)),
+				'HOOK_PRODUCT_ACTIONS' => Hook::exec('displayProductButtons'),
+				'HOOK_PRODUCT_TAB' =>  Hook::exec('displayProductTab'),
+				'HOOK_PRODUCT_TAB_CONTENT' =>  Hook::exec('displayProductTabContent'),
 				'display_qties' => (int)Configuration::get('PS_DISPLAY_QTIES'),
 				'display_ht' => !Tax::excludeTaxeOption(),
 				'currencySign' => $this->context->currency->sign,
@@ -234,7 +234,7 @@ class ProductControllerCore extends FrontController
 		$id_shop = $this->context->shop->getID(true);
 
 		$quantity_discounts = SpecificPrice::getQuantityDiscounts($id_product, $id_shop, $id_currency, $id_country, $id_group, null, true);
-		foreach($quantity_discounts as &$quantity_discount)
+		foreach ($quantity_discounts as &$quantity_discount)
 			if ($quantity_discount['id_product_attribute'])
 			{
 				$combination = new Combination((int)$quantity_discount['id_product_attribute']);
@@ -339,6 +339,7 @@ class ProductControllerCore extends FrontController
 				$combinations[$row['id_product_attribute']]['attributes_values'][$row['id_attribute_group']] = $row['attribute_name'];
 				$combinations[$row['id_product_attribute']]['attributes'][] = (int)$row['id_attribute'];
 				$combinations[$row['id_product_attribute']]['price'] = (float)$row['price'];
+				// Call getPriceStatic in order to set $combination_specific_price
 				Product::getPriceStatic((int)$this->product->id, false, $row['id_product_attribute'], 6, null, false, true, 1, false, null, null, null, $combination_specific_price);
 				$combinations[$row['id_product_attribute']]['specific_price'] = $combination_specific_price;
 				$combinations[$row['id_product_attribute']]['ecotax'] = (float)$row['ecotax'];
@@ -436,7 +437,7 @@ class ProductControllerCore extends FrontController
 			$this->context->smarty->assign('path', Tools::getPath((int)$this->product->id_category_default, $this->product->name));
 
 		$this->context->smarty->assign('categories', Category::getHomeCategories($this->context->language->id));
-		$this->context->smarty->assign(array('HOOK_PRODUCT_FOOTER' => Hook::exec('productFooter', array('product' => $this->product, 'category' => $category))));
+		$this->context->smarty->assign(array('HOOK_PRODUCT_FOOTER' => Hook::exec('displayFooterProduct', array('product' => $this->product, 'category' => $category))));
 	}
 
 	public function transformDescriptionWithImg($desc)
@@ -465,7 +466,7 @@ class ProductControllerCore extends FrontController
 			if (in_array($field_name, $authorized_file_fields) && isset($file['tmp_name']) && !empty($file['tmp_name']))
 			{
 				$file_name = md5(uniqid(rand(), true));
-				if ($error = checkImage($file, (int)Configuration::get('PS_PRODUCT_PICTURE_MAX_SIZE')))
+				if ($error = ImageManager::validateUpload($file, (int)Configuration::get('PS_PRODUCT_PICTURE_MAX_SIZE')))
 					$this->errors[] = $error;
 
 				$product_picture_width = (int)Configuration::get('PS_PRODUCT_PICTURE_WIDTH');
@@ -473,10 +474,10 @@ class ProductControllerCore extends FrontController
 				if ($error || (!$tmp_name = tempnam(_PS_TMP_IMG_DIR_, 'PS') || !move_uploaded_file($file['tmp_name'], $tmp_name)))
 					return false;
 				/* Original file */
-				else if (!imageResize($tmp_name, _PS_UPLOAD_DIR_.$file_name))
+				else if (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
 				/* A smaller one */
-				else if (!imageResize($tmp_name, _PS_UPLOAD_DIR_.$file_name.'_small', $product_picture_width, $product_picture_height))
+				else if (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name.'_small', $product_picture_width, $product_picture_height))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
 				else if (!chmod(_PS_UPLOAD_DIR_.$file_name, 0777) || !chmod(_PS_UPLOAD_DIR_.$file_name.'_small', 0777))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
@@ -545,9 +546,10 @@ class ProductControllerCore extends FrontController
 			{
 				if ($row['reduction_type'] == 'amount')
 				{
-					$reduction_amount = $row['reduction'];
-					if (!$row['id_currency'])
-						$reduction_amount = Tools::convertPrice($reduction_amount, $this->context->currency->id);
+					// Commenting unused code, delete if useless
+//					$reduction_amount = $row['reduction'];
+//					if (!$row['id_currency'])
+//						$reduction_amount = Tools::convertPrice($reduction_amount, $this->context->currency->id);
 					$row['real_value'] = Product::$_taxCalculationMethod == PS_TAX_INC ? $row['reduction'] : $row['reduction'] / (1 + $tax_rate / 100);
 				}
 				else

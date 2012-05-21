@@ -47,10 +47,23 @@ class AdminEmployeesControllerCore extends AdminController
 		$this->context = Context::getContext();
 
 	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+		/*
+		check if there are more than one superAdmin
+		if it's the case then we can delete a superAdmin
+		*/
+		$super_admin = Employee::countProfile(_PS_ADMIN_PROFILE_, true);
+		if ($super_admin == 1)
+		{
+			$super_admin_array = Employee::getEmployeesByProfile(_PS_ADMIN_PROFILE_, true);
+			$super_admin_id = array();
+			foreach ($super_admin_array as $key => $val)
+				$super_admin_id[] = $val['id_employee'];
+			$this->addRowActionSkipList('delete', $super_admin_id);
+		}
 
 		$profiles = Profile::getProfiles($this->context->language->id);
 		if (!$profiles)
-			$this->_errors[] = Tools::displayError('No profile');
+			$this->errors[] = Tools::displayError('No profile');
 		else
 			foreach ($profiles as $profile)
 				$this->profiles_array[$profile['name']] = $profile['name'];
@@ -92,8 +105,20 @@ class AdminEmployeesControllerCore extends AdminController
 				'submit' => array()
 			)
 		);
+		
+		$path = _PS_ADMIN_DIR_.'/themes/';
+		foreach (scandir($path) as $theme)
+			if (file_exists($path.$theme.'/css/admin.css'))
+				$this->themes[] = $theme;
 
 		parent::__construct();
+
+		// An employee can edit its own profile
+		if ($this->context->employee->id == Tools::getValue('id_employee'))
+		{
+			$this->tabAccess['view'] = '1';
+			$this->tabAccess['edit'] = '1';
+		}
 	}
 
 	public function renderList()
@@ -114,16 +139,10 @@ class AdminEmployeesControllerCore extends AdminController
 		
 		if ($obj->id_profile == _PS_ADMIN_PROFILE_ && $this->context->employee->id_profile != _PS_ADMIN_PROFILE_)
 		{
-			$this->_errors[] = Tools::displayError('You cannot edit SuperAdmin profile.');
+			$this->errors[] = Tools::displayError('You cannot edit SuperAdmin profile.');
 			return parent::renderForm();
 		}
-
-
-		$path = _PS_ADMIN_DIR_.'/themes/';
-		foreach (scandir($path) as $theme)
-			if (file_exists($path.$theme.'/admin.css'))
-				$this->themes[] = $theme;
-
+		
 		$this->fields_form = array(
 			'legend' => array(
 				'title' => $this->l('Employees'),
@@ -288,9 +307,9 @@ class AdminEmployeesControllerCore extends AdminController
 			return false;
 		$email = $this->getFieldValue($obj, 'email');
 		if (!Validate::isEmail($email))
-	 		$this->_errors[] = Tools::displayError('Invalid e-mail');
+	 		$this->errors[] = Tools::displayError('Invalid e-mail');
 		else if (Employee::employeeExists($email) && !Tools::getValue('id_employee'))
-			$this->_errors[] = Tools::displayError('An account already exists for this e-mail address:').' '.$email;
+			$this->errors[] = Tools::displayError('An account already exists for this e-mail address:').' '.$email;
 	}
 
 	public function postProcess()
@@ -300,21 +319,21 @@ class AdminEmployeesControllerCore extends AdminController
 			/* PrestaShop demo mode */
 			if (_PS_MODE_DEMO_ && $id_employee = Tools::getValue('id_employee') && (int)$id_employee == _PS_DEMO_MAIN_BO_ACCOUNT_)
 			{
-				$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
+				$this->errors[] = Tools::displayError('This functionnality has been disabled.');
 				return;
 			}
 			/* PrestaShop demo mode*/
 
 			if ($this->context->employee->id == Tools::getValue('id_employee'))
 			{
-				$this->_errors[] = Tools::displayError('You cannot disable or delete your own account.');
+				$this->errors[] = Tools::displayError('You cannot disable or delete your own account.');
 				return false;
 			}
 
 			$employee = new Employee(Tools::getValue('id_employee'));
 			if ($employee->isLastAdmin())
 			{
-					$this->_errors[] = Tools::displayError('You cannot disable or delete the last administrator account.');
+					$this->errors[] = Tools::displayError('You cannot disable or delete the last administrator account.');
 					return false;
 			}
 
@@ -322,7 +341,7 @@ class AdminEmployeesControllerCore extends AdminController
 			$warehouses = Warehouse::getWarehousesByEmployee((int)Tools::getValue('id_employee'));
 			if (Tools::isSubmit('deleteemployee') && count($warehouses) > 0)
 			{
-				$this->_errors[] = Tools::displayError('You cannot delete this account since it manages warehouses. Check your warehouses first.');
+				$this->errors[] = Tools::displayError('You cannot delete this account since it manages warehouses. Check your warehouses first.');
 				return false;
 			}
 		}
@@ -336,36 +355,38 @@ class AdminEmployeesControllerCore extends AdminController
 			{
 				if (Tools::getValue('id_profile') != (int)_PS_ADMIN_PROFILE_)
 				{
-					$this->_errors[] = Tools::displayError('You should have at least one employee in the administrator group.');
+					$this->errors[] = Tools::displayError('You should have at least one employee in the administrator group.');
 					return false;
 				}
 
 				if (Tools::getvalue('active') == 0)
 				{
-					$this->_errors[] = Tools::displayError('You cannot disable or delete the last administrator account.');
+					$this->errors[] = Tools::displayError('You cannot disable or delete the last administrator account.');
 					return false;
 				}
 			}
-
-			$assos = self::getAssoShop($this->table);
+			
+			if (!in_array(Tools::getValue('bo_theme'), $this->themes))
+			{
+				$this->errors[] = Tools::displayError('Invalid theme.');
+					return false;
+			}
+			
+			$assos = AdminEmployeesController::getAssoShop($this->table);
 
 			if (count($assos[0]) == 0 && $this->table = 'employee')
 				if (Shop::isFeatureActive() && _PS_ADMIN_PROFILE_ != $_POST['id_profile'])
-					$this->_errors[] = Tools::displayError('The employee must be associated with at least one shop');
+					$this->errors[] = Tools::displayError('The employee must be associated with at least one shop');
 		}
 		return parent::postProcess();
 	}
 
-	public function initProcess()
+	public function initContent()
 	{
-		// If employee is editing its own entry, its ok
-		if ($this->tabAccess['edit'] !== '1'
-			&& $this->table == 'employee'
-			&& $this->context->employee->id == Tools::getValue('id_employee')
-			&& Tools::isSubmit('updateemployee'))
-			$this->tabAccess['edit'] = 1;
+		if ($this->context->employee->id == Tools::getValue('id_employee'))
+			$this->display = 'edit';
 
-		parent::initProcess();
+		return parent::initContent();
 	}
 }
 

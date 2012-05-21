@@ -150,23 +150,26 @@ form .simulate-disable-input{
 }
 .mails_field {
 	margin:0;
-	background: none repeat scroll 0 0 #FFFFF0;
-	border: 1px solid #DFD5C3;
+	background: none repeat scroll 0 0 #FFF;
+	border: 1px solid #CCCCCC;
 	font-size: 1.1em;
 	margin: 20px 0 20px 0;
-	padding: 2em 1em 1em 1em;
+	padding:0;
 	position:relative;
+	border-radius:3px;
 }
 
 .mails_field h3{
-	position:absolute;
+background: -moz-linear-gradient(center top , #F9F9F9, #ECECEC) repeat-x scroll left top #ECECEC;
+    color: #333333;
+    font-size: 13px;
+    padding: 4px 6px;
+    text-align: left;
+    text-shadow: 0 1px 0 #FFFFFF;
 	margin:0;
-	top:-10px;
 	font-size:1em;
-	background-color:#FFF6D3;
-	border:1px solid #DFD5C3;
-	padding: 2px 5px 2px 5px;
-	display:inline-block;
+	padding: 10px 5px;
+	display:block;
 }
 
 .style-themeModuleMail {
@@ -269,11 +272,9 @@ input, textarea, option {
 
 input[type="text"], input[type="password"], input[type="file"], textarea {
 	padding: 2px 4px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) inset;
 }
 
-input[type="text"], input[type="password"], input[type="file"], textarea, select, option {
-	background-color:#FFF;
-}
 input[type="radio"], input[type="checkbox"] {
 	background-color:transparent;
 }
@@ -424,7 +425,6 @@ select optgroup option {
 }
 
 #content .warning {
-	width: 400px;
 	margin: 0 0 15px 0;
 	line-height: 20px;
 	padding: 10px 20px 10px 20px;
@@ -509,6 +509,21 @@ select optgroup option {
 	padding: 10px 5px 5px 40px;
 	border-radius:3px;
 	min-height:32px;
+}
+
+#content .warn h2 {
+	margin:0;
+}
+
+
+#content .warn ul li, #content .warn p, #content .warn a {
+	color:#9e6014;
+}
+
+#content .warn ul li label {
+	font-weight:normal;
+	color:#9e6014;
+	text-shadow:none;
 }
 
 #content .error ol {
@@ -1090,13 +1105,8 @@ html[xmlns] .clearfix {
 	margin-top: 5px;
 }
 #adminpresentation{
-	width: 902px;
-	border:1px solid #cccccc;
-	background-color: #F8F8F8;
-	float: left;
-	margin: 0 0 15px;
-	padding: 10px;
 	position:relative;
+	width:100%;
 }
 
 #listpresentation{
@@ -1145,14 +1155,14 @@ html[xmlns] .clearfix {
 
 #footer_iframe_home{
 	position:absolute;
-	top:379px;
-	left:675px;
+	top:0;
+	right:0;
 }
 
 #footer_iframe_home label{
 	float: none;
-	padding-left: 10px;
-	color: #903E5B;
+	color: #585A69;
+	font-weight:normal;
 	line-height: 15px;
 }
 
@@ -1168,19 +1178,27 @@ html[xmlns] .clearfix {
 }
 
 #column_left{
-	width: 610px;
+	width: 49.1%;
 	float: left;
 	padding-top: 5px;
 }
 
 #column_right{
-	width: 315px;
+	width: 49.1%;
 	float: right;
-	padding-top: 5px;
+	padding:0;
 }
 
-/*homepage*/
-#homepage { width:925px;}
+#column_right .table_info {
+	width:48.1%;
+	float:left;
+}
+
+#column_right #table_info_last.table_info {
+	width:48.1%;
+	float:right;
+}
+
 
 .F_list{
 	list-style: none;
@@ -1189,46 +1207,64 @@ html[xmlns] .clearfix {
 }
 
 
-#first_block a, #second_block a, #third_block a, #fourth_block a{ background: #F8F8F8 none no-repeat scroll center 6px;}
+#first_block a, #second_block a, #third_block a, #fourth_block a,
+#fifth_block a, #sixth_block a, #seventh_block a, #eighth_block a{ background: #F8F8F8 none no-repeat scroll center 25px;}
 
 #first_block a{
-	background-image: url('../img/admin/folder_add.png');
-	margin-left:0;
+	background-image: url('../img/admin/package_go.png');
 }
 
 #second_block a{
-	background-image: url('../img/admin/package_add.png');
+	background-image: url('../img/admin/cart_add.png');
 }
 
 #third_block a {
-	background-image: url('../img/admin/chart_bar.png');
+	background-image: url('../img/admin/book.png');
 }
 
 #fourth_block a{
-	background-image: url('../img/admin/user_add.png');
+	background-image: url('../img/admin/package_add.png');
+}
+
+#fifth_block a{
+	background-image: url('../img/admin/plugin_add.png');
+}
+
+#sixth_block a{
+	background-image: url('../img/admin/cart_remove.png');
+}
+
+#seventh_block a {
+	background-image: url('../img/admin/page_white_add.png');
+}
+
+#eighth_block a{
+	background-image: url('../img/admin/advertising.png');
 }
 
 .F_list li{
 	float: left;
+	margin-right:15px;
+	margin-bottom:15px;
+	display: block;
 }
 
 .F_list li h4{
-	width: 115px;
-	font-size: 14px;
-	font-weight:bold;
-	margin-top: 35px;
+	width: 95px;
+	font-size: 11px;
+	font-weight:normal;
+	margin-top: 55px;
 	margin-bottom: 0;
-	line-height: 14px;
+	line-height: 16px;
 }
 
 .F_list a{
 	float:left;
 	color: #333;
-	width: 125px;
-	margin-left: 14px;
+	width: 95px;
 	border: 1px solid #ccc;
 	padding: 5px;
-	height: 120px;
+	height: 95px;
 	text-align:center;
 	border-radius:3px;
 }
@@ -1239,16 +1275,16 @@ html[xmlns] .clearfix {
 
 .F_list li p{
 	font-size: 8pt;
+	display:none;
 }
 
 .table_info{
-	width: 283px;
 	float: left;
-	padding: 0;
+	padding:0;
+	margin:0;
 	border: 1px solid #ccc;
-	margin-right: 15px;
-	margin-top: 20px;
 	border-radius:3px;
+	background-color:#fff;
 }
 
 .table_info h5{
@@ -1295,7 +1331,6 @@ html[xmlns] .clearfix {
 
 .table_info_details{
 	border-collapse: collapse;
-	width: 283px;
 	border: none;
 }
 
@@ -1319,8 +1354,7 @@ html[xmlns] .clearfix {
 	font-weight:normal;
 	text-align: left;
 	padding-left: 10px;
-	width: 150px;
-	font-size:12px;
+	font-size:13px;
 }
 
 .table_info_details tr td{
@@ -1332,11 +1366,12 @@ html[xmlns] .clearfix {
 #table_info_large{
 	margin-top: 20px;
 	margin-bottom: 20px;
-	width: 586px;
+	width: 100%;
 	float: left;
 	padding: 0;
 	border: 1px solid #ccc;
 	border-radius:3px;
+	background-color:#fff;
 }
 
 #table_info_large h5{
@@ -1364,11 +1399,13 @@ html[xmlns] .clearfix {
 	width: 586px;
 	height: 175px;
 	background-color: #fff;
+	margin: 15px auto;
+	text-align: center;
 }
 
 .admin-box1{
 	background-color:#F8F8F8;
-	width: 310px;
+	width: 48.1%;
 	float: left;
 	padding: 0;
 	border: 1px solid #ccc;
@@ -1392,14 +1429,14 @@ html[xmlns] .clearfix {
 }
 
 .admin-box2{
-	width: 310px;
-	float: left;
+	float: right;
 	padding: 0;
 	border: 1px solid #CCCCCC;
 	font-size: 8pt;
 	margin-bottom: 20px;
 	background-color: #f2f2f2;
 	border-radius:3px;
+	width:100%;
 }
 
 .admin-box2 h5{
@@ -1415,6 +1452,7 @@ html[xmlns] .clearfix {
 	font-weight:normal;
 }
 
+#discover_prestashop { width:48.1% !important; float:right !important;}
 
 .admin-home-box-list li img{
 	margin: 0 5px;
@@ -1466,10 +1504,10 @@ html[xmlns] .clearfix {
 
 #table_customer{
 	border:1px solid #ccc;
-	width: 590px;
 	cellpadding: 0;
 	cellspacing: 0;
 	border-radius:3px;
+	background-color:#fff;
 }
 
 #table_customer thead span{
@@ -1479,13 +1517,13 @@ html[xmlns] .clearfix {
 	text-shadow: 0 1px 0 #fff;
 	line-height: 35px;
 	display: block;
-	text-align: center;
-	height: 30px;
+	height: 39px;
 	border-left: none;
 	border-right: none;
 }
 
 #table_customer thead span.first{
+text-align: center;
 }
 
 #table_customer thead span.last{
@@ -1532,8 +1570,8 @@ html[xmlns] .clearfix {
 
 #table_customer tbody tr td{
 	border: none;
-	padding-left: 10px;
 	height: 35px;
+	font-size:12px;
 }
 
 #table_info_news{
@@ -1754,12 +1792,18 @@ font-family:Georgia, Arial, 'sans-serif';
 }
 
 p.preference_description{
-	font-family:Georgia, Arial, 'sans-serif';
+	font-family:Arial, 'sans-serif';
 	font-style:italic;
     clear: both;
     text-align: left;
     width: 500px;
     color:#7F7F7F;
+    font-size:11px;
+}
+
+p.preference_description .light-warning {
+	color: red;
+	font-weight: bold;
 }
 
 .preference_default_multishop{
@@ -1839,13 +1883,13 @@ div.progressBarImage
 	height: 100%;
 }
 
-#createImageDescription ul li{
+#createImageDescription ul.smallImage li{
 	list-style-type: none;
 	display: block;
-	width: 90px;
 	text-align: center;
 	float: left;
 	margin-bottom:15px;
+	margin-right:20px;
 }
 #menu .submenu_size .submenu { display: none; position:absolute}
 #menu .submenu_size:hover > .submenu { display: block; }
@@ -2106,7 +2150,7 @@ div#scrollTop a:hover{
 
 .category-filter #filternameForm { float:left; margin-left:10px; color:#585A69;}
 
-.current-edit { background-color: rgb(232, 237, 194); }
+.current-edit { background-color: #E9F1F6 }
 
 .edit-note { width: 98%; height: 100px; }
 
@@ -2126,6 +2170,7 @@ div#scrollTop a:hover{
 
 /*commandes*/
 .container-command {width:100%}
+.container-command-top-spacing {margin-top: 25px;}
 .bloc-command {background-color:#EBEDF4; border:1px solid #CCCED7; margin-bottom:10px;}
 .button-command {float:right; padding:10px;}
 
@@ -2166,6 +2211,11 @@ div#scrollTop a:hover{
 #container-customer h2 {
 color:#000;
 font-weight:normal;
+margin:0;
+}
+
+#container-customer h2 img {
+margin-right:5px;
 }
 
 #container-customer .info-customer-left {
@@ -2184,3 +2234,65 @@ font-weight:normal;
 	padding-left:15px;
 
 }
+
+#container-customer .info-customer-left h2,
+#container-customer .info-customer-right h2 {
+margin-bottom:7px;
+}
+
+#container-customer a {
+
+}
+
+/*infoCustomer*/
+.infoCustomer {}
+.infoCustomer dl {   margin: 7px 0;}
+.infoCustomer dl dt {font-weight:bold; float:left; padding-right:5px;}
+.infoCustomer dl dd { margin:0; padding:0;}
+
+/*container-carts*/
+#container-carts { background-color:#EBEDF4; border:1px solid #CCCED7; padding:10px;}
+
+/*cart_rule_form*/
+#cart_rule_form {}
+#cart_rule_form h4 { font-size:18px; font-weight:normal; margin-top:0;}
+
+#ajax_running {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 40%;
+	z-index: 10000;
+	background-color: #FFF1A8;
+	border: 1px solid #FFD96F;
+	color: #000;
+	font-weight: bold;
+	font-size: 14px;
+	padding: 5px 20px;
+	border-radius: 0 0 3px 3px;
+	-webkit-border-bottom-left-radius: 3px;
+	-webkit-border-bottom-right-radius: 3px;
+	width: 300px;
+}
+
+
+#container_category_tree {
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	padding: 5px;
+}
+
+#container_category_tree a{
+	font-weight: bold;
+}
+
+#container_category_tree a input{
+	margin-right: 3px;
+}
+
+
+#block_tips {float:right; width:48.1%}
+#block_discover {float:left; width:48.1%}
+#block_partner_tips {float:right; width:48.1%}
+.row-news { width:100%;float:left;}
+#table_info_news { border:1px solid #ccc;}

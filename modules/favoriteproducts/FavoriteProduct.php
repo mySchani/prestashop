@@ -20,51 +20,39 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10878 $
+*  @version  Release: $Revision: 12476 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class FavoriteProduct extends ObjectModel
 {
-	public		$id;
+	public $id;
 
-	public 		$id_product;
+	public $id_product;
 
-	public 		$id_customer;
+	public $id_customer;
 
-	public 		$id_shop;
+	public $id_shop;
 
-	public 		$date_add;
+	public $date_add;
 
-	public 		$date_upd;
+	public $date_upd;
 
-	protected 	$fieldRequired = array(
-		'id_product',
-		'id_customer',
-		'id_shop'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'favorite_product',
+		'primary' => 'id_favorite_product',
+		'fields' => array(
+			'id_product' =>		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'id_customer' =>	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'id_shop' =>		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'date_add' =>		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' =>		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
 	);
-
-	protected 	$fieldsValidate = array(
-		'id_product' => 'isUnsignedInt',
-		'id_customer' => 'isUnsignedInt',
-		'id_shop' => 'isUnsignedInt'
-	);
-
-	protected $table = 'favorite_product';
-
-	protected $identifier = 'id_favorite_product';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_customer'] = (int)$this->id_customer;
-		$fields['id_shop'] = (int)$this->id_shop;
-
-		return $fields;
-	}
 
 	public static function getFavoriteProducts($id_customer, $id_lang, Shop $shop = null)
 	{
@@ -72,15 +60,16 @@ class FavoriteProduct extends ObjectModel
 			$shop = Context::getContext()->shop;
 
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-		SELECT fp.`id_shop`, p.`id_product`, pl.`description_short`, pl.`link_rewrite`, pl.`name`, i.`id_image`, CONCAT(p.`id_product`, \'-\', i.`id_image`) as image
-		FROM `'._DB_PREFIX_.'favorite_product` fp
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.`id_product` = fp.`id_product`)
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.$shop->addSqlRestrictionOnLang('pl').')
-		LEFT OUTER JOIN `'._DB_PREFIX_.'product_attribute` pa ON (p.`id_product` = pa.`id_product` AND `default_on` = 1)
-		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
-		LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)($id_lang).')
-		WHERE p.`active` = 1
-			'.$shop->addSqlRestriction(false, 'fp'));
+			SELECT fp.`id_shop`, p.`id_product`, pl.`description_short`, pl.`link_rewrite`, pl.`name`, i.`id_image`, CONCAT(p.`id_product`, \'-\', i.`id_image`) as image
+			FROM `'._DB_PREFIX_.'favorite_product` fp
+			LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.`id_product` = fp.`id_product`)
+			LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.$shop->addSqlRestrictionOnLang('pl').')
+			LEFT OUTER JOIN `'._DB_PREFIX_.'product_attribute` pa ON (p.`id_product` = pa.`id_product` AND `default_on` = 1)
+			LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
+			LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)($id_lang).')
+			WHERE p.`active` = 1
+				'.$shop->addSqlRestriction(false, 'fp')
+		);
 	}
 
 	public static function getFavoriteProduct($id_customer, $id_product, Shop $shop = null)

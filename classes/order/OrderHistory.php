@@ -28,19 +28,19 @@
 class OrderHistoryCore extends ObjectModel
 {
 	/** @var integer Order id */
-	public 		$id_order;
+	public $id_order;
 
 	/** @var integer Order state id */
-	public 		$id_order_state;
+	public $id_order_state;
 
 	/** @var integer Employee id for this history entry */
-	public 		$id_employee;
+	public $id_employee;
 
 	/** @var string Object creation date */
-	public 		$date_add;
+	public $date_add;
 
 	/** @var string Object last modification date */
-	public 		$date_upd;
+	public $date_upd;
 
 	/**
 	 * @see ObjectModel::$definition
@@ -52,12 +52,14 @@ class OrderHistoryCore extends ObjectModel
 			'id_order' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'id_order_state' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'id_employee' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
-			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_add' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 		),
 	);
 
-
-	protected	$webserviceParameters = array(
+	/**
+	 * @see  ObjectModel::$webserviceParameters
+	 */
+	protected $webserviceParameters = array(
 		'objectsNodeName' => 'order_histories',
 		'fields' => array(
 			'id_order_state' => array('required' => true, 'xlink_resource'=> 'order_states'),
@@ -65,81 +67,122 @@ class OrderHistoryCore extends ObjectModel
 		),
 	);
 
+	/**
+	 * Sets the new state of the given order
+	 *
+	 * @param int $new_order_state
+	 * @param int $id_order
+	 */
 	public function changeIdOrderState($new_order_state, $id_order)
 	{
-		if ($new_order_state != NULL)
+		if (!$new_order_state || !$id_order)
+			return;
+
+		// sets order and states
+		$order = new Order($id_order);
+		$new_os = new OrderState((int)$new_order_state, $order->id_lang);
+		$old_os = $order->getCurrentOrderState();
+		$is_validated = $this->isValidated();
+
+		// executes hook
+		if ($new_os->id == Configuration::get('PS_OS_PAYMENT'))
+			Hook::exec('actionPaymentConfirmation', array('id_order' => (int)$order->id));
+
+		// executes hook
+		Hook::exec('actionOrderStatusUpdate', array(
+			'newOrderStatus' => $new_os,
+			'id_order' => (int)$order->id
+		));
+
+		if (Validate::isLoadedObject($order) && ($old_os instanceof OrderState) && ($new_os instanceof OrderState))
 		{
-			Hook::updateOrderStatus((int)($new_order_state), (int)$id_order);
-			$order = new Order((int)($id_order));
-
-			/* Best sellers */
-			$newOS = new OrderState((int)($new_order_state), $order->id_lang);
-			$oldOrderStatus = OrderHistory::getLastOrderState((int)$id_order);
-			$isValidated = $this->isValidated();
-			if (Validate::isLoadedObject($order))
-				foreach ($order->getProductsDetail() as $product)
+			// @since 1.5.0 : gets the stock manager
+			$manager = null;
+			if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT'))
+				$manager = StockManagerFactory::getManager();
+			// foreach products of the order
+			foreach ($order->getProductsDetail() as $product)
+			{
+				// if becoming logable => adds sale
+				if ($new_os->logable && !$old_os->logable)
 				{
-					/* If becoming logable => adding sale */
-					if ($newOS->logable
-						&& !($oldOrderStatus instanceof OrderState
-						&& $oldOrderStatus->logable))
-					{
-						ProductSale::addProductSale($product['product_id'], $product['product_quantity']);
-					}
-					/* If becoming unlogable => removing sale */
-					else if (!$newOS->logable
-						&& $oldOrderStatus instanceof OrderState
-						&& $oldOrderStatus->logable)
-					{
-						ProductSale::removeProductSale($product['product_id'], $product['product_quantity']);
-						// @since 1.5.0
-						if ($newOS->id == Configuration::get('PS_OS_ERROR') || $newOS->id == Configuration::get('PS_OS_CANCELED'))
-							StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['product_quantity'], $order->id_shop);
-					}
+					ProductSale::addProductSale($product['product_id'], $product['product_quantity']);
+					// @since 1.5.0 - Stock Management
+					if (!Pack::isPack($product['product_id']) &&
+						($old_os->id == Configuration::get('PS_OS_ERROR') || $old_os->id == Configuration::get('PS_OS_CANCELED')))
+						StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], -(int)$product['product_quantity'], $order->id_shop);
+				}
+				// if becoming unlogable => removes sale
+				else if (!$new_os->logable && $old_os->logable)
+				{
+					ProductSale::removeProductSale($product['product_id'], $product['product_quantity']);
 
-					if ((!Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') || (int)$product['advanced_stock_management'] != 1)
-						&& !$isValidated
-						&& $newOS->logable
-						&& $oldOrderStatus instanceof OrderState
-						&& $oldOrderStatus->id == Configuration::get('PS_OS_ERROR')
-					)
+					// @since 1.5.0 - Stock Management
+					if (!Pack::isPack($product['product_id']) &&
+						($new_os->id == Configuration::get('PS_OS_ERROR') || $new_os->id == Configuration::get('PS_OS_CANCELED')))
 						StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['product_quantity'], $order->id_shop);
-					// If order is shipped for the first time and
-					// if we use advanced stock management system, decrement stock preperly.
-					// The product is removed from the physical stock. $id_warehouse is needed
-					// @TODO Checks $id_warehouse
-					else if ($newOS->shipped == 1
-						&& $oldOrderStatus instanceof OrderState
-						&& $oldOrderStatus->shipped == 0
-						&& Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT')
-						&& (int)$product['advanced_stock_management'] == 1)
+				}
+				// if waiting for payment => payment error/canceled
+				else if (!$new_os->logable && !$old_os->logable &&
+						 ($new_os->id == Configuration::get('PS_OS_ERROR') || $new_os->id == Configuration::get('PS_OS_CANCELED')))
+						 StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['product_quantity'], $order->id_shop);
+				// @since 1.5.0 : if the order is being shipped and this products uses the advanced stock management :
+				// decrements the physical stock using $id_warehouse
+				if ($new_os->shipped == 1 && $old_os->shipped == 0 &&
+					Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') &&
+					Warehouse::exists($product['id_warehouse']) &&
+					$manager != null &&
+					((int)$product['advanced_stock_management'] == 1 || Pack::usesAdvancedStockManagement($product['product_id'])))
+				{
+					// gets the warehouse
+					$warehouse = new Warehouse($product['id_warehouse']);
+
+					// decrements the stock (if it's a pack, the StockManager does what is needed)
+					$manager->removeProduct(
+						$product['product_id'],
+						$product['product_attribute_id'],
+						$warehouse,
+						$product['product_quantity'],
+						Configuration::get('PS_STOCK_CUSTOMER_ORDER_REASON'),
+						true,
+						(int)$id_order
+					);
+				}
+				// @since.1.5.0 : if the order was shipped, and is not anymore, we need to restock products
+				else if ($new_os->shipped == 0 && $old_os->shipped == 1 &&
+						 Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') &&
+						 Warehouse::exists($product['id_warehouse']) &&
+						 $manager != null &&
+						 ((int)$product['advanced_stock_management'] == 1 || Pack::usesAdvancedStockManagement($product['product_id'])))
+				{
+					// if the product is a pack, we restock every products in the pack using the last negative stock mvts
+					if (Pack::isPack($product['product_id']))
 					{
-						$manager = StockManagerFactory::getManager();
-						$warehouse = new Warehouse($product['id_warehouse']);
-
-						$manager->removeProduct(
-							$product['product_id'],
-							$product['product_attribute_id'],
-							$warehouse,
-							$product['product_quantity'],
-							Configuration::get('PS_STOCK_CUSTOMER_ORDER_REASON'),
-							true,
-							(int)$id_order
-						);
-
-						if (StockAvailable::dependsOnStock($product['product_id'], $order->id_shop))
-							StockAvailable::synchronize($product['product_id']);
-						else
-							StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], -(int)$product['product_quantity'], $order->id_shop);
+						$pack_products = Pack::getItems($product['product_id'], Configuration::get('PS_LANG_DEFAULT'));
+						foreach ($pack_products as $pack_product)
+						{
+							if ($pack_product->advanced_stock_management == 1)
+							{
+								$mvts = StockMvt::getNegativeStockMvts($order->id, $pack_product->id, 0, $pack_product->pack_quantity * $product['product_quantity']);
+								foreach ($mvts as $mvt)
+								{
+									$manager->addProduct(
+										$pack_product->id,
+										0,
+										new Warehouse($mvt['id_warehouse']),
+										$mvt['physical_quantity'],
+										null,
+										$mvt['price_te'],
+										true
+									);
+								}
+								StockAvailable::updateQuantity($pack_product->id, 0, (int)$pack_product->pack_quantity * $product['product_quantity'], $order->id_shop);
+							}
+						}
 					}
-					else if ($newOS->shipped == 0
-						&& $oldOrderStatus instanceof OrderState
-						&& $oldOrderStatus->shipped == 1
-						&& Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT')
-						&& (int)$product['advanced_stock_management'] == 1
-					)
+					// else, it's not a pack, re-stock using the last negative stock mvts
+					else
 					{
-						$manager = StockManagerFactory::getManager();
 						$mvts = StockMvt::getNegativeStockMvts($order->id, $product['product_id'], $product['product_attribute_id'], $product['product_quantity']);
 						foreach ($mvts as $mvt)
 						{
@@ -153,73 +196,95 @@ class OrderHistoryCore extends ObjectModel
 								true
 							);
 						}
-
-						if (StockAvailable::dependsOnStock($product['product_id'], $order->id_shop))
-							StockAvailable::synchronize($product['product_id']);
-						else
-							StockAvailable::updateQuantity($product['product_id'], $product['product_attribute_id'], (int)$product['physical_quantity'], $order->id_shop);
-					}
-				}
-
-			$this->id_order_state = (int)($new_order_state);
-
-			/* Change invoice number of order ? */
-			if (!Validate::isLoadedObject($newOS) OR !Validate::isLoadedObject($order))
-				die(Tools::displayError('Invalid new order state'));
-
-			/* The order is valid only if the invoice is available and the order is not cancelled */
-			$order->valid = $newOS->logable;
-			$order->update();
-
-			if ($newOS->invoice AND !$order->invoice_number)
-				$order->setInvoice();
-
-			// Set order as paid
-			if ($newOS->paid == 1)
-			{
-				$invoices = $order->getInvoicesCollection();
-				$payment_method = Module::getInstanceByName($order->module);
-				foreach ($invoices as $invoice)
-				{
-					$rest_paid = $invoice->getRestPaid();
-					if ($rest_paid)
-					{
-						$payment = new OrderPayment();
-						$payment->id_order = $order->id;
-						$payment->id_order_invoice = $invoice->id;
-						$payment->id_currency = $order->id_currency;
-						$payment->amount = $rest_paid;
-						$payment->payment_method = $payment_method->displayName;
-						$payment->conversion_rate = 1;
-						$payment->save();
 					}
 				}
 			}
-
-			// Update delivery date even if it was already set by another state change
-			if ($newOS->delivery)
-				$order->setDelivery();
-			Hook::postUpdateOrderStatus((int)($new_order_state), (int)($id_order));
 		}
+
+		$this->id_order_state = (int)$new_order_state;
+
+		// changes invoice number of order ?
+		if (!Validate::isLoadedObject($new_os) || !Validate::isLoadedObject($order))
+			die(Tools::displayError('Invalid new order state'));
+
+		// the order is valid if and only if the invoice is available and the order is not cancelled
+		$order->valid = $new_os->logable;
+		// Update id_order_state attribute in Order
+		$order->current_state = $new_os->id;
+		$order->update();
+
+		if ($new_os->invoice && !$order->invoice_number)
+			$order->setInvoice();
+
+		// set orders as paid
+		if ($new_os->paid == 1)
+		{
+			$invoices = $order->getInvoicesCollection();
+			$payment_method = Module::getInstanceByName($order->module);
+			foreach ($invoices as $invoice)
+			{
+				$rest_paid = $invoice->getRestPaid();
+				if ($rest_paid)
+				{
+					$payment = new OrderPayment();
+					$payment->id_order = $order->id;
+					$payment->id_order_invoice = $invoice->id;
+					$payment->id_currency = $order->id_currency;
+					$payment->amount = $rest_paid;
+					$payment->payment_method = $payment_method->displayName;
+					$payment->conversion_rate = 1;
+					$payment->save();
+				}
+			}
+		}
+
+		// updates delivery date even if it was already set by another state change
+		if ($new_os->delivery)
+			$order->setDelivery();
+
+		// executes hook
+		Hook::exec('actionOrderStatusPostUpdate', array(
+			'newOrderStatus' => $new_os,
+			'id_order' => (int)$order->id,
+		));
 	}
 
+	/**
+	 * Returns the last order state
+	 * @param int $id_order
+	 * @return OrderState|bool
+	 * @deprecated 1.5.0.4
+	 * @see Order->current_state
+	 */
 	public static function getLastOrderState($id_order)
 	{
+		Tools::displayAsDeprecated();
 		$id_order_state = Db::getInstance()->getValue('
 		SELECT `id_order_state`
 		FROM `'._DB_PREFIX_.'order_history`
-		WHERE `id_order` = '.(int)($id_order).'
+		WHERE `id_order` = '.(int)$id_order.'
 		ORDER BY `date_add` DESC, `id_order_history` DESC');
+
+		// returns false if there is no state
 		if (!$id_order_state)
 			return false;
+
+		// else, returns an OrderState object
 		return new OrderState($id_order_state, Configuration::get('PS_LANG_DEFAULT'));
 	}
 
-	public function addWithemail($autodate = true, $templateVars = false, Context $context = null)
+	/**
+	 * @param bool $autodate Optional
+	 * @param array $template_vars Optional
+	 * @param Context $context Optional
+	 * @return bool
+	 */
+	public function addWithemail($autodate = true, $template_vars = false, Context $context = null)
 	{
 		if (!$context)
 			$context = Context::getContext();
-		$lastOrderState = $this->getLastOrderState($this->id_order);
+		$order = new Order($this->id_order);
+		$last_order_state = $order->getCurrentOrderState();
 
 		if (!parent::add($autodate))
 			return false;
@@ -231,36 +296,37 @@ class OrderHistoryCore extends ObjectModel
 				LEFT JOIN `'._DB_PREFIX_.'customer` c ON o.`id_customer` = c.`id_customer`
 				LEFT JOIN `'._DB_PREFIX_.'order_state` os ON oh.`id_order_state` = os.`id_order_state`
 				LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = o.`id_lang`)
-		WHERE oh.`id_order_history` = '.(int)($this->id).' AND os.`send_email` = 1');
+			WHERE oh.`id_order_history` = '.(int)$this->id.' AND os.`send_email` = 1');
 
-		if (isset($result['template']) AND Validate::isEmail($result['email']))
+		if (isset($result['template']) && Validate::isEmail($result['email']))
 		{
 			$topic = $result['osname'];
 			$data = array('{lastname}' => $result['lastname'], '{firstname}' => $result['firstname'], '{id_order}' => (int)$this->id_order);
-			if ($templateVars)
-				$data = array_merge($data, $templateVars);
-			$order = new Order((int)$this->id_order);
+			if ($template_vars)
+				$data = array_merge($data, $template_vars);
 			$data['{total_paid}'] = Tools::displayPrice((float)$order->total_paid, new Currency((int)$order->id_currency), false);
-			$data['{order_name}'] = sprintf("#%06d", (int)$order->id);
+			$data['{order_name}'] = sprintf('#%06d', (int)$order->id);
 
 			// An additional email is sent the first time a virtual item is validated
-			if ($virtualProducts = $order->getVirtualProducts() AND (!$lastOrderState OR !$lastOrderState->logable) AND $newOrderState = new OrderState($this->id_order_state, Configuration::get('PS_LANG_DEFAULT')) AND $newOrderState->logable)
+			$virtual_products = $order->getVirtualProducts();
+			$new_order_state = new OrderState($this->id_order_state, Configuration::get('PS_LANG_DEFAULT'));
+			if ($virtual_products && (!$last_order_state || !$last_order_state->logable) && $new_order_state && $new_order_state->logable)
 			{
 				$assign = array();
-				foreach ($virtualProducts AS $key => $virtualProduct)
+				foreach ($virtual_products as $key => $virtual_product)
 				{
-					$id_product_download = ProductDownload::getIdFromIdAttribute($virtualProduct['product_id'], $virtualProduct['product_attribute_id']);
+					$id_product_download = ProductDownload::getIdFromIdAttribute($virtual_product['product_id'], $virtual_product['product_attribute_id']);
 					$product_download = new ProductDownload($id_product_download);
 					// If this virtual item has an associated file, we'll provide the link to download the file in the email
 					if ($product_download->display_filename != '')
 					{
 						$assign[$key]['name'] = $product_download->display_filename;
-						$dl_link = $product_download->getTextLink(false, $virtualProduct['download_hash'])
+						$dl_link = $product_download->getTextLink(false, $virtual_product['download_hash'])
 							.'&id_order='.$order->id
 							.'&secure_key='.$order->secure_key;
 						$assign[$key]['link'] = $dl_link;
-						if ($virtualProduct['download_deadline'] != '0000-00-00 00:00:00')
-							$assign[$key]['deadline'] = Tools::displayDate($virtualProduct['download_deadline'], $order->id_lang);
+						if ($virtual_product['download_deadline'] != '0000-00-00 00:00:00')
+							$assign[$key]['deadline'] = Tools::displayDate($virtual_product['download_deadline'], $order->id_lang);
 						if ($product_download->nb_downloadable != 0)
 							$assign[$key]['downloadable'] = $product_download->nb_downloadable;
 					}
@@ -269,8 +335,8 @@ class OrderHistoryCore extends ObjectModel
 				$context->smarty->assign('id_order', $order->id);
 				$iso = Language::getIsoById((int)($order->id_lang));
 				$links = $context->smarty->fetch(_PS_MAIL_DIR_.$iso.'/download-product.tpl');
-				$tmpArray = array('{nbProducts}' => count($virtualProducts), '{virtualProducts}' => $links);
-				$data = array_merge ($data, $tmpArray);
+				$tmp_array = array('{nbProducts}' => count($virtual_products), '{virtualProducts}' => $links);
+				$data = array_merge ($data, $tmp_array);
 				// If there's at least one downloadable file
 				if (!empty($assign))
 					Mail::Send((int)$order->id_lang, 'download_product', Mail::l('Virtual product to download', $order->id_lang), $data, $result['email'], $result['firstname'].' '.$result['lastname']);
@@ -283,6 +349,9 @@ class OrderHistoryCore extends ObjectModel
 		return true;
 	}
 
+	/**
+	 * @return int
+	 */
 	public function isValidated()
 	{
 		return Db::getInstance()->getValue('

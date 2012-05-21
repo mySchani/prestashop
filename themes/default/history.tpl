@@ -24,12 +24,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">
-//<![CDATA[
-	var baseDir = '{$base_dir_ssl}';
-//]]>
-</script>
-
 {capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Order history'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 {include file="$tpl_dir./errors.tpl"}
@@ -58,10 +52,10 @@
 			<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{else}item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{/if}">
 				<td class="history_link bold">
 					{if isset($order.invoice) && $order.invoice && isset($order.virtual) && $order.virtual}<img src="{$img_dir}icon/download_product.gif" class="icon" alt="{l s='Products to download'}" title="{l s='Products to download'}" />{/if}
-					<a class="color-myaccount" href="javascript:showOrder(1, {$order.id_order|intval}, 'order-detail');">{l s='#'}{$order.id_order|string_format:"%06d"}</a>
+					<a class="color-myaccount" href="javascript:showOrder(1, {$order.id_order|intval}, '{$link->getPageLink('order-detail')}');">{l s='#'}{$order.id_order|string_format:"%06d"}</a>
 				</td>
 				<td class="history_date bold">{dateFormat date=$order.date_add full=0}</td>
-				<td class="history_price"><span class="price">{displayPrice price=$order.total_paid_real currency=$order.id_currency no_utf8=false convert=false}</span></td>
+				<td class="history_price"><span class="price">{displayPrice price=$order.total_paid currency=$order.id_currency no_utf8=false convert=false}</span></td>
 				<td class="history_method">{$order.payment|escape:'htmlall':'UTF-8'}</td>
 				<td class="history_state">{if isset($order.order_state)}{$order.order_state|escape:'htmlall':'UTF-8'}{/if}</td>
 				<td class="history_invoice">
@@ -71,7 +65,7 @@
 				{else}-{/if}
 				</td>
 				<td class="history_detail">
-					<a class="color-myaccount" href="javascript:showOrder(1, {$order.id_order|intval}, 'order-detail');">{l s='details'}</a>
+					<a class="color-myaccount" href="javascript:showOrder(1, {$order.id_order|intval}, '{$link->getPageLink('order-detail')}');">{l s='details'}</a>
 					{if isset($opc) && $opc}
 					<a href="{$link->getPageLink('order-opc', true, NULL, "submitReorder&id_order={$order.id_order}")}" title="{l s='Reorder'}">
 					{else}

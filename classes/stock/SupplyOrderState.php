@@ -41,7 +41,7 @@ class SupplyOrderStateCore extends ObjectModel
 	public $delivery_note;
 
 	/**
-	 * @var bool Tells if the order is still editable by an employee
+	 * @var bool Tells if the order is still editable by an employee (i.e. you can add products)
 	 */
 	public $editable;
 
@@ -56,12 +56,12 @@ class SupplyOrderStateCore extends ObjectModel
 	public $pending_receipt;
 
 	/**
-	 * @var bool Tells if the the order is in an enclosed state
+	 * @var bool Tells if the the order is in an enclosed state (i.e. terminated, canceled)
 	 */
 	public $enclosed;
 
 	/**
-	 * @var string Display state in the specified color (Ex. #FFFF00)
+	 * @var string Color used to display the state in the specified color (Ex. #FFFF00)
 	 */
 	public $color;
 
@@ -96,9 +96,9 @@ class SupplyOrderStateCore extends ObjectModel
 	/**
 	 * Gets the list of supply order states
 	 *
-	 * @param int $id_state_referrer The state refferer id used to know what state is available after the current state refferer
-	 * @param int $id_lang The language id
-	 * @return array
+	 * @param int $id_state_referrer Optional, used to know what state is available after this one
+	 * @param int $id_lang Optional Id Language
+	 * @return array States
 	 */
 	public static function getSupplyOrderStates($id_state_referrer = null, $id_lang = null)
 	{
@@ -142,4 +142,30 @@ class SupplyOrderStateCore extends ObjectModel
 
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
 	}
+
+	/**
+	 * Gets the list of supply order states
+	 *
+	 * @param array $ids Optional Do not include these ids in the result
+	 * @param int $id_lang Optional
+	 * @return array
+	 */
+	public static function getStates($ids = null, $id_lang = null)
+	{
+		if ($id_lang == null)
+			$id_lang = Context::getContext()->language->id;
+
+		if ($ids && !is_array($ids))
+			$ids = array();
+
+		$query = new DbQuery();
+		$query->select('sl.name, s.id_supply_order_state');
+		$query->from('supply_order_state', 's');
+		$query->leftjoin('supply_order_state_lang', 'sl', 's.id_supply_order_state = sl.id_supply_order_state AND sl.id_lang='.(int)$id_lang);
+		if ($ids)
+			$query->where('s.id_supply_order_state NOT IN('.implode(',', array_map('intval', $ids)).')');
+
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+	}
+
 }

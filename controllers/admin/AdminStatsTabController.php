@@ -60,7 +60,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 
 	public function displayCalendar()
 	{
-		return self::displayCalendarForm(array(
+		return AdminStatsTabController::displayCalendarForm(array(
 			'Calendar' => $this->l('Calendar', 'AdminStatsTab'),
 			'Day' => $this->l('Day', 'AdminStatsTab'),
 			'Month' => $this->l('Month', 'AdminStatsTab'),
@@ -74,7 +74,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 	public static function displayCalendarForm($translations, $token, $action = null, $table = null, $identifier = null, $id = null)
 	{
 		$context = Context::getContext();
-		$tpl = $context->smarty->createTemplate('stats/calendar.tpl');
+		$tpl = $context->controller->createTemplate('calendar.tpl');
 
 		$context->controller->addJqueryUI('ui.datepicker');
 
@@ -95,7 +95,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 
 	protected function displayEngines()
 	{
-		$tpl = $this->context->smarty->createTemplate('stats/engines.tpl');
+		$tpl = $this->createTemplate('engines.tpl');
 
 		$autoclean_period = array(
 			'never' => 	$this->l('Never'),
@@ -120,7 +120,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 
 	public function displayMenu()
 	{
-		$tpl = $this->context->smarty->createTemplate('stats/menu.tpl');
+		$tpl = $this->createTemplate('menu.tpl');
 
 		$modules = $this->getModules();
 		$module_instance = array();
@@ -137,7 +137,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 		return $tpl->fetch();
 	}
 
-	private function getModules()
+	protected function getModules()
 	{
 		$sql = 'SELECT h.`name` AS hook, m.`name`
 				FROM `'._DB_PREFIX_.'module` m
@@ -152,9 +152,9 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 
 	public function displayStats()
 	{
-		$tpl = $this->context->smarty->createTemplate('stats/stats.tpl');
+		$tpl = $this->createTemplate('stats.tpl');
 
-		if (!($module_name = Tools::getValue('module')) && $module_instance = Module::getInstanceByName('statsforecast') AND $module_instance->active)
+		if (!($module_name = Tools::getValue('module')) && ($module_instance = Module::getInstanceByName('statsforecast')) && $module_instance->active)
 			$module_name = 'statsforecast';
 
 		if ($module_name)
@@ -165,7 +165,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 				$module_instance = Module::getInstanceByName($module_name);
 
 			if ($module_instance && $module_instance->active)
-				$hook = Hook::exec('AdminStatsModules', NULL, $module_instance->id);
+				$hook = Hook::exec('displayAdminStatsModules', null, $module_instance->id);
 		}
 
 		$tpl->assign(array(
@@ -183,7 +183,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 		if (Tools::isSubmit('submitDatePicker'))
 		{
 			if (!Validate::isDate($from = Tools::getValue('datepickerFrom')) || !Validate::isDate($to = Tools::getValue('datepickerTo')))
-				$this->_errors[] = Tools::displayError('Date specified is invalid');
+				$this->errors[] = Tools::displayError('Date specified is invalid');
 		}
 		if (Tools::isSubmit('submitDateDay'))
 		{
@@ -218,7 +218,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 			$from = (date('Y') - 1).date('-01-01');
 			$to = (date('Y') - 1).date('-12-31');
 		}
-		if (isset($from) && isset($to) && !count($this->_errors))
+		if (isset($from) && isset($to) && !count($this->errors))
 		{
 			$this->context->employee->stats_date_from = $from;
 			$this->context->employee->stats_date_to = $to;
@@ -235,7 +235,7 @@ abstract class AdminStatsTabControllerCore extends AdminPreferencesControllerCor
 				Configuration::updateValue('PS_STATS_OLD_CONNECT_AUTO_CLEAN', Tools::getValue('PS_STATS_OLD_CONNECT_AUTO_CLEAN', Configuration::get('PS_STATS_OLD_CONNECT_AUTO_CLEAN')));
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 	}
 

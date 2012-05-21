@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11276 $
+*  @version  Release: $Revision: 12691 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,7 +28,7 @@
 class AdminAddressesControllerCore extends AdminController
 {
 	/** @var array countries list */
-	private $countriesArray = array();
+	private $countries_array = array();
 
 	public function __construct()
 	{
@@ -53,9 +53,9 @@ class AdminAddressesControllerCore extends AdminController
 			'firstname' => array('title' => $this->l('First name'), 'width' => 120, 'filter_key' => 'a!firstname'),
 			'lastname' => array('title' => $this->l('Last name'), 'width' => 140, 'filter_key' => 'a!lastname'),
 			'address1' => array('title' => $this->l('Address')),
-			'postcode' => array('title' => $this->l('Postcode/ Zip Code'), 'align' => 'right', 'width' => 50),
+			'postcode' => array('title' => $this->l('Postcode/ Zip Code'), 'align' => 'right', 'width' => 80),
 			'city' => array('title' => $this->l('City'), 'width' => 150),
-			'country' => array('title' => $this->l('Country'), 'width' => 100, 'type' => 'select', 'list' => $this->countriesArray, 'filter_key' => 'cl!id_country'));
+			'country' => array('title' => $this->l('Country'), 'width' => 100, 'type' => 'select', 'list' => $this->countries_array, 'filter_key' => 'cl!id_country'));
 
 		parent::__construct();
 	}
@@ -63,13 +63,13 @@ class AdminAddressesControllerCore extends AdminController
 	public function renderList()
 	{
 		$this->_select = 'cl.`name` as country';
-		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON
-			(cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)$this->context->language->id.')';
+		$this->_join = '
+			LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)$this->context->language->id.')';
 		$this->_where = 'AND a.id_customer != 0';
 
 		$countries = Country::getCountries($this->context->language->id);
-		foreach ($countries AS $country)
-			$this->countriesArray[$country['id_country']] = $country['name'];
+		foreach ($countries as $country)
+			$this->countries_array[$country['id_country']] = $country['name'];
 
 		return parent::renderList();
 	}
@@ -99,7 +99,7 @@ class AdminAddressesControllerCore extends AdminController
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('Alias'),
+					'label' => $this->l('Address alias'),
 					'name' => 'alias',
 					'size' => 33,
 					'required' => true,
@@ -134,16 +134,18 @@ class AdminAddressesControllerCore extends AdminController
 				'class' => 'button'
 			)
 		);
-
-		if (Validate::isLoadedObject($this->object))
+		$id_customer = (int)Tools::getValue('id_customer');
+		if (!$id_customer && Validate::isLoadedObject($this->object))
+			$id_customer = $this->object->id_customer;
+		if ($id_customer)
 		{
-			$customer = new Customer($this->object->id_customer);
-			$tokenCustomer = Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)$this->context->employee->id);
+			$customer = new Customer((int)$id_customer);
+			$token_customer = Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)$this->context->employee->id);
 		}
 
 		// @todo in 1.4, this include was done before the class declaration
 		// We should use a hook now
-		if (Configuration::get('VATNUMBER_MANAGEMENT') AND file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php'))
+		if (Configuration::get('VATNUMBER_MANAGEMENT') && file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php'))
 			include_once(_PS_MODULE_DIR_.'vatnumber/vatnumber.php');
 		if (Configuration::get('VATNUMBER_MANAGEMENT'))
 			if (file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php') && VatNumber::isApplicable(Configuration::get('PS_COUNTRY_DEFAULT')))
@@ -154,16 +156,17 @@ class AdminAddressesControllerCore extends AdminController
 		$this->tpl_form_vars = array(
 			'vat' => isset($vat) ? $vat : null,
 			'customer' => isset($customer) ? $customer : null,
-			'tokenCustomer' => isset ($tokenCustomer) ? $tokenCustomer : null
+			'tokenCustomer' => isset ($token_customer) ? $token_customer : null
 		);
 
 		// Order address fields depending on country format
 		$addresses_fields = $this->processAddressFormat();
-		$addresses_fields = $addresses_fields["dlv_all_fields"];	// we use  delivery address
+		// we use  delivery address
+		$addresses_fields = $addresses_fields['dlv_all_fields'];
 
 		$temp_fields = array();
 
-		foreach($addresses_fields as $addr_field_item)
+		foreach ($addresses_fields as $addr_field_item)
 		{
 			if ($addr_field_item == 'company')
 			{
@@ -182,7 +185,7 @@ class AdminAddressesControllerCore extends AdminController
 					'size' => 33,
 				);
 			}
-			elseif ($addr_field_item == 'lastname')
+			else if ($addr_field_item == 'lastname')
 			{
 				$temp_fields[] = array(
 					'type' => 'text',
@@ -193,7 +196,7 @@ class AdminAddressesControllerCore extends AdminController
 					'hint' => $this->l('Invalid characters:').' 0-9!<>,;?=+()@#"�{}_$%:<span class="hint-pointer">&nbsp;</span>'
 				);
 			}
-			elseif ($addr_field_item == 'firstname')
+			else if ($addr_field_item == 'firstname')
 			{
 				$temp_fields[] = array(
 					'type' => 'text',
@@ -204,7 +207,7 @@ class AdminAddressesControllerCore extends AdminController
 					'hint' => $this->l('Invalid characters:').' 0-9!<>,;?=+()@#"�{}_$%:<span class="hint-pointer">&nbsp;</span>'
 				);
 			}
-			elseif ($addr_field_item == 'address1')
+			else if ($addr_field_item == 'address1')
 			{
 				$temp_fields[] = array(
 					'type' => 'text',
@@ -214,7 +217,7 @@ class AdminAddressesControllerCore extends AdminController
 					'required' => true,
 				);
 			}
-			elseif ($addr_field_item == 'address2')
+			else if ($addr_field_item == 'address2')
 			{
 				$temp_fields[] = array(
 					'type' => 'text',
@@ -231,10 +234,10 @@ class AdminAddressesControllerCore extends AdminController
 					'label' => $this->l('Postcode/ Zip Code'),
 					'name' => 'postcode',
 					'size' => 33,
-					'required' => false,
+					'required' => true,
 				);
 			}
-			elseif ($addr_field_item == 'city')
+			else if ($addr_field_item == 'city')
 			{
 				$temp_fields[] = array(
 					'type' => 'text',
@@ -244,7 +247,7 @@ class AdminAddressesControllerCore extends AdminController
 					'required' => true,
 				);
 			}
-			elseif ($addr_field_item == 'country' || $addr_field_item == 'Country:name')
+			else if ($addr_field_item == 'country' || $addr_field_item == 'Country:name')
 			{
 				$temp_fields[] = array(
 					'type' => 'select',
@@ -272,6 +275,12 @@ class AdminAddressesControllerCore extends AdminController
 			}
 		}
 
+		if (isset($customer) && !Tools::isSubmit('submit'.strtoupper($this->table)) && Validate::isLoadedObject($customer) && !Validate::isLoadedObject($this->object))
+		{
+			$this->fields_value['lastname'] = $customer->lastname;
+			$this->fields_value['firstname'] = $customer->firstname;
+		}
+
 		// merge address format with the rest of the form
 		array_splice($this->fields_form['input'], 3, 0, $temp_fields);
 
@@ -288,35 +297,37 @@ class AdminAddressesControllerCore extends AdminController
 			if (Validate::isLoadedObject($customer))
 				$_POST['id_customer'] = $customer->id;
 			else
-				$this->_errors[] = Tools::displayError('This e-mail address is not registered.');
+				$this->errors[] = Tools::displayError('This e-mail address is not registered.');
 		}
-		elseif ($id_customer = Tools::getValue('id_customer'))
+		else if ($id_customer = Tools::getValue('id_customer'))
 		{
-			$customer = new Customer((int)($id_customer));
+			$customer = new Customer((int)$id_customer);
 			if (Validate::isLoadedObject($customer))
 				$_POST['id_customer'] = $customer->id;
 			else
-				$this->_errors[] = Tools::displayError('Unknown customer');
+				$this->errors[] = Tools::displayError('Unknown customer');
 		}
 		else
-			$this->_errors[] = Tools::displayError('Unknown customer');
-		if (Country::isNeedDniByCountryId(Tools::getValue('id_country')) AND !Tools::getValue('dni'))
-			$this->_errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
+			$this->errors[] = Tools::displayError('Unknown customer');
+		if (Country::isNeedDniByCountryId(Tools::getValue('id_country')) && !Tools::getValue('dni'))
+			$this->errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
 
 		/* If the selected country does not contain states */
-		$id_state = (int)(Tools::getValue('id_state'));
-		if ($id_country = Tools::getValue('id_country') AND $country = new Country((int)($id_country)) AND !(int)($country->contains_states) AND $id_state)
-			$this->_errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
+		$id_state = (int)Tools::getValue('id_state');
+		$id_country = (int)Tools::getValue('id_country');
+		$country = new Country((int)$id_country);
+		if ($country && !(int)$country->contains_states && $id_state)
+			$this->errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
 
 		/* If the selected country contains states, then a state have to be selected */
-		if ((int)($country->contains_states) AND !$id_state)
-			$this->_errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
+		if ((int)$country->contains_states && !$id_state)
+			$this->errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
 
 		/* Check zip code */
 		if ($country->need_zip_code)
 		{
 			$zip_code_format = $country->zip_code_format;
-			if (($postcode = Tools::getValue('postcode')) AND $zip_code_format)
+			if (($postcode = Tools::getValue('postcode')) && $zip_code_format)
 			{
 				$zip_regexp = '/^'.$zip_code_format.'$/ui';
 				$zip_regexp = str_replace(' ', '( |)', $zip_regexp);
@@ -325,32 +336,34 @@ class AdminAddressesControllerCore extends AdminController
 				$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
 				$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
 				if (!preg_match($zip_regexp, $postcode))
-					$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
+					$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.
+									   Tools::displayError('Must be typed as follows:').' '.
+									   str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
 			}
-			elseif ($zip_code_format)
-				$this->_errors[] = Tools::displayError('Postcode required.');
-			elseif ($postcode AND !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-				$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.');
+			else if ($zip_code_format)
+				$this->errors[] = Tools::displayError('Postcode required.');
+			else if ($postcode && !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
+				$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.');
 		}
 
 		/* If this address come from order's edition and is the same as the other one (invoice or delivery one)
 		** we delete its id_address to force the creation of a new one */
-		if ((int)(Tools::getValue('id_order')))
+		if ((int)Tools::getValue('id_order'))
 		{
 			$this->_redirect = false;
 			if (isset($_POST['address_type']))
 				$_POST['id_address'] = '';
 		}
 
-		if (empty($this->_errors))
+		if (empty($this->errors))
 			parent::processSave($token);
 
 		/* Reassignation of the order's new (invoice or delivery) address */
-		$address_type = ((int)(Tools::getValue('address_type')) == 2 ? 'invoice' : ((int)(Tools::getValue('address_type')) == 1 ? 'delivery' : ''));
-		if ($this->action == 'save' AND ($id_order = (int)(Tools::getValue('id_order'))) AND !sizeof($this->_errors) AND !empty($address_type))
+		$address_type = ((int)Tools::getValue('address_type') == 2 ? 'invoice' : ((int)Tools::getValue('address_type') == 1 ? 'delivery' : ''));
+		if ($this->action == 'save' && ($id_order = (int)Tools::getValue('id_order')) && !count($this->errors) && !empty($address_type))
 		{
-			if(!Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'orders SET `id_address_'.$address_type.'` = '.Db::getInstance()->Insert_ID().' WHERE `id_order` = '.$id_order))
-				$this->_errors[] = Tools::displayError('An error occurred while linking this address to its order.');
+			if (!Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'orders SET `id_address_'.$address_type.'` = '.Db::getInstance()->Insert_ID().' WHERE `id_order` = '.$id_order))
+				$this->errors[] = Tools::displayError('An error occurred while linking this address to its order.');
 			else
 				Tools::redirectAdmin(Tools::getValue('back').'&conf=4');
 		}
@@ -363,13 +376,12 @@ class AdminAddressesControllerCore extends AdminController
 	 */
 	protected function processAddressFormat()
 	{
-		$tmp_addr = new Address((int)Tools::getValue("id_address"));
+		$tmp_addr = new Address((int)Tools::getValue('id_address'));
 
-		$selectedCountry = ($tmp_addr && $tmp_addr->id_country) ? $tmp_addr->id_country :
-				(int)(Configuration::get('PS_COUNTRY_DEFAULT'));
+		$selected_country = ($tmp_addr && $tmp_addr->id_country) ? $tmp_addr->id_country : (int)Configuration::get('PS_COUNTRY_DEFAULT');
 
-		$inv_adr_fields = AddressFormat::getOrderedAddressFields($selectedCountry, false, true);
-		$dlv_adr_fields = AddressFormat::getOrderedAddressFields($selectedCountry, false, true);
+		$inv_adr_fields = AddressFormat::getOrderedAddressFields($selected_country, false, true);
+		$dlv_adr_fields = AddressFormat::getOrderedAddressFields($selected_country, false, true);
 
 		$inv_all_fields = array();
 		$dlv_all_fields = array();
@@ -379,14 +391,32 @@ class AdminAddressesControllerCore extends AdminController
 		foreach (array('inv','dlv') as $adr_type)
 		{
 			foreach (${$adr_type.'_adr_fields'} as $fields_line)
-				foreach(explode(' ',$fields_line) as $field_item)
+				foreach (explode(' ', $fields_line) as $field_item)
 					${$adr_type.'_all_fields'}[] = trim($field_item);
 
-
-			$out[$adr_type.'_adr_fields'] =  ${$adr_type.'_adr_fields'};
-			$out[$adr_type.'_all_fields'] =  ${$adr_type.'_all_fields'};
+			$out[$adr_type.'_adr_fields'] = ${$adr_type.'_adr_fields'};
+			$out[$adr_type.'_all_fields'] = ${$adr_type.'_all_fields'};
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Method called when an ajax request is made
+	 * @see AdminController::postProcess()
+	 */
+	public function ajaxProcess()
+	{
+		if (Tools::isSubmit('email'))
+		{
+			$email = pSQL(Tools::getValue('email'));
+			$customer = Customer::searchByName($email);
+			if (!empty($customer))
+			{
+				$customer = $customer['0'];
+				echo Tools::jsonEncode(array('infos' => pSQL($customer['firstname']).'_'.pSQL($customer['lastname'])));
+			}
+		}
+		die;
 	}
 }

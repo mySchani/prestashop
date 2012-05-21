@@ -159,7 +159,7 @@ class AdminCartsControllerCore extends AdminController
 			$product['qty_in_stock'] = StockAvailable::getQuantityAvailableByProduct($product['id_product'], isset($product['id_product_attribute']) ? $product['id_product_attribute'] : null, (int)$order->id_shop);
 
 			$image_product = new Image($image['id_image']);
-			$product['image'] = (isset($image['id_image']) ? cacheImage(_PS_IMG_DIR_.'p/'.$image_product->getExistingImgPath().'.jpg', 'product_mini_'.(int)$product['id_product'].(isset($product['id_product_attribute']) ? '_'.(int)$product['id_product_attribute'] : '').'.jpg', 45, 'jpg') : '--');
+			$product['image'] = (isset($image['id_image']) ? ImageManager::thumbnail(_PS_IMG_DIR_.'p/'.$image_product->getExistingImgPath().'.jpg', 'product_mini_'.(int)$product['id_product'].(isset($product['id_product_attribute']) ? '_'.(int)$product['id_product_attribute'] : '').'.jpg', 45, 'jpg') : '--');
 		}
 
 		$this->tpl_view_vars = array(
@@ -196,6 +196,8 @@ class AdminCartsControllerCore extends AdminController
 				$this->context->cart->id_customer = $id_customer;
 			if ($this->context->cart->OrderExists())
 				return;
+			if (!$this->context->cart->secure_key)
+				$this->context->cart->secure_key = $this->context->customer->secure_key;
 			if (!$this->context->cart->id_shop)
 				$this->context->cart->id_shop = (int)$this->context->shop->id;
 			if (!$this->context->cart->id_lang)
@@ -215,6 +217,7 @@ class AdminCartsControllerCore extends AdminController
 				$this->context->cart->id_address_delivery = $addresses[0]['id_address'];
 			elseif ($id_address_delivery)
 				$this->context->cart->id_address_delivery = (int)$id_address_delivery;
+				
 			$this->context->cart->save();
 			$currency = new Currency((int)$this->context->cart->id_currency);
 			$this->context->currency = $currency;
@@ -245,7 +248,7 @@ class AdminCartsControllerCore extends AdminController
 				return;
 			if ($this->context->cart->OrderExists())
 				$errors[] = Tools::displayError('An order already placed with this cart');
-			elseif (!($id_product = (int)Tools::getValue('id_product')) OR !($product = new Product((int)$id_product, true, $this->context->language->id)))
+			elseif (!($id_product = (int)Tools::getValue('id_product')) || !($product = new Product((int)$id_product, true, $this->context->language->id)))
 				$errors[] = Tools::displayError('Invalid product');
 			elseif (!($qty = Tools::getValue('qty')) || $qty == 0)
 				$errors[] = Tools::displayError('Invalid quantity');
@@ -279,10 +282,13 @@ class AdminCartsControllerCore extends AdminController
 		}
 	}
 
-	public function ajaxProcessUpdateCarrier()
+	public function ajaxProcessUpdateDeliveryOption()
 	{
 		if ($this->tabAccess['edit'] === '1')
 		{
+			$delivery_option = Tools::getValue('delivery_option');			
+			if ($delivery_option !== false)
+				$this->context->cart->setDeliveryOption(array($this->context->cart->id_address_delivery => $delivery_option));
 			if (Validate::isBool(($recyclable = (int)Tools::getValue('recyclable'))))
 				$this->context->cart->recyclable = $recyclable;
 			if (Validate::isBool(($gift = (int)Tools::getValue('gift'))))
@@ -355,9 +361,7 @@ class AdminCartsControllerCore extends AdminController
 		if ($this->tabAccess['edit'] === '1')
 		{
 			$errors = array();
-			$customer = new Customer((int)$this->context->cart->id_customer);
-
-			if (!$id_cart_rule = Tools::getValue('id_cart_rule') OR !$cart_rule = new CartRule((int)$id_cart_rule))
+			if (!$id_cart_rule = Tools::getValue('id_cart_rule') || !$cart_rule = new CartRule((int)$id_cart_rule))
 				$errors[] = Tools::displayError('Invalid voucher');
 			else if ($err = $cart_rule->checkValidity($this->context))
 				$errors[] = $err;
@@ -368,17 +372,23 @@ class AdminCartsControllerCore extends AdminController
 		}
 	}
 
+	public function ajaxProcessUpdateAddress()
+	{
+		if ($this->tabAccess['edit'] === '1')
+			echo Tools::jsonEncode(array('addresses' => $this->context->customer->getAddresses((int)$this->context->cart->id_lang)));
+	}
+
 	public function ajaxProcessUpdateAddresses()
 	{
 		if ($this->tabAccess['edit'] === '1')
 		{
 			if (($id_address_delivery = (int)Tools::getValue('id_address_delivery')) &&
-				$address_delivery = new Address((int)$id_address_delivery) &&
-				$address_delivery->id_customer = $this->context->cart->id_customer)
+				($address_delivery = new Address((int)$id_address_delivery)) &&
+				$address_delivery->id_customer == $this->context->cart->id_customer)
 				$this->context->cart->id_address_delivery = (int)$address_delivery->id;
 
 			if (($id_address_invoice = (int)Tools::getValue('id_address_invoice')) &&
-				$address_invoice = new Address((int)$id_address_invoice) &&
+				($address_invoice = new Address((int)$id_address_invoice)) &&
 				$address_invoice->id_customer = $this->context->cart->id_customer)
 				$this->context->cart->id_address_invoice = (int)$address_invoice->id;
 			$this->context->cart->save();
@@ -431,10 +441,33 @@ class AdminCartsControllerCore extends AdminController
 		return $summary;
 	}
 
-	protected function getAvailableCarriers()
+	protected function getDeliveryOptionList()
 	{
-		$customer = new Customer((int)$this->context->cart->id_customer);
-		return Carrier::getCarriersForOrder(Address::getZoneById($this->context->cart->id_address_delivery), $customer->getGroups());
+		$delivery_option_list_formated = array();
+		$delivery_option_list = $this->context->cart->getDeliveryOptionList();
+		
+		if (!count($delivery_option_list))
+			return array();
+
+		foreach (current($delivery_option_list) as $key => $delivery_option)
+		{
+			$name = '';
+			$first = true;
+			foreach ($delivery_option['carrier_list'] as $carrier)
+			{
+				if (!$first)
+					$name .= ', ';
+				else
+					$first = false;
+				
+				$name .= $carrier['instance']->name;
+				
+				if ($delivery_option['unique_carrier'])
+					$name .= ' - '.$carrier['instance']->delay[$this->context->employee->id_lang];
+			}
+			$delivery_option_list_formated[] = array('name' => $name, 'key' => $key);
+		}
+		return $delivery_option_list_formated;
 	}
 
 	public function displayAjaxSearchCarts()
@@ -471,9 +504,8 @@ class AdminCartsControllerCore extends AdminController
 	{
 		$id_cart = (int)$this->context->cart->id;
 		return array('summary' => $this->getCartSummary(),
-						'carriers' => $this->getAvailableCarriers(),
+						'delivery_option_list' => $this->getDeliveryOptionList(),
 						'cart' => $this->context->cart,
-						'carriers' => $this->getAvailableCarriers(),
 						'addresses' => $this->context->customer->getAddresses((int)$this->context->cart->id_lang),
 						'id_cart' => $id_cart,
 						'link_order' => $this->context->link->getPageLink(
@@ -496,25 +528,28 @@ class AdminCartsControllerCore extends AdminController
 
 	public function ajaxProcessUpdateProductPrice()
 	{
-		SpecificPrice::deleteByIdCart((int)$this->context->cart->id, (int)Tools::getValue('id_product'), (int)Tools::getValue('id_product_attribute'));
-		$specific_price = new SpecificPrice();
-		$specific_price->id_cart = (int)$this->context->cart->id;
-		$specific_price->id_shop = 0;
-		$specific_price->id_group_shop = 0;
-		$specific_price->id_currency = 0;
-		$specific_price->id_country = 0;
-		$specific_price->id_group = 0;
-		$specific_price->id_customer = (int)$this->context->customer->id;
-		$specific_price->id_product = (int)Tools::getValue('id_product');
-		$specific_price->id_product_attribute = (int)Tools::getValue('id_product_attribute');
-		$specific_price->price = (float)Tools::getValue('price');
-		$specific_price->from_quantity = 1;
-		$specific_price->reduction = 0;
-		$specific_price->reduction_type = 'amount';
-		$specific_price->from = '0000-00-00 00:00:00';
-		$specific_price->to = '0000-00-00 00:00:00';
-		$specific_price->add();
-		echo Tools::jsonEncode($this->ajaxReturnVars());
+		if ($this->tabAccess['edit'] === '1')
+		{
+			SpecificPrice::deleteByIdCart((int)$this->context->cart->id, (int)Tools::getValue('id_product'), (int)Tools::getValue('id_product_attribute'));
+			$specific_price = new SpecificPrice();
+			$specific_price->id_cart = (int)$this->context->cart->id;
+			$specific_price->id_shop = 0;
+			$specific_price->id_group_shop = 0;
+			$specific_price->id_currency = 0;
+			$specific_price->id_country = 0;
+			$specific_price->id_group = 0;
+			$specific_price->id_customer = (int)$this->context->customer->id;
+			$specific_price->id_product = (int)Tools::getValue('id_product');
+			$specific_price->id_product_attribute = (int)Tools::getValue('id_product_attribute');
+			$specific_price->price = (float)Tools::getValue('price');
+			$specific_price->from_quantity = 1;
+			$specific_price->reduction = 0;
+			$specific_price->reduction_type = 'amount';
+			$specific_price->from = '0000-00-00 00:00:00';
+			$specific_price->to = '0000-00-00 00:00:00';
+			$specific_price->add();
+			echo Tools::jsonEncode($this->ajaxReturnVars());
+		}
 	}
 
 	public static function getOrderTotalUsingTaxCalculationMethod($id_cart)

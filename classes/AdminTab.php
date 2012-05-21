@@ -370,7 +370,7 @@ abstract class AdminTabCore
 		{
 			/* New tab loading */
 			$classname = 'Admin'.$subtab;
-			if ($module = Db::getInstance()->getValue('SELECT `module` FROM `'._DB_PREFIX_.'tab` WHERE `class_name` = \''.pSQL($classname).'\'') && file_exists(_PS_MODULE_DIR_.'/'.$module.'/'.$classname.'.php'))
+			if (($module = Db::getInstance()->getValue('SELECT `module` FROM `'._DB_PREFIX_.'tab` WHERE `class_name` = \''.pSQL($classname).'\'')) && file_exists(_PS_MODULE_DIR_.'/'.$module.'/'.$classname.'.php'))
 				include_once(_PS_MODULE_DIR_.'/'.$module.'/'.$classname.'.php');
 			elseif (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$classname.'.php'))
 				include_once('tabs/'.$classname.'.php');
@@ -787,7 +787,7 @@ abstract class AdminTabCore
 									foreach ($category as $categ_id => $categ)
 										if ($categ_id != 1)
 											$rowList[] = array('id_category' => $categ_id, 'id_group' => $object->id);
-								Db::getInstance()->autoExecute(_DB_PREFIX_.'category_group', $rowList, 'INSERT');
+								Db::getInstance()->insert('category_group', $rowList);
 							}
 							// Save and stay on same form
 							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
@@ -914,7 +914,7 @@ abstract class AdminTabCore
 		if (!Shop::isFeatureActive())
 			return ;
 
-		if(!$assos = self::getAssoShop($this->table, $id_object))
+		if (!$assos = AdminTab::getAssoShop($this->table, $id_object))
 			return;
 
 		Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.$this->table.'_'.$assos[1].($id_object ? ' WHERE `'.$this->identifier.'`='.(int)$id_object : ''));
@@ -1083,15 +1083,15 @@ abstract class AdminTabCore
 
 			// Check image validity
 			$max_size = isset($this->maxImageSize) ? $this->maxImageSize : 0;
-			if ($error = checkImage($_FILES[$name], Tools::getMaxUploadSize($max_size)))
+			if ($error = ImageManager::validateUpload($_FILES[$name], Tools::getMaxUploadSize($max_size)))
 				$this->_errors[] = $error;
-			elseif (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') || !move_uploaded_file($_FILES[$name]['tmp_name'], $tmpName))
+			elseif (!($tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS')) || !move_uploaded_file($_FILES[$name]['tmp_name'], $tmpName))
 				return false;
 			else
 			{
 				$tmpName = $_FILES[$name]['tmp_name'];
 				// Copy new image
-				if (!imageResize($tmpName, _PS_IMG_DIR_.$dir.$id.'.'.$this->imageType, (int)$width, (int)$height, ($ext ? $ext : $this->imageType)))
+				if (!ImageManager::resize($tmpName, _PS_IMG_DIR_.$dir.$id.'.'.$this->imageType, (int)$width, (int)$height, ($ext ? $ext : $this->imageType)))
 					$this->_errors[] = Tools::displayError('An error occurred while uploading image.');
 				if (count($this->_errors))
 					return false;
@@ -1374,7 +1374,7 @@ abstract class AdminTabCore
 		if ($id && file_exists($image))
 			echo '
 			<div id="image" >
-				'.cacheImage($image, $this->table.'_'.(int)($id).'.'.$this->imageType, $size, $this->imageType, $disableCache).'
+				'.ImageManager::thumbnail($image, $this->table.'_'.(int)($id).'.'.$this->imageType, $size, $this->imageType, $disableCache).'
 				<p align="center">'.$this->l('File size').' '.(filesize($image) / 1000).'kb</p>
 				<a href="'.self::$currentIndex.'&'.$this->identifier.'='.(int)($id).'&token='.$token.($id_image ? '&id_image='.(int)($id_image) : '').'&deleteImage=1">
 				<img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /> '.$this->l('Delete').'</a>
@@ -1683,7 +1683,7 @@ abstract class AdminTabCore
 						}else
 							$path_to_image = _PS_IMG_DIR_.$params['image'].'/'.$item_id.(isset($tr['id_image']) ? '-'.(int)($tr['id_image']) : '').'.'.$this->imageType;
 
-						echo cacheImage($path_to_image, $this->table.'_mini_'.$item_id.'.'.$this->imageType, 45, $this->imageType);
+						echo ImageManager::thumbnail($path_to_image, $this->table.'_mini_'.$item_id.'.'.$this->imageType, 45, $this->imageType);
 					}
 					elseif (isset($params['icon']) && (isset($params['icon'][$tr[$key]]) || isset($params['icon']['default'])))
 						echo '<img src="../img/admin/'.(isset($params['icon'][$tr[$key]]) ? $params['icon'][$tr[$key]] : $params['icon']['default'].'" alt="'.$tr[$key]).'" title="'.$tr[$key].'" />';
@@ -1915,7 +1915,7 @@ abstract class AdminTabCore
 				echo (isset($field['desc']) ? '<p class="preference_description">'.$field['desc'].'</p>' : '');
 
 				// Is this field invisible in current shop context ?
-				echo ($isInvisible) ? '<p class="multishop_warning">'.$this->l('You can\'t change the value of this configuration field in this shop context').'</p>' : '';
+				echo ($isInvisible) ? '<p class="multishop_warning">'.$this->l('You cannot change the value of this configuration field in this shop context').'</p>' : '';
 
 				echo '</div></div>';
 			}

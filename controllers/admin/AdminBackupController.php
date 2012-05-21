@@ -82,12 +82,12 @@ class AdminBackupControllerCore extends AdminController
 	public function renderView()
 	{
 		if (!($object = $this->loadObject()))
-			$this->_errors[] = Tools::displayError('The object could not be loaded.');
+			$this->errors[] = Tools::displayError('The object could not be loaded.');
 
 		if ($object->id)
 			$this->tpl_view_vars = array('url_backup' => $object->getBackupURL());
 		else if ($object->error)
-			$this->_errors[] = $object->error;
+			$this->errors[] = $object->error;
 
 		return parent::renderView();
 	}
@@ -116,33 +116,10 @@ class AdminBackupControllerCore extends AdminController
 
 	public function initContent()
 	{
-		// toolbar (save, cancel, new, ..)
-		$this->initToolbar();
-		if ($this->display == 'edit' || $this->display == 'add')
-		{
-			if (!$this->loadObject(true))
-				return;
+		if ($this->display == 'add')
+			$this->display = 'list';
 
-			$this->content .= $this->initViewDownload();
-		}
-		else if ($this->display == 'view')
-		{
-			// Some controllers use the view action without an object
-			if ($this->className)
-				$this->loadObject(true);
-			$this->content .= $this->renderView();
-		}
-		else if (!$this->ajax)
-		{
-			$this->content .= $this->renderList();
-			$this->content .= $this->renderOptions();
-		}
-
-		$this->context->smarty->assign(array(
-			'content' => $this->content,
-			'url_post' => self::$currentIndex.'&token='.$this->token,
-		));
-		parent::initContent();
+		return parent::initContent();
 	}
 
 	/**
@@ -165,7 +142,7 @@ class AdminBackupControllerCore extends AdminController
 		/* PrestaShop demo mode */
 		if (_PS_MODE_DEMO_)
 		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
 			return;
 		}
 		/* PrestaShop demo mode*/
@@ -179,13 +156,13 @@ class AdminBackupControllerCore extends AdminController
 			if (($object = $this->loadObject()))
 			{
 				if (!$object->add())
-					$this->_errors[] = $object->error;
+					$this->errors[] = $object->error;
 				else
-					$this->tpl_view_vars = array(
+					$this->context->smarty->assign(array(
 						'conf' => $this->l('It appears that the Backup was successful, however, you must download and carefully verify the Backup file.'),
 						'backup_url' => $object->getBackupURL(),
 						'backup_weight' => number_format((filesize($object->id) * 0.000001), 2, '.', '')
-					);
+					));
 			}
 		}
 
@@ -241,7 +218,7 @@ class AdminBackupControllerCore extends AdminController
 		$dh = @opendir(_PS_ADMIN_DIR_.'/backups/');
 		if ($dh === false)
 		{
-			$this->_errors[] = Tools::displayError('Unable to open backup directory .').addslashes(_PS_ADMIN_DIR_.'/backups/').'"';
+			$this->errors[] = Tools::displayError('Unable to open backup directory .').addslashes(_PS_ADMIN_DIR_.'/backups/').'"';
 			return;
 		}
 		while (($file = readdir($dh)) !== false)

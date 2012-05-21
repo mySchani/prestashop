@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11097 $
+*  @version  Release: $Revision: 12975 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -241,8 +241,7 @@ class AdminStockConfigurationControllerCore extends AdminController
 									'label' => $this->l('No')
 								)
 							),
-							'desc' => $this->l('For this status, you have to define if it is possible to edit the order.
-												An editable order is an order not valid to send to the supplier.')
+							'desc' => $this->l('For this status, you have to define if it is possible to edit the order. An editable order is an order not valid to send to the supplier.')
 						),
 						array(
 							'type' => 'radio',
@@ -284,8 +283,7 @@ class AdminStockConfigurationControllerCore extends AdminController
 									'label' => $this->l('No')
 								)
 							),
-							'desc' => $this->l('For this status, you have to define if products have been partially/completely received.
-												This allows to know if the products ordered have to be added to the corresponding warehouse.'),
+							'desc' => $this->l('For this status, you have to define if products have been partially/completely received. This allows to know if the products ordered have to be added to the corresponding warehouse.'),
 						),
 						array(
 							'type' => 'radio',
@@ -428,11 +426,12 @@ class AdminStockConfigurationControllerCore extends AdminController
 	public function initSupplyOrderStatusList()
 	{
 		$this->table = 'supply_order_state';
-	 	$this->className = 'SupplyOrderState';
-	 	$this->identifier = 'id_supply_order_state';
-	 	$this->_defaultOrderBy = 'id_supply_order_state';
+		$this->className = 'SupplyOrderState';
+		$this->identifier = 'id_supply_order_state';
+		$this->_defaultOrderBy = 'id_supply_order_state';
 		$this->lang = true;
 		$this->list_no_link = true;
+		$this->_orderBy = null;
 		$this->addRowActionSkipList('delete', array(1, 2, 3, 4, 5, 6));
 		$this->toolbar_title = $this->l('Stock : Supply Order status');
 		$this->initToolbar();

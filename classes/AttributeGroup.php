@@ -75,14 +75,14 @@ class AttributeGroupCore extends ObjectModel
 			$this->position = AttributeGroup::getHigherPosition() + 1;
 
 		$return = parent::add($autodate, true);
-		Hook::exec('afterSaveAttributeGroup', array('id_attribute_group' => $this->id));
+		Hook::exec('actionAttributeGroupSave', array('id_attribute_group' => $this->id));
 		return $return;
 	}
 
 	public function update($nullValues = false)
 	{
 		$return = parent::update($nullValues);
-		Hook::exec('afterSaveAttributeGroup', array('id_attribute_group' => $this->id));
+		Hook::exec('actionAttributeGroupSave', array('id_attribute_group' => $this->id));
 		return $return;
 	}
 
@@ -126,7 +126,7 @@ class AttributeGroupCore extends ObjectModel
 				IN ('.implode(', ', $to_remove).')') === false)
 			return false;
 		/* Remove combinations if they do not possess attributes anymore */
-		if (!self::cleanDeadCombinations())
+		if (!AttributeGroup::cleanDeadCombinations())
 			return false;
 	 	/* Also delete related attributes */
 		if (Db::getInstance()->execute('
@@ -137,7 +137,7 @@ class AttributeGroupCore extends ObjectModel
 			return false;
 		$return = parent::delete();
 		if ($return)
-			Hook::exec('afterDeleteAttributeGroup', array('id_attribute_group' => $this->id));
+			Hook::exec('actionAttributeGroupDelete', array('id_attribute_group' => $this->id));
 		return $return;
 	}
 

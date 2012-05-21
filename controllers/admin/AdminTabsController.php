@@ -196,10 +196,9 @@ class AdminTabsControllerCore extends AdminController
 	 * method call when ajax request is made with the details row action
 	 * @see AdminController::postProcess()
 	 */
-	public function ajaxProcess()
+	public function ajaxProcessDetails()
 	{
-		// test if an id is submit
-		if (($id = Tools::getValue('id')) && Tools::isSubmit('id'))
+		if (($id = Tools::getValue('id')))
 		{
 			// override attributes
 			$this->display = 'list';
@@ -246,7 +245,7 @@ class AdminTabsControllerCore extends AdminController
 		/* PrestaShop demo mode */
 		if (_PS_MODE_DEMO_)
 		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
 			return;
 		}
 		/* PrestaShop demo mode*/
@@ -259,12 +258,12 @@ class AdminTabsControllerCore extends AdminController
 		else if (Tools::getValue('position') && !Tools::isSubmit('submitAdd'.$this->table))
 		{
 			if ($this->tabAccess['edit'] !== '1')
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 			else if (!Validate::isLoadedObject($object = new Tab((int)Tools::getValue($this->identifier))))
-				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').
+				$this->errors[] = Tools::displayError('An error occurred while updating status for object.').
 					' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			if (!$object->updatePosition((int)Tools::getValue('way'), (int)Tools::getValue('position')))
-				$this->_errors[] = Tools::displayError('Failed to update the position.');
+				$this->errors[] = Tools::displayError('Failed to update the position.');
 			else
 				Tools::redirectAdmin(self::$currentIndex.'&conf=5&token='.Tools::getAdminTokenLite('AdminTabs'));
 		}
@@ -282,7 +281,7 @@ class AdminTabsControllerCore extends AdminController
 		parent::getList($id_lang, 'position', $order_way, $start, $limit, $id_lang_shop);
 	}
 
-	public function afterImageUpload()
+	protected function afterImageUpload()
 	{
 		if (!($obj = $this->loadObject(true)))
 			return;

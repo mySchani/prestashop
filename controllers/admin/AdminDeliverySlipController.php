@@ -47,6 +47,7 @@ class AdminDeliverySlipControllerCore extends AdminController
 						'title' => $this->l('Delivery number:'),
 						'desc' => $this->l('The next delivery slip will begin with this number, and then increase with each additional slip'),
 						'size' => 6,
+						'cast' => 'intval',
 						'type' => 'text'
 					)
 				),
@@ -103,16 +104,15 @@ class AdminDeliverySlipControllerCore extends AdminController
 		if (Tools::isSubmit('submitAdddelivery'))
 		{
 			if (!Validate::isDate(Tools::getValue('date_from')))
-				$this->_errors[] = Tools::displayError('Invalid from date');
+				$this->errors[] = Tools::displayError('Invalid from date');
 			if (!Validate::isDate(Tools::getValue('date_to')))
-				$this->_errors[] = Tools::displayError('Invalid end date');
-			if (!count($this->_errors))
+				$this->errors[] = Tools::displayError('Invalid end date');
+			if (!count($this->errors))
 			{
-				$orders = Order::getOrdersIdByDate(Tools::getValue('date_from'), Tools::getValue('date_to'), null, 'delivery');
-				if (count($orders))
-					Tools::redirectAdmin('pdf.php?deliveryslips='.urlencode(serialize($orders)).'&token='.$this->token);
+				if (count(OrderInvoice::getByDeliveryDateInterval(Tools::getValue('date_from'), Tools::getValue('date_to'))))
+					Tools::redirectAdmin('pdf.php?deliveryslips&date_from='.urlencode(Tools::getValue('date_from')).'&date_to='.urlencode(Tools::getValue('date_to')).'&token='.$this->token);
 				else
-					$this->_errors[] = Tools::displayError('No delivery slip found for this period');
+					$this->errors[] = Tools::displayError('No delivery slip found for this period');
 			}
 		}
 		else

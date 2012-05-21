@@ -25,7 +25,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 global $smarty;
-$smarty->setTemplateDir(_PS_ADMIN_DIR_.'/themes/template');
 $smarty->debugging = false;
 $smarty->debugging_ctrl = 'NONE';
 
@@ -40,7 +39,7 @@ function smartyTranslate($params, &$smarty)
 		global $_LANGPDF;
 		$iso = Context::getContext()->language->iso_code;
 		if (!Validate::isLanguageIsoCode($iso))
-			throw PrestashopException('Invalid iso lang!');
+			throw PrestaShopException('Invalid iso lang!');
 
         $translationsFile = _PS_THEME_DIR_.'pdf/lang/'.$iso.'.php';
 
@@ -60,24 +59,65 @@ function smartyTranslate($params, &$smarty)
     }
 
 	$filename = ((!isset($smarty->compiler_object) OR !is_object($smarty->compiler_object->template)) ? $smarty->template_resource : $smarty->compiler_object->template->getTemplateFilepath());
-	// 1.5 admin : default filename is .tpl; test is made on dir
-	$dir_filename = dirname($filename);
-	// key is Helper if dir contains "helper"
-	// we may improve this later to get only the first directory everytime
-	if(strpos($dir_filename, 'helper') !== false)
-		$dir_filename = 'helper';
 
-	switch ($dir_filename)
+	// If the template is part of a module
+	if (!empty($params['mod']))
 	{
-		// note : this may be modified later
-		case '.': $class = 'index';break;
-		case 'helper' : $class = 'AdminTab';break;
-		default :
-			$class = 'Admin'.ucfirst($dir_filename);
+		global $_MODULES, $_MODULE;
+
+		$key = Tools::substr(basename($filename), 0, -4).'_'.md5($params['s']);
+		$iso = Language::getIsoById(Context::getContext()->language->id);
+
+		if (Tools::file_exists_cache(_PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php'))
+		{
+			$translationsFile = _PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php';
+			$key = '<{'.$params['mod'].'}'._THEME_NAME_.'>'.$key;
+		}
+		else
+		{
+			// @retrocompatibility with translations files in module root
+			if (Tools::file_exists_cache(_PS_MODULE_DIR_.$params['mod'].'/translations'))
+				$translationsFile = _PS_MODULE_DIR_.$params['mod'].'/translations/'.$iso.'.php';
+			else
+				$translationsFile = _PS_MODULE_DIR_.$params['mod'].'/'.$iso.'.php';
+			$key = '<{'.$params['mod'].'}prestashop>'.$key;
+		}
+
+		if (!is_array($_MODULES))
+			$_MODULES = array();
+		if (@include_once($translationsFile))
+			if (is_array($_MODULE))
+				$_MODULES = array_merge($_MODULES, $_MODULE);
+		$lang_array = $_MODULES;
+		if (is_array($lang_array) && key_exists($key, $lang_array))
+			$msg = $lang_array[$key];
+		elseif (is_array($lang_array) && key_exists(Tools::strtolower($key), $lang_array))
+			$msg = $lang_array[Tools::strtolower($key)];
+		else
+			$msg = $params['s'];
+		return $msg;
 	}
 
-	if(in_array($class, array('header','footer','password','login')))
+	// If the tpl is at the root of the template folder
+	if (dirname($filename) == '.')
 		$class = 'index';
+	// If the tpl is used by a Helper
+	elseif (strpos($filename, 'helpers') === 0)
+		$class = 'Helper';
+	// If the tpl is used by a Controller
+	else
+	{
+		// Split by \ and / to get the folder tree for the file
+		$folder_tree = preg_split('#[/\\\]#', $filename);
+		$key = array_search('controllers', $folder_tree);
+
+		// If there was a match, construct the class name using the child folder name
+		// Eg. xxx/controllers/customers/xxx => AdminCustomers
+		if ($key !== false)
+			$class = 'Admin'.Tools::toCamelCase($folder_tree[$key + 1], true);
+		else
+			$class = null;
+	}
 
 	return AdminController::translate($params['s'], $class, $addslashes, $htmlentities);
 }

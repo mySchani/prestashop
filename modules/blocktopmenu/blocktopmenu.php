@@ -36,7 +36,7 @@ class blocktopmenu extends Module
 	{
 		$this->name = 'blocktopmenu';
 		$this->tab = 'front_office_features';
-		$this->version = 1.3;
+		$this->version = 1.4;
 		$this->author = 'PrestaShop';
 
 		parent::__construct();
@@ -49,8 +49,8 @@ class blocktopmenu extends Module
 	{
 		if(!parent::install() ||
 			!$this->registerHook('top') ||
-			!Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', 'CAT1,CMS1,CMS2,PRD1') ||
-			!Configuration::updateValue('MOD_BLOCKTOPMENU_SEARCH', '1') ||
+			!Configuration::updateGlobalValue('MOD_BLOCKTOPMENU_ITEMS', 'CAT1,CMS1,CMS2,PRD1') ||
+			!Configuration::updateGlobalValue('MOD_BLOCKTOPMENU_SEARCH', '1') ||
 			!$this->installDB())
 			return false;
 		return true;
@@ -60,25 +60,25 @@ class blocktopmenu extends Module
 	{
 		return (Db::getInstance()->execute('
 		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'linksmenutop` (
-			`id_link` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+			`id_linksmenutop` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
 			`id_shop` INT UNSIGNED NOT NULL,
 			`new_window` TINYINT( 1 ) NOT NULL,
 			`link` VARCHAR( 128 ) NOT NULL,
 			INDEX (`id_shop`)
-		) ENGINE = MYISAM CHARACTER SET utf8 COLLATE utf8_general_ci;') AND
+		) ENGINE = '._MYSQL_ENGINE_.' CHARACTER SET utf8 COLLATE utf8_general_ci;') AND
 		Db::getInstance()->execute('
 			 CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'linksmenutop_lang` (
-			`id_link` INT NOT NULL,
+			`id_linksmenutop` INT NOT NULL,
 			`id_lang` INT NOT NULL,
 			`id_shop` INT NOT NULL,
 			`label` VARCHAR( 128 ) NOT NULL ,
-			INDEX ( `id_link` , `id_lang`, `id_shop`)
-		) ENGINE = MYISAM CHARACTER SET utf8 COLLATE utf8_general_ci;'));
+			INDEX ( `id_linksmenutop` , `id_lang`, `id_shop`)
+		) ENGINE = '._MYSQL_ENGINE_.' CHARACTER SET utf8 COLLATE utf8_general_ci;'));
 	}
 
 	public function uninstall()
 	{
-		if(!parent::uninstall() ||
+		if (!parent::uninstall() ||
 			!Configuration::deleteByName('MOD_BLOCKTOPMENU_ITEMS') ||
 			!Configuration::deleteByName('MOD_BLOCKTOPMENU_SEARCH') ||
 			!$this->uninstallDB())
@@ -98,7 +98,7 @@ class blocktopmenu extends Module
 		global $cookie;
 		if(Tools::isSubmit('submitBlocktopmenu'))
 		{
-			if (Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', Tools::getValue('items'), false, (int)$this->context->shop->id_group_shop, (int)$this->context->shop->id))
+			if (Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', Tools::getValue('items')))
 				$this->_html .= $this->displayConfirmation($this->l('Settings Updated'));
 			else
 				$this->_html .= $this->displayError($this->l('Unable to update settings'));
@@ -118,9 +118,9 @@ class blocktopmenu extends Module
 		}
 		if(Tools::isSubmit('submitBlocktopmenuRemove'))
 		{
-			$id_link = Tools::getValue('id_link', 0);
-			MenuTopLinks::remove($id_link, (int)$this->context->shop->id);
-			Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', str_replace(array('LNK'.$id_link.',', 'LNK'.$id_link), '', Configuration::get('MOD_BLOCKTOPMENU_ITEMS')));
+			$id_linksmenutop = Tools::getValue('id_linksmenutop', 0);
+			MenuTopLinks::remove($id_linksmenutop, (int)$this->context->shop->id);
+			Configuration::updateValue('MOD_BLOCKTOPMENU_ITEMS', str_replace(array('LNK'.$id_linksmenutop.',', 'LNK'.$id_linksmenutop), '', Configuration::get('MOD_BLOCKTOPMENU_ITEMS')));
 			$this->_html .= $this->displayConfirmation($this->l('The link has been removed'));
 		}
 		
@@ -186,7 +186,7 @@ class blocktopmenu extends Module
 								$this->_html .= '<optgroup label="'.$this->l('Menu Top Links').'">';
 								$links = MenuTopLinks::gets($cookie->id_lang, null, (int)$this->context->shop->id);
 								foreach($links as $link)
-									$this->_html .= '<option value="LNK'.$link['id_link'].'" style="margin-left:10px;">'.$link['label'].'</option>';
+									$this->_html .= '<option value="LNK'.$link['id_linksmenutop'].'" style="margin-left:10px;">'.$link['label'].'</option>';
 								$this->_html .= '</optgroup>';
 								// END Menu Top Links
 								$this->_html .= '</select><br />
@@ -302,13 +302,13 @@ class blocktopmenu extends Module
 				{
 					$this->_html .= '
 					<tr>
-						<td>'.$link['id_link'].'</td>
+						<td>'.$link['id_linksmenutop'].'</td>
 						<td>'.$link['label'].'</td>
 						<td>'.$link['link'].'</td>
 						<td>'.(($link['new_window']) ? $this->l('Yes') : $this->l('No')).'</td>
 						<td>
 							<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
-								<input type="hidden" name="id_link" value="'.$link['id_link'].'" />
+								<input type="hidden" name="id_linksmenutop" value="'.$link['id_linksmenutop'].'" />
 								<input type="submit" name="submitBlocktopmenuRemove" value="'.$this->l('Remove').'" class="button" />
 							</form>
 						</td>
@@ -322,23 +322,8 @@ class blocktopmenu extends Module
 
 	private function getMenuItems()
 	{
-		if (Context::shop() == Shop::CONTEXT_SHOP)
-		{
-			if (!Configuration::isOverridenByCurrentContext('MOD_BLOCKTOPMENU_ITEMS'))
-			{
-				$items_shop = Configuration::get('MOD_BLOCKTOPMENU_ITEMS');
-			}
-		}
-		if (!isset($items_shop))
-			$items_shop = '';
-		
-		$items_shop = explode(',', $items_shop);
-		$items_global = Configuration::getGlobalValue('MOD_BLOCKTOPMENU_ITEMS');
-		$items_global = explode(',', $items_global);
-
-		$items_global = array_diff($items_global, $items_shop);
-
-		return array('global' => $items_global, 'shop' => $items_shop);
+		// @todo why this ?
+		return array('global' => explode(',', Configuration::get('MOD_BLOCKTOPMENU_ITEMS')));
 	}
 
 	private function makeMenuOption()

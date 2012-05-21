@@ -49,6 +49,11 @@ class CategoryControllerCore extends FrontController
 
 	public function canonicalRedirection($canonicalURL = '')
 	{
+		if (!Shop::isCategoryAvailable(Tools::getValue('id_category')))
+		{
+			$this->redirect_after = '404';
+			$this->redirect();
+		}
 		if (!Tools::getValue('noredirect') && Validate::isLoadedObject($this->category))
 			parent::canonicalRedirection($this->context->link->getCategoryLink($this->category));
 	}
@@ -94,7 +99,7 @@ class CategoryControllerCore extends FrontController
 
 		$this->context->smarty->assign(array(
 			'category' => $this->category,
-			'products' => (isset($this->cat_products) && $this->cat_products) ? $this->cat_products : NULL,
+			'products' => (isset($this->cat_products) && $this->cat_products) ? $this->cat_products : null,
 			'id_category' => (int)$this->category->id,
 			'id_category_parent' => (int)$this->category->id_parent,
 			'return_category_name' => Tools::safeOutput($this->category->name),
@@ -162,7 +167,7 @@ class CategoryControllerCore extends FrontController
 	public function assignProductList()
 	{
 		$hookExecuted = false;
-		Hook::exec('productListAssign', array(
+		Hook::exec('actionProductListOverride', array(
 			'nbProducts' => &$this->nbProducts,
 			'catProducts' => &$this->cat_products,
 			'hookExecuted' => &$hookExecuted,
@@ -180,6 +185,7 @@ class CategoryControllerCore extends FrontController
 		else
 			// Pagination must be call after "getProducts"
 			$this->pagination($this->nbProducts);
+			self::$smarty->assign('categoryNameComplement', '');
 		$this->context->smarty->assign('nb_products', $this->nbProducts);
 	}
 }

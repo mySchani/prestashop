@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9696 $
+*  @version  Release: $Revision: 12658 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -56,6 +56,7 @@ class ConfigurationTestCore
 			'mails_dir' => 'mails',
 			'module_dir' => 'modules',
 			'theme_lang_dir' => 'themes/'._THEME_NAME_.'/lang',
+			'theme_pdf_lang_dir' => 'themes/'._THEME_NAME_.'/pdf/lang/',
 			'theme_cache_dir' => 'themes/'._THEME_NAME_.'/cache',
 			'translations_dir' => 'translations',
 			'customizable_products_dir' => 'upload',
@@ -71,7 +72,6 @@ class ConfigurationTestCore
 	 */
 	public static function getDefaultTestsOp()
 	{
-
 		return array(
 			'fopen' => false,
 			'register_globals' => false,
@@ -93,7 +93,7 @@ class ConfigurationTestCore
 	{
 		$res = array();
 		foreach ($tests as $key => $test)
-			$res[$key] = self::run($key, $test);
+			$res[$key] = ConfigurationTest::run($key, $test);
 		return $res;
 	}
 
@@ -126,7 +126,7 @@ class ConfigurationTestCore
 
 	public static function test_upload()
 	{
-		return  ini_get('file_uploads');
+		return ini_get('file_uploads');
 	}
 
 	public static function test_fopen()
@@ -162,7 +162,7 @@ class ConfigurationTestCore
 	public static function test_dir($relative_dir, $recursive = false)
 	{
 		$dir = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.ltrim($relative_dir, '/');
-		if (!file_exists($dir) OR !$dh = opendir($dir))
+		if (!file_exists($dir) || !$dh = opendir($dir))
 			return false;
 		$dummy = rtrim($dir, '/').'/'.uniqid();
 		if (@file_put_contents($dummy, 'test'))
@@ -177,7 +177,7 @@ class ConfigurationTestCore
 		{
 			while (($file = readdir($dh)) !== false)
 				if (is_dir($dir.DIRECTORY_SEPARATOR.$file) && $file != '.' && $file != '..' && $file != '.svn')
-					if (!self::test_dir($relative_dir.DIRECTORY_SEPARATOR.$file, true))
+					if (!ConfigurationTest::test_dir($relative_dir.DIRECTORY_SEPARATOR.$file, true))
 						return false;
 		}
 		closedir($dh);
@@ -187,96 +187,103 @@ class ConfigurationTestCore
 	public static function test_file($file_relative)
 	{
 		$file = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.$file_relative;
-		return (file_exists($file) AND is_writable($file));
+		return (file_exists($file) && is_writable($file));
 	}
 
 	public static function test_config_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_sitemap($dir)
 	{
-		return self::test_file($dir);
+		return ConfigurationTest::test_file($dir);
 	}
 
 	public static function test_root_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_log_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_admin_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_img_dir($dir)
 	{
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_module_dir($dir)
 	{
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_cache_dir($dir)
 	{
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_tools_v2_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_cache_v2_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_download_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_mails_dir($dir)
 	{
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_translations_dir($dir)
 	{
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_theme_lang_dir($dir)
 	{
 		if (!file_exists($dir))
 			return true;
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
+	}
+
+	public static function test_theme_pdf_lang_dir($dir)
+	{
+		if (!file_exists($dir))
+			return true;
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_theme_cache_dir($dir)
 	{
 		if (!file_exists($dir))
 			return true;
-		return self::test_dir($dir, true);
+		return ConfigurationTest::test_dir($dir, true);
 	}
 
 	public static function test_customizable_products_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_virtual_products_dir($dir)
 	{
-		return self::test_dir($dir);
+		return ConfigurationTest::test_dir($dir);
 	}
 
 	public static function test_mcrypt()

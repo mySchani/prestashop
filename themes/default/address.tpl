@@ -23,39 +23,6 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-<script type="text/javascript">
-// <![CDATA[
-	var baseDir = '{$base_dir_ssl}';
-//]]>
-</script>
-
-{*
-** Compatibility code for Prestashop older than 1.4.2 using a recent theme
-** Ignore list isn't require here
-** $address exist in every PrestaShop version
-*}
-
-{* Will be deleted for 1.5 version and more *}
-{* If ordered_adr_fields doesn't exist, it's a PrestaShop older than 1.4.2 *}
-{if !isset($ordered_adr_fields)}
-	{if isset($address)}
-		{counter start=0 skip=1 assign=address_key_number}
-		{foreach from=$address key=address_key item=address_value}
-			{$ordered_adr_fields.$address_key_number = $address_key}
-			{counter}
-		{/foreach}
-	{else}
-		{$ordered_adr_fields.0 = 'company'}
-		{$ordered_adr_fields.1 = 'firstname'}
-		{$ordered_adr_fields.2 = 'lastname'}
-		{$ordered_adr_fields.3 = 'address1'}
-		{$ordered_adr_fields.4 = 'address2'}
-		{$ordered_adr_fields.5 = 'postcode'}
-		{$ordered_adr_fields.6 = 'city'}
-		{$ordered_adr_fields.7 = 'country'}
-		{$ordered_adr_fields.8 = 'state'}
-	{/if}
-{/if}
 
 <script type="text/javascript">
 // <![CDATA[
@@ -259,7 +226,7 @@ $(function(){ldelim}
 		</p>
 		<p class="required text" id="adress_alias">
 			<label for="alias">{l s='Assign an address title for future reference'} <sup>*</sup></label>
-			<input type="text" id="alias" name="alias" value="{if isset($smarty.post.alias)}{$smarty.post.alias}{else}{if isset($address->alias)}{$address->alias|escape:'htmlall':'UTF-8'}{/if}{if isset($select_address)}{else}{l s='My address'}{/if}{/if}" />
+			<input type="text" id="alias" name="alias" value="{if isset($smarty.post.alias)}{$smarty.post.alias}{else}{if isset($address->alias)}{$address->alias|escape:'htmlall':'UTF-8'}{/if}{if isset($select_address)}{l s='My address'}{/if}{/if}" />
 		</p>
 	</fieldset>
 	<p class="submit2">

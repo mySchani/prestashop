@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10659 $
+*  @version  Release: $Revision: 12553 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
@@ -39,7 +39,7 @@ class BlockLayered extends Module
 	{
 		$this->name = 'blocklayered';
 		$this->tab = 'front_office_features';
-		$this->version = '1.7.3';
+		$this->version = '1.7.8';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -67,6 +67,7 @@ class BlockLayered extends Module
 			Configuration::updateValue('PS_LAYERED_SHOW_QTIES', 1);
 			Configuration::updateValue('PS_LAYERED_FULL_TREE', 1);
 			Configuration::updateValue('PS_LAYERED_FILTER_PRICE_USETAX', 1);
+			Configuration::updateValue('PS_LAYERED_FILTER_CATEGORY_DEPTH', 1);
 			
 			$this->rebuildLayeredStructure();
 			$this->rebuildLayeredCache();
@@ -99,6 +100,7 @@ class BlockLayered extends Module
 		Configuration::deleteByName('PS_LAYERED_FULL_TREE');
 		Configuration::deleteByName('PS_LAYERED_INDEXED');
 		Configuration::deleteByName('PS_LAYERED_FILTER_PRICE_USETAX');
+		Configuration::deleteByName('PS_LAYERED_FILTER_CATEGORY_DEPTH');
 		
 		Db::getInstance()->Execute('DROP TABLE IF EXISTS '._DB_PREFIX_.'layered_price_index');
 		Db::getInstance()->Execute('DROP TABLE IF EXISTS '._DB_PREFIX_.'layered_friendly_url');
@@ -537,18 +539,27 @@ class BlockLayered extends Module
 		$default_form_language = (int)(Configuration::get('PS_LANG_DEFAULT'));
 		$langValue = array();
 		
+		if (version_compare(_PS_VERSION_,'1.5','>'))
+			$return = '
+				<script type="text/javascript">
+					flag_fields = \'\';
+				</script>';
+		else
+			$return = '';
+		
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS(
 		'SELECT url_name, meta_title, id_lang FROM '._DB_PREFIX_.'layered_indexable_feature_value_lang_value
 		WHERE id_feature_value = '.(int)$params['id_feature_value']);
 		if ($result)
 			foreach ($result as $data)
 				$langValue[$data['id_lang']] = array('url_name' => $data['url_name'], 'meta_title' => $data['meta_title']);
-		$return = '<div class="clear"></div>
+		$return .= '<div class="clear"></div>
 				<label>'.$this->l('Url:').'</label>
 				<div class="margin-form">
 				<script type="text/javascript">
 					flag_fields += \'¤url_name¤meta_title\';
-				</script>';
+				</script>
+				<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 					<div id="url_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
@@ -556,20 +567,26 @@ class BlockLayered extends Module
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}_<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Specific format in url block layered generation').'</p>
 					</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 					<label>'.$this->l('Meta title:').' </label>
-					<div class="margin-form">';
+					<div class="margin-form">
+						<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 						<div id="meta_title_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
 							<input size="33" type="text" name="meta_title_'.$language['id_lang'].'" value="'.Tools::safeOutput(@$langValue[$language['id_lang']]['meta_title'], true).'" />
 							<p style="clear: both">'.$this->l('Specific format for meta title').'</p>
 						</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
+			
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>';
 		return $return;
@@ -609,18 +626,27 @@ class BlockLayered extends Module
 		$default_form_language = (int)(Configuration::get('PS_LANG_DEFAULT'));
 		$langValue = array();
 		
+		if (version_compare(_PS_VERSION_,'1.5','>'))
+			$return = '
+				<script type="text/javascript">
+					flag_fields = \'\';
+				</script>';
+		else
+			$return = '';
+		
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS(
 		'SELECT url_name, meta_title, id_lang FROM '._DB_PREFIX_.'layered_indexable_attribute_lang_value
 		WHERE id_attribute = '.(int)$params['id_attribute']);
 		if ($result)
 			foreach ($result as $data)
 				$langValue[$data['id_lang']] = array('url_name' => $data['url_name'], 'meta_title' => $data['meta_title']);
-		$return = '<div class="clear"></div>
+		$return .= '<div class="clear"></div>
 				<label>'.$this->l('Url:').'</label>
 				<div class="margin-form">
 				<script type="text/javascript">
 					flag_fields += \'¤url_name¤meta_title\';
-				</script>';
+				</script>
+				<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 					<div id="url_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
@@ -628,20 +654,25 @@ class BlockLayered extends Module
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}_<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Specific format in url block layered generation').'</p>
 					</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 					<label>'.$this->l('Meta title:').' </label>
-					<div class="margin-form">';
+					<div class="margin-form">
+						<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 						<div id="meta_title_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
 							<input size="33" type="text" name="meta_title_'.$language['id_lang'].'" value="'.Tools::safeOutput(@$langValue[$language['id_lang']]['meta_title'], true).'" />
 							<p style="clear: both">'.$this->l('Specific format for meta title').'</p>
 						</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>';
 		return $return;
@@ -728,12 +759,21 @@ class BlockLayered extends Module
 		else
 			$on = (bool)$indexable;
 
-		$return = '<div class="clear"></div>
+		if (version_compare(_PS_VERSION_,'1.5','>'))
+			$return = '
+				<script type="text/javascript">
+					flag_fields = \'\';
+				</script>';
+		else
+			$return = '';
+		
+		$return .= '<div class="clear"></div>
 				<label>'.$this->l('Url:').'</label>
 				<div class="margin-form">
 				<script type="text/javascript">
 					flag_fields += \'¤url_name¤meta_title\';
-				</script>';
+				</script>
+				<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 					<div id="url_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
@@ -741,20 +781,25 @@ class BlockLayered extends Module
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}_<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Specific format in url block layered generation').'</p>
 					</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 					<label>'.$this->l('Meta title:').' </label>
-					<div class="margin-form">';
+					<div class="margin-form">
+						<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 						<div id="meta_title_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
 							<input size="33" type="text" name="meta_title_'.$language['id_lang'].'" value="'.Tools::safeOutput(@$langValue[$language['id_lang']]['meta_title'], true).'" />
 							<p style="clear: both">'.$this->l('Specific format for meta title').'</p>
 						</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 			<label>'.$this->l('Indexable:').' </label>
@@ -788,12 +833,21 @@ class BlockLayered extends Module
 		else
 			$on = (bool)$indexable;
 		
-		$return = '<div class="clear"></div>
+		if (version_compare(_PS_VERSION_,'1.5','>'))
+			$return = '
+				<script type="text/javascript">
+					flag_fields = \'\';
+				</script>';
+		else
+			$return = '';
+		
+		$return .= '<div class="clear"></div>
 				<label>'.$this->l('Url:').'</label>
 				<div class="margin-form">
 				<script type="text/javascript">
 					flag_fields += \'¤url_name¤meta_title\';
-				</script>';
+				</script>
+				<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 					<div id="url_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
@@ -801,20 +855,25 @@ class BlockLayered extends Module
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}_<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Specific format in url block layered generation').'</p>
 					</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'url_name', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 					<label>'.$this->l('Meta title:').' </label>
-					<div class="margin-form">';
+					<div class="margin-form">
+						<div class="translatable">';
 		foreach ($languages as $language)
 			$return .= '
 						<div id="meta_title_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $default_form_language ? 'block' : 'none').'; float: left;">
 							<input size="33" type="text" name="meta_title_'.$language['id_lang'].'" value="'.Tools::safeOutput(@$langValue[$language['id_lang']]['meta_title'], true).'" />
 							<p style="clear: both">'.$this->l('Specific format for meta title').'</p>
 						</div>';
-		$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
+		if (version_compare(_PS_VERSION_,'1.5','<'))
+			$return .= $this->displayFlags($languages, $default_form_language, 'flag_fields', 'meta_title', true, true);
 		$return .= '
+						</div>
 						<div class="clear"></div>
 					</div>
 			<label>'.$this->l('Indexable:').' </label>
@@ -873,7 +932,12 @@ class BlockLayered extends Module
 		if (($nbProducts > 0 && !$full || $cursor < $nbProducts && $full) && !$ajax)
 		{
 			$token = substr(Tools::encrypt('blocklayered/index'), 0, 10);
-			if (!Tools::file_get_contents(Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php?token='.$token.'&cursor='.(int)$cursor.'&full='.(int)$full))
+			if (Tools::usingSecureMode())
+				$domain = Tools::getShopDomainSsl(true);
+			else
+				$domain = Tools::getShopDomain(true);
+			
+			if (!Tools::file_get_contents($domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php?token='.$token.'&cursor='.(int)$cursor.'&full='.(int)$full))
 				self::indexPrices((int)$cursor, (int)$full);
 			return $cursor;
 		}
@@ -984,7 +1048,7 @@ class BlockLayered extends Module
 			foreach ($currencyList as $currency)
 			{
 				$price = Product::priceCalculation($id_shop, (int)$idProduct, null, null, null, null,
-					$currency['id_currency'], null, null, false, true, false, true, true,
+					$currency['id_currency'], null, null, false, 6, false, true, true,
 					$specificPriceOutput, true);
 				
 				if (!isset($maxPrice[$currency['id_currency']]))
@@ -1007,7 +1071,7 @@ class BlockLayered extends Module
 					$price = Product::priceCalculation((($specificPrice['id_shop'] == 0) ? null : (int)$specificPrice['id_shop']), (int)$idProduct,
 						null, (($specificPrice['id_country'] == 0) ? null : $specificPrice['id_country']), null, null,
 						$currency['id_currency'], (($specificPrice['id_group'] == 0) ? null : $specificPrice['id_group']),
-						$specificPrice['from_quantity'], false, true, false, true, true, $specificPriceOutput, true);
+						$specificPrice['from_quantity'], false, 6, false, true, true, $specificPriceOutput, true);
 					
 					if (!isset($maxPrice[$currency['id_currency']]))
 						$maxPrice[$currency['id_currency']] = 0;
@@ -1025,7 +1089,7 @@ class BlockLayered extends Module
 				foreach ($currencyList as $currency)
 				{
 					$price = Product::priceCalculation(null, (int)$idProduct, null, null, null, null, (int)$currency['id_currency'], (int)$group['id_group'],
-						null, false, true, false, true, true, $specificPriceOutput, true);
+						null, false, 6, false, true, true, $specificPriceOutput, true);
 					
 					if (!isset($maxPrice[$currency['id_currency']]))
 						$maxPrice[$currency['id_currency']] = 0;
@@ -1045,7 +1109,7 @@ class BlockLayered extends Module
 					'.(int)$currency['id_currency'].',
 					'.$id_shop.',
 					'.(int)$minPrice[$currency['id_currency']].',
-					'.(int)($maxPrice[$currency['id_currency']] * (100 + $maxTaxRate) / 100).')';
+					'.(int)Tools::ps_round($maxPrice[$currency['id_currency']] * (100 + $maxTaxRate) / 100, 0).')';
 			
 			Db::getInstance()->Execute('
 				INSERT INTO `'._DB_PREFIX_.'layered_price_index` (id_product, id_currency, id_shop, price_min, price_max)
@@ -1096,7 +1160,7 @@ class BlockLayered extends Module
 		else
 			$smarty->assign('meta_title', $categoryMetas['meta_title']);
 		
-		$metaKeyWordsComplement = substr(str_replace(' – ', ', ', strtolower($title)), 1000);
+		$metaKeyWordsComplement = substr(str_replace(' – ', ', ', strtolower($title)), 0, 1000);
 		if (!empty($metaKeyWordsComplement))
 			$smarty->assign('meta_keywords', rtrim($categoryTitle.', '.$metaKeyWordsComplement.', '.$categoryMetas['meta_keywords'], ', '));
 		
@@ -1200,7 +1264,7 @@ class BlockLayered extends Module
 						}
 					}
 					else
-						$shop_list = array(0);
+						$shop_list = array(Context::getContext()->shop->getID(true));
 				}
 				else
 					$shop_list = array(0);
@@ -1224,6 +1288,7 @@ class BlockLayered extends Module
 				
 	
 					$sqlToInsert = 'INSERT INTO '._DB_PREFIX_.'layered_category (id_category, id_shop, id_value, type, position, filter_show_limit, filter_type) VALUES ';
+					$values = false;
 					foreach ($_POST['categoryBox'] as $id_category_layered)
 					{
 						$n = 0;
@@ -1231,6 +1296,7 @@ class BlockLayered extends Module
 						foreach ($_POST as $key => $value)
 							if (substr($key, 0, 17) == 'layered_selection' && $value == 'on')
 							{
+								$values = true;
 								$type = 0;
 								$limit = 0;
 								if (Tools::getValue($key.'_filter_type'))
@@ -1266,8 +1332,8 @@ class BlockLayered extends Module
 								}
 							}
 					}
-					
-					Db::getInstance()->Execute(rtrim($sqlToInsert, ','));
+					if ($values)
+						Db::getInstance()->Execute(rtrim($sqlToInsert, ','));
 					
 					$valuesToInsert = array(
 						'name' => pSQL(Tools::getValue('layered_tpl_name')),
@@ -1301,6 +1367,7 @@ class BlockLayered extends Module
 			Configuration::updateValue('PS_LAYERED_SHOW_QTIES', Tools::getValue('ps_layered_show_qties'));
 			Configuration::updateValue('PS_LAYERED_FULL_TREE', Tools::getValue('ps_layered_full_tree'));
 			Configuration::updateValue('PS_LAYERED_FILTER_PRICE_USETAX', Tools::getValue('ps_layered_filter_price_usetax'));
+			Configuration::updateValue('PS_LAYERED_FILTER_CATEGORY_DEPTH', (int)Tools::getValue('ps_layered_filter_category_depth'));
 			
 			$html .= '
 			<div class="conf">'.
@@ -1337,7 +1404,7 @@ class BlockLayered extends Module
 			'.(version_compare(_PS_VERSION_,'1.5','>') ? '' : '<img src="../img/admin/ok2.png" alt="" />').'<span class="message"></span>
 		</div>
 		<div id="ajax-message-ko" class="error ajax-message" style="display: none">
-			'.(version_compare(_PS_VERSION_,'1.5','>') ? '' : '<img src="../img/admin/ok2.png" alt="" />').'<span class="message"></span>
+			'.(version_compare(_PS_VERSION_,'1.5','>') ? '' : '<img src="../img/admin/errors.png" alt="" />').'<span class="message"></span>
 		</div>
 		<h2>'.$this->l('Layered navigation').'</h2>
 		<fieldset class="width4">
@@ -1358,37 +1425,42 @@ class BlockLayered extends Module
 		foreach (Db::getInstance()->ExecuteS('SELECT id_category FROM `'._DB_PREFIX_.'category`') as $category)
 			if ($category['id_category'] != 1)
 				$categoryList[] = $category['id_category'];
-		
+				
+		if (Tools::usingSecureMode())
+			$domain = Tools::getShopDomainSsl(true);
+		else
+			$domain = Tools::getShopDomain(true);
+			
 		$html .= '
 			<a class="bold ajaxcall-recurcive"
 			style="width: 250px; text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px"
-			href="'.Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'">'.
+			href="'.$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'">'.
 			$this->l('Index all missing prices').'</a>
 			<br />
 			<a class="bold ajaxcall-recurcive"
 			style="width: 250px; text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px" id="full-index"
-			href="'.Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&full=1">'.
+			href="'.$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&full=1">'.
 			$this->l('Re-build entire price index').'</a>
 			<br />
 			<a class="bold ajaxcall" id="attribute-indexer"
 			style="width: 250px; text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px" id="full-index"
-			href="'.Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-attribute-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'">'.
+			href="'.$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-attribute-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'">'.
 			$this->l('Build attribute index').'</a>
 			<br />
 			<a class="bold ajaxcall" id="url-indexer"
 			style="width: 250px; text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px" id="full-index"
-			href="'.Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-url-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&truncate=1">'.
+			href="'.$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-url-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&truncate=1">'.
 			$this->l('Build url index').'</a>
 			<br />
 			<br />
 			'.$this->l('You can set a cron job that will re-build price index using the following URL:').'<br /><b>'.
-			Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&full=1</b>
+			$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-price-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&full=1</b>
 			<br />
 			'.$this->l('You can set a cron job that will re-build url index using the following URL:').'<br /><b>'.
-			Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-url-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&truncate=1</b>
+			$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-url-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&truncate=1</b>
 			<br />
 			'.$this->l('You can set a cron job that will re-build attribute index using the following URL:').'<br /><b>'.
-			Tools::getCurrentUrlProtocolPrefix().Tools::getHttpHost().__PS_BASE_URI__.'modules/blocklayered/blocklayered-attribute-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'</b>
+			$domain.__PS_BASE_URI__.'modules/blocklayered/blocklayered-attribute-indexer.php'.'?token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'</b>
 			<br /><br />
 			'.$this->l('A nightly rebuild is recommended.').'
 			<script type="text/javascript">
@@ -1568,9 +1640,15 @@ class BlockLayered extends Module
 				#layered_container_left ul li { cursor: move; position: relative; }
 				#layered-cat-counter { display: none; }
 				#layered-step-2, #layered-step-3 { display: none; }
+				#layered-step-2 h3 { margin-top: 0; }
 				#table-filter-templates tr th, #table-filter-templates tr td { text-align: center; }
 				.filter_type { width: 70px; position: absolute; right: 53px; top: 5px;}
 				.filter_show_limit { position: absolute; width: 40px; right: 5px; top: 5px; }
+				#layered-step-3 .alert { width: auto; }
+				#fancybox-content {
+					height: 400px !important;
+					overflow: auto !important;
+				}
 			</style>
 			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" onsubmit="return checkForm();">';
 			
@@ -1613,17 +1691,31 @@ class BlockLayered extends Module
 
 			$selectedCat = array();
 			// Translations are not automatic for the moment ;)
-			$trads = array(
-				 'Home' => $this->l('Home'),
-				 'selected' => $this->l('selected'),
-				 'Collapse All' => $this->l('Collapse All'),
-				 'Expand All' => $this->l('Expand All'),
-				 'Check All' => $this->l('Check All'),
-				 'Uncheck All'  => $this->l('Uncheck All'),
-				 'search'  => $this->l('Search a category')
-			);
-			
-			$html .= Helper::renderAdminCategorieTree($trads, $selectedCat, 'categoryBox');
+			if (version_compare(_PS_VERSION_,'1.5','>'))
+			{
+				if ($this->context->shop() == Shop::CONTEXT_SHOP)
+				{
+					$root_category = Category::getRootCategory();
+					$root_category = array('id_category' => $root_category->id_category, 'name' => $root_category->name);
+				}
+				else
+					$root_category = array('id_category' => '0', 'name' => $this->l('Root'));
+				$helper = new Helper();
+				$html .= $helper->renderCategoryTree(null, $selectedCat, 'categoryBox');
+			}
+			else
+			{
+				$trads = array(
+					 'Home' => $this->l('Home'),
+					 'selected' => $this->l('selected'),
+					 'Collapse All' => $this->l('Collapse All'),
+					 'Expand All' => $this->l('Expand All'),
+					 'Check All' => $this->l('Check All'),
+					 'Uncheck All'  => $this->l('Uncheck All'),
+					 'search'  => $this->l('Search a category')
+				);
+				$html .= Helper::renderAdminCategorieTree($trads, $selectedCat, 'categoryBox');
+			}
 			
 			$html .= '
 					<br />
@@ -1663,17 +1755,28 @@ class BlockLayered extends Module
 				
 			}
 			
-			$html .= '<script type="text/javascript">
-					
-					function updLayCounters()
+			$html .= '
+				<script type="text/javascript">
+					function updLayCounters(showAlert)
 					{
 						$(\'#num_sel_filters\').html(\'(\'+$(\'ul#selected_filters\').find(\'li\').length+\')\');
 						$(\'#num_avail_filters\').html(\'(\'+$(\'#layered_container_right ul\').find(\'li\').length+\')\');
 						
 						if ($(\'ul#selected_filters\').find(\'li\').length >= 1)
+						{
 							$(\'#layered-step-3\').show();
+							$(\'#layered-step-3 .alert\').hide();
+						}
 						else
-							$(\'#layered-step-3\').hide();
+						{
+							if (showAlert)
+								$(\'#layered-step-3\').show();
+							else
+								$(\'#layered-step-3\').hide();
+							
+							$(\'#layered-step-3 .alert\').show();
+							
+						}
 					}
 
 					function updPositions()
@@ -1713,7 +1816,7 @@ class BlockLayered extends Module
 							data: \'layered_token='.substr(Tools::encrypt('blocklayered/index'), 0, 10).'&id_lang='.$id_lang.'&\'
 								+(all ? \'\' : $(\'input[name="categoryBox[]"]\').serialize()+\'&\')
 								+(id_layered_filter ? \'id_layered_filter=\'+parseInt(id_layered_filter) : \'\')
-								+\'&base_folder='._PS_ADMIN_DIR_.'\',
+								+\'&base_folder='.urlencode(_PS_ADMIN_DIR_).'\',
 							success: function(result)
 							{
 								$(\'#layered-ajax-refresh\').css(\'background-color\', \'transparent\');
@@ -1726,7 +1829,7 @@ class BlockLayered extends Module
 								});
 								
 								updHeight();
-								updLayCounters();
+								updLayCounters(true);
 							}
 						});
 						return false;
@@ -1758,7 +1861,7 @@ class BlockLayered extends Module
 								$(this).parent().addClass(\'layered_left\');
 								$(this).effect(\'transfer\', { to: $(\'#layered_container_left ul#selected_filters\') }, 300, function() {
 									$(this).parent().appendTo(\'ul#selected_filters\');
-									updLayCounters();
+									updLayCounters(false);
 									updHeight();
 									updPositions();
 								});
@@ -1770,7 +1873,7 @@ class BlockLayered extends Module
 									$(this).parent().removeClass(\'layered_left\');
 									$(this).parent().addClass(\'layered_right\');
 									$(this).parent().appendTo(\'ul#all_filters\');
-									updLayCounters();
+									updLayCounters(true);
 									updHeight();
 									updPositions();
 									if ($(\'#layered_container_left ul\').length == 0)
@@ -1783,33 +1886,36 @@ class BlockLayered extends Module
 						$(\'label a#inline\').fancybox({ 
 							\'hideOnContentClick\': false,
 							\'onClosed\': function() {
+								lock_treeview_hidding = false;
+								$(\'#categories-treeview\').parent().parent().hide();
 								updCatCounter();
 								if ($(\'#categories-treeview\').find(\'input:checked\').length == 0)
-									$(\'#error-treeview\').show(500);
+									$(\'#error-treeview\').show();
 								else
-									$(\'#error-treeview\').hide(500);
+									$(\'#error-treeview\').hide();
 								updElements(0, 0);
 							},
 							\'onComplete\': function() {
-							'.(version_compare(_PS_VERSION_,'1.5','<') ? '
-								if($(\'#categories-treeview li#1\').attr(\'cleaned\'))
+								lock_treeview_hidding = true;
+								$(\'#categories-treeview\').parent().parent().show();
+								if($($(\'#categories-treeview li\')[0]).attr(\'cleaned\'))
 									return;
-								if($(\'#categories-treeview li#1\').attr(\'cleaned\', true))
-								$(\'#categories-treeview li#1\').removeClass(\'static\');
-								$(\'#categories-treeview li#1 span\').trigger(\'click\');
-								$(\'#categories-treeview li#1\').children(\'div\').remove();
-								$(\'#categories-treeview li#1\').
+								if($($(\'#categories-treeview li\')[0]).attr(\'cleaned\', true))
+								$($(\'#categories-treeview li\')[0]).removeClass(\'static\');
+								$($(\'#categories-treeview li span\')[0]).trigger(\'click\');
+								$($(\'#categories-treeview li\')[0]).children(\'div\').remove();
+								$($(\'#categories-treeview li\')[0]).
 									removeClass(\'collapsable lastCollapsable\').
 									addClass(\'last static\');
 								$(\'.hitarea\').live(\'click\', function(it)
 								{
 									$(this).parent().find(\'> .category_label\').click();
-								});' : '').'
+								});
 							}
 						});
 
 						updHeight();
-						updLayCounters();
+						updLayCounters(false);
 						updPositions();
 						updCatCounter();
 						enableSortable();
@@ -1845,6 +1951,7 @@ class BlockLayered extends Module
 				{ $(\'#error-filter-name\').hide(); } else { $(\'#error-filter-name\').show(); }" name="layered_tpl_name" maxlength="64" value="'.$this->l('My template').' '.date('Y-m-d').'"
 				style="width: 200px; font-size: 11px;" /> <span style="font-size: 10px; font-style: italic;">('.$this->l('only as a reminder').')</span></p>
 				<hr size="1" noshade />
+				<p class="alert">'.$this->l('No filters selected, the blocklayered will be disable for the categories seleted.').'</p>
 				<br />
 				<center><input type="submit" class="button" name="SubmitFilter" value="'.$this->l('Save this filter template').'" /></center>
 			</div>
@@ -1852,17 +1959,17 @@ class BlockLayered extends Module
 				<input type="hidden" name="n_existing" id="n_existing" value="'.(int)count($filtersTemplates).'" />
 			</form>
 		</fieldset><br />
-		<fieldset class="width2">
+		<fieldset class="width4">
 			<legend><img src="../img/admin/cog.gif" alt="" /> '.$this->l('Configuration').'</legend>
 			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">			
 				<table border="0" style="font-size: 11px; width: 100%; margin: 0 auto;" class="table">
 					<tr>
 						<th style="text-align: center;">'.$this->l('Option').'</th>
-						<th style="text-align: center;">'.$this->l('Value').'</th>
+						<th style="text-align: center; width: 200px;">'.$this->l('Value').'</th>
 					</tr>
 					<tr>
 						<td style="text-align: right;">'.$this->l('Hide filter values with no product is matching').'</td>
-						<td>
+						<td style="text-align: center;">
 							<img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" />
 							'.$this->l('Yes').' <input type="radio" name="ps_layered_hide_0_values" value="1" '.(Configuration::get('PS_LAYERED_HIDE_0_VALUES') ? 'checked="checked"' : '').' />
 							<img src="../img/admin/disabled.gif" alt="'.$this->l('No').'" title="'.$this->l('No').'" style="margin-left: 10px;" />
@@ -1871,7 +1978,7 @@ class BlockLayered extends Module
 					</tr>
 					<tr>
 						<td style="text-align: right;">'.$this->l('Show the number of matching products').'</td>
-						<td>
+						<td style="text-align: center;">
 							<img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" />
 							'.$this->l('Yes').' <input type="radio" name="ps_layered_show_qties" value="1" '.(Configuration::get('PS_LAYERED_SHOW_QTIES') ? 'checked="checked"' : '').' />
 							<img src="../img/admin/disabled.gif" alt="'.$this->l('No').'" title="'.$this->l('No').'" style="margin-left: 10px;" />
@@ -1880,14 +1987,20 @@ class BlockLayered extends Module
 					</tr>
 					<tr>
 						<td style="text-align: right;">'.$this->l('Show products from subcategories').'</td>
-						<td>
+						<td style="text-align: center;">
 							<img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" />
 							'.$this->l('Yes').' <input type="radio" name="ps_layered_full_tree" value="1" '.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'checked="checked"' : '').' />
 							<img src="../img/admin/disabled.gif" alt="'.$this->l('No').'" title="'.$this->l('No').'" style="margin-left: 10px;" />
 							'.$this->l('No').' <input type="radio" name="ps_layered_full_tree" value="0" '.(!Configuration::get('PS_LAYERED_FULL_TREE') ? 'checked="checked"' : '').' />
 						</td>
 					</tr>
-					<tr>
+					<tr style="text-align: center;">
+						<td style="text-align: right;">'.$this->l('Category filter depth (0 for no limits, 1 by default)').'</td>
+						<td>
+							<input type="text" name="ps_layered_filter_category_depth" value="'.((Configuration::get('PS_LAYERED_FILTER_CATEGORY_DEPTH') !== false) ? Configuration::get('PS_LAYERED_FILTER_CATEGORY_DEPTH') : 1).'" />
+						</td>
+					</tr>
+					<tr style="text-align: center;">
 						<td style="text-align: right;">'.$this->l('Use tax to filter price').'</td>
 						<td>
 							<img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" />
@@ -2015,12 +2128,15 @@ class BlockLayered extends Module
 				$queryFiltersFrom .= ' INNER JOIN '._DB_PREFIX_.'category_product cp
 				ON p.id_product = cp.id_product
 				INNER JOIN '._DB_PREFIX_.'category c ON (c.id_category = cp.id_category AND
-				'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).')';
+				'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+				AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+				AND c.active = 1)';
 			else
 				$queryFiltersFrom .= ' INNER JOIN '._DB_PREFIX_.'category_product cp
 				ON p.id_product = cp.id_product
 				INNER JOIN '._DB_PREFIX_.'category c ON (c.id_category = cp.id_category
-				AND c.id_category = '.(int)$id_parent.')';
+				AND c.id_category = '.(int)$id_parent.'
+				AND c.active = 1)';
 		}
 
 		foreach ($selectedFilters as $key => $filterValues)
@@ -2083,7 +2199,7 @@ class BlockLayered extends Module
 					if (version_compare(_PS_VERSION_,'1.5','>'))
 					{
 						$queryFiltersWhere .= ' AND sa.quantity '.(!$selectedFilters['quantity'][0] ? '>=' : '>').' 0 ';
-						$queryFiltersFrom .= 'LEFT JOIN stock_available sa ON (sa.id_product = p.id_product AND sa.id_shop = '.(int)Context::getContext()->shop->getID(true).') ';
+						$queryFiltersFrom .= 'LEFT JOIN `'._DB_PREFIX_.'stock_available` sa ON (sa.id_product = p.id_product AND sa.id_shop = '.(int)Context::getContext()->shop->getID(true).') ';
 					}
 					else
 						$queryFiltersWhere .= ' AND p.quantity '.(!$selectedFilters['quantity'][0] ? '>=' : '>').' 0 ';
@@ -2200,7 +2316,9 @@ class BlockLayered extends Module
 			LEFT JOIN '._DB_PREFIX_.'image_lang il ON (i.id_image = il.id_image AND il.id_lang = '.(int)($cookie->id_lang).')
 			LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
 			WHERE p.`active` = 1 AND
-			'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+			'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+			AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+			AND c.active = 1
 			AND pl.id_lang = '.(int)$cookie->id_lang.'
 			AND p.id_product IN ('.implode(',', $productIdList).')'
 			.' GROUP BY p.id_product ORDER BY '.Tools::getProductsOrder('by', Tools::getValue('orderby'), true).' '.Tools::getProductsOrder('way', Tools::getValue('orderway')).
@@ -2282,9 +2400,11 @@ class BlockLayered extends Module
 					$sqlQuery['join'] = '
 					INNER JOIN '._DB_PREFIX_.'category_product cp ON (cp.id_product = p.id_product)
 					INNER JOIN '._DB_PREFIX_.'category c ON (c.id_category = cp.id_category AND
-					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).') ';
+					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+					AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+					AND c.active = 1) ';
 					if (version_compare(_PS_VERSION_,'1.5','>'))
-						$sqlQuery['join'] .= 'LEFT JOIN '._DB_PREFIX_.'stock_available sa
+						$sqlQuery['join'] .= 'LEFT JOIN `'._DB_PREFIX_.'stock_available` sa
 							ON (sa.id_product = p.id_product AND sa.id_shop = '.(int)$this->context->shop->getID(true).') ';
 					$sqlQuery['where'] = 'WHERE p.`active` = 1 ';
 					$sqlQuery['group'] = ' GROUP BY p.id_product ';
@@ -2298,7 +2418,9 @@ class BlockLayered extends Module
 					INNER JOIN '._DB_PREFIX_.'product p ON (p.id_product = cp.id_product AND p.active = 1)
 					INNER JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer) ';
 					$sqlQuery['where'] = 'WHERE 
-					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).' ';
+					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+					AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+					AND c.active = 1 ';
 					$sqlQuery['group'] = ' GROUP BY p.id_manufacturer ';
 					break;
 
@@ -2331,7 +2453,9 @@ class BlockLayered extends Module
 					SELECT id_product
 					FROM '._DB_PREFIX_.'category_product cp
 					INNER JOIN '._DB_PREFIX_.'category c ON (c.id_category = cp.id_category AND 
-					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).')) ';
+					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+					AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+					AND c.active = 1)) ';
 					$sqlQuery['group'] = '
 					GROUP BY lpa.id_attribute
 					ORDER BY id_attribute_group, id_attribute ';
@@ -2357,11 +2481,17 @@ class BlockLayered extends Module
 					SELECT id_product
 					FROM '._DB_PREFIX_.'category_product cp
 					INNER JOIN '._DB_PREFIX_.'category c ON (c.id_category = cp.id_category AND
-					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.' AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).')) ';
+					'.(Configuration::get('PS_LAYERED_FULL_TREE') ? 'c.nleft >= '.(int)$parent->nleft.'
+					AND c.nright <= '.(int)$parent->nright : 'c.id_category = '.(int)$id_parent).'
+					AND c.active = 1)) ';
 					$sqlQuery['group'] = 'GROUP BY fv.id_feature_value ';
 					break;
 
 				case 'category':
+					$depth = Configuration::get('PS_LAYERED_FILTER_CATEGORY_DEPTH');
+					if ($depth === false)
+						$depth = 1;
+					
 					$sqlQuery['select'] = '
 					SELECT c.id_category, c.id_parent, cl.name, (SELECT count(DISTINCT p.id_product) # ';
 					$sqlQuery['from'] = '
@@ -2372,8 +2502,10 @@ class BlockLayered extends Module
 					$sqlQuery['group'] = ') count_products
 					FROM '._DB_PREFIX_.'category c
 					LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category AND cl.id_lang = '.(int)$cookie->id_lang.')
-					WHERE c.id_parent = '.(int)$id_parent.'
-					GROUP BY c.id_category ORDER BY level_depth, c.position';
+					WHERE c.nleft > '.(int)$parent->nleft.'
+					AND c.nright < '.(int)$parent->nright.'
+					'.($depth ? 'AND c.level_depth <= '.($parent->level_depth+(int)$depth) : '').'
+					GROUP BY c.id_category ORDER BY c.nleft, c.position';
 			}
 			
 			foreach ($filters as $filterTmp)
@@ -2971,7 +3103,7 @@ class BlockLayered extends Module
 		if (version_compare(_PS_VERSION_,'1.5','>'))
 		{
 			$queryFilters = ' AND sav.quantity '.(!$filterValue[0] ? '>=' : '>').' 0 ';
-			$queryFiltersJoin = 'LEFT JOIN stock_available sav ON (sav.id_product = p.id_product AND sav.id_shop = '.(int)Context::getContext()->shop->getID(true).') ';
+			$queryFiltersJoin = 'LEFT JOIN `'._DB_PREFIX_.'stock_available` sav ON (sav.id_product = p.id_product AND sav.id_shop = '.(int)Context::getContext()->shop->getID(true).') ';
 		}
 		else
 			$queryFilters = ' AND p.quantity '.(!$filterValue[0] ? '>=' : '>').' 0 ';
@@ -3241,7 +3373,6 @@ class BlockLayered extends Module
 		{
 			$html .= '
 			<script type="text/javascript">
-				//<![CDATA[
 				$(document).ready(function()
 				{
 					$(\'#selected_filters li\').remove();
@@ -3259,8 +3390,67 @@ class BlockLayered extends Module
 			
 			if (isset($layeredValues['categories']) && count($layeredValues['categories']))
 			{
-				foreach ($layeredValues['categories'] as $id_category)
-					$html .= '$(\'#categories-treeview\').find(\'input[name="categoryBox[]"][value='.(int)$id_category.']\').attr(\'checked\', \'checked\');'."\n";
+				$html .= '
+							function expandCategories(categories, iteration, id_category, init) {
+								if (categories[iteration])
+								{
+									category = $(\'#categories-treeview\').find(\'input[name="categoryBox[]"][value=\'+categories[iteration]+\']\');
+								
+									if (category.length)
+									{
+										if (category.parent().hasClass(\'expandable\'))
+										{
+											$(\'#\'+categories[iteration]+\' .hitarea\').click();
+										}
+										
+										if (parseInt(categories[iteration]) == parseInt(id_category))
+										{
+											$(\'#layered-cat-counter\').html(parseInt($(\'#layered-cat-counter\').html()) + 1);
+											if ($(\'#categories-treeview\').find(\'input[name="categoryBox[]"][value=\'+id_category+\']:checked\').length == 0)
+											{
+												$(\'#categories-treeview\').find(\'input[name="categoryBox[]"][value=\'+id_category+\']\').click();
+												clickOnCategoryBox($(\'#categories-treeview\').find(\'input[name="categoryBox[]"][value=\'+id_category+\']\'));
+											}
+											collapseAllCategories();
+										}
+									}
+									else {
+										setTimeout(function() { expandCategories(categories, iteration, id_category, false); }, 20 );
+										return;
+									}
+									$(\'#categories-treeview\').parent().parent().show();
+									expandCategories(categories, iteration+1, id_category);
+									if (typeof(lock_treeview_hidding) == \'undefined\' || !lock_treeview_hidding)
+										$(\'#categories-treeview\').parent().parent().hide();
+								}
+							}
+							$(\'#layered-cat-counter\').html(0);
+							$(\'.nb_sub_cat_selected\').hide();
+							$(\'#categories-treeview\').find(\'input[name="categoryBox[]"]:checked\').each(function(i, it) {
+								$(it).click();
+								updateNbSubCategorySelected($(it), false);
+							});';
+				
+				foreach ($layeredValues['categories'] as $id_category) {
+					if ($id_category != 1) // @todo do we need to use the root of the current shop ?
+					{
+						$category = new Category($id_category);
+						$parent_list = array_reverse($category->getParentsCategories());
+					}
+					else
+						$parent_list = array(array('id_category' => 1));
+					$html .= 'var categories = [];
+					';
+					foreach ($parent_list as $parent)
+					{
+						$html .= '
+							categories.push('.(int)$parent['id_category'].');';
+					}
+
+					$html .= '
+						expandCategories(categories, 0, '.(int)$id_category.', false);';
+				}
+				
 				$html .= '
 				updCatCounter();
 				$(\'#scope_1\').attr(\'checked\', \'\');
@@ -3275,7 +3465,8 @@ class BlockLayered extends Module
 				
 			$html .= '
 			$(\'#layered_tpl_name\').val(\''.addslashes($layeredFilter['name']).'\');
-			$(\'#id_layered_filter\').val(\''.(int)$layeredFilter['id_layered_filter'].'\')';
+			$(\'#id_layered_filter\').val(\''.(int)$layeredFilter['id_layered_filter'].'\');
+			';
 				
 			$html .= '
 				});
@@ -3327,6 +3518,7 @@ class BlockLayered extends Module
 		$smarty->assign('comparator_max_item', (int)(Configuration::get('PS_COMPARATOR_MAX_ITEM')));
 		$smarty->assign('products', $products);
 		$smarty->assign('products_per_page', (int)Configuration::get('PS_PRODUCTS_PER_PAGE'));
+		$smarty->assign('static_token', Tools::getToken(false));
 		
 		// Prevent bug with old template where category.tpl contain the title of the category and category-count.tpl do not exists
 		if (file_exists(_PS_THEME_DIR_.'category-count.tpl'))
@@ -3342,7 +3534,7 @@ class BlockLayered extends Module
 		/* We are sending an array in jSon to the .js controller, it will update both the filters and the products zones */
 		return Tools::jsonEncode(array(
 		'filtersBlock' => $this->generateFiltersBlock($selectedFilters),
-		'productList' => $product_list,
+		'productList' => utf8_encode($product_list),
 		'pagination' => $smarty->fetch(_PS_THEME_DIR_.'pagination.tpl'),
 		'categoryCount' => $categoryCount));
 	}

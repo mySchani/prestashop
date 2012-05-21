@@ -96,10 +96,10 @@ class AdminGeolocationControllerCore extends AdminController
 				$redirectAdmin = true;
 			}
 			else
-				$this->_errors[] = Tools::displayError('Geolocation database is unavailable.');
+				$this->errors[] = Tools::displayError('Geolocation database is unavailable.');
 
 			if (!is_array(Tools::getValue('countries')) || !count(Tools::getValue('countries')))
-				$this->_errors[] = Tools::displayError('Country selection is invalid');
+				$this->errors[] = Tools::displayError('Country selection is invalid');
 			else
 			{
 				Configuration::updateValue(
@@ -112,7 +112,7 @@ class AdminGeolocationControllerCore extends AdminController
 			}
 
 			if (!Validate::isCleanHtml(Tools::getValue('PS_GEOLOCATION_WHITELIST')))
-				$this->_errors[] = Tools::displayError('Invalid whitelist');
+				$this->errors[] = Tools::displayError('Invalid whitelist');
 			else
 			{
 				Configuration::updateValue(
@@ -147,7 +147,7 @@ class AdminGeolocationControllerCore extends AdminController
 		parent::initContent();
 	}
 
-	private function isGeoLiteCityAvailable()
+	protected function isGeoLiteCityAvailable()
 	{
 		if (file_exists(_PS_GEOIP_DIR_.'GeoLiteCity.dat'))
 			return true;

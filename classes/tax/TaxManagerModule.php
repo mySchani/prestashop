@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 8702 $
+*  @version  Release: $Revision: 12682 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,8 +36,7 @@ abstract class TaxManagerModuleCore extends Module
 
 	public function hookTaxManager($args)
 	{
-
-		$class_file =_PS_MODULE_DIR_.'/'.$this->name.'/'.$this->tax_manager_class.'.php';
+		$class_file = _PS_MODULE_DIR_.'/'.$this->name.'/'.$this->tax_manager_class.'.php';
 
 		if (!isset($this->tax_manager_class) || !file_exists($class_file))
 			die(Tools::displayError('Incorrect Tax Manager class ['.$this->tax_manager_class.']'));

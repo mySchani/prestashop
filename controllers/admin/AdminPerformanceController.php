@@ -56,16 +56,13 @@ class AdminPerformanceControllerCore extends AdminController
 							'id' => 'smarty_force_compile_'._PS_SMARTY_CHECK_COMPILE_,
 							'value' => _PS_SMARTY_CHECK_COMPILE_,
 							'label' => $this->l('Compile cache if templates are updated'),
-							'desc' => $this->l('Templates are recompiled when they are updated, if you experience compilation troubles 
-								when you update your templates files, you should use force compile instead of this option. 
-								It should never be used in a production environment.')
+							'desc' => $this->l('Templates are recompiled when they are updated, if you experience compilation troubles when you update your templates files, you should use force compile instead of this option. It should never be used in a production environment.')
 						),
 						array(
 							'id' => 'smarty_force_compile_'._PS_SMARTY_FORCE_COMPILE_,
 							'value' => _PS_SMARTY_FORCE_COMPILE_,
 							'label' => $this->l('Force compile'),
-							'desc' => $this->l('This forces Smarty to (re)compile templates on every invocation. 
-								This is handy for development and debugging. It should never be used in a production environment.')
+							'desc' => $this->l('This forces Smarty to (re)compile templates on every invocation. This is handy for development and debugging. It should never be used in a production environment.')
 						)
 					)
 				),
@@ -191,9 +188,7 @@ class AdminPerformanceControllerCore extends AdminController
 				'title' => $this->l('CCC (Combine, Compress and Cache)'),
 				'image' => '../img/admin/arrow_in.png'
 			),
-			'desc' => $this->l('CCC allows you to reduce the loading time of your page. 
-				With these settings you will gain performance without even touching the code of your theme. 
-				Make sure, however, that your theme is compatible with PrestaShop 1.4+. Otherwise, CCC will cause problems.'),
+			'desc' => $this->l('CCC allows you to reduce the loading time of your page. With these settings you will gain performance without even touching the code of your theme. Make sure, however, that your theme is compatible with PrestaShop 1.4+. Otherwise, CCC will cause problems.'),
 			'input' => array(
 				array(
 					'type' => 'hidden',
@@ -322,24 +317,21 @@ class AdminPerformanceControllerCore extends AdminController
 					'label' => $this->l('Media server #1:'),
 					'name' => '_MEDIA_SERVER_1_',
 					'size' => 30,
-					'desc' => $this->l('Name of the second domain of your shop, (e.g., myshop-media-server-1.com). 
-						If you do not have another domain, leave this field blank')
+					'desc' => $this->l('Name of the second domain of your shop, (e.g., myshop-media-server-1.com). If you do not have another domain, leave this field blank')
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Media server #2:'),
 					'name' => '_MEDIA_SERVER_2_',
 					'size' => 30,
-					'desc' => $this->l('Name of the third domain of your shop, (e.g., myshop-media-server-2.com). 
-						If you do not have another domain, leave this field blank')
+					'desc' => $this->l('Name of the third domain of your shop, (e.g., myshop-media-server-2.com). If you do not have another domain, leave this field blank')
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Media server #3:'),
 					'name' => '_MEDIA_SERVER_3_',
 					'size' => 30,
-					'desc' => $this->l('Name of the fourth domain of your shop, (e.g., myshop-media-server-3.com). 
-						If you do not have another domain, leave this field blank')
+					'desc' => $this->l('Name of the fourth domain of your shop, (e.g., myshop-media-server-3.com). If you do not have another domain, leave this field blank')
 				),
 			)
 		);
@@ -356,8 +348,7 @@ class AdminPerformanceControllerCore extends AdminController
 				'title' => $this->l('Ciphering'),
 				'image' => '../img/admin/computer_key.png'
 			),
-			'desc' => $this->l('Mcrypt is faster than our custom BlowFish class, but requires the PHP extension "mcrypt". 
-				If you change this configuration, all cookies will be reset.'),
+			'desc' => $this->l('Mcrypt is faster than our custom BlowFish class, but requires the PHP extension "mcrypt". If you change this configuration, all cookies will be reset.'),
 			'input' => array(
 				array(
 					'type' => 'hidden',
@@ -527,23 +518,23 @@ class AdminPerformanceControllerCore extends AdminController
 			if ($this->tabAccess['add'] === '1')
 			{
 				if (!Tools::getValue('memcachedIp'))
-					$this->_errors[] = Tools::displayError('Memcached IP is missing');
+					$this->errors[] = Tools::displayError('Memcached IP is missing');
 				if (!Tools::getValue('memcachedPort'))
-					$this->_errors[] = Tools::displayError('Memcached port is missing');
+					$this->errors[] = Tools::displayError('Memcached port is missing');
 				if (!Tools::getValue('memcachedWeight'))
-					$this->_errors[] = Tools::displayError('Memcached weight is missing');
-				if (!count($this->_errors))
+					$this->errors[] = Tools::displayError('Memcached weight is missing');
+				if (!count($this->errors))
 				{
 					if (CacheMemcache::addServer(pSQL(Tools::getValue('memcachedIp')),
 						(int)Tools::getValue('memcachedPort'),
 						(int)Tools::getValue('memcachedWeight')))
 						Tools::redirectAdmin(self::$currentIndex.'&token='.Tools::getValue('token').'&conf=4');
 					else
-						$this->_errors[] = Tools::displayError('Cannot add Memcached server');
+						$this->errors[] = Tools::displayError('Cannot add Memcached server');
 				}
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+				$this->errors[] = Tools::displayError('You do not have permission to add here.');
 		}
 
 		if (Tools::getValue('deleteMemcachedServer'))
@@ -553,10 +544,10 @@ class AdminPerformanceControllerCore extends AdminController
 				if (CacheMemcache::deleteServer((int)Tools::getValue('deleteMemcachedServer')))
 					Tools::redirectAdmin(self::$currentIndex.'&token='.Tools::getValue('token').'&conf=4');
 				else
-					$this->_errors[] = Tools::displayError('Error in deleting Memcached server');
+					$this->errors[] = Tools::displayError('Error in deleting Memcached server');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+				$this->errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
 
 		$redirecAdmin = false;
@@ -570,7 +561,7 @@ class AdminPerformanceControllerCore extends AdminController
 				$redirecAdmin = true;
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ((bool)Tools::getValue('features_detachables_up'))
@@ -583,7 +574,7 @@ class AdminPerformanceControllerCore extends AdminController
 				$redirecAdmin = true;
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ((bool)Tools::getValue('ccc_up'))
@@ -595,12 +586,12 @@ class AdminPerformanceControllerCore extends AdminController
 					!Configuration::updateValue('PS_HTML_THEME_COMPRESSION', (int)Tools::getValue('PS_HTML_THEME_COMPRESSION')) ||
 					!Configuration::updateValue('PS_JS_HTML_THEME_COMPRESSION', (int)Tools::getValue('PS_JS_HTML_THEME_COMPRESSION')) ||
 					!Configuration::updateValue('PS_HIGH_HTML_THEME_COMPRESSION', (int)Tools::getValue('PS_HIGH_HTML_THEME_COMPRESSION')))
-					$this->_errors[] = Tools::displayError('Unknown error.');
+					$this->errors[] = Tools::displayError('Unknown error.');
 				else
 					$redirecAdmin = true;
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ((bool)Tools::getValue('media_server_up'))
@@ -608,12 +599,12 @@ class AdminPerformanceControllerCore extends AdminController
 			if ($this->tabAccess['edit'] === '1')
 			{
 				if (Tools::getValue('_MEDIA_SERVER_1_') != null && !Validate::isFileName(Tools::getValue('_MEDIA_SERVER_1_')))
-					$this->_errors[] = Tools::displayError('Media server #1 is invalid');
+					$this->errors[] = Tools::displayError('Media server #1 is invalid');
 				if (Tools::getValue('_MEDIA_SERVER_2_') != null && !Validate::isFileName(Tools::getValue('_MEDIA_SERVER_2_')))
-					$this->_errors[] = Tools::displayError('Media server #2 is invalid');
+					$this->errors[] = Tools::displayError('Media server #2 is invalid');
 				if (Tools::getValue('_MEDIA_SERVER_3_') != null && !Validate::isFileName(Tools::getValue('_MEDIA_SERVER_3_')))
-					$this->_errors[] = Tools::displayError('Media server #3 is invalid');
-				if (!count($this->_errors))
+					$this->errors[] = Tools::displayError('Media server #3 is invalid');
+				if (!count($this->errors))
 				{
 					$base_urls = array();
 					$base_urls['_MEDIA_SERVER_1_'] = Tools::getValue('_MEDIA_SERVER_1_');
@@ -627,7 +618,7 @@ class AdminPerformanceControllerCore extends AdminController
 				}
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ((bool)Tools::getValue('ciphering_up') && Configuration::get('PS_CIPHER_ALGORITHM') != (int)Tools::getValue('PS_CIPHER_ALGORITHM'))
@@ -639,7 +630,7 @@ class AdminPerformanceControllerCore extends AdminController
 				if ($algo)
 				{
 					if (!function_exists('mcrypt_encrypt'))
-						$this->_errors[] = Tools::displayError('Mcrypt is not activated on this server.');
+						$this->errors[] = Tools::displayError('Mcrypt is not activated on this server.');
 					else
 					{
 						if (!strstr($settings, '_RIJNDAEL_KEY_'))
@@ -664,7 +655,7 @@ class AdminPerformanceControllerCore extends AdminController
 						}
 					}
 				}
-				if (!count($this->_errors))
+				if (!count($this->errors))
 				{
 					if (file_put_contents(dirname(__FILE__).'/../../config/settings.inc.php', $settings))
 					{
@@ -672,11 +663,11 @@ class AdminPerformanceControllerCore extends AdminController
 						$redirecAdmin = true;
 					}
 					else
-						$this->_errors[] = Tools::displayError('Cannot overwrite settings file.');
+						$this->errors[] = Tools::displayError('Cannot overwrite settings file.');
 				}
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ((bool)Tools::getValue('cache_up'))
@@ -689,7 +680,7 @@ class AdminPerformanceControllerCore extends AdminController
 				else
 					$cache_active = 1;
 				if (!$caching_system = Tools::getValue('caching_system'))
-					$this->_errors[] = Tools::displayError('Caching system is missing');
+					$this->errors[] = Tools::displayError('Caching system is missing');
 				else
 					$settings = preg_replace(
 						'/define\(\'_PS_CACHING_SYSTEM_\', \'([a-z0-9=\/+-_]+)\'\);/Ui',
@@ -697,43 +688,43 @@ class AdminPerformanceControllerCore extends AdminController
 						$settings
 					);
 				if ($cache_active && $caching_system == 'CacheMemcache' && !extension_loaded('memcache'))
-					$this->_errors[] = Tools::displayError('To use Memcached, you must install the Memcache PECL extension on your server.').' 
+					$this->errors[] = Tools::displayError('To use Memcached, you must install the Memcache PECL extension on your server.').'
 						<a href="http://www.php.net/manual/en/memcache.installation.php">http://www.php.net/manual/en/memcache.installation.php</a>';
 				else if ($cache_active && $caching_system == 'CacheApc' && !extension_loaded('apc'))
-					$this->_errors[] = Tools::displayError('To use APC cache, you must install the APC PECL extension on your server.').' 
+					$this->errors[] = Tools::displayError('To use APC cache, you must install the APC PECL extension on your server.').'
 						<a href="http://fr.php.net/manual/fr/apc.installation.php">http://fr.php.net/manual/fr/apc.installation.php</a>';
 				else if ($cache_active && $caching_system == 'CacheXcache' && !extension_loaded('xcache'))
-					$this->_errors[] = Tools::displayError('To use Xcache, you must install the Xcache extension on your server.').' 
+					$this->errors[] = Tools::displayError('To use Xcache, you must install the Xcache extension on your server.').'
 						<a href="http://xcache.lighttpd.net">http://xcache.lighttpd.net</a>';
 				else if ($cache_active && $caching_system == 'CacheFs' && !is_writable(_PS_CACHEFS_DIRECTORY_))
-					$this->_errors[] = Tools::displayError('To use CacheFS the directory').' '.
+					$this->errors[] = Tools::displayError('To use CacheFS the directory').' '.
 						realpath(_PS_CACHEFS_DIRECTORY_).' '.Tools::displayError('must be writable');
 
 				if ($caching_system == 'CacheFs' && $cache_active)
 				{
 					if (!($depth = Tools::getValue('ps_cache_fs_directory_depth')))
-						$this->_errors[] = Tools::displayError('Please set a directory depth');
-					if (!count($this->_errors))
+						$this->errors[] = Tools::displayError('Please set a directory depth');
+					if (!count($this->errors))
 					{
 						CacheFs::deleteCacheDirectory();
 						CacheFs::createCacheDirectories((int)$depth);
 						Configuration::updateValue('PS_CACHEFS_DIRECTORY_DEPTH', (int)$depth);
 					}
 				}
-				else if($caching_system == 'MCached' && $cache_active && !_PS_CACHE_ENABLED_ && _PS_CACHING_SYSTEM_ == 'MCached')
+				else if ($caching_system == 'MCached' && $cache_active && !_PS_CACHE_ENABLED_ && _PS_CACHING_SYSTEM_ == 'MCached')
 					Cache::getInstance()->flush();
 
-				if (!count($this->_errors))
+				if (!count($this->errors))
 				{
 					$settings = preg_replace('/define\(\'_PS_CACHE_ENABLED_\', \'([0-9])\'\);/Ui', 'define(\'_PS_CACHE_ENABLED_\', \''.(int)$cache_active.'\');', $settings);
 					if (file_put_contents(dirname(__FILE__).'/../../config/settings.inc.php', $settings))
 						$redirecAdmin = true;
 					else
-						$this->_errors[] = Tools::displayError('Cannot overwrite settings file.');
+						$this->errors[] = Tools::displayError('Cannot overwrite settings file.');
 				}
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 
 		if ($redirecAdmin)

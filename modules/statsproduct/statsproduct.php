@@ -224,11 +224,11 @@ class StatsProduct extends ModuleGraph
 							<th>'.$this->l('Average price').'</th>
 						</tr>
 					</thead><tbody>';
-					$tokenProducts = Tools::getAdminToken('AdminCatalog'.(int)Tab::getIdFromClassName('AdminCatalog').(int)$this->context->employee->id);
+					$tokenProducts = Tools::getAdminToken('AdminProducts'.(int)Tab::getIdFromClassName('AdminProducts').(int)$this->context->employee->id);
 					foreach ($crossSelling as $selling)
 						$this->html .= '
 						<tr>
-							<td ><a href="?tab=AdminCatalog&id_product='.(int)$selling['id_product'].'&addproduct&token='.$tokenProducts.'">'.$selling['pname'].'</a></td>
+							<td ><a href="?tab=AdminProducts&id_product='.(int)$selling['id_product'].'&addproduct&token='.$tokenProducts.'">'.$selling['pname'].'</a></td>
 							<td align="center">'.(int)$selling['pqty'].'</td>
 							<td align="right">'.Tools::displayprice($selling['pprice'], $currency).'</td>
 						</tr>';
@@ -242,7 +242,7 @@ class StatsProduct extends ModuleGraph
 			$this->html .= '
 			<div class="margin-form">
 				<form action="" method="post" id="categoriesForm">
-				<label>'.$this->l('Choose a category').'</label>
+				<label class="t">'.$this->l('Choose a category').'</label>
 					<select name="id_category" onchange="$(\'#categoriesForm\').submit();">
 						<option value="0">'.$this->l('All').'</option>';
 			foreach ($categories as $category)
@@ -251,7 +251,8 @@ class StatsProduct extends ModuleGraph
 					</select>
 				</form>
 			</div>
-						'.$this->l('Click on a product to access its statistics.').'
+						<p>'.$this->l('Click on a product to access its statistics.').'</p>
+				
 			<h2>'.$this->l('Products available').'</h2>
 			<div>
 			<table class="table" border="0" cellspacing="0" cellspacing="0">
@@ -370,7 +371,7 @@ class StatsProduct extends ModuleGraph
 
 			$combArray = array();
 			$assocNames = array();
-			$combinaisons = $product->getAttributeCombinaisons((int)$this->getLang());
+			$combinaisons = $product->getAttributeCombinations((int)$this->getLang());
 			foreach ($combinaisons as $k => $combinaison)
 				$combArray[$combinaison['id_product_attribute']][] = array('group' => $combinaison['group_name'], 'attr' => $combinaison['attribute_name']);
 			foreach ($combArray as $id_product_attribute => $product_attribute)

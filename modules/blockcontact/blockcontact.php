@@ -28,7 +28,7 @@
 if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 	
-class blockcontact extends Module
+class Blockcontact extends Module
 {
 	public function __construct()
 	{
@@ -44,41 +44,47 @@ class blockcontact extends Module
 	
 	public function install()
 	{
-		return (parent::install() AND Configuration::updateValue('blockcontact_telnumber', '') AND Configuration::updateValue('blockcontact_email', '') AND $this->registerHook('displayRightColumn') && $this->registerHook('displayHeader'));
+		return parent::install()
+			&& Configuration::updateValue('blockcontact_telnumber', '')
+			&& Configuration::updateValue('blockcontact_email', '')
+			&& $this->registerHook('displayRightColumn')
+			&& $this->registerHook('displayHeader');
 	}
 	
 	public function uninstall()
 	{
-		//Delete configuration			
-		return (Configuration::deleteByName('blockcontact_telnumber') AND Configuration::deleteByName('blockcontact_email') AND parent::uninstall());
+		// Delete configuration
+		return Configuration::deleteByName('blockcontact_telnumber') && Configuration::deleteByName('blockcontact_email') && parent::uninstall();
 	}
 	
 	public function getContent()
 	{
+		$html = '';
 		// If we try to update the settings
-		if (isset($_POST['submitModule']))
+		if (Tools::isSubmit('submitModule'))
 		{				
-			Configuration::updateValue('blockcontact_telnumber', (preg_match('/^[0-9]+/', $_POST['telnumber']) ? $_POST['telnumber']: ''));
-			Configuration::updateValue('blockcontact_email', (($_POST['email'] != '') ? $_POST['email']: ''));
-			echo '<div class="conf confirm"><img src="../img/admin/ok.gif"/>'.$this->l('Configuration updated').'</div>';
+			Configuration::updateValue('blockcontact_telnumber', Tools::getValue('telnumber'));
+			Configuration::updateValue('blockcontact_email', Tools::getValue('email'));
+			$html .= '<div class="confirm">'.$this->l('Configuration updated').'</div>';
 		}
-		
-		return '
+
+		$html .= '
 		<h2>'.$this->displayName.'</h2>
 		<form action="'.Tools::htmlentitiesutf8($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>			
 				<label for="telnumber">'.$this->l('Telephone number : ').'</label>
-				<input type="text" id="telnumber" name="telnumber" value="'.((Configuration::get('blockcontact_telnumber') != "") ? Configuration::get('blockcontact_telnumber') : "").'" />
+				<input type="text" id="telnumber" name="telnumber" value="'.((Configuration::get('blockcontact_telnumber') != '') ? Configuration::get('blockcontact_telnumber') : '').'" />
 				<div class="clear">&nbsp;</div>
 				<label for="email">'.$this->l('Email : ').'</label>
-				<input type="text" id="email" name="email" value="'.((Configuration::get('blockcontact_email') != "") ? Configuration::get('blockcontact_email') : "").'" />
+				<input type="text" id="email" name="email" value="'.((Configuration::get('blockcontact_email') != '') ? Configuration::get('blockcontact_email') : '').'" />
 				<div class="clear">&nbsp;</div>
 				<div class="margin-form">
 					<input type="submit" name="submitModule" value="'.$this->l('Update settings').'" class="button" /></center>
 				</div>
 			</fieldset>
-		</form>
-		';
+		</form>';
+
+		return $html;
 	}
 
 	public function hookDisplayHeader()

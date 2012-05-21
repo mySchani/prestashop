@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10979 $
+*  @version  Release: $Revision: 13073 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -102,6 +102,7 @@ class CSVCore
     public function headers()
     {
         header('Content-type: text/csv');
+        header('Content-Type: application/force-download; charset=UTF-8');
 		header('Cache-Control: no-store, no-cache');
         header('Content-disposition: attachment; filename="'.$this->filename.'.csv"');
     }

@@ -39,7 +39,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	
 	public $exportSelected = '';
 	
-	public $fd = NULL;
+	public $fd = null;
 	
 	public $date = array(
 		'begin' => '',
@@ -58,12 +58,11 @@ class AdminAccountingExportControllerCore extends AdminController
 	public function __construct()
 	{
 		$this->className = 'Accounting';
-		
-	 	$this->pathAccountExportTpl = _PS_ADMIN_DIR_.'/themes/template/accounting_export/';
+
 	 	$this->content = '';
 	 	$this->downloadDir = _PS_ADMIN_DIR_.'/export/';
 	 	$this->exportSelected = 'global_export';
-	 	
+
 	 	$this->initExportFieldList();	
 		parent::__construct();
 	}
@@ -71,7 +70,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	/**
 	 * Init the available fields by export type with associated translation
 	 */
-	private function initExportFieldList()
+	protected function initExportFieldList()
 	{
 		$this->exportTypeList = array(
 			'global_export' => array(
@@ -79,16 +78,16 @@ class AdminAccountingExportControllerCore extends AdminController
 				'type' => 'global_export',
 				'file' => 'accounting_global_export.csv',
 				'fields' => array(
-					'invoice_date' => $this->l('Invoice Date'),
-					'journal' => $this->l('Journal'),
-					'account' => $this->l('Account'),
-					'invoice_number' => $this->l('Invoice Number'),
-					'credit' => $this->l('Credit (TTC)'),
-					'debit' => $this->l('Debit (TVA+HT)'),
-					'transaction_id' => $this->l('Transaction Number'),
-					'payment_type' => $this->l('Payment Type'),
-					'currency_code' => $this->l('Currency Code'),
-					'wording' => $this->l('Wording')
+					'invoice_date' => $this->l('Invoice Date', 'AdminTab', false, false),
+					'journal' => $this->l('Journal', 'AdminTab', false, false),
+					'account' => $this->l('Account', 'AdminTab', false, false),
+					'invoice_number' => $this->l('Invoice Number', 'AdminTab', false, false),
+					'credit' => $this->l('Credit (TTC)', 'AdminTab', false, false),
+					'debit' => $this->l('Debit (TVA+HT)', 'AdminTab', false, false),
+					'transaction_id' => $this->l('Transaction Number', 'AdminTab', false, false),
+					'payment_type' => $this->l('Payment Type', 'AdminTab', false, false),
+					'currency_code' => $this->l('Currency Code', 'AdminTab', false, false),
+					'wording' => $this->l('Wording', 'AdminTab', false, false)
 				)
 			),
 			'reconciliation_export' => array(
@@ -96,12 +95,12 @@ class AdminAccountingExportControllerCore extends AdminController
 				'type' => 'reconciliation_export',
 				'file' => 'accounting_reconciliation_export.csv',
 				'fields' => array(
-					'invoice_number' => $this->l('Invoice Number'),
-					'wording' => $this->l('Wording'),
-					'total_paid_real' => $this->l('Total TTC'),
-					'invoice_date' => $this->l('Invoice Date'),
-					'transaction_id' => $this->l('Transaction Number'),
-					'account_client' => $this->l('Account client')
+					'invoice_number' => $this->l('Invoice Number', 'AdminTab', false, false),
+					'wording' => $this->l('Wording', 'AdminTab', false, false),
+					'total_paid_real' => $this->l('Total TTC', 'AdminTab', false, false),
+					'invoice_date' => $this->l('Invoice Date', 'AdminTab', false, false),
+					'transaction_id' => $this->l('Transaction Number', 'AdminTab', false, false),
+					'account_client' => $this->l('Account client', 'AdminTab', false, false)
 				)
 			) 
 	 	);
@@ -110,7 +109,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	/**
 	 * Init the block Menu
 	 */
-	private function initMenu()
+	protected function initMenu()
 	{
 		$this->context->smarty->assign(array(
 			'exportTypeList' => $this->exportTypeList,
@@ -118,8 +117,8 @@ class AdminAccountingExportControllerCore extends AdminController
 			'preventList' => $this->prevent
 			)
 		);
-		
-		$this->content .= $this->context->smarty->fetch($this->pathAccountExportTpl.'menu.tpl');
+
+		$this->content .= $this->createTemplate('menu.tpl')->fetch();
 	}
 	
 	/**
@@ -133,12 +132,12 @@ class AdminAccountingExportControllerCore extends AdminController
 		$this->addJqueryUi('ui.datepicker');
 	}
 	
-	private function checkRights()
+	protected function checkRights()
 	{
 		if (!is_writeable($this->downloadDir))
-			$this->_errors[] = $this->l('The download folder doesn\'t have the sufficient right…');
+			$this->errors[] = $this->l('The download folder doesn\'t have the sufficient right…');
 		if (!($this->fd = fopen($this->downloadFile, 'w+')))
-			$this->_errors[] = $this->l('The file can\'t be opened or created, please check the right');
+			$this->errors[] = $this->l('The file can\'t be opened or created, please check the right');
 		@chmod($this->downloadFile, 0777);
 	}
 	
@@ -155,23 +154,18 @@ class AdminAccountingExportControllerCore extends AdminController
 			'journal' => Configuration::get('ACCOUNTING_JOURNAL_EXPORT'),
 			'begin_date' => Tools::getValue('beginDate'),
 			'end_date' => Tools::getValue('endDate'),
-			'pathAccountExportTpl' => $this->pathAccountExportTpl,
 			'urlDownload' => Tools::getShopDomain().'/download/'
 		));
 		
-		foreach($this->exportTypeList as $exportType)
+		foreach ($this->exportTypeList as $exportType)
 		{
-			$pathTpl = $this->pathAccountExportTpl.$exportType['type'].'.tpl';
-			$pathExportedFile = $this->downloadDir.$exportType['file'];
-			
 			$this->context->smarty->assign(array(
 				'title' => $exportType['name'],
 				'type' => $exportType['type'],
 				'existingExport' => file_exists($this->downloadDir.$exportType['file']) ? true : false
 			));
-			
-			if (file_exists($pathTpl))
-				$this->content .= $this->context->smarty->fetch($pathTpl);
+
+			$this->content .= $this->createTemplate($exportType['type'].'.tpl')->fetch();
 		}
 		parent::initContent();
 	}
@@ -195,7 +189,7 @@ class AdminAccountingExportControllerCore extends AdminController
 			// Switch to ajax if there is any problems with time
 			ini_set('max_execution_time', 0);
 			
-			switch($this->exportSelected)
+			switch ($this->exportSelected)
 			{
 				case 'reconciliation_export':
 					$this->runReconciliationExport();
@@ -220,25 +214,25 @@ class AdminAccountingExportControllerCore extends AdminController
 	 * Write the exported content tout a file
 	 * @var array $list Result of the SQL query
 	 */
-	private function writeExportToFile($list)
+	protected function writeExportToFile($list)
 	{
 		$this->checkRights();
 		
-		if (!count($this->_errors) && $this->fd !== NULL)
+		if (!count($this->errors) && $this->fd !== null)
 		{
 			$buffer = '';
-			foreach($this->exportTypeList[$this->exportSelected]['fields'] as $key => $translation)
-				$buffer .= $translation.';';
-			fwrite($this->fd, rtrim($buffer, ';')."\r\n");
+			foreach ($this->exportTypeList[$this->exportSelected]['fields'] as $key => $translation)
+				$buffer .= '"'.$translation.'";';
+			fwrite($this->fd, mb_convert_encoding(rtrim($buffer, ';')."\r\n", 'UTF-16LE'));
 			
 			// Bufferize line by line and write it to the file
 			// Todo :: Allow to configure the size of the buffer before flushing it
-			foreach($list as $row)
+			foreach ($list as $row)
 			{
 				$buffer = '';
 				foreach ($row as $col => $val)
-					$buffer .= $val.';';
-				fwrite($this->fd, rtrim($buffer, ';')."\r\n");
+					$buffer .= '"'.$val.'";';
+				fwrite($this->fd, mb_convert_encoding(rtrim($buffer, ';')."\r\n", 'UTF-16LE'));
 			}
 			$this->confirmations[] = $this->l('Export has been successfully done');
 		}
@@ -247,7 +241,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	/**
 	 * Start the reconciliation export type
 	 */
-	private function runReconciliationExport()
+	protected function runReconciliationExport()
 	{
 		$query = '
 			SELECT
@@ -282,7 +276,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	 * @param $line_number
 	 * @return array
 	 */
-	private function createLine($row, $line_number)
+	protected function createLine($row, $line_number)
 	{
 		$line = array();
 
@@ -299,7 +293,7 @@ class AdminAccountingExportControllerCore extends AdminController
 		$line[9] = $row['wording'];
 		
 		// Override case depending of the whished line
-		switch($line_number)
+		switch ($line_number)
 		{
 			case 0:
 				$line[2] = $row['account_client'];
@@ -307,7 +301,7 @@ class AdminAccountingExportControllerCore extends AdminController
 				break;
 			case 1:
 				$line[2] = !empty($row['account']) ? $row['account'] :
-					Configuration::get('default_account_number', NULL, NULL, $row['id_shop']);
+					Configuration::get('default_account_number', null, null, $row['id_shop']);
 				// Force an empty string if Configuration send false
 				$line[2] = empty($line[2]) ? '' : $line[2];
 				$line[5] = $row['product_price_ht'];
@@ -326,7 +320,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	 * @param $db_details
 	 * @return array
 	 */
-	private function buildGlobalExportlist($db_details)
+	protected function buildGlobalExportlist($db_details)
 	{
 		// List use to write data in csv file
 		$list = array();
@@ -334,7 +328,7 @@ class AdminAccountingExportControllerCore extends AdminController
 		// Cache list to merge easily the content with the same accounting for different invoice number
 		$cache_list = array();
 		$num = 0;
-		foreach($db_details as $row)
+		foreach ($db_details as $row)
 		{
 			// Init the list for the current invoice number
 			if (!array_key_exists($row['invoice_number'], $cache_list))
@@ -343,7 +337,7 @@ class AdminAccountingExportControllerCore extends AdminController
 			// Need to Generate 3 lines for a product
 			for ($i = 0; $i < 3; ++$i)
 				// Create the two first line and check if a tax exist for the last one
-				if ($i < 2 || ($i == 2 && $row['id_tax'] !== NULL))
+				if ($i < 2 || ($i == 2 && $row['id_tax'] !== null))
 				{
 					// Generate a product line
 					$line = $this->createLine($row, $i);
@@ -385,9 +379,9 @@ class AdminAccountingExportControllerCore extends AdminController
 		// If advanced stock management enable then we foreach the cache_list to know
 		// if a product use the system to store back the movement price.
 		if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT'))
-			foreach($cache_list as $invoice_list)
-				foreach($invoice_list as $product_list)
-					foreach($product_list as $id_product => $product_detail)
+			foreach ($cache_list as $invoice_list)
+				foreach ($invoice_list as $product_list)
+					foreach ($product_list as $id_product => $product_detail)
 						if ($product_detail['advanced_stock_management'])
 						{
 							// Get stock product stock movement detail
@@ -407,7 +401,7 @@ class AdminAccountingExportControllerCore extends AdminController
 	 * Start the global export type 
 	 *
 	 */
-	private function runGlobalExport()
+	protected function runGlobalExport()
 	{
 		$query = '
 			SELECT 
@@ -468,10 +462,10 @@ class AdminAccountingExportControllerCore extends AdminController
 	* Allow to download the last export file
 	* @var string File name
 	*/
-	private function downloadFile($fileName)
+	protected function downloadFile($fileName)
 	{
 		$path = $this->downloadDir.$fileName;
-		header('Content-length: ' . filesize($path));
+		header('Content-length: '.filesize($path));
 		header('Content-Disposition: attachment; filename="'.$fileName.'"');
 		
 		// Flush buffered data before reading the file

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11390 $
+*  @version  Release: $Revision: 13081 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -178,14 +178,14 @@ class StockMvtCore extends ObjectModel
 	 * @since 1.5.0
 	 * @param int $id_order
 	 * @param int $id_product
-	 * @param int $id_product_attribute
+	 * @param int $id_product_attribute Use 0 if the product does not have attributes
 	 * @param int $quantity
 	 * @param int $id_warehouse Optional
 	 * @return Array mvts
 	 */
 	public static function getNegativeStockMvts($id_order, $id_product, $id_product_attribute, $quantity, $id_warehouse = null)
 	{
-		$mvts = array();
+		$movements = array();
 		$quantity_total = 0;
 
 		$query = new DbQuery();
@@ -205,10 +205,35 @@ class StockMvtCore extends ObjectModel
 			if ($quantity_total >= $quantity)
 				break;
 			$quantity_total += (int)$row['physical_quantity'];
-			$mvts[] = $row;
+			$movements[] = $row;
 		}
 
-		return $mvts;
+		return $movements;
+	}
+
+	/**
+	 * For a given product, gets the last positive stock mvt
+	 *
+	 * @since 1.5.0
+	 * @param int $id_product
+	 * @param int $id_product_attribute Use 0 if the product does not have attributes
+	 * @return bool|array
+	 */
+	public static function getLastPositiveStockMvt($id_product, $id_product_attribute)
+	{
+		$query = new DbQuery();
+		$query->select('sm.*, w.id_currency, (s.usable_quantity = sm.physical_quantity) as is_usable');
+		$query->from('stock_mvt', 'sm');
+		$query->innerJoin('stock', 's', 's.id_stock = sm.id_stock');
+		$query->innerJoin('warehouse', 'w', 'w.id_warehouse = s.id_warehouse');
+		$query->where('sm.sign = 1');
+		$query->where('s.id_product = '.(int)$id_product.' AND s.id_product_attribute = '.(int)$id_product_attribute);
+		$query->orderBy('date_add DESC');
+
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+		if ($res != false)
+			return $res['0'];
+		return false;
 	}
 
 }

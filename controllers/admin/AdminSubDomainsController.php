@@ -66,6 +66,7 @@ class AdminSubDomainsControllerCore extends AdminController
 	
 	public function renderList()
 	{
+		$this->addRowAction('delete');
 		$this->warnings[] = $this->l('Cookies are different on each subdomain of your Website. If you want to use the same cookie, please add here the subdomains used by your shop. The most common is "www".');
 		return parent::renderList();
 	}
@@ -77,8 +78,8 @@ class AdminSubDomainsControllerCore extends AdminController
 			SELECT `id_subdomain`
 			FROM `'._DB_PREFIX_.'subdomain`
 		');
-		if (sizeof($result) === 1)
-			foreach ($result AS $row)
+		if (count($result) === 1)
+			foreach ($result as $row)
 				$this->_listSkipDelete = array($row['id_subdomain']);
 		
 		return parent::postProcess();

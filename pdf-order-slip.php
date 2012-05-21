@@ -25,11 +25,14 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * This file will be removed in 1.6
+ * You have to use index.php?controller=page_name instead of this page
+ *
+ * @deprecated 1.5.0
+ */
+
 include(dirname(__FILE__).'/config/config.inc.php');
 Tools::displayFileAsDeprecated();
 
-// init front controller in order to use Tools::redirect
-$controller = new FrontController();
-$controller->init();
-
-Tools::redirect('index.php?controller=pdf-order-slip'.(($_SERVER['QUERY_STRING']) ? '&'.$_SERVER['QUERY_STRING'] : ''));
+Tools::redirect('index.php?controller=pdf-order-slip'.($_REQUEST ? '&'.http_build_query($_REQUEST) : ''), __PS_BASE_URI__, null, 'HTTP/1.1 301 Moved Permanently');

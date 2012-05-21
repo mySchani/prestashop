@@ -35,35 +35,35 @@ class AdminSearchControllerCore extends AdminController
 		/* Handle empty search field */
 		if (empty($this->query))
 		{
-			$this->_errors[] = Tools::displayError('Please fill in search form first.');
+			$this->errors[] = Tools::displayError('Please fill in search form first.');
 			return;
 		}
 		else
 		{
-			if (!$searchType and strlen($this->query) > 1)
+			if (!$searchType && strlen($this->query) > 1)
 				$this->searchFeatures();
 
 			/* Product research */
-			if (!$searchType OR $searchType == 1)
+			if (!$searchType || $searchType == 1)
 			{
 				/* Handle product ID */
-				if ($searchType == 1 AND (int)$this->query AND Validate::isUnsignedInt((int)$this->query))
-					if ($product = new Product((int)$this->query) AND Validate::isLoadedObject($product))
-						Tools::redirectAdmin('index.php?tab=AdminCatalog&id_product='.(int)($product->id).'&addproduct'.'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$this->context->employee->id));
+				if ($searchType == 1 && (int)$this->query && Validate::isUnsignedInt((int)$this->query))
+					if (($product = new Product($this->query)) && Validate::isLoadedObject($product))
+						Tools::redirectAdmin('index.php?tab=AdminProducts&id_product='.(int)($product->id).'&addproduct'.'&token='.Tools::getAdminTokenLite('AdminProducts'));
 
 				/* Normal catalog search */
 				$this->searchCatalog();
 			}
 
 			/* Customer */
-			if (!$searchType OR $searchType == 2 OR $searchType == 6)
+			if (!$searchType || $searchType == 2 || $searchType == 6)
 			{
-				if (!$searchType OR $searchType == 2)
+				if (!$searchType || $searchType == 2)
 				{
 					/* Handle customer ID */
-					if ($searchType AND (int)$this->query AND Validate::isUnsignedInt((int)$this->query))
-						if ($customer = new Customer((int)$this->query) AND Validate::isLoadedObject($customer))
-							Tools::redirectAdmin('index.php?tab=AdminCustomers&id_customer='.(int)($customer->id).'&viewcustomer'.'&token='.Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)$this->context->employee->id));
+					if ($searchType && (int)$this->query && Validate::isUnsignedInt((int)$this->query))
+						if (($customer = new Customer($this->query)) && Validate::isLoadedObject($customer))
+							Tools::redirectAdmin('index.php?tab=AdminCustomers&id_customer='.(int)$customer->id.'&viewcustomer'.'&token='.Tools::getAdminToken('AdminCustomers'.(int)Tab::getIdFromClassName('AdminCustomers').(int)$this->context->employee->id));
 
 					/* Normal customer search */
 					$this->searchCustomer();
@@ -76,25 +76,26 @@ class AdminSearchControllerCore extends AdminController
 			/* Order */
 			if ($searchType == 3)
 			{
-				if ((int)$this->query AND Validate::isUnsignedInt((int)$this->query) AND $order = new Order((int)$this->query) AND Validate::isLoadedObject($order))
+				$order = new Order($this->query);
+				if ((int)$this->query && Validate::isUnsignedInt((int)$this->query) && $order && Validate::isLoadedObject($order))
 					Tools::redirectAdmin('index.php?tab=AdminOrders&id_order='.(int)($order->id).'&vieworder'.'&token='.Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)$this->context->employee->id));
-				$this->_errors[] = Tools::displayError('No order found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
+				$this->errors[] = Tools::displayError('No order found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
 			}
 
 			/* Invoices */
 			if ($searchType == 4)
 			{
-				if ((int)$this->query AND Validate::isUnsignedInt((int)$this->query) AND $invoice = Order::getInvoice((int)$this->query))
+				if ((int)$this->query && Validate::isUnsignedInt((int)$this->query) && ($invoice = Order::getInvoice((int)$this->query)))
 					Tools::redirectAdmin('pdf.php?id_order='.(int)($invoice['id_order']).'&pdf');
-				$this->_errors[] = Tools::displayError('No invoice found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
+				$this->errors[] = Tools::displayError('No invoice found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
 			}
 
 			/* Cart */
 			if ($searchType == 5)
 			{
-				if ((int)$this->query AND Validate::isUnsignedInt((int)$this->query) AND $cart = new Cart((int)$this->query) AND Validate::isLoadedObject($cart))
+				if ((int)$this->query && Validate::isUnsignedInt((int)$this->query) && ($cart = new Cart($this->query)) && Validate::isLoadedObject($cart))
 					Tools::redirectAdmin('index.php?tab=AdminCarts&id_cart='.(int)($cart->id).'&viewcart'.'&token='.Tools::getAdminToken('AdminCarts'.(int)(Tab::getIdFromClassName('AdminCarts')).(int)$this->context->employee->id));
-				$this->_errors[] = Tools::displayError('No cart found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
+				$this->errors[] = Tools::displayError('No cart found with this ID:').' '.Tools::htmlentitiesUTF8($this->query);
 			}
 			/* IP */
 			// 6 - but it is included in the customer block
@@ -107,7 +108,7 @@ class AdminSearchControllerCore extends AdminController
 	{
 		if (!ip2long(trim($this->query)))
 		{
-			$this->_errors[] = Tools::displayError('It seems that this is not an IP address :').' '.Tools::htmlentitiesUTF8($this->query);
+			$this->errors[] = Tools::displayError('It seems that this is not an IP address :').' '.Tools::htmlentitiesUTF8($this->query);
 			return;
 		}
 		$this->_list['customers'] = Customer::searchByIp($this->query);
@@ -157,12 +158,11 @@ class AdminSearchControllerCore extends AdminController
 			$key_match[strtolower($key)] = $key;
 		}
 		$this->_list['features'] = array();
-
 		foreach ($_LANGADM as $key => $value)
 		{
 			if (stripos($value, $this->query) !== false)
 			{
-				$key = substr($key, 0, -32);
+				$key = strtolower(substr($key, 0, -32));
 				if (in_array($key, array('AdminTab', 'index')))
 					continue;
 				// if class name doesn't exists, just ignore it
@@ -190,15 +190,15 @@ class AdminSearchControllerCore extends AdminController
 			$genders[$gender->id] = $gender->name;
 		}
 		$this->fieldsDisplay['customers'] = (array(
-			'id_customer' => array('title' => $this->l('ID'), 'align' => 'center'),
-			'id_gender' => array('title' => $this->l('Gender'), 'align' => 'center', 'icon' => $genders_icon, 'list' => $genders),
-			'firstname' => array('title' => $this->l('Name'), 'align' => 'center'),
-			'lastname' => array('title' => $this->l('Name'), 'align' => 'center'),
-			'email' => array('title' => $this->l('E-mail address'), 'align' => 'center'),
-			'birthday' => array('title' => $this->l('Birth date'), 'align' => 'center', 'type' => 'date'),
-			'date_add' => array('title' => $this->l('Register date'), 'align' => 'center', 'type' => 'date'),
-			'orders' => array('title' => $this->l('Orders'), 'align' => 'center'),
-			'active' => array('title' => $this->l('Enabled'),'align' => 'center','active' => 'status','type' => 'bool'),
+			'id_customer' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
+			'id_gender' => array('title' => $this->l('Gender'), 'align' => 'center', 'icon' => $genders_icon, 'list' => $genders, 'width' => 25),
+			'firstname' => array('title' => $this->l('First Name'), 'align' => 'left', 'width' => 150),
+			'lastname' => array('title' => $this->l('Name'), 'align' => 'left', 'width' => 'auto'),
+			'email' => array('title' => $this->l('E-mail address'), 'align' => 'left', 'width' => 250),
+			'birthday' => array('title' => $this->l('Birth date'), 'align' => 'center', 'type' => 'date', 'width' => 75),
+			'date_add' => array('title' => $this->l('Register date'), 'align' => 'center', 'type' => 'date', 'width' => 75),
+			'orders' => array('title' => $this->l('Orders'), 'align' => 'center', 'width' => 50),
+			'active' => array('title' => $this->l('Enabled'),'align' => 'center','active' => 'status','type' => 'bool', 'width' => 25),
 		));
 	}
 
@@ -206,13 +206,13 @@ class AdminSearchControllerCore extends AdminController
 	{
 		$this->show_toolbar = false;
 		$this->fieldsDisplay['products'] = (array(
-			'id_product' => array('title' => $this->l('ID')),
-			'manufacturer_name' => array('title' => $this->l('Manufacturer'), 'align' => 'center'),
-			'reference' => array('title' => $this->l('Reference'), 'align' => 'center'),
-			'name' => array('title' => $this->l('Name')),
-			'price_tax_excl' => array('title' => $this->l('Price tax excl'), 'align' => 'right', 'type' => 'price'),
-			'price_tax_incl' => array('title' => $this->l('Price tax incl'), 'align' => 'right', 'type' => 'price'),
-			'status' => array('title' => $this->l('Status'), 'align' => 'center'),
+			'id_product' => array('title' => $this->l('ID'), 'width' => 25),
+			'manufacturer_name' => array('title' => $this->l('Manufacturer'), 'align' => 'center', 'width' => 200),
+			'reference' => array('title' => $this->l('Reference'), 'align' => 'center', 'width' => 150),
+			'name' => array('title' => $this->l('Name'), 'width' => 'auto'),
+			'price_tax_excl' => array('title' => $this->l('Price tax excl'), 'align' => 'right', 'type' => 'price', 'width' => 60),
+			'price_tax_incl' => array('title' => $this->l('Price tax incl'), 'align' => 'right', 'type' => 'price', 'width' => 60),
+			'status' => array('title' => $this->l('Status'), 'align' => 'center', 'width' => 25),
 		));
 	}
 
@@ -222,7 +222,7 @@ class AdminSearchControllerCore extends AdminController
 		$this->addJqueryPlugin('highlight');
 	}
 
-	// Override because we don't want any buttons
+	/* Override because we don't want any buttons */
 	public function initToolbar()
 	{
 	}
@@ -237,49 +237,61 @@ class AdminSearchControllerCore extends AdminController
 		$this->tpl_view_vars['query'] = $this->query;
 		$this->tpl_view_vars['show_toolbar'] = true;
 
-		if (sizeof($this->_errors))
+		if (count($this->errors))
 			return parent::renderView();
 		else
 		{
-			$helper = new HelperList();
-			$helper->currentIndex = self::$currentIndex;
-			$helper->token = $this->token;
-			$helper->shopLinkType = '';
-			$helper->simple_header = true;
 			if (isset($this->_list['features']))
 				$this->tpl_view_vars['features'] = $this->_list['features'];
 			if (isset($this->_list['categories']))
 			{
 				$categories = array();
-				foreach($this->_list['categories'] as $category)
-					$categories[] = getPath(self::$currentIndex.'?tab=AdminCatalog', (int)$category['id_category']);
+				foreach ($this->_list['categories'] as $category)
+					$categories[] = getPath($this->context->link->getAdminLink('AdminCategories', false), $category['id_category']);
 				$this->tpl_view_vars['categories'] = $categories;
 			}
 			if (isset($this->_list['products']))
 			{
 				$view = '';
 				$this->initProductList();
+
+				$helper = new HelperList();
+				$helper->shopLinkType = '';
+				$helper->simple_header = true;
 				$helper->identifier = 'id_product';
-				$helper->actions = array('edit', 'view');
+				$helper->actions = array('edit');
 				$helper->show_toolbar = false;
+				$helper->table = 'product';
+				$helper->currentIndex = $this->context->link->getAdminLink('AdminProducts', false);
+				$helper->token = Tools::getAdminTokenLite('AdminProducts');
+
 				if ($this->_list['products'])
 					$view = $helper->generateList($this->_list['products'], $this->fieldsDisplay['products']);
 
-				$this->tpl_view_vars['products'] =  $view;
+				$this->tpl_view_vars['products'] = $view;
 			}
 			if (isset($this->_list['customers']))
 			{
 				$view = '';
 				$this->initCustomerList();
+
+				$helper = new HelperList();
+				$helper->shopLinkType = '';
+				$helper->simple_header = true;
 				$helper->identifier = 'id_customer';
 				$helper->actions = array('edit', 'view');
+				$helper->show_toolbar = false;
+				$helper->table = 'customer';
+				$helper->currentIndex = $this->context->link->getAdminLink('AdminCustomers', false);
+				$helper->token = Tools::getAdminTokenLite('AdminCustomers');
+
 				if ($this->_list['customers'])
 				{
-					foreach($this->_list['customers'] as $key => $val)
+					foreach ($this->_list['customers'] as $key => $val)
 						$this->_list['customers'][$key]['orders'] = Order::getCustomerNbOrders((int)$val['id_customer']);
 					$view = $helper->generateList($this->_list['customers'], $this->fieldsDisplay['customers']);
 				}
-				$this->tpl_view_vars['customers'] =  $view;
+				$this->tpl_view_vars['customers'] = $view;
 			}
 			return parent::renderView();
 		}

@@ -28,8 +28,9 @@ function updateCarrierList(json)
 {
 	var html = json.carrier_block;
 	
-	if (json.HOOK_EXTRACARRIER !== null && json.HOOK_EXTRACARRIER != undefined)
-		html += json.HOOK_EXTRACARRIER;
+	// @todo  check with theme 1.4
+	//if ($('#HOOK_EXTRACARRIER').length == 0 && json.HOOK_EXTRACARRIER !== null && json.HOOK_EXTRACARRIER != undefined)
+	//	html += json.HOOK_EXTRACARRIER;
 	
 	$('#carrier_area').replaceWith(html);
 	
@@ -181,7 +182,7 @@ function updateCarrierSelectionAndGift()
 			$('#opc_payment_methods-overlay').fadeOut('slow');
 			$('#opc_delivery_methods-overlay').fadeOut('slow');
 		}
-   });
+	});
 }
 
 function confirmFreeOrder()
@@ -670,9 +671,11 @@ function multishippingMode(it)
 {
 	if ($(it).attr('checked'))
 	{
-		$('#address_delivery').hide();
+		$('#address_delivery, .address_delivery').hide();
 		$('#address_invoice').removeClass('alternate_item').addClass('item');
 		$('#multishipping_mode_box').addClass('on');
+		$('.addressesAreEquals').hide();
+		$('#address_invoice_form').show();
 		
 		$('#link_multishipping_form').click(function() {return false;});
 		
@@ -705,21 +708,45 @@ function multishippingMode(it)
 			'onComplete': function()
 			{
 				cleanSelectAddressDelivery();
+				$('#fancybox-content').append($('<div class="multishipping_close_container"><a id="multishipping-close" class="button_large" href="#">' + CloseTxt + '</a></div>'));
+				$('#multishipping-close').click(function() {
+					var newTotalQty = 0;
+					$('#fancybox-content .cart_quantity_input').each(function(){
+						newTotalQty += parseInt($(this).val());
+					});
+					if (newTotalQty != totalQty) {
+						if(!confirm(QtyChanged)) {
+							return false;
+						}
+					}
+					$.fancybox.close();
+					return false;
+				});
+				totalQty = 0;
+				$('#fancybox-content .cart_quantity_input').each(function(){
+					totalQty += parseInt($(this).val());
+				});
 			}
 		});
 	}
 	else
 	{
-		$('#address_delivery').show();
+		$('#address_delivery, .address_delivery').show();
 		$('#address_invoice').removeClass('item').addClass('alternate_item');
 		$('#multishipping_mode_box').removeClass('on');
+		$('.addressesAreEquals').show();
+		if ($('.addressesAreEquals').find('input:checked').length) {
+			$('#address_invoice_form').hide();
+		} else {
+			$('#address_invoice_form').show();
+		}
 		
 		// Disable multi address shipping
 		$.ajax({
 			url: orderOpcUrl,
 			async: true,
 			cache: false,
-			data: 'ajax=true&method=noMultiAddressDelivery',
+			data: 'ajax=true&method=noMultiAddressDelivery'
 		});
 		
 		// Reload the cart
@@ -740,6 +767,9 @@ $(document).ready(function() {
 	// If the multishipping mode is off assure us the checkbox "I want to specify a delivery address for each products I order." is unchecked.
 	$('#multishipping_mode_checkbox').attr('checked', false);
 	// If the multishipping mode is on, check the box "I want to specify a delivery address for each products I order.".
-	if (typeof(multishipping_mode) != 'undefined' && multishipping_mode)
-		$('#multishipping_mode_checkbox').click()
+	if (typeof(multishipping_mode) != 'undefined' && multishipping_mode) {
+		$('#multishipping_mode_checkbox').click();
+		$('.addressesAreEquals').hide();
+		$('.addressesAreEquals').find('input').attr('checked', false);
+	}
 });

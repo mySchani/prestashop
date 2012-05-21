@@ -51,7 +51,7 @@ class AdminMetaControllerCore extends AdminController
 			'general' => array(
 				'title' =>	$this->l('URLs Setup'),
 				'fields' =>	array(
-					'PS_REWRITING_SETTINGS' => array('title' => $this->l('Friendly URL'), 'desc' => $this->l('Enable only if your server allows URL rewriting (recommended)').'<div class="optionsDescription">'.$this->l('If you turn on this feature, you must').' <a href="?tab=AdminGenerator&token='.Tools::getAdminToken('AdminGenerator'.(int)(Tab::getIdFromClassName('AdminGenerator')).(int)$this->context->employee->id).'">'.$this->l('generate a .htaccess file').'</a></div>', 'validation' => 'isBool', 'cast' => 'intval', 'type' => 'bool'),
+					'PS_REWRITING_SETTINGS' => array('title' => $this->l('Friendly URL'), 'desc' => $this->l('Enable only if your server allows URL rewriting (recommended)'), 'validation' => 'isBool', 'cast' => 'intval', 'type' => 'bool'),
 					'PS_CANONICAL_REDIRECT' => array('title' => $this->l('Automatically redirect to Canonical url'), 'desc' => $this->l('Recommended but your theme must be compliant'), 'validation' => 'isBool', 'cast' => 'intval', 'type' => 'bool'),
 				),
 				'submit' => array()
@@ -188,13 +188,13 @@ class AdminMetaControllerCore extends AdminController
 			}
 			else
 			{	// index.php can have empty rewrite rule
-				$defaultLangIsValidated = !Tools::getValue('url_rewrite_'.$default_language) OR Validate::isLinkRewrite(Tools::getValue('url_rewrite_'.$default_language));
-				$englishLangIsValidated = !Tools::getValue('url_rewrite_1') OR Validate::isLinkRewrite(Tools::getValue('url_rewrite_1'));
+				$defaultLangIsValidated = !Tools::getValue('url_rewrite_'.$default_language) || Validate::isLinkRewrite(Tools::getValue('url_rewrite_'.$default_language));
+				$englishLangIsValidated = !Tools::getValue('url_rewrite_1') || Validate::isLinkRewrite(Tools::getValue('url_rewrite_1'));
 			}
 
-			if (!$defaultLangIsValidated AND !$englishLangIsValidated)
+			if (!$defaultLangIsValidated && !$englishLangIsValidated)
 			{
-				$this->_errors[] = Tools::displayError('Url rewrite field must be filled at least in default or english language.');
+				$this->errors[] = Tools::displayError('Url rewrite field must be filled at least in default or english language.');
 				return false;
 			}
 
@@ -208,13 +208,13 @@ class AdminMetaControllerCore extends AdminController
 					else
 						$_POST['url_rewrite_'.$lang['id_lang']] = Tools::getValue('url_rewrite_1');
 			}
-			Hook::exec('afterSaveAdminMeta');
+			Hook::exec('actionAdminMetaSave');
 		}
 
 		return parent::postProcess();
 	}
 
-	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL, $id_lang_shop = false)
+	public function getList($id_lang, $orderBy = null, $orderWay = null, $start = 0, $limit = null, $id_lang_shop = false)
 	{
 		parent::getList($id_lang, $orderBy, $orderWay, $start, $limit, Context::getContext()->shop->getID(true));
 	}
@@ -228,23 +228,32 @@ class AdminMetaControllerCore extends AdminController
 	{
 		$default_routes = Dispatcher::getInstance()->default_routes;
 		if (!isset($default_routes[$routeID]))
-			return ;
+			return;
 
 		$rule = Tools::getValue('PS_ROUTE_'.$routeID);
 		if (!$rule || $rule == $default_routes[$routeID]['rule'])
 		{
 			Configuration::updateValue('PS_ROUTE_'.$routeID, '');
-			return ;
+			return;
 		}
 
 		$errors = array();
 		if (!Dispatcher::getInstance()->validateRoute($routeID, $rule, $errors))
 		{
 			foreach ($errors as $error)
-				$this->_errors[] = sprintf('Keyword "{%1$s}" required for route "%2$s" (rule: "%3$s")', $error, $routeID, htmlspecialchars($rule));
+				$this->errors[] = sprintf('Keyword "{%1$s}" required for route "%2$s" (rule: "%3$s")', $error, $routeID, htmlspecialchars($rule));
 		}
 		else
 			Configuration::updateValue('PS_ROUTE_'.$routeID, $rule);
+	}
+
+	/**
+	 * Called when PS_REWRITING_SETTINGS option is saved
+	 */
+	public function updateOptionPsRewritingSettings()
+	{
+		Configuration::updateValue('PS_REWRITING_SETTINGS', (int)Tools::getValue('PS_REWRITING_SETTINGS'));
+		Tools::generateHtaccess();
 	}
 
 	public function updateOptionPsRouteProductRule()

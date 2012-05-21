@@ -114,8 +114,15 @@ $(document).ready(function()
 	$('.hide-action').each(function() {
 		hideFilterValueAction(this);
 	});
-	
-	$('#selectPrductSort').live('change', function() {
+
+	// Unbind event change on #selectPrductSort
+	$('#selectPrductSort').unbind('change');
+
+	// To be sure there is no other events attached to the selectPrductSort, change the ID
+	$('#selectPrductSort').attr('onchange', '');
+	$('#selectPrductSort').attr('id', 'selectPrductSort2');
+	$('label[for=selectPrductSort]').attr('for', 'selectPrductSort2');
+	$('#selectPrductSort2').live('change', function(event) {
 		reloadContent();
 	});
 	
@@ -228,7 +235,7 @@ function cancelFilter()
 			{
 				$('#'+$(this).attr('rel')).attr('checked', false);
 				$('.'+$(this).attr('rel')).attr('checked', false);
-				$('#layered_form input[name='+$(this).attr('rel')+']:hidden').remove();
+				$('#layered_form input[name='+$(this).attr('rel')+']').remove();
 			}
 		}
 		reloadContent();
@@ -292,13 +299,28 @@ function reloadContent(params_plus)
 		}
 	});
 	
-	$('#layered_form .select option:checked').each( function () {
-		data += '&'+$(this).attr('id') + '=' + $(this).val();
+	$('#layered_form .select option').each( function () {
+		if($(this).attr('id') && $(this).parent().val() == $(this).val())
+		{
+			data += '&'+$(this).attr('id') + '=' + $(this).val();
+		}
 	});
 	
-	if ($('#selectPrductSort').length)
+	if ($('#selectPrductSort2').length)
 	{
-		var splitData = $('#selectPrductSort').val().split(':');
+		if ($('#selectPrductSort2').val().search(/orderby=/) > 0)
+		{
+			// Old ordering working
+			var splitData = [
+				$('#selectPrductSort2').val().match(/orderby=(\w*)/)[1],
+				$('#selectPrductSort2').val().match(/orderway=(\w*)/)[1]
+			];
+		}
+		else
+		{
+			// New working for default theme 1.4 and theme 1.5
+			var splitData = $('#selectPrductSort2').val().split(':');
+		}
 		data += '&orderby='+splitData[0]+'&orderway='+splitData[1];
 	}
 	
@@ -327,8 +349,12 @@ function reloadContent(params_plus)
 			$('#layered_block_left').replaceWith(result.filtersBlock);
 			
 			$('.category-product-count').html(result.categoryCount);
+			
+			if (result.productList)
+				$('#product_list').replaceWith(utf8_decode(result.productList));
+			else
+				$('#product_list').html('');
 
-			$('#product_list').replaceWith(result.productList);
 			$('#product_list').css('opacity', '1');
 			$('div#pagination').html(result.pagination);
 			paginationButton();
@@ -429,4 +455,33 @@ function updateProductUrl()
 	$.each($('ul#product_list li.ajax_block_product .product_img_link, ul#product_list li.ajax_block_product h3 a, ul#product_list li.ajax_block_product .product_desc a'), function() {
 		$(this).attr('href', $(this).attr('href') + param_product_url);
 	});
+}
+/**
+ * Copy of the php function utf8_decode()
+ */
+function utf8_decode (utfstr) {
+	var res = '';
+	for (var i = 0; i < utfstr.length;) {
+		var c = utfstr.charCodeAt(i);
+
+		if (c < 128)
+		{
+			res += String.fromCharCode(c);
+			i++;
+		}
+		else if((c > 191) && (c < 224))
+		{
+			var c1 = utfstr.charCodeAt(i+1);
+			res += String.fromCharCode(((c & 31) << 6) | (c1 & 63));
+			i += 2;
+		}
+		else
+		{
+			var c1 = utfstr.charCodeAt(i+1);
+			var c2 = utfstr.charCodeAt(i+2);
+			res += String.fromCharCode(((c & 15) << 12) | ((c1 & 63) << 6) | (c2 & 63));
+			i += 3;
+		}
+	}
+	return res;
 }

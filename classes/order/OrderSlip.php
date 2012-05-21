@@ -28,34 +28,34 @@
 class OrderSlipCore extends ObjectModel
 {
 	/** @var integer */
-	public		$id;
+	public $id;
 
 	/** @var integer */
-	public 		$id_customer;
+	public $id_customer;
 
 	/** @var integer */
-	public 		$id_order;
+	public $id_order;
 
 	/** @var float */
-	public		$conversion_rate;
+	public $conversion_rate;
 
 	/** @var integer */
-	public		$amount;
+	public $amount;
 
 	/** @var integer */
-	public		$shipping_cost;
+	public $shipping_cost;
 
 	/** @var integer */
-	public		$shipping_cost_amount;
+	public $shipping_cost_amount;
 
 	/** @var integer */
-	public		$partial;
+	public $partial;
 
 	/** @var string Object creation date */
-	public 		$date_add;
+	public $date_add;
 
 	/** @var string Object last modification date */
-	public 		$date_upd;
+	public $date_upd;
 
 	/**
 	 * @see ObjectModel::$definition
@@ -81,7 +81,11 @@ class OrderSlipCore extends ObjectModel
 		foreach ($orderDetailList as $key => $orderDetail)
 		{
 			if ($qty = (int)($productQtyList[$key]))
-				Db::getInstance()->AutoExecute(_DB_PREFIX_.'order_slip_detail', array('id_order_slip' => (int)($this->id), 'id_order_detail' => (int)($orderDetail), 'product_quantity' => $qty), 'INSERT');
+				Db::getInstance()->insert('order_slip_detail', array(
+					'id_order_slip' => (int)$this->id,
+					'id_order_detail' => (int)$orderDetail,
+					'product_quantity' => $qty,
+				));
 		}
 	}
 
@@ -108,7 +112,7 @@ class OrderSlipCore extends ObjectModel
 	public static function getOrdersSlipProducts($orderSlipId, $order)
 	{
 		$cart_rules = $order->getCartRules(true);
-		$productsRet = self::getOrdersSlipDetail($orderSlipId);
+		$productsRet = OrderSlip::getOrdersSlipDetail($orderSlipId);
 		$products = $order->getProductsDetail();
 
 		$tmp = array();
@@ -120,7 +124,7 @@ class OrderSlipCore extends ObjectModel
 			{
 				$resTab[$key] = $product;
 				$resTab[$key]['product_quantity'] = $tmp[$product['id_order_detail']];
-				if (sizeof($cart_rules))
+				if (count($cart_rules))
 				{
 					$order->setProductPrices($product);
 					$realProductPrice = $resTab[$key]['product_price'];
@@ -148,7 +152,7 @@ class OrderSlipCore extends ObjectModel
 
 		$order = new Order($this->id_order);
 		$products = array();
-		foreach ($result AS $row)
+		foreach ($result as $row)
 		{
 			$order->setProductPrices($row);
 			$products[] = $row;
@@ -165,7 +169,7 @@ class OrderSlipCore extends ObjectModel
 		ORDER BY `date_add` ASC');
 
 		$slips = array();
-		foreach ($result AS $slip)
+		foreach ($result as $slip)
 			$slips[] = (int)$slip['id_order_slip'];
 		return $slips;
 	}
@@ -173,7 +177,7 @@ class OrderSlipCore extends ObjectModel
 	public static function createOrderSlip($order, $productList, $qtyList, $shipping_cost = false)
 	{
 		$currency = new Currency($order->id_currency);
-		$orderSlip =  new OrderSlip();
+		$orderSlip = new OrderSlip();
 		$orderSlip->id_customer = (int)($order->id_customer);
 		$orderSlip->id_order = (int)($order->id);
 		$orderSlip->shipping_cost = (int)($shipping_cost);
@@ -189,7 +193,7 @@ class OrderSlipCore extends ObjectModel
 	public static function createPartialOrderSlip($order, $amount, $shipping_cost_amount, $order_detail_list)
 	{
 		$currency = new Currency($order->id_currency);
-		$orderSlip =  new OrderSlip();
+		$orderSlip = new OrderSlip();
 		$orderSlip->id_customer = (int)($order->id_customer);
 		$orderSlip->id_order = (int)($order->id);
 		$orderSlip->amount = (float)($amount);
@@ -227,7 +231,7 @@ class OrderSlipCore extends ObjectModel
 				'amount_tax_excl' => (float)($tab['amount_tax_excl']),
 				'amount_tax_incl' => (float)($tab['amount_tax_incl']),
 			);
-			Db::getInstance()->autoExecute(_DB_PREFIX_.'order_slip_detail', $insertOrderSlip, 'INSERT');
+			Db::getInstance()->insert('order_slip_detail', $insertOrderSlip);
 		}
 	}
 

@@ -117,11 +117,17 @@ class ContactControllerCore extends FrontController
 				}
 				if (!empty($contact->email))
 				{
+					$mail_var_list = array(
+						'{email}' => $from,
+						'{message}' => stripslashes($message),
+						'{id_order}' => (int)Tools::getValue('id_order'),
+						'{attached_file}' => $_FILES['fileUpload']['name'] ? $_FILES['fileUpload']['name'] : '');
+
 					if (Mail::Send($this->context->language->id, 'contact', Mail::l('Message from contact form'),
-					array('{email}' => $from, '{message}' => stripslashes($message)), $contact->email, $contact->name, $from, ($customer->id ? $customer->firstname.' '.$customer->lastname : ''),
-					$fileAttachment)
-						&& Mail::Send($this->context->language->id, 'contact_form', Mail::l('Your message has been correctly sent'), array('{message}' => stripslashes($message)), $from))
-						$this->context->smarty->assign('confirmation', 1);
+						$mail_var_list, $contact->email, $contact->name, $from, ($customer->id ? $customer->firstname.' '.$customer->lastname : ''),
+								$fileAttachment) &&
+							Mail::Send($this->context->language->id, 'contact_form', Mail::l('Your message has been correctly sent'), $mail_var_list, $from))
+								$this->context->smarty->assign('confirmation', 1);
 					else
 						$this->errors[] = Tools::displayError('An error occurred while sending message.');
 				}
