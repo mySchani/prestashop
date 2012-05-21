@@ -41,38 +41,29 @@ class TabCore extends ObjectModel
 	/** @var integer position */
 	public $position;
 
-	protected $fieldsRequired = array('class_name');
-	protected $fieldsSize = array('class_name' => 64, 'module' => 64);
-	protected $fieldsValidate = array(
-		'id_parent' => 'isInt',
-		'position' => 'isUnsignedInt',
-		'module' => 'isTabName'
+	/** @var integer active */
+	public $active;
+
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'tab',
+		'primary' => 'id_tab',
+		'multilang' => true,
+		'fields' => array(
+			'id_parent' => 	array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+			'position' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'module' => 	array('type' => self::TYPE_STRING, 'validate' => 'isTabName', 'size' => 64),
+			'class_name' => array('type' => self::TYPE_STRING, 'required' => true, 'size' => 64),
+			'active' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+
+			// Lang fields
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 32),
+		),
 	);
 
-	protected $fieldsRequiredLang = array('name');
-	protected $fieldsSizeLang = array('name' => 32);
-	protected $fieldsValidateLang = array('name' => 'isGenericName');
-
-	protected $table = 'tab';
-	protected $identifier = 'id_tab';
-
 	protected static $_getIdFromClassName = null;
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_parent'] = (int)$this->id_parent;
-		$fields['class_name'] = pSQL($this->class_name);
-		$fields['module'] = pSQL($this->module);
-		$fields['position'] = (int)$this->position;
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	/**
 	 * additionnal treatments for Tab when creating new one :
@@ -233,6 +224,76 @@ class TabCore extends ObjectModel
 				self::$_getIdFromClassName[$row['class_name']] = $row['id_tab'];
 		}
 		return (isset(self::$_getIdFromClassName[$class_name]) ? (int)self::$_getIdFromClassName[$class_name] : false);
+	}
+
+	/**
+	 * Get collection from module name
+	 * @static
+	 * @param $module string Module name
+	 * @param null $id_lang integer Language ID
+	 * @return array|Collection Collection of tabs (or empty array)
+	 */
+	public static function getCollectionFromModule($module, $id_lang = null)
+	{
+		if (is_null($id_lang))
+			$id_lang = Context::getContext()->language->id;
+
+		if (!Validate::isModuleName($module))
+			return array();
+
+		$tabs = new Collection('Tab', (int)$id_lang);
+		$tabs->where('module', '=', $module);
+		return $tabs;
+	}
+
+	/**
+	 * Enabling tabs for module
+	 * @static
+	 * @param $module string Module Name
+	 * @return bool Status
+	 */
+	public static function enablingForModule($module)
+	{
+		$tabs = self::getCollectionFromModule($module);
+		if (!empty($tabs)) {
+			foreach ($tabs as $tab) {
+				$tab->active = 1;
+				$tab->save();
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Disabling tabs for module
+	 * @static
+	 * @param $module string Module name
+	 * @return bool Status
+	 */
+	public static function disablingForModule($module)
+	{
+		$tabs = self::getCollectionFromModule($module);
+		if (!empty($tabs)) {
+			foreach ($tabs as $tab) {
+				$tab->active = 0;
+				$tab->save();
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Get Instance from tab class name
+	 * @static
+	 * @param $class_name Name of tab class
+	 * @return Tab Tab object (empty if bad id or class name)
+	 */
+	public static function getInstanceFromClassName($class_name)
+	{
+		$id_tab = (int)self::getIdFromClassName($class_name);
+		return new self($id_tab);
 	}
 
 	public static function getNbTabs($id_parent = null)

@@ -57,11 +57,11 @@ class AdminEmployeesControllerCore extends AdminController
 
 		$this->fieldsDisplay = array(
 			'id_employee' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-			'lastname' => array('title' => $this->l('Last name'), 'width' => 130),
+			'lastname' => array('title' => $this->l('Last name'), 'width' => 'auto'),
 			'firstname' => array('title' => $this->l('First name'), 'width' => 130),
 			'email' => array('title' => $this->l('E-mail address'), 'width' => 180),
 			'profile' => array('title' => $this->l('Profile'), 'width' => 90, 'type' => 'select', 'list' => $this->profiles_array, 'filter_key' => 'pl!name'),
-			'active' => array('title' => $this->l('Can log in'), 'align' => 'center', 'active' => 'status', 'type' => 'bool'),
+			'active' => array('title' => $this->l('Can log in'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'width' => 30),
 		);
 
 		$this->options = array(
@@ -96,19 +96,28 @@ class AdminEmployeesControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
  		$this->_select = 'pl.`name` AS profile';
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'profile` p ON a.`id_profile` = p.`id_profile`
 		LEFT JOIN `'._DB_PREFIX_.'profile_lang` pl ON (pl.`id_profile` = p.`id_profile` AND pl.`id_lang` = '.(int)$this->context->language->id.')';
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		if (!($obj = $this->loadObject(true)))
 			return;
+
+		$available_profiles = Profile::getProfiles($this->context->language->id);
+		
+		if ($obj->id_profile == _PS_ADMIN_PROFILE_ && $this->context->employee->id_profile != _PS_ADMIN_PROFILE_)
+		{
+			$this->_errors[] = Tools::displayError('You cannot edit SuperAdmin profile.');
+			return parent::renderForm();
+		}
+
 
 		$path = _PS_ADMIN_DIR_.'/themes/';
 		foreach (scandir($path) as $theme)
@@ -123,15 +132,15 @@ class AdminEmployeesControllerCore extends AdminController
 			'input' => array(
 				array(
 					'type' => 'text',
-					'label' => $this->l('Last name:'),
-					'name' => 'lastname',
+					'label' => $this->l('First name:'),
+					'name' => 'firstname',
 					'size' => 33,
 					'required' => true
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('First name:'),
-					'name' => 'firstname',
+					'label' => $this->l('Last name:'),
+					'name' => 'lastname',
 					'size' => 33,
 					'required' => true
 				),
@@ -227,13 +236,21 @@ class AdminEmployeesControllerCore extends AdminController
 				'desc' => $this->l('Allow or disallow this employee to log into this Back Office')
 			);
 
+			// if employee is not SuperAdmin (id_profile = 1), don't make it possible to select the admin profile
+			if ($this->context->employee->id_profile != _PS_ADMIN_PROFILE_)
+				 foreach ($available_profiles as $i => $profile)
+				 	if ($available_profiles[$i]['id_profile'] == _PS_ADMIN_PROFILE_)
+					{
+						unset($available_profiles[$i]);
+						break;
+					}
 			$this->fields_form['input'][] = array(
 				'type' => 'select',
 				'label' => $this->l('Profile:'),
 				'name' => 'id_profile',
 				'required' => true,
 				'options' => array(
-					'query' => Profile::getProfiles($this->context->language->id),
+					'query' => $available_profiles,
 					'id' => 'id_profile',
 					'name' => 'name',
 					'default' => array(
@@ -262,7 +279,7 @@ class AdminEmployeesControllerCore extends AdminController
 
 		$this->fields_value['passwd'] = false;
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	protected function _childValidation()
@@ -337,6 +354,18 @@ class AdminEmployeesControllerCore extends AdminController
 					$this->_errors[] = Tools::displayError('The employee must be associated with at least one shop');
 		}
 		return parent::postProcess();
+	}
+
+	public function initProcess()
+	{
+		// If employee is editing its own entry, its ok
+		if ($this->tabAccess['edit'] !== '1'
+			&& $this->table == 'employee'
+			&& $this->context->employee->id == Tools::getValue('id_employee')
+			&& Tools::isSubmit('updateemployee'))
+			$this->tabAccess['edit'] = 1;
+
+		parent::initProcess();
 	}
 }
 

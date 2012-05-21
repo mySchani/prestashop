@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10626 $
+*  @version  Release: $Revision: 11624 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -59,12 +59,12 @@
 	</td>
 	{if ($order->hasBeenPaid())}<td align="center" class="productQuantity">{$product['product_quantity_refunded']}</td>{/if}
 	{if ($order->hasBeenDelivered())}<td align="center" class="productQuantity">{$product['product_quantity_return']}</td>{/if}
-	<td align="center" class="productQuantity product_stock">{StockManagerFactory::getManager()->getProductRealQuantities($product['product_id'], $product['product_attribute_id'], null, true)}</td>
+	<td align="center" class="productQuantity product_stock">{$product['current_stock']}</td>
 	<td align="center" class="total_product">
 		{displayPrice price=(Tools::ps_round($product_price, 2) * ($product['product_quantity'] - $product['customizationQuantityTotal'])) currency=$currency->id}
 	</td>
 	<td colspan="2" style="display: none;" class="add_product_fields">&nbsp;</th>
-	<td align="center" class="cancelCheck standard_refund_fields" style="background-color:rgb(232, 237, 194);display:none">
+	<td align="center" class="cancelCheck standard_refund_fields current-edit" style="display:none">
 		<input type="hidden" name="totalQtyReturn" id="totalQtyReturn" value="{$product['product_quantity_return']}" />
 		<input type="hidden" name="totalQty" id="totalQty" value="{$product['product_quantity']}" />
 		<input type="hidden" name="productName" id="productName" value="{$product['product_name']}" />
@@ -74,7 +74,7 @@
 		--
 	{/if}
 	</td>
-	<td class="cancelQuantity standard_refund_fields" style="background-color:rgb(232, 237, 194);display:none">
+	<td class="cancelQuantity standard_refund_fields current-edit" style="display:none">
 	{if ($product['product_quantity_return'] + $product['product_quantity_refunded'] >= $product['product_quantity'])}
 		<input type="hidden" name="cancelQuantity[{$k}]" value="0" />
 	{elseif (!$order->hasBeenDelivered() OR Configuration::get('PS_ORDER_RETURN'))}
@@ -95,10 +95,13 @@
 		0/{$productQuantity}
 	{/if}
 	</td>
-	<td class="partial_refund_fields" style="text-align:right;background-color:rgb(232, 237, 194);display:none"><input type="text" size="3" name="partialRefundProduct[{$k}]" /> &euro;</td>
-	{if $can_edit}
+	<td class="partial_refund_fields current-edit" style="text-align:left;display:none">
+		<div style="width:40%;margin-top:5px;float:left">{l s='Quantity:'}</div> <div style="width:60%;margin-top:2px;float:left"><input type="text" size="3" name="partialRefundProductQuantity[{$k}]" value="0" /> 0/{$productQuantity-$product['product_quantity_refunded']}</div>
+		<div style="width:40%;margin-top:5px;float:left">{l s='Amount:'}</div> <div style="width:60%;margin-top:2px;float:left"><input type="text" size="3" name="partialRefundProduct[{$k}]" /> &euro;</div>
+	</td>
+	{if ($can_edit && !$order->hasBeenDelivered())}
 	<td class="product_invoice" colspan="2" style="display: none;text-align:center;">
-		{if $order->hasBeenPaid()}
+		{if sizeof($invoices_collection)}
 		<select name="product_invoice" class="edit_product_invoice">
 			{foreach from=$invoices_collection item=invoice}
 			<option value="{$invoice->id}" {if $invoice->id == $product['id_order_invoice']}selected="selected"{/if}>#{Configuration::get('PS_INVOICE_PREFIX', $current_id_lang)}{'%06d'|sprintf:$invoice->number}</option>

@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminPerformanceController extends AdminController
+class AdminPerformanceControllerCore extends AdminController
 {
 	public function initFieldsetSmarty()
 	{
@@ -88,12 +88,39 @@ class AdminPerformanceController extends AdminController
 						)
 					),
 					'desc' => $this->l('Should be enabled except for debugging.')
-				)
+				),
+				array(
+					'type' => 'radio',
+					'label' => $this->l('Debug console:'),
+					'name' => 'smarty_console',
+					'class' => 't',
+					'br' => true,
+					'values' => array(
+						array(
+							'id' => 'smarty_console_none',
+							'value' => 0,
+							'label' => $this->l('Not open console')
+						),
+						array(
+							'id' => 'smarty_console_url',
+							'value' => 1,
+							'label' => $this->l('Open console with URL parameter (SMARTY_DEBUG)'),
+							'desc' => $this->l('To open the debug console, you simply pass the SMARTY_DEBUG parameter in the URL.')
+						),
+						array(
+							'id' => 'smarty_console_open',
+							'value' => 2,
+							'label' => $this->l('Always open console'),
+							'desc' => $this->l('To always force open the debug console choose this option.')
+						)
+					)
+				),
 			)
 		);
 
 		$this->fields_value['smarty_force_compile'] = Configuration::get('PS_SMARTY_FORCE_COMPILE');
 		$this->fields_value['smarty_cache'] = Configuration::get('PS_SMARTY_CACHE');
+		$this->fields_value['smarty_console'] = Configuration::get('PS_SMARTY_CONSOLE');
 	}
 
 	public function initFieldsetFeaturesDetachables()
@@ -444,7 +471,7 @@ class AdminPerformanceController extends AdminController
 		$this->tpl_form_vars['servers'] = CacheMemcache::getMemcachedServers();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		// Initialize fieldset for a form
 		$this->initFieldsetSmarty();
@@ -457,7 +484,7 @@ class AdminPerformanceController extends AdminController
 		// Activate multiple fieldset
 		$this->multiple_fieldsets = true;
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initContent()
@@ -477,7 +504,7 @@ class AdminPerformanceController extends AdminController
 
 		$this->initToolbar();
 		$this->display = '';
-		$this->content .= $this->initForm();
+		$this->content .= $this->renderForm();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
@@ -539,6 +566,7 @@ class AdminPerformanceController extends AdminController
 			{
 				Configuration::updateValue('PS_SMARTY_FORCE_COMPILE', Tools::getValue('smarty_force_compile', _PS_SMARTY_NO_COMPILE_));
 				Configuration::updateValue('PS_SMARTY_CACHE', Tools::getValue('smarty_cache', 0));
+				Configuration::updateValue('PS_SMARTY_CONSOLE', Tools::getValue('smarty_console', 0));
 				$redirecAdmin = true;
 			}
 			else
@@ -681,7 +709,7 @@ class AdminPerformanceController extends AdminController
 					$this->_errors[] = Tools::displayError('To use CacheFS the directory').' '.
 						realpath(_PS_CACHEFS_DIRECTORY_).' '.Tools::displayError('must be writable');
 
-				if ($caching_system == 'CacheFs')
+				if ($caching_system == 'CacheFs' && $cache_active)
 				{
 					if (!($depth = Tools::getValue('ps_cache_fs_directory_depth')))
 						$this->_errors[] = Tools::displayError('Please set a directory depth');
@@ -692,6 +720,9 @@ class AdminPerformanceController extends AdminController
 						Configuration::updateValue('PS_CACHEFS_DIRECTORY_DEPTH', (int)$depth);
 					}
 				}
+				else if($caching_system == 'MCached' && $cache_active && !_PS_CACHE_ENABLED_ && _PS_CACHING_SYSTEM_ == 'MCached')
+					Cache::getInstance()->flush();
+
 				if (!count($this->_errors))
 				{
 					$settings = preg_replace('/define\(\'_PS_CACHE_ENABLED_\', \'([0-9])\'\);/Ui', 'define(\'_PS_CACHE_ENABLED_\', \''.(int)$cache_active.'\');', $settings);

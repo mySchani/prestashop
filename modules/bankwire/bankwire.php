@@ -162,31 +162,11 @@ class BankWire extends PaymentModule
 		return $this->_html;
 	}
 
-	public function execPayment($cart)
-	{
-		if (!$this->active)
-			return ;
-		if (!$this->_checkCurrency($cart))
-			Tools::redirect('index.php?controller=order');
-
-
-		$this->context->smarty->assign(array(
-			'nbProducts' => $cart->nbProducts(),
-			'cust_currency' => $cart->id_currency,
-			'currencies' => $this->getCurrency((int)$cart->id_currency),
-			'total' => $cart->getOrderTotal(true, Cart::BOTH),
-			'this_path' => $this->_path,
-			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
-		));
-
-		return $this->display(__FILE__, 'payment_execution.tpl');
-	}
-
 	public function hookPayment($params)
 	{
 		if (!$this->active)
 			return ;
-		if (!$this->_checkCurrency($params['cart']))
+		if (!$this->checkCurrency($params['cart']))
 			return ;
 
 
@@ -204,6 +184,7 @@ class BankWire extends PaymentModule
 
 		$state = $params['objOrder']->getCurrentState();
 		if ($state == Configuration::get('PS_OS_BANKWIRE') OR $state == Configuration::get('PS_OS_OUTOFSTOCK'))
+		{
 			$this->context->smarty->assign(array(
 				'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
 				'bankwireDetails' => Tools::nl2br($this->details),
@@ -212,19 +193,21 @@ class BankWire extends PaymentModule
 				'status' => 'ok',
 				'id_order' => $params['objOrder']->id
 			));
+			if (isset($params['objOrder']->reference) && !empty($params['objOrder']->reference))
+				$this->context->smarty->assign('reference', $params['objOrder']->reference);
+		}
 		else
 			$this->context->smarty->assign('status', 'failed');
 		return $this->display(__FILE__, 'payment_return.tpl');
 	}
 	
-	private function _checkCurrency($cart)
+	public function checkCurrency($cart)
 	{
-		$currency_order = new Currency((int)($cart->id_currency));
-		$currencies_module = $this->getCurrency((int)$cart->id_currency);
-		$currency_default = Configuration::get('PS_CURRENCY_DEFAULT');
-		
+		$currency_order = new Currency($cart->id_currency);
+		$currencies_module = $this->getCurrency($cart->id_currency);
+
 		if (is_array($currencies_module))
-			foreach ($currencies_module AS $currency_module)
+			foreach ($currencies_module as $currency_module)
 				if ($currency_order->id == $currency_module['id_currency'])
 					return true;
 		return false;

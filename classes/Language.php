@@ -50,13 +50,23 @@ class LanguageCore extends ObjectModel
 	/** @var boolean Status */
 	public 		$active = true;
 
-	protected 	$fieldsRequired = array('name', 'iso_code', 'date_format_lite', 'date_format_full');
-	protected 	$fieldsSize = array('name' => 32, 'iso_code' => 2, 'language_code' => 5, 'date_format_lite' => 32, 'date_format_full' => 32);
-	protected 	$fieldsValidate = array('name' => 'isGenericName', 'iso_code' => 'isLanguageIsoCode', 'language_code' => 'isLanguageCode',
-	'active' => 'isBool', 'is_rtl' => 'isBool', 'date_format_lite' => 'isPhpDateFormat', 'date_format_full' => 'isPhpDateFormat');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'lang',
+		'primary' => 'id_lang',
+		'fields' => array(
+			'name' => 				array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 32),
+			'iso_code' => 			array('type' => self::TYPE_STRING, 'validate' => 'isLanguageIsoCode', 'required' => true, 'size' => 2),
+			'language_code' => 		array('type' => self::TYPE_STRING, 'validate' => 'isLanguageCode', 'size' => 5),
+			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'is_rtl' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'date_format_lite' => 	array('type' => self::TYPE_STRING, 'validate' => 'isPhpDateFormat', 'required' => true, 'size' => 32),
+			'date_format_full' => 	array('type' => self::TYPE_STRING, 'validate' => 'isPhpDateFormat', 'required' => true, 'size' => 32),
+		),
+	);
 
-	protected 	$table = 'lang';
-	protected 	$identifier = 'id_lang';
 
 	/** @var array Languages cache */
 	protected static $_checkedLangs;
@@ -80,19 +90,16 @@ class LanguageCore extends ObjectModel
 		parent::__construct($id);
 	}
 
+	/**
+	 * @see ObjectModel::getFields()
+	 * @return array
+	 */
 	public function getFields()
 	{
-		$this->validateFields();
-		$fields['name'] = pSQL($this->name);
-		$fields['iso_code'] = pSQL(strtolower($this->iso_code));
-		$fields['language_code'] = pSQL(strtolower($this->language_code));
-		$fields['is_rtl'] = (int)$this->is_rtl;
-		if (empty($fields['language_code']))
-			$fields['language_code'] = $fields['iso_code'];
-		$fields['date_format_lite'] = pSQL($this->date_format_lite);
-		$fields['date_format_full'] = pSQL($this->date_format_full);
-		$fields['active'] = (int)$this->active;
-		return $fields;
+		if (empty($this->language_code))
+			$this->language_code = $this->iso_code;
+
+		return parent::getFields();
 	}
 
 	/**
@@ -174,7 +181,10 @@ class LanguageCore extends ObjectModel
 		// create empty files if they not exists
 		$this->_generateFiles();
 
+		// @todo Since a lot of modules are not in right format with their primary keys name, just get true ...
 		$resUpdateSQL = $this->loadUpdateSQL();
+		$resUpdateSQL = true;
+
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
 		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return $resUpdateSQL;
@@ -211,7 +221,7 @@ class LanguageCore extends ObjectModel
 
 	/**
 	 * This functions checks if every files exists for the language $iso_code.
-	 * Concerned files are theses located in translations/$iso_code/
+	 * Concerned files are those located in translations/$iso_code/
 	 * and translations/mails/$iso_code .
 	 *
 	 * @param mixed $iso_code
@@ -475,10 +485,11 @@ class LanguageCore extends ObjectModel
 
 	public function deleteSelection($selection)
 	{
-		if (!is_array($selection) OR !Validate::isTableOrIdentifier($this->identifier) OR !Validate::isTableOrIdentifier($this->table))
+		if (!is_array($selection))
 			die(Tools::displayError());
+
 		$result = true;
-		foreach ($selection AS $id)
+		foreach ($selection as $id)
 		{
 			$this->id = (int)($id);
 			$result = $result AND $this->delete();
@@ -489,11 +500,11 @@ class LanguageCore extends ObjectModel
 			return true;
 
 		Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
-								(int)(Configuration::get('PS_REWRITING_SETTINGS')),
-								(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-								'',
-								(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
-							);
+			(int)Configuration::get('PS_REWRITING_SETTINGS'),
+			(int)Configuration::get('PS_HTACCESS_CACHE_CONTROL'),
+			'',
+			(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+		);
 
 		return $result;
 	}
@@ -508,7 +519,7 @@ class LanguageCore extends ObjectModel
 	{
 		if (!self::$_LANGUAGES)
 			self::loadLanguages();
-		$languages = array();
+
 		$languages = array();
 		foreach (self::$_LANGUAGES AS $language)
 		{
@@ -607,6 +618,7 @@ class LanguageCore extends ObjectModel
 		$sql = 'SELECT l.*, ls.`id_shop`
 				FROM `'._DB_PREFIX_.'lang` l
 				LEFT JOIN `'._DB_PREFIX_.'lang_shop` ls ON (l.id_lang = ls.id_lang)';
+
 		$result = Db::getInstance()->executeS($sql);
 		foreach ($result AS $row)
 		{
@@ -641,13 +653,13 @@ class LanguageCore extends ObjectModel
 			return true;
 		else
 		{
-			if(@fsockopen('www.prestashop.com', 80))
+			if(@fsockopen('api.prestashop.com', 80))
 			{
 				$lang = new Language();
 				$lang->iso_code = $iso_code;
 				$lang->active = true;
 
-				if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$iso_code)))
+				if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://api.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$iso_code)))
 				{
 					if (isset($lang_pack->name)
 					&& isset($lang_pack->version)
@@ -660,7 +672,7 @@ class LanguageCore extends ObjectModel
 
 				if ($lang_pack)
 				{
-					$flag = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/flags/jpeg/'.$iso_code.'.jpg');
+					$flag = Tools::file_get_contents('http://api.prestashop.com/download/lang_packs/flags/jpeg/'.$iso_code.'.jpg');
 					if ($flag != NULL && !preg_match('/<body>/', $flag))
 					{
 						$file = fopen(dirname(__FILE__).'/../img/l/'.$insert_id.'.jpg', 'w');

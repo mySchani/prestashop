@@ -5,6 +5,10 @@
 		<div id="add_product_product_attribute_area" style="margin-top: 5px;display: none;">
 			{l s='Combinations:'} <select name="add_product[product_attribute_id]" id="add_product_product_attribute_id"></select>
 		</div>
+		<div id="add_product_product_warehouse_area" style="margin-top: 5px; display: none;">
+			{l s='Warehouse:'} <select  id="add_product_warehouse" name="add_product_warehouse">
+			</select>
+		</div>
 	</td>
 	<td style="display:none;">
 		{if $currency->sign % 2}{$currency->sign}{/if}<input type="text" name="add_product[product_price_tax_excl]" id="add_product_product_price_tax_excl" value="" size="4" disabled="disabled" /> {if !($currency->sign % 2)}{$currency->sign}{/if} {l s='tax excl.'}<br />
@@ -16,11 +20,11 @@
 	<td style="display:none;" align="center" class="productQuantity" id="add_product_product_stock">0</td>
 	<td style="display:none;" align="center" id="add_product_product_total">{displayPrice price=0 currency=$currency->id}</td>
 	<td style="display:none;" align="center" colspan="2">
-		{if $order->valid}
+		{if sizeof($invoices_collection)}
 		<select name="add_product[invoice]" id="add_product_product_invoice" disabled="disabled">
-			<optgroup label="{l s='Existing'}">
+			<optgroup class="existing" label="{l s='Existing'}">
 				{foreach from=$invoices_collection item=invoice}
-				<option value="{$invoice->id}">#{Configuration::get('PS_INVOICE_PREFIX', $current_id_lang)}{'%06d'|sprintf:$invoice->number}</option>
+				<option value="{$invoice->id}">{$invoice->getInvoiceNumberFormatted($current_id_lang)}</option>
 				{/foreach}
 			</optgroup>
 			<optgroup label="{l s='New'}">

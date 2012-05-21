@@ -325,11 +325,11 @@ if (Tools::isSubmit('ajaxProductsPositions'))
 			{
 				if ($product = new Product((int)$pos[2]))
 					if (isset($position) && $product->updatePosition($way, $position))
-						echo "ok position $position for product $pos[2]\r\n";
+						echo "ok position ".(int)$position." for product ".(int)$pos[2]."\r\n";
 					else
-						echo '{"hasError" : true, "errors" : "Can not update product '. $id_product . ' to position '.$position.' "}';
+						echo '{"hasError" : true, "errors" : "Can not update product '. (int)$id_product . ' to position '.(int)$position.' "}';
 				else
-					echo '{"hasError" : true, "errors" : "This product ('.$id_product.') can t be loaded"}';
+					echo '{"hasError" : true, "errors" : "This product ('.(int)$id_product.') can t be loaded"}';
 
 				break;
 			}
@@ -562,11 +562,11 @@ if (Tools::isSubmit('getHookableList'))
 		die('{"hasError" : true, "errors" : ["Live Edit : This functionnality has been disabled"]}');
 	/* PrestaShop demo mode*/
 
-	if (!strlen(Tools::getValue('hooks_list')))
+	if (!count(Tools::getValue('hooks_list')))
 		die('{"hasError" : true, "errors" : ["Live Edit : no module on this page"]}');
 
-	$modules_list = explode(',', Tools::getValue('modules_list'));
-	$hooks_list = explode(',', Tools::getValue('hooks_list'));
+	$modules_list = Tools::getValue('modules_list');
+	$hooks_list = Tools::getValue('hooks_list');
 	$hookableList = array();
 
 	foreach ($modules_list as $module)
@@ -621,42 +621,48 @@ if (Tools::isSubmit('saveHook'))
 	/* PrestaShop demo mode */
 	if (_PS_MODE_DEMO_)
 		die('{"hasError" : true, "errors" : ["Live Edit : This functionnality has been disabled"]}');
-	/* PrestaShop demo mode*/
 
 	$hooks_list = explode(',', Tools::getValue('hooks_list'));
 	$id_shop = (int)Tools::getValue('id_shop');
-	if ($id_shop)
+	if (!$id_shop)
+		$id_shop = Context::getContext()->shop->getId(true);
+
+	$res = true;
+	$hookableList = array();
+	// $_POST['hook'] is an array of id_module
+	$hooks_list = Tools::getValue('hook');
+	foreach ($hooks_list as $id_hook => $modules)
 	{
-		$hookableList = array();
-		foreach ($hooks_list as $hook)
+		// 1st, drop all previous hooked modules
+		$sql = 'DELETE FROM `'._DB_PREFIX_.'hook_module`
+			WHERE `id_hook` =  '.(int)$id_hook.'
+			AND id_shop = '.$id_shop;
+		$res &= Db::getInstance()->execute($sql);
+
+		$i = 1;
+		$value = '';
+		$ids = array();
+		// then prepare sql query to rehook all chosen modules(id_module, id_shop, id_hook, position)
+		// position is i (autoincremented)
+		foreach ($modules as $id_module)
 		{
-			$hook = trim($hook);
-			if (!$hook)
-				continue;
-
-			$sql = 'DELETE FROM '._DB_PREFIX_.'hook_module
-					WHERE id_hook = (SELECT id_hook FROM '._DB_PREFIX_.'hook WHERE `name` = \''.pSQL($hook).'\' LIMIT 1)
-						AND id_shop = '.$id_shop;
-			Db::getInstance()->execute($sql);
-			$hookedModules = explode(',', Tools::getValue($hook));
-			$i = 1;
-			$value = '';
-			$ids = array();
-			foreach ($hookedModules as $module)
+			if (!in_array($id_module, $ids))
 			{
-				$id = explode('_', $module);
-				if (!in_array($id[1], $ids))
-				{
-					$ids[] = $id[1];
-					$value .= '('.(int)$id[1].', (SELECT id_hook FROM `'._DB_PREFIX_.'hook` WHERE `name` = \''.pSQL($hook).'\' LIMIT 0, 1), '.(int)$i.'),';
-				}
-				$i++;
+				$ids[] = $id_module;
+				$value .= '('.(int)$id_module.', '.$id_shop.', '.(int)$id_hook.', '.$i.'),';
 			}
-			$value = rtrim($value, ',');
-			Db::getInstance()->execute('INSERT INTO  '._DB_PREFIX_.'hook_module (id_module, id_shop, id_hook, position) VALUES '.$value);
-
+			$i++;
 		}
+		$value = rtrim($value, ',');
+		$res &= Db::getInstance()->execute('INSERT INTO  `'._DB_PREFIX_.'hook_module` 
+			(id_module, id_shop, id_hook, position) 
+			VALUES '.$value);
+
 	}
+	if ($res)
+		$hasError = true;
+	else
+		$hasError = false;
 	die('{"hasError" : false, "errors" : ""}');
 }
 
@@ -670,13 +676,13 @@ if (Tools::isSubmit('getAdminHomeElement'))
 	$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 5)));
 
 	// SCREENCAST
-	if (@fsockopen('www.prestashop.com', 80, $errno, $errst, 3))
+	if (@fsockopen('api.prestashop.com', 80, $errno, $errst, 3))
 		$result['screencast'] = 'OK';
 	else
 		$result['screencast'] = 'NOK';
 
 	// PREACTIVATION
-	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+	$content = @file_get_contents($protocol.'://api.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
 	if (!$content)
 		$result['partner_preactivation'] = 'NOK';
 	else
@@ -702,7 +708,7 @@ if (Tools::isSubmit('getAdminHomeElement'))
 	}
 
 	// PREACTIVATION PAYPAL WARNING
-	$content = @file_get_contents('https://www.prestashop.com/partner/preactivation/preactivation-warnings.php?version=1.0&partner=paypal&iso_country='.Tools::strtolower(Context::getContext()->country->iso_code).'&iso_lang='.Tools::strtolower(Context::getContext()->language->iso_code).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+	$content = @file_get_contents('https://api.prestashop.com/partner/preactivation/preactivation-warnings.php?version=1.0&partner=paypal&iso_country='.Tools::strtolower(Context::getContext()->country->iso_code).'&iso_lang='.Tools::strtolower(Context::getContext()->language->iso_code).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
 	$content = explode('|', $content);
 	if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 		Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', $content[1]);
@@ -710,7 +716,7 @@ if (Tools::isSubmit('getAdminHomeElement'))
 		Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', '');
 
 	// DISCOVER PRESTASHOP
-	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
+	$content = @file_get_contents($protocol.'://api.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 	if (!$content)
 		$result['discover_prestashop'] = 'NOK';
 	else
@@ -721,10 +727,10 @@ if (Tools::isSubmit('getAdminHomeElement'))
 		else
 			$result['discover_prestashop'] = 'NOK';
 
-		if (@fsockopen('www.prestashop.com', 80, $errno, $errst, 3))
-			$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://www.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
+		if (@fsockopen('api.prestashop.com', 80, $errno, $errst, 3))
+			$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://api.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
 
-		$content = @file_get_contents($protocol.'://www.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
+		$content = @file_get_contents($protocol.'://api.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 		$content = explode('|', $content);
 		if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 			$result['discover_prestashop'] .= $content[1];
@@ -854,11 +860,11 @@ if (Tools::isSubmit('ajaxAttributesPositions'))
 			{
 				if ($attribute = new Attribute((int)$pos[2]))
 					if (isset($position) && $attribute->updatePosition($way, $position))
-						echo "ok position $position for attribute $pos[2]\r\n";
+						echo "ok position ".(int)$position." for attribute ".(int)$pos[2]."\r\n";
 					else
-						echo '{"hasError" : true, "errors" : "Can not update attribute '. $id_attribute . ' to position '.$position.' "}';
+						echo '{"hasError" : true, "errors" : "Can not update attribute '. (int)$id_attribute . ' to position '.(int)$position.' "}';
 				else
-					echo '{"hasError" : true, "errors" : "This attribute ('.$id_attribute.') can t be loaded"}';
+					echo '{"hasError" : true, "errors" : "This attribute ('.(int)$id_attribute.') can t be loaded"}';
 
 				break;
 			}
@@ -886,11 +892,11 @@ if (Tools::isSubmit('ajaxGroupsAttributesPositions'))
 		{
 			if ($group_attribute = new AttributeGroup((int)$pos[1]))
 				if (isset($position) && $group_attribute->updatePosition($way, $position))
-					echo "ok position $position for group attribute $pos[1]\r\n";
+					echo "ok position ".(int)$position." for group attribute ".(int)$pos[1]."\r\n";
 				else
-					echo '{"hasError" : true, "errors" : "Can not update group attribute '. $id_attribute_group . ' to position '.$position.' "}';
+					echo '{"hasError" : true, "errors" : "Can not update group attribute '. (int)$id_attribute_group . ' to position '.(int)$position.' "}';
 			else
-				echo '{"hasError" : true, "errors" : "This group attribute ('.$id_attribute_group.') can t be loaded"}';
+				echo '{"hasError" : true, "errors" : "This group attribute ('.(int)$id_attribute_group.') can t be loaded"}';
 
 			break;
 		}
@@ -918,11 +924,11 @@ if (Tools::isSubmit('ajaxFeaturesPositions'))
 		{
 			if ($feature = new Feature((int)$pos[2]))
 				if (isset($position) && $feature->updatePosition($way, $position))
-					echo "ok position $position for feature $pos[1]\r\n";
+					echo "ok position ".(int)$position." for feature ".(int)$pos[1]."\r\n";
 				else
-					echo '{"hasError" : true, "errors" : "Can not update feature '. $id_feature . ' to position '.$position.' "}';
+					echo '{"hasError" : true, "errors" : "Can not update feature '. (int)$id_feature . ' to position '.(int)$position.' "}';
 			else
-				echo '{"hasError" : true, "errors" : "This feature ('.$id_feature.') can t be loaded"}';
+				echo '{"hasError" : true, "errors" : "This feature ('.(int)$id_feature.') can t be loaded"}';
 
 			break;
 		}
@@ -945,11 +951,11 @@ if (Tools::isSubmit('ajaxCarriersPositions'))
 		{
 			if ($carrier = new Carrier((int)$pos[2]))
 				if (isset($position) && $carrier->updatePosition($way, $position))
-					echo "ok position $position for carrier $pos[1]\r\n";
+					echo "ok position ".(int)$position." for carrier ".(int)$pos[1]."\r\n";
 				else
-					echo '{"hasError" : true, "errors" : "Can not update carrier '. $id_carrier . ' to position '.$position.' "}';
+					echo '{"hasError" : true, "errors" : "Can not update carrier '. (int)$id_carrier . ' to position '.(int)$position.' "}';
 			else
-				echo '{"hasError" : true, "errors" : "This carrier ('.$id_carrier.') can t be loaded"}';
+				echo '{"hasError" : true, "errors" : "This carrier ('.(int)$id_carrier.') can t be loaded"}';
 
 			break;
 		}
@@ -996,3 +1002,15 @@ if (Tools::isSubmit('ajaxUpdateTaxRule'))
 	die(Tools::jsonEncode($output));
 }
 
+if (Tools::isSubmit('getZones'))
+{
+	$zones = Zone::getZones();
+	$html = '<select id="zone_to_affect" name="zone_to_affect">';
+	foreach ($zones as $z)
+	{
+		$html .= '<option value="'.$z['id_zone'].'">'.$z['name'].'</option>';
+	}
+	$html .= '</select>';
+	$array = array('hasError' => false, 'errors' => '', 'data' => $html);
+	die(Tools::jsonEncode($html));
+}

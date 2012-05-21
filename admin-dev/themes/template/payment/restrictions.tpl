@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9635 $
+*  @version  Release: $Revision: 11658 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -94,6 +94,6 @@
 				</tr>
 			{/if}
 		</table>
-		<div style="text-align:center;"><input type="submit" class="button space" name="submitModule{$list['name_id']}" value="{l s='Save restrictions'}" /></div>
+		<div><input type="submit" class="button space" name="submitModule{$list['name_id']}" value="{l s='Save restrictions'}" /></div>
 	</fieldset>
 </form>

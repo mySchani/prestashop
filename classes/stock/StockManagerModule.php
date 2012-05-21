@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9151 $
+*  @version  Release: $Revision: 10941 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,7 +28,7 @@
 /**
  * @since 1.5.0
  */
-abstract class StockManagerModule extends Module
+abstract class StockManagerModuleCore extends Module
 {
 	public $stock_manager_class;
 

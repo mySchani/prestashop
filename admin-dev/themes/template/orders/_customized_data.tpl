@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10579 $
+*  @version  Release: $Revision: 10935 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -87,7 +87,7 @@
 				<input type="hidden" name="totalQty" id="totalQty" value="{$customization['quantity']}" />
 				<input type="hidden" name="productName" id="productName" value="{$product['product_name']}" />
 			{if ((!$order->hasBeenDelivered() OR Configuration::get('PS_ORDER_RETURN')) && (int)(($customization['quantity_returned']) < (int)($customization['quantity'])))}
-				<input type="checkbox" name="id_customization[{$customizationId}]" id="id_customization[{$customizationId}]" value="{$product['id_order_detail']}" onchange="setCancelQuantity(this, '{$customizationId}', '{$customization['quantity']}')" '.{if (($customization['quantity_returned'] + $customization['quantity_refunded']) >= $customization['quantity'])}disabled="disabled"{/if} />
+				<input type="checkbox" name="id_customization[{$customizationId}]" id="id_customization[{$customizationId}]" value="{$product['id_order_detail']}" onchange="setCancelQuantity(this, '{$customizationId}', '{$customization['quantity'] - $customization['quantity_refunded']}')" '.{if (($customization['quantity_returned'] + $customization['quantity_refunded']) >= $customization['quantity'])}disabled="disabled"{/if} />
 			{else}
 				--
 			{/if}

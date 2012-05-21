@@ -85,7 +85,15 @@ class LinkCore
 		$url .= $this->getLangLink($id_lang);
 
 		if (!is_object($product))
-			$product = new Product($product, false, $id_lang);
+		{
+			if (is_array($product) && isset($product['id_product']))
+					$product = new Product((int)$product['id_product'], false, $id_lang);
+			else if(is_numeric($product))
+					$product = new Product((int)$product, false, $id_lang);
+			else
+				throw new PrestashopException('Invalid product vars');
+		}
+
 
 		// Set available keywords
 		$params = array();
@@ -258,11 +266,11 @@ class LinkCore
 	 *
 	 * @since 1.5.0
 	 * @param string $module Module name
-	 * @param string $action Action name
+	 * @param string $process Action name
 	 * @param int $id_lang
 	 * @return string
 	 */
-	public function getModuleLink($module, $action, $ssl = false, $id_lang = null)
+	public function getModuleLink($module, $process, $ssl = false, $id_lang = null)
 	{
 		$base = (($ssl && Configuration::get('PS_SSL_ENABLED')) ? _PS_BASE_URL_SSL_ : _PS_BASE_URL_);
 		$url = $base.__PS_BASE_URI__.$this->getLangLink($id_lang);
@@ -272,7 +280,7 @@ class LinkCore
 		// Set available keywords
 		$params = array();
 		$params['module'] = $module;
-		$params['action'] = $action;
+		$params['process'] = $process;
 
 		return $url.Dispatcher::getInstance()->createUrl('module', $params, $this->allow);
 	}
@@ -298,24 +306,26 @@ class LinkCore
 	public function getImageLink($name, $ids, $type = null)
 	{
 		// legacy mode or default image
+		$theme = ((Shop::isFeatureActive() && file_exists(_PS_PROD_IMG_DIR_.$ids.($type ? '-'.$type : '').'-'.(int)Context::getContext()->shop->id_theme.'.jpg')) ? '-'.Context::getContext()->shop->id_theme : '');
 		if ((Configuration::get('PS_LEGACY_IMAGES')
-			&& (file_exists(_PS_PROD_IMG_DIR_.$ids.($type ? '-'.$type : '').'.jpg')))
+			&& (file_exists(_PS_PROD_IMG_DIR_.$ids.($type ? '-'.$type : '').$theme.'.jpg')))
 			|| strpos($ids, 'default') !== false)
 		{
-		if ($this->allow == 1)
-			$uri_path = __PS_BASE_URI__.$ids.($type ? '-'.$type : '').'/'.$name.'.jpg';
+			if ($this->allow == 1)
+				$uri_path = __PS_BASE_URI__.$ids.($type ? '-'.$type : '').$theme.'/'.$name.'.jpg';
+			else
+				$uri_path = _THEME_PROD_DIR_.$ids.($type ? '-'.$type : '').$theme.'.jpg';
+		}
 		else
-			$uri_path = _THEME_PROD_DIR_.$ids.($type ? '-'.$type : '').'.jpg';
-		}else
 		{
 			// if ids if of the form id_product-id_image, we want to extract the id_image part
 			$split_ids = explode('-', $ids);
 			$id_image = (isset($split_ids[1]) ? $split_ids[1] : $split_ids[0]);
-
+			$theme = ((Shop::isFeatureActive() && file_exists(_PS_PROD_IMG_DIR_.Image::getImgFolderStatic($id_image).$id_image.($type ? '-'.$type : '').'-'.(int)Context::getContext()->shop->id_theme.'.jpg')) ? '-'.Context::getContext()->shop->id_theme : '');
 			if ($this->allow == 1)
-				$uri_path = __PS_BASE_URI__.$id_image.($type ? '-'.$type : '').'/'.$name.'.jpg';
+				$uri_path = __PS_BASE_URI__.$id_image.($type ? '-'.$type : '').$theme.'/'.$name.'.jpg';
 			else
-				$uri_path = _THEME_PROD_DIR_.Image::getImgFolderStatic($id_image).$id_image.($type ? '-'.$type : '').'.jpg';
+				$uri_path = _THEME_PROD_DIR_.Image::getImgFolderStatic($id_image).$id_image.($type ? '-'.$type : '').$theme.'.jpg';
 		}
 
 		return $this->protocol_content.Tools::getMediaServer($uri_path).$uri_path;

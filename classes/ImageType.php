@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -29,6 +29,9 @@ class ImageTypeCore extends ObjectModel
 {
 	public		$id;
 
+	/** @var string id_theme */
+	public		$id_theme;
+	
 	/** @var string Name */
 	public		$name;
 
@@ -52,48 +55,36 @@ class ImageTypeCore extends ObjectModel
 
 	/** @var integer Apply to scenes */
 	public 		$scenes;
-	
+
 	/** @var integer Apply to store */
 	public 		$stores;
 
-	protected $fieldsRequired = array('name', 'width', 'height');
-	protected $fieldsValidate = array(
-		'name' => 'isImageTypeName',
-		'width' => 'isImageSize',
-		'height' => 'isImageSize',
-		'categories' => 'isBool',
-		'products' => 'isBool',
-		'manufacturers' => 'isBool',
-		'suppliers' => 'isBool',
-		'scenes' => 'isBool',
-		'stores' => 'isBool'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'image_type',
+		'primary' => 'id_image_type',
+		'fields' => array(
+			'id_theme' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isImageTypeName', 'required' => true, 'size' => 16),
+			'width' => 			array('type' => self::TYPE_INT, 'validate' => 'isImageSize', 'required' => true),
+			'height' => 		array('type' => self::TYPE_INT, 'validate' => 'isImageSize', 'required' => true),
+			'categories' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'products' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'manufacturers' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'suppliers' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'scenes' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'stores' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
 	);
-	protected $fieldsSize = array('name' => 16);
-
-	protected $table = 'image_type';
-	protected $identifier = 'id_image_type';
 
 	/**
 	 * @var array Image types cache
 	 */
 	protected static $images_types_cache = array();
-	
-	protected	$webserviceParameters = array();
 
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['name'] = pSQL($this->name);
-		$fields['width'] = (int)($this->width);
-		$fields['height'] = (int)($this->height);
-		$fields['products'] = (int)($this->products);
-		$fields['categories'] = (int)($this->categories);
-		$fields['manufacturers'] = (int)($this->manufacturers);
-		$fields['suppliers'] = (int)($this->suppliers);
-		$fields['scenes'] = (int)($this->scenes);
-		$fields['stores'] = (int)($this->stores);
-		return $fields;
-	}
+	protected $webserviceParameters = array();
 
 	/**
 	* Returns image type definitions
@@ -101,16 +92,17 @@ class ImageTypeCore extends ObjectModel
 	* @param string|null Image type
 	* @return array Image type definitions
 	*/
-	public static function getImagesTypes($type = NULL)
+	public static function getImagesTypes($type = NULL, $id_theme = false)
 	{
-		if (!isset(self::$images_types_cache[$type]))
+		if (!isset(self::$images_types_cache[$type.($id_theme ? '-'.$id_theme : '')]))
 		{
+			$where = 'WHERE 1';
+			if ($id_theme)
+				$where .= ' AND id_theme='.(int)$id_theme;
 			if (!empty($type))
-				$where = 'WHERE ' . pSQL($type) . ' = 1 ';
-			else
-				$where = '';
+				$where .= ' AND ' . pSQL($type) . ' = 1 ';
 
-			$query = 'SELECT * FROM `'._DB_PREFIX_.'image_type`'.$where.'ORDER BY `name` ASC';
+			$query = 'SELECT * FROM `'._DB_PREFIX_.'image_type`'.$where.' ORDER BY `name` ASC';
 			self::$images_types_cache[$type] = Db::getInstance()->executeS($query);
 		}
 
@@ -127,7 +119,7 @@ class ImageTypeCore extends ObjectModel
 	{
 		if (!Validate::isImageTypeName($typeName))
 			die(Tools::displayError());
-			
+
 		Db::getInstance()->executeS('
 		SELECT `id_image_type`
 		FROM `'._DB_PREFIX_.'image_type`

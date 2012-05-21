@@ -89,7 +89,7 @@ class AdminManufacturersControllerCore extends AdminController
 
 		parent::__construct();
 	}
-	
+
 	public function setMedia()
 	{
 		parent::setMedia();
@@ -115,7 +115,7 @@ class AdminManufacturersControllerCore extends AdminController
 
 	 	$this->context->smarty->assign('title_list', $this->l('List of manufacturers:'));
 
-		$this->content .= parent::initList();
+		$this->content .= parent::renderList();
 	}
 
 	public function initListManufacturerAddresses()
@@ -131,8 +131,6 @@ class AdminManufacturersControllerCore extends AdminController
 
 		$this->addRowAction('editaddresses');
 		$this->addRowAction('delete');
-
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 	 	// test if a filter is applied for this list
 		if (Tools::isSubmit('submitFilter'.$this->table) || $this->context->cookie->{'submitFilter'.$this->table} !== false)
@@ -192,7 +190,7 @@ class AdminManufacturersControllerCore extends AdminController
 	 	$this->_join .= '
 	 		LEFT JOIN `'._DB_PREFIX_.'manufacturer` m
 	 			ON (a.`id_manufacturer` = m.`id_manufacturer`)';
-	 	$this->_where = 'AND a.`id_customer` = 0';
+	 	$this->_where = 'AND a.`id_customer` = 0 AND a.`id_supplier` = 0 AND a.`id_warehouse` = 0';
 
 	 	$this->context->smarty->assign('title_list', $this->l('Manufacturers addresses:'));
 
@@ -200,11 +198,11 @@ class AdminManufacturersControllerCore extends AdminController
 		$this->postProcess();
 
 		$this->initToolbar();
-		$this->content .= parent::initList();
+		$this->content .= parent::renderList();
 
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->initListManufacturer();
 		$this->initListManufacturerAddresses();
@@ -231,7 +229,7 @@ class AdminManufacturersControllerCore extends AdminController
         return $this->context->smarty->fetch('helper/list/list_action_edit.tpl');
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'tinymce' => true,
@@ -359,7 +357,7 @@ class AdminManufacturersControllerCore extends AdminController
 			)), ENT_COMPAT, 'UTF-8');
 		}
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initFormAddress()
@@ -562,7 +560,7 @@ class AdminManufacturersControllerCore extends AdminController
 		}
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		if (!($manufacturer = $this->loadObject()))
 			return;
@@ -608,9 +606,10 @@ class AdminManufacturersControllerCore extends AdminController
 			'addresses' => $addresses,
 			'products' => $products,
 			'stock_management' => Configuration::get('PS_STOCK_MANAGEMENT'),
+			'shopContext' => Context::getContext()->shop(),
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initContent()
@@ -623,19 +622,19 @@ class AdminManufacturersControllerCore extends AdminController
 		{
 			if (!$this->loadObject(true))
 				return;
-			$this->content .= $this->initForm();
+			$this->content .= $this->renderForm();
 		}
 		else if ($this->display == 'view')
 		{
 			// Some controllers use the view action without an object
 			if ($this->className)
 				$this->loadObject(true);
-			$this->content .= $this->initView();
+			$this->content .= $this->renderView();
 		}
 		else if (!$this->ajax)
 		{
-			$this->content .= $this->initList();
-			$this->content .= $this->initOptions();
+			$this->content .= $this->renderList();
+			$this->content .= $this->renderOptions();
 		}
 
 		$this->context->smarty->assign(array(
@@ -660,20 +659,6 @@ class AdminManufacturersControllerCore extends AdminController
 			$this->action = 'save';
 		else if (Tools::isSubmit('deleteaddress'))
 			$this->action = 'delete';
-		else if (is_array($this->bulk_actions))
-		{
-			foreach ($this->bulk_actions as $bulk_action => $params)
-			{
-				if (Tools::isSubmit('submitBulk'.$bulk_action.$this->table))
-				{
-					$this->action = 'bulk'.$bulk_action;
-					$this->boxes = Tools::getValue($this->table.'Box');
-					break;
-				}
-			}
-			if ($this->ajax && method_exists($this, 'ajaxPreprocess'))
-				$this->ajaxPreProcess();
-		}
 	}
 
 	public function postProcess()
@@ -698,12 +683,15 @@ class AdminManufacturersControllerCore extends AdminController
 		{
 			$images_types = ImageType::getImagesTypes('manufacturers');
 			foreach ($images_types as $k => $image_type)
+			{
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				imageResize(
 					_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg',
-					_PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($image_type['name']).'.jpg',
+					_PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 					(int)$image_type['width'],
 					(int)$image_type['height']
 				);
+			}
 		}
 	}
 }

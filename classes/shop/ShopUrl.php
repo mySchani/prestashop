@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9233 $
+*  @version  Release: $Revision: 11383 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,17 +38,29 @@ class ShopUrlCore extends ObjectModel
 	private static $main_domain = null;
 	private static $main_domain_ssl = null;
 
-	protected $fieldsRequired = array('domain', 'id_shop');
-	protected $fieldsSize = array('domain' => 255, 'physical_uri' => 64, 'virtual_uri' => 64);
-	protected $fieldsValidate = array('active' => 'isBool');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'shop_url',
+		'primary' => 'id_shop_url',
+		'fields' => array(
+			'active' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'main' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'domain' => 		array('type' => self::TYPE_STRING, 'required' => true, 'size' => 255),
+			'domain_ssl' => 	array('type' => self::TYPE_STRING, 'size' => 255),
+			'id_shop' => 		array('type' => self::TYPE_INT, 'required' => true),
+			'physical_uri' => 	array('type' => self::TYPE_STRING, 'size' => 64),
+			'virtual_uri' => 	array('type' => self::TYPE_STRING, 'size' => 64),
+		),
+	);
 
-	protected $table = 'shop_url';
-	protected $identifier = 'id_shop_url';
-
+	/**
+	 * @see ObjectModel::getFields()
+	 * @return array
+	 */
 	public function getFields()
 	{
-		$this->validateFields();
-
 		$this->physical_uri = trim($this->physical_uri, '/');
 		if ($this->physical_uri)
 			$this->physical_uri = preg_replace('#/+#', '/', '/'.$this->physical_uri.'/');
@@ -59,14 +71,7 @@ class ShopUrlCore extends ObjectModel
 		if ($this->virtual_uri)
 			$this->virtual_uri = preg_replace('#/+#', '/', trim($this->virtual_uri, '/')).'/';
 
-		$fields['domain'] = pSQL($this->domain);
-		$fields['domain_ssl'] = pSQL($this->domain_ssl);
-		$fields['physical_uri'] = pSQL($this->physical_uri);
-		$fields['virtual_uri'] = pSQL($this->virtual_uri);
-		$fields['id_shop'] = (int)$this->id_shop;
-		$fields['main'] = (int)$this->main;
-		$fields['active'] = (int)$this->active;
-		return $fields;
+		return parent::getFields();
 	}
 
 	public function getURL($ssl = false)
@@ -78,13 +83,18 @@ class ShopUrlCore extends ObjectModel
 		return $url.$this->physical_uri.$this->virtual_uri;
 	}
 
+	/**
+	 * Get list of shop urls
+	 *
+	 * @param bool $id_shop
+	 * @return Collection
+	 */
 	public static function getShopUrls($id_shop = false)
 	{
-		$sql = 'SELECT *
-				FROM '._DB_PREFIX_.'shop_url
-				WHERE 1
-					'.($id_shop ? ' AND id_shop = '.(int)$id_shop : '');
-		return Db::getInstance()->executeS($sql);
+		$urls = new Collection('ShopUrl');
+		if ($id_shop)
+			$urls->where('id_shop', '=', $id_shop);
+		return $urls;
 	}
 
 	public function setMain()

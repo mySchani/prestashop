@@ -33,20 +33,30 @@ class TagCore extends ObjectModel
  	/** @var string Name */
 	public $name;
 
- 	protected $fieldsRequired = array('id_lang', 'name');
- 	protected $fieldsValidate = array('id_lang' => 'isUnsignedId', 'name' => 'isGenericName');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'tag',
+		'primary' => 'id_tag',
+		'fields' => array(
+			'id_lang' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'name' => 		array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
+		),
+	);
 
-	protected $table = 'tag';
-	protected $identifier = 'id_tag';
 
 	protected $webserviceParameters = array(
-	'fields' => array(
-	'id_lang' => array('xlink_resource' => 'languages'),
-	),
+		'fields' => array(
+			'id_lang' => array('xlink_resource' => 'languages'),
+		),
 	);
 
 	public function __construct($id = null, $name = null, $id_lang = null)
 	{
+		$this->def = self::getDefinition($this);
+		$this->setDefinitionRetrocompatibility();
+
 		if ($id)
 			parent::__construct($id);
 		else if ($name && Validate::isGenericName($name) && $id_lang && Validate::isUnsignedId($id_lang))
@@ -63,14 +73,6 @@ class TagCore extends ObjectModel
 				$this->name = $row['name'];
 			}
 		}
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_lang'] = (int)$this->id_lang;
-		$fields['name'] = pSQL($this->name);
-		return $fields;
 	}
 
 	public function add($autodate = true, $null_values = false)

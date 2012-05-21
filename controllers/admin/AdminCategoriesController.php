@@ -80,6 +80,8 @@ class AdminCategoriesControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		if ($id_category = Tools::getvalue('id_category'))
 			$this->_category = new Category($id_category);
 		else
@@ -87,7 +89,7 @@ class AdminCategoriesControllerCore extends AdminController
 
 		parent::__construct();
 	}
-	
+
 	public function setMedia()
 	{
 		parent::setMedia();
@@ -95,14 +97,12 @@ class AdminCategoriesControllerCore extends AdminController
 		$this->addJqueryPlugin('tagify');
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 		$this->addRowAction('add');
 		$this->addRowAction('view');
-
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->_filter .= ' AND `id_parent` = '.(int)$this->_category->id.' ';
 		$this->_select = 'position ';
@@ -113,7 +113,7 @@ class AdminCategoriesControllerCore extends AdminController
 		$this->tpl_list_vars['categories_tree'] = $categories_tree;
 		$this->tpl_list_vars['categories_name'] = $categories_name;
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
@@ -131,10 +131,10 @@ class AdminCategoriesControllerCore extends AdminController
 		}
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		$this->initToolbar();
-		return $this->initList();
+		return $this->renderList();
 	}
 
 	public function initToolbar()
@@ -147,7 +147,7 @@ class AdminCategoriesControllerCore extends AdminController
 		if (Tools::getValue('id_category') && !Tools::isSubmit('updatecategory'))
 		{
 			$this->toolbar_btn['edit'] = array(
-				'href' => self::$currentIndex.'&amp;update'.$this->table.'&amp;id_category='.Tools::getValue('id_category').'&amp;token='.$this->token,
+				'href' => self::$currentIndex.'&amp;update'.$this->table.'&amp;id_category='.(int)Tools::getValue('id_category').'&amp;token='.$this->token,
 				'desc' => $this->l('Edit')
 			);
 			$back = Tools::safeOutput(Tools::getValue('back', ''));
@@ -160,26 +160,24 @@ class AdminCategoriesControllerCore extends AdminController
 		}
 		if ($this->display == 'view')
 			$this->toolbar_btn['new'] = array(
-				'href' => self::$currentIndex.'&amp;add'.$this->table.'&amp;id_parent='.Tools::getValue('id_category').'&amp;token='.$this->token,
+				'href' => self::$currentIndex.'&amp;add'.$this->table.'&amp;id_parent='.(int)Tools::getValue('id_category').'&amp;token='.$this->token,
 				'desc' => $this->l('Add new')
 			);
 		parent::initToolbar();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->initToolbar();
 		$obj = $this->loadObject(true);
 		$selected_cat = array(isset($obj->id_parent) ? $obj->id_parent : Tools::getValue('id_parent', 1));
-		if (count($selected_cat) > 0)
-		{
-			if (isset($selected_cat[0]))
-				$selected_cat = implode(',', $selected_cat);
-			else
-				$selected_cat = implode(',', array_keys($selected_cat));
-		}
-		else
-			$selected_cat = '';
+		$unidentified = new Group(Configuration::get('PS_UNIDENTIFIED_GROUP'));
+		$guest = new Group(Configuration::get('PS_GUEST_GROUP'));
+		$default = new Group(Configuration::get('PS_CUSTOMER_GROUP'));
+
+		$unidentified_group_information = sprintf($this->l('%s - This group is for visitors.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
+		$guest_group_information = sprintf($this->l('%s - This group is for the guest customers. They have ordered a cart as guest.'), "<b>".$guest->name[$this->context->language->id]."</b>");
+		$default_group_information = sprintf($this->l('%s - This group is the default group customer.'), "<b>".$default->name[$this->context->language->id]."</b>");
 
 		$this->fields_form = array(
 			'tinymce' => true,
@@ -195,7 +193,8 @@ class AdminCategoriesControllerCore extends AdminController
 					'lang' => true,
 					'size' => 48,
 					'required' => true,
-					'hint' => $this->l('Invalid characters:').' <>;=#{}'
+					'class' => 'copy2friendlyUrl',
+					'hint' => $this->l('Invalid characters:').' <>;=#{}',
 				),
 				array(
 					'type' => 'radio',
@@ -285,6 +284,10 @@ class AdminCategoriesControllerCore extends AdminController
 					'label' => $this->l('Group access:'),
 					'name' => 'groupBox',
 					'values' => Group::getGroups(Context::getContext()->language->id),
+					'info_introduction' => $this->l('You have now three default customer groups.'),
+					'unidentified' => $unidentified_group_information,
+					'guest' => $guest_group_information,
+					'customer' => $default_group_information,
 					'desc' => $this->l('Mark all groups you want to give access to this category')
 				)
 			),
@@ -315,7 +318,7 @@ class AdminCategoriesControllerCore extends AdminController
 		foreach ($groups as $group)
 			$this->fields_value['groupBox_'.$group['id_group']] = Tools::getValue('groupBox_'.$group['id_group'], (in_array($group['id_group'], $carrier_groups_ids)));
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -324,13 +327,17 @@ class AdminCategoriesControllerCore extends AdminController
 
 		if (Tools::isSubmit('submitAdd'.$this->table))
 		{
-			if ($id_category = (int)Tools::getValue('id_category'))
+			$id_category = (int)Tools::getValue('id_category');
+			$id_parent = (int)Tools::getValue('id_parent');
+			if ($id_category)
 			{
-				if (!Category::checkBeforeMove($id_category, $this->_category->id_parent))
+				if ($id_category != $id_parent)
 				{
-					$this->_errors[] = Tools::displayError('Category cannot be moved here');
-					return false;
+					if (!Category::checkBeforeMove($id_category, $id_parent))
+						$this->_errors[] = Tools::displayError($this->l('Category cannot be moved here'));
 				}
+				else
+					$this->_errors[] = Tools::displayError($this->l('Category cannot be parent of herself.'));
 			}
 		}
 		/* Delete object */
@@ -376,7 +383,10 @@ class AdminCategoriesControllerCore extends AdminController
 			if (!$object->updatePosition((int)Tools::getValue('way'), (int)Tools::getValue('position')))
 				$this->_errors[] = Tools::displayError('Failed to update the position.');
 			else
+			{
+				$object->regenerateEntireNtree();
 				Tools::redirectAdmin(self::$currentIndex.'&'.$this->table.'Orderby=position&'.$this->table.'Orderway=asc&conf=5'.(($id_category = (int)Tools::getValue($this->identifier, Tools::getValue('id_category_parent', 1))) ? ('&'.$this->identifier.'='.$id_category) : '').'&token='.Tools::getAdminTokenLite('AdminCategories'));
+			}
 		}
 		/* Delete multiple objects */
 		else if (Tools::getValue('submitDel'.$this->table))
@@ -415,11 +425,14 @@ class AdminCategoriesControllerCore extends AdminController
 		{
 			$images_types = ImageType::getImagesTypes('categories');
 			foreach ($images_types as $k => $image_type)
+			{
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				imageResize(
 					_PS_CAT_IMG_DIR_.$id_category.'.jpg',
-					_PS_CAT_IMG_DIR_.$id_category.'-'.stripslashes($image_type['name']).'.jpg',
+					_PS_CAT_IMG_DIR_.$id_category.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 					(int)$image_type['width'], (int)$image_type['height']
 				);
+			}
 		}
 		return $ret;
 	}

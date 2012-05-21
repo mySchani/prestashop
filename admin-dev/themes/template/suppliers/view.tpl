@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10279 $
+*  @version  Release: $Revision: 11144 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -34,7 +34,7 @@
 {foreach $products AS $product}
 	<hr />
 	{if !$product->hasAttributes()}
-		<table border="0" cellpadding="0" cellspacing="0" class="table" style="width:80%;margin-left:10%;">
+		<table border="0" cellpadding="0" cellspacing="0" class="table" style="">
 			<tr>
 				<th>{$product->name}</th>
 				{if !empty($product->reference)}<th width="150">{l s='Ref:'} {$product->reference}</th>{/if}
@@ -45,13 +45,20 @@
 		</table>
 	{else}
 		<h3><a href="?tab=AdminProducts&id_product={$product->id}&updateproduct&token={getAdminToken tab='AdminProducts'}">{$product->name}</a></h3>
-		<table border="0" cellpadding="0" cellspacing="0" class="table" style="width:80%;margin-left:10%;">
+		<table border="0" cellpadding="0" cellspacing="0" class="table" style="width:100%;">
+			<colgroup>
+				<col></col>
+				<col width="80"></col>
+				<col width="80"></col>
+				<col width="50"></col>
+				<col width="130"></col>
+			</colgroup>
 			<tr>
-				<th>{l s='Attribute name'}</th>
-				<th width="80">{l s='Reference'}</th>
-				<th width="80">{l s='EAN13'}</th>
-				<th width="80">{l s='UPC'}</th>
-				{if $stock_management}<th class="right" width="150">{l s='Available Quantity'}</th>{/if}
+				<th style="height:40px;">{l s='Attribute name'}</th>
+				<th>{l s='Reference'}</th>
+				<th>{l s='EAN13'}</th>
+				<th>{l s='UPC'}</th>
+				{if $stock_management && $shopContext != Shop::CONTEXT_ALL}<th class="right">{l s='Available Quantity'}</th>{/if}
 			</tr>
 			{foreach $product->combinaison AS $id_product_attribute => $product_attribute}
 				<tr {if $id_product_attribute %2}class="alt_row"{/if} >
@@ -59,7 +66,7 @@
 					<td>{$product_attribute.reference}</td>
 					<td>{$product_attribute.ean13}</td>
 					<td>{$product_attribute.upc}</td>
-					{if $stock_management}<td class="right">{$product_attribute.quantity}</td>{/if}
+					{if $stock_management && $shopContext != Shop::CONTEXT_ALL}<td class="right">{$product_attribute.quantity}</td>{/if}
 				</tr>
 			{/foreach}
 		</table>

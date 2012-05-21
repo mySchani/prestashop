@@ -83,13 +83,13 @@ class AdminShopUrlControllerCore extends AdminController
 				'width' => 50,
 			),
 		);
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 		$this->addRowActionSkipList('delete', array(1));
 
 		$this->addRowAction('edit');
@@ -98,10 +98,10 @@ class AdminShopUrlControllerCore extends AdminController
 	 	$this->_select = 's.name AS shop_name, CONCAT(a.physical_uri, a.virtual_uri) AS uri';
 	 	$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'shop` s ON (s.id_shop = a.id_shop)';
 
-	 	return parent::initList();
+	 	return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -175,8 +175,7 @@ class AdminShopUrlControllerCore extends AdminController
 						)
 					),
 					'desc' => array(
-						$this->l('If you set this url as main url for selected shop, all urls set to this shop will be redirected to this url
-							(you can only have one main url per shop).'),
+						$this->l('If you set this url as main url for selected shop, all urls set to this shop will be redirected to this url (you can only have one main url per shop).'),
 						array(
 							'text' => $this->l('Since the selected shop has no main url, you have to set this url as main'),
 							'id' => 'mainUrlInfo'
@@ -229,17 +228,42 @@ class AdminShopUrlControllerCore extends AdminController
 		$this->fields_value = array(
 			'domain' => Validate::isLoadedObject($obj) ? $this->getFieldValue($obj, 'domain') : $current_shop->domain,
 			'domain_ssl' => Validate::isLoadedObject($obj) ? $this->getFieldValue($obj, 'domain_ssl') : $current_shop->domain_ssl,
-			'physical_uri' => Validate::isLoadedObject($obj) ? $this->getFieldValue($obj, 'physical_uri') : $current_shop->physical_uri
+			'physical_uri' => Validate::isLoadedObject($obj) ? $this->getFieldValue($obj, 'physical_uri') : $current_shop->physical_uri,
+			'active' => true
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
 	{
 		$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
-		if (Tools::isSubmit('submitAdd'.$this->table))
+
+		if ((isset($_GET['status'.$this->table]) || isset($_GET['status'])) && Tools::getValue($this->identifier))
 		{
+			if ($this->tabAccess['edit'] === '1')
+			{
+				if (Validate::isLoadedObject($object = $this->loadObject()))
+				{
+					if ($object->main)
+						$this->_errors[] = Tools::displayError('You can\'t disable a main url');
+					elseif ($object->toggleStatus())
+						Tools::redirectAdmin(self::$currentIndex.'&conf=5&token='.$token);
+					else
+						$this->_errors[] = Tools::displayError('An error occurred while updating status.');
+				}
+				else
+					$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		else
+			return parent::postProcess();
+	}
+
+	public function processAdd($token)
+	{
 			$object = $this->loadObject(true);
 			if ($object->id && Tools::getValue('main'))
 				$object->setMain();
@@ -253,30 +277,9 @@ class AdminShopUrlControllerCore extends AdminController
 			if ($object->canAddThisUrl(Tools::getValue('domain'), Tools::getValue('domain_ssl'), Tools::getValue('physical_uri'), Tools::getValue('virtual_uri')))
 				$this->_errors[] = Tools::displayError('A shop url that use this domain and uri already exists');
 
-			parent::postProcess();
-			Tools::generateHtaccess(dirname(__FILE__).'/../../.htaccess', Configuration::get('PS_REWRITING_SETTINGS'), Configuration::get('PS_HTACCESS_CACHE_CONTROL'), '');
-		}
-		else if ((isset($_GET['status'.$this->table]) || isset($_GET['status'])) && Tools::getValue($this->identifier))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($object = $this->loadObject()))
-				{
-					if ($object->main)
-						$this->_errors[] = Tools::displayError('You can\'t disable a main url');
-					else if ($object->toggleStatus())
-						Tools::redirectAdmin(self::$currentIndex.'&conf=5&token='.$token);
-					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating status.');
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		else
-			return parent::postProcess();
+			parent::processAdd($token);
+			if (!$this->_errors)
+				Tools::generateHtaccess(dirname(__FILE__).'/../../.htaccess', Configuration::get('PS_REWRITING_SETTINGS'), Configuration::get('PS_HTACCESS_CACHE_CONTROL'), '');
 	}
 
 	protected function afterUpdate($object)

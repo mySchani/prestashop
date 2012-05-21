@@ -42,16 +42,22 @@ class SceneCore extends ObjectModel
 	/** @var array Products */
 	public 		$products;
 
-	protected 	$table = 'scene';
-	protected 	$identifier = 'id_scene';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'scene',
+		'primary' => 'id_scene',
+		'multilang' => true,
+		'fields' => array(
+			'active' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
 
- 	protected 	$fieldsRequired = array('active');
- 	protected 	$fieldsValidate = array('active' => 'isBool', 'zones' => 'isSceneZones', 'categories' => 'isArrayWithIds');
- 	protected 	$fieldsRequiredLang = array('name');
- 	protected 	$fieldsSizeLang = array('name' => 100);
- 	protected 	$fieldsValidateLang = array('name' => 'isGenericName');
+			// Lang fields
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 100),
+		),
+	);
 
- 	protected static	$feature_active = null;
+ 	protected static $feature_active = null;
 
  	public function __construct($id = NULL, $id_lang = NULL, $liteResult = true, $hideScenePosition = false)
 	{
@@ -64,24 +70,6 @@ class SceneCore extends ObjectModel
 		$this->image_dir = _PS_SCENE_IMG_DIR_;
 	}
 
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['active'] = (int)($this->active);
-		return $fields;
-	}
-
-	/**
-  * Check then return multilingual fields for database interaction
-  *
-  * @return array Multilingual fields
-  */
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
-
 	public function update($nullValues = false)
 	{
 		if (!$this->updateZoneProducts())
@@ -92,7 +80,7 @@ class SceneCore extends ObjectModel
 		if (parent::update($nullValues))
 		{
 			// Refresh cache of feature detachable
-			Configuration::updateGlobalValue('PS_SCENE_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+			Configuration::updateGlobalValue('PS_SCENE_FEATURE_ACTIVE', self::isCurrentlyUsed($this->def['table'], true));
 			return true;
 		}
 		return false;
@@ -123,7 +111,7 @@ class SceneCore extends ObjectModel
 		if (parent::delete())
 		{
 			return $this->deleteImage() &&
-				Configuration::updateGlobalValue('PS_SCENE_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+				Configuration::updateGlobalValue('PS_SCENE_FEATURE_ACTIVE', self::isCurrentlyUsed($this->def['table'], true));
 		}
 		return false;
 	}

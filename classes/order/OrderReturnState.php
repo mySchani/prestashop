@@ -33,31 +33,20 @@ class OrderReturnStateCore extends ObjectModel
 	/** @var string Display state in the specified color */
 	public $color;
 
- 	protected $fieldsValidate = array('color' => 'isColor');
-	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 64);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName');
-
-	protected $table = 'order_return_state';
-	protected $identifier = 'id_order_return_state';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['color'] = pSQL($this->color);
-		return $fields;
-	}
-
 	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_return_state',
+		'primary' => 'id_order_return_state',
+		'multilang' => true,
+		'fields' => array(
+			'color' => 	array('type' => self::TYPE_STRING, 'validate' => 'isColor'),
+
+			// Lang fields
+			'name' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+		),
+	);
 
 	/**
 	* Get all available order states

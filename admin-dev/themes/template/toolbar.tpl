@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10566 $
+*  @version  Release: $Revision: 11075 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,21 +28,22 @@
 	<ul class="cc_button">
 		{foreach from=$toolbar_btn item=btn key=k}
 			<li>
-				<a id="desc-{$table}-{$btn.imgclass|default:$k}" class="toolbar_btn" href="{$btn.href}" title="{$btn.desc}" {if isset($btn.target) && $btn.target}target="_blank"{/if}>
+				<a id="desc-{$table}-{$btn.imgclass|default:$k}" class="toolbar_btn" {if isset($btn.href)}href="{$btn.href}"{/if} title="{$btn.desc}" {if isset($btn.target) && $btn.target}target="_blank"{/if}>
 					<span class="process-icon-{$btn.imgclass|default:$k} {$btn.class|default:'' }" ></span>
 					<div>{$btn.desc}</div>
 				</a>
 			</li>
-			{if isset($ps_help_context) && $ps_help_context}
+		{/foreach}
+		{if isset($ps_help_context) && $ps_help_context}
 			<li class="help-context" style="display:none">
 				<a id="desc-{$table}-help" class="toolbar_btn" href="#" title="{l s='Help'}">
 					<span class="process-icon-help"></span>
 					<div>{l s='Help'}</div>
 				</a>
 			</li>
-			{/if}
-		{/foreach}
+		{/if}
 	</ul>
+
 	<script language="javascript">
 		$(function() {
 			//get reference on save link
@@ -78,24 +79,24 @@
 
 				//submit the form
 				{block name=formSubmit}
-				btn_save.click(function() {
-					//add hidden input to emulate submit button click when posting the form -> field name posted
-					btn_submit.before('<input type="hidden" name="'+btn_submit.attr("name")+'" value="1" />');
-
-					$('#{$table}_form').submit();
-					return false;
-				});
-
-				if (btn_save_and_stay)
-				{
-					btn_save_and_stay.click(function() {
+					btn_save.click(function() {
 						//add hidden input to emulate submit button click when posting the form -> field name posted
-						btn_submit.before('<input type="hidden" name="'+btn_submit.attr("name")+'AndStay" value="1" />');
-
+						btn_submit.before('<input type="hidden" name="'+btn_submit.attr("name")+'" value="1" />');
+	
 						$('#{$table}_form').submit();
 						return false;
 					});
-				}
+	
+					if (btn_save_and_stay)
+					{
+						btn_save_and_stay.click(function() {
+							//add hidden input to emulate submit button click when posting the form -> field name posted
+							btn_submit.before('<input type="hidden" name="'+btn_submit.attr("name")+'AndStay" value="1" />');
+	
+							$('#{$table}_form').submit();
+							return false;
+						});
+					}
 				{/block}
 			}
 		});

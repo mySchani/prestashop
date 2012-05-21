@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10542 $
+*  @version  Release: $Revision: 11429 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -33,11 +33,11 @@
 	<p>{l s='total missing expresssions:'} {$missing_translations|array_sum} </p>
 	{$limit_warning}
 	{if !$suoshin_exceeded}
-		<form method="post" action="{$url_submit}" class="form">
+		<form method="post" id="{$table}_form" action="{$url_submit}" class="form">
 		{$toggle_button}
-		{include file="translations/auto_translate.tpl"}
+		{*{include file="translations/auto_translate.tpl"}*}
 		<input type="hidden" name="lang" value="{$lang}" />
-		<input type="submit" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" />
+		<input type="submit" id="{$table}_form_submit_btn" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" />
 		<br /><br />
 		{foreach $tabsArray as $k => $newLang}
 			{if !empty($newLang)}
@@ -54,12 +54,12 @@
 							<td>= {*todo : md5 is already calculated in AdminTranslationsController*}
 								{if $key|strlen < $textarea_sized}
 									<input type="text" 
-										   style="width: 450px" 
-										   name="{if in_array($type, array('front', 'fields'))}{$k}_{$key|md5}{else}{$k}{$key|md5}{/if}" 
-										   value="{$value|regex_replace:'/"/':'&quot;'|stripslashes}" />
+										style="width: 450px" 
+										name="{if in_array($type, array('front', 'fields'))}{$k}_{$key|md5}{else}{$k}{$key|md5}{/if}" 
+										value="{$value|regex_replace:'/"/':'&quot;'|stripslashes}" />
 								{else}
 									<textarea rows="{($key|strlen / $textarea_sized)|intval}" 
-											 style="width: 450px" 
+										style="width: 450px" 
 									name="{if in_array($type, array('front', 'fields'))}{$k}_{$key|md5}{else}{$k}{$key|md5}{/if}"
 									>{$value|regex_replace:'/"/':'&quot;'|stripslashes}</textarea>
 								{/if}
@@ -71,7 +71,6 @@
 				</fieldset><br />
 			{/if}
 		{/foreach}
-		<br /><input type="submit" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" /></form>
 	{/if}
 
 {/block}

@@ -51,7 +51,7 @@ function str2url(str,encoding,ucfirst)
 	str = str.replace(/[\u013E\u013A]/g,'l');
 	str = str.replace(/[\u0155]/g,'r');
 
-	str = str.replace(/[^a-z0-9\s\'\:\/\[\]-]/g,'');
+	str = str.replace(/[^a-z0-9\s\'\:\/\[\]-]\\u00A1-\\uFFFF/g,'');
 	str = str.replace(/[\s\'\:\/\[\]-]+/g,' ');
 	str = str.replace(/[ ]/g,'-');
 	str = str.replace(/[\/]/g,'-');
@@ -86,7 +86,7 @@ function strToAltImgAttr(str,encoding,ucfirst)
 	str = str.replace(/[\u013E\u013A]/g,'l');
 	str = str.replace(/[\u0155]/g,'r');
 
-	str = str.replace(/[^a-zA-Z0-9\s\'\:\/\[\]-]/g,'');
+	str = str.replace(/[^a-zA-Z0-9\s\'\:\/\[\]-]\\u00A1-\\uFFFF/g,'');
 	str = str.replace(/[\s\'\:\/\[\]-]+/g,' ');
 
 	if (ucfirst == 1) {
@@ -929,14 +929,8 @@ function refreshImagePositions(imageTable)
 	var reg = /_[0-9]$/g;
 	var up_reg  = new RegExp("imgPosition=[0-9]+&");
 
-	imageTable.find("tbody tr").each(function(i) {
-		// Update link position
-		// Up links
-		$(this).find("td.dragHandle a:first").attr("href", $(this).find("td.dragHandle a:first").attr("href").replace(up_reg, "imgPosition="+ i +"&"));//, "imgPosition="+ (i - 1) +"&"));
-		// Down links
-		$(this).find("td.dragHandle a:last").attr("href", $(this).find("td.dragHandle a:last").attr("href").replace(up_reg, "imgPosition="+ (i + 2) +"&"));
-		// Position image cell
-		$(this).find("td.positionImage").html(i + 1);
+	imageTable.find("tbody tr").each(function(i,el) {
+		$(el).find("td.positionImage").html(i + 1);
 	});
 	imageTable.find("tr td.dragHandle a:hidden").show();
 	imageTable.find("tr td.dragHandle:first a:first").hide();
@@ -944,13 +938,16 @@ function refreshImagePositions(imageTable)
 }
 
 
-function doAdminAjax(data)
+function doAdminAjax(data, success_func, error_func)
 {
 	$.ajax(
 	{
 		url : 'index.php',
 		data : data,
 		success : function(data){
+			if (success_func)
+				return success_func(data);
+
 			data = $.parseJSON(data);
 			if(data.confirmations.length != 0)
 				showSuccessMessage(data.confirmations);
@@ -958,6 +955,9 @@ function doAdminAjax(data)
 				showErrorMessage(data.error);
 		},
 		error : function(data){
+			if (error_func)
+				return error_func(data);
+
 			alert("[TECHNICAL ERROR]");
 		}
 	});
@@ -1000,4 +1000,40 @@ $(document).ready(function(){
 		if(!isArrowKey(e))
 			return copyMeta2friendlyURL()
 	});
+
+	// Adding a button to top
+	var scroll = $('#scrollTop a');
+	var view = $(window);
+
+	scroll.click(function(){
+		$.scrollTo('#top_container', 1200, { offset: -100 });
+	});
+
+	view.bind("scroll", function(e) {
+		var heightView = view.height();
+		var btnPlace = scroll.offset().top;
+		if (heightView < btnPlace)
+			scroll.show();
+		else
+			scroll.hide();
+	});
 });
+
+// Delete all tags HTML
+function stripHTML(oldString)
+{
+	var newString = '';
+	var inTag = false;
+	for(var i = 0; i < oldString.length; i++) {
+		if(oldString.charAt(i) == '<') inTag = true;
+		if(oldString.charAt(i) == '>') {
+			if(oldString.charAt(i+1)!='<')
+			{
+				inTag = false;
+				i++;
+			}
+		}
+		if(!inTag) newString += oldString.charAt(i);
+	}
+	return newString;
+}

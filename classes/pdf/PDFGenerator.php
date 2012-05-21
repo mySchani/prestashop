@@ -34,7 +34,7 @@ require_once(_PS_TOOL_DIR_.'tcpdf/tcpdf.php');
  */
 class PDFGeneratorCore extends TCPDF
 {
-	const DEFAULT_FONT = 'dejavusans';
+	const DEFAULT_FONT = 'helvetica';
 
 	public $header;
 	public $footer;
@@ -42,6 +42,12 @@ class PDFGeneratorCore extends TCPDF
 	public $font;
 
 	public $font_by_lang = array('jp' => 'cid0jp');
+
+
+	public function __construct($use_cache = false)
+	{
+		parent::__construct('P', 'mm', 'A4', true, 'UTF-8', $use_cache, false);
+	}
 
 	/**
 	 * set the PDF encoding
@@ -84,13 +90,15 @@ class PDFGeneratorCore extends TCPDF
 
 	/**
 	 * Change the font
-	 * @param unknown_type $iso_lang
+	 * @param string $iso_lang
 	 */
 	public function setFontForLang($iso_lang)
 	{
 		$this->font = self::DEFAULT_FONT;
 		if (array_key_exists($iso_lang, $this->font_by_lang))
 			$this->font = $this->font_by_lang[$iso_lang];
+
+		$this->setFont($this->font);
 	}
 
 	/**
@@ -98,7 +106,6 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function Header()
 	{
-		$this->setFont($this->font);
 		$this->writehtml($this->header);
 	}
 
@@ -107,7 +114,6 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function Footer()
 	{
-		$this->setFont($this->font);
 		$this->writehtml($this->footer);
 	}
 
@@ -115,15 +121,18 @@ class PDFGeneratorCore extends TCPDF
 	 * Render the pdf file
 	 *
 	 * @param string $filename
+     * @param boolean $inline
 	 * @throws PrestashopException
 	 */
-	public function render($filename)
+	public function render($filename, $display = true)
 	{
 		if (empty($filename))
 			throw new PrestashopException('Missing filename.');
 
 		$this->lastPage();
-		$this->output($filename, 'I');
+
+        $output = $display ? 'I' : 'S';
+        return $this->output($filename, $output);
 	}
 
 	/**
@@ -131,7 +140,6 @@ class PDFGeneratorCore extends TCPDF
 	 */
 	public function writePage()
 	{
-
 		$this->SetHeaderMargin(5);
 		$this->SetFooterMargin(18);
 		$this->setMargins(10, 40, 10);

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -31,6 +31,7 @@ require_once(dirname(__FILE__).'/../../config/config.inc.php');
 require_once(dirname(__FILE__).'/../../init.php');
 
 include_once(dirname(__FILE__).'/ReferralProgramModule.php');
+include_once(dirname(__FILE__).'/referralprogram.php');
 
 $context = Context::getContext();
 if (!$context->customer->isLogged())
@@ -41,8 +42,15 @@ $context->controller->addJqueryPlugin(array('thickbox', 'idTabs'));
 include(dirname(__FILE__).'/../../header.php');
 
 // get discount value (ready to display)
-$discount = ReferralProgram::displayDiscount((float)Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency)), (int)Configuration::get('REFERRAL_DISCOUNT_TYPE'), new Currency($cookie->id_currency));
-
+$discount_type = (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE'));
+if ($discount_type == 1)
+{
+	$discount = Discount::display((float)(Configuration::get('REFERRAL_PERCENTAGE')), $discount_type, new Currency($cookie->id_currency));
+}
+else
+{
+	$discount = Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency))), $discount_type, new Currency($cookie->id_currency));
+}
 $activeTab = 'sponsor';
 $error = false;
 
@@ -102,7 +110,7 @@ if (Tools::isSubmit('submitSponsorFriends') AND Tools::getValue('friendsEmail') 
 							'{firstname_friend}' => $friendFirstName,
 							'{link}' => 'authentication.php?create_account=1&sponsor='.urlencode($cipherTool->encrypt($referralprogram->id.'|'.$referralprogram->email.'|')),
 							'{discount}' => $discount);
-						Mail::Send((int)($cookie->id_lang), 'referralprogram-invitation', Mail::l('Referral Program'), $vars, $friendEmail, $friendFirstName.' '.$friendLastName, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
+						Mail::Send((int)$cookie->id_lang, 'referralprogram-invitation', Mail::l('Referral Program', (int)$cookie->id_lang), $vars, $friendEmail, $friendFirstName.' '.$friendLastName, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
 						$invitation_sent = true;
 						$nbInvitation++;
 						$activeTab = 'pending';
@@ -150,7 +158,7 @@ if (Tools::isSubmit('revive'))
 				'{discount}' => $discount
 			);
 			$referralprogram->save();
-			Mail::Send((int)($cookie->id_lang), 'referralprogram-invitation', Mail::l('Referral Program'), $vars, $referralprogram->email, $referralprogram->firstname.' '.$referralprogram->lastname, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
+			Mail::Send((int)$cookie->id_lang, 'referralprogram-invitation', Mail::l('Referral Program', (int)$cookie->id_lang), $vars, $referralprogram->email, $referralprogram->firstname.' '.$referralprogram->lastname, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
 			$revive_sent = true;
 			$nbRevive++;
 		}
@@ -185,8 +193,9 @@ $smarty->assign(array(
 	'mails_exists' => (isset($mails_exists) ? $mails_exists : array())
 ));
 
-echo Module::display(dirname(__FILE__).'/referralprogram.php', 'referralprogram-program.tpl');
+$referralprogram = new ReferralProgram();
+echo $referralprogram->display(dirname(__FILE__).'/referralprogram.php', 'referralprogram-program.tpl');
 
-include(dirname(__FILE__).'/../../footer.php'); 
+include(dirname(__FILE__).'/../../footer.php');
 
 

@@ -62,6 +62,13 @@ class AdminInvoicesControllerCore extends AdminController
 						'type' => 'textareaLang',
 						'cols' => 40,
 						'rows' => 8
+					),
+					'PS_INVOICE_MODEL' => array(
+						'title' => $this->l('Invoice model:'),
+						'desc' => $this->l('Choose an invoice model'),
+						'type' => 'select',
+						'identifier' => 'value',
+						'list' => $this->getInvoicesModels()
 					)
 				),
 				'submit' => array()
@@ -80,7 +87,7 @@ class AdminInvoicesControllerCore extends AdminController
 			),
 			'input' => array(
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('From:'),
 					'name' => 'date_from',
 					'size' => 20,
@@ -89,7 +96,7 @@ class AdminInvoicesControllerCore extends AdminController
 					'desc' => $this->l('Format: 2007-12-31 (inclusive)')
 				),
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('To:'),
 					'name' => 'date_to',
 					'size' => 20,
@@ -110,10 +117,9 @@ class AdminInvoicesControllerCore extends AdminController
 			'date_to' => date('Y-m-d')
 		);
 
-		$this->tpl_form_vars = array('style' => 'float:left;');
 		$this->table = 'invoice_date';
 		$this->toolbar_title = $this->l('Print PDF invoices');
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initFormByStatus()
@@ -147,11 +153,12 @@ class AdminInvoicesControllerCore extends AdminController
 			SELECT COUNT(*) as nbOrders, (
 				SELECT oh.id_order_state
 				FROM '._DB_PREFIX_.'order_history oh
-				WHERE oh.id_order = o.id_order
+				WHERE oh.id_order = oi.id_order
 				ORDER BY oh.date_add DESC, oh.id_order_history DESC
 				LIMIT 1
 			) id_order_state
-			FROM '._DB_PREFIX_.'orders o
+			FROM '._DB_PREFIX_.'order_invoice oi
+			LEFT JOIN '._DB_PREFIX_.'orders o ON (oi.id_order = o.id_order)
 			WHERE o.id_shop IN('.implode(', ', $this->context->shop->getListOfID()).')
 			GROUP BY id_order_state
 		');
@@ -162,12 +169,12 @@ class AdminInvoicesControllerCore extends AdminController
 
 		$this->tpl_form_vars = array(
 			'statusStats' => $status_stats,
-			'style' => 'margin-left:400px'
+			'style' => ''
 		);
 
 		$this->table = 'invoice_status';
 		$this->show_toolbar = false;
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initContent()
@@ -177,7 +184,7 @@ class AdminInvoicesControllerCore extends AdminController
 		$this->content .= $this->initFormByDate();
 		$this->content .= $this->initFormByStatus();
 		$this->table = 'invoice';
-		$this->content .= $this->initOptions();
+		$this->content .= $this->renderOptions();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
@@ -204,13 +211,17 @@ class AdminInvoicesControllerCore extends AdminController
 		{
 			if (!Validate::isDate(Tools::getValue('date_from')))
 				$this->_errors[] = $this->l('Invalid from date');
+
 			if (!Validate::isDate(Tools::getValue('date_to')))
 				$this->_errors[] = $this->l('Invalid end date');
+
 			if (!count($this->_errors))
 			{
-				$orders = Order::getOrdersIdInvoiceByDate(Tools::getValue('date_from'), Tools::getValue('date_to'), null, 'invoice');
-				if (count($orders))
+				$order_invoice_list = OrderInvoice::getByDateInterval(Tools::getValue('date_from'), Tools::getValue('date_to'));
+
+				if (count($order_invoice_list))
 					Tools::redirectAdmin('pdf.php?invoices&date_from='.urlencode(Tools::getValue('date_from')).'&date_to='.urlencode(Tools::getValue('date_to')).'&token='.$this->token);
+
 				$this->_errors[] = $this->l('No invoice found for this period');
 			}
 		}
@@ -223,6 +234,7 @@ class AdminInvoicesControllerCore extends AdminController
 				foreach ($status_array as $id_order_state)
 					if (count($orders = Order::getOrderIdsByStatus((int)$id_order_state)))
 						Tools::redirectAdmin('pdf.php?invoices2&id_order_state='.implode('-', $status_array).'&token='.$this->token);
+
 				$this->_errors[] = $this->l('No invoice found for this status');
 			}
 		}
@@ -234,5 +246,22 @@ class AdminInvoicesControllerCore extends AdminController
 	{
 		if ((int)Tools::getValue('PS_INVOICE_START_NUMBER') != 0 && (int)Tools::getValue('PS_INVOICE_START_NUMBER') <= Order::getLastInvoiceNumber())
 				$this->_errors[] = $this->l('Invalid invoice number (must be > ').Order::getLastInvoiceNumber().')';
+	}
+
+	protected function getInvoicesModels()
+	{
+		$models = array(array('value'=>'invoice', 'name'=>'invoice'));
+		$d = dir(_PS_THEME_DIR_.'/pdf/');
+		while (false !== ($entry = $d->read()))
+		{
+			if (preg_match('`^(invoice-[a-z0-9]+)\.tpl$`', $entry, $matches)) {
+				$models[] = array(
+					'value' => $matches[1],
+					'name' => $matches[1]
+				);
+			}
+		}
+		$d->close();
+		return $models;
 	}
 }

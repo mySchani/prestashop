@@ -31,7 +31,6 @@ class AdminFeaturesControllerCore extends AdminController
 	 	$this->table = 'feature';
 		$this->className = 'Feature';
 	 	$this->lang = true;
-	 	$this->_defaultOrderBy = 'position';
 
 		$this->fieldsDisplay = array(
 			'id_feature' => array(
@@ -58,20 +57,21 @@ class AdminFeaturesControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		parent::__construct();
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 		$this->addRowAction('details');
-
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+	 	$this->_defaultOrderBy = 'position';
 
 	 	// Added specific button in toolbar
 	 	$this->toolbar_btn['newAttributes'] = array(
@@ -84,7 +84,7 @@ class AdminFeaturesControllerCore extends AdminController
 			'desc' => $this->l('Add new feature')
 		);
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	/**
@@ -94,7 +94,7 @@ class AdminFeaturesControllerCore extends AdminController
 	public function ajaxProcess()
 	{
 		// test if an id is submit
-		if (($id = Tools::getValue('id')) && Tools::isSubmit('id'))
+		if (($id = Tools::getValue('id')))
 		{
 			$this->table = 'feature_value';
 			$this->className = 'FeatureValue';
@@ -108,9 +108,7 @@ class AdminFeaturesControllerCore extends AdminController
 			$this->addRowAction('edit');
 			$this->addRowAction('delete');
 
-	 		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
-			if (!Validate::isLoadedObject($obj = new FeatureValue((int)$id)))
+			if (!Validate::isLoadedObject($obj = new Feature((int)$id)))
 				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 
 			$this->fieldsDisplay = array(
@@ -127,7 +125,7 @@ class AdminFeaturesControllerCore extends AdminController
 			$this->_where = sprintf('AND `id_feature` = %d', (int)$id);
 
 			// get list and force no limit clause in the request
-			$this->getList($this->context->language->id, null);
+			$this->getList($this->context->language->id);
 
 			// Render list
 			$helper = new HelperList();
@@ -151,10 +149,10 @@ class AdminFeaturesControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		$this->toolbar_title = $this->l('Add a new feature');
 		$this->fields_form = array(
@@ -190,7 +188,7 @@ class AdminFeaturesControllerCore extends AdminController
 			'class' => 'button'
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	/**
@@ -224,8 +222,8 @@ class AdminFeaturesControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
 	public function initFormFeatureValue()
 	{
@@ -314,14 +312,14 @@ class AdminFeaturesControllerCore extends AdminController
 			{
 				if (!$this->loadObject(true))
 					return;
-				$this->content .= $this->initForm();
+				$this->content .= $this->renderForm();
 			}
 			else if ($this->display == 'view')
 			{
 				// Some controllers use the view action without an object
 				if ($this->className)
 					$this->loadObject(true);
-				$this->content .= $this->initView();
+				$this->content .= $this->renderView();
 			}
 			else if ($this->display == 'editFeatureValue')
 			{
@@ -332,8 +330,8 @@ class AdminFeaturesControllerCore extends AdminController
 			}
 			else if (!$this->ajax)
 			{
-				$this->content .= $this->initList();
-				$this->content .= $this->initOptions();
+				$this->content .= $this->renderList();
+				$this->content .= $this->renderOptions();
 			}
 		}
 		else
@@ -357,10 +355,10 @@ class AdminFeaturesControllerCore extends AdminController
 
 			if (Tools::isSubmit('deletefeature_value'))
 			{
-			 	if ($this->tabAccess['delete'] === '1')
-			 	{
-				 	if (Tools::getValue('id_feature_value'))
-				 	{
+				if ($this->tabAccess['delete'] === '1')
+				{
+					if (Tools::getValue('id_feature_value'))
+					{
 						$object = new FeatureValue((int)Tools::getValue('id_feature_value'));
 						if ($object->delete())
 							Tools::redirectAdmin(self::$currentIndex.'&conf=2'.'&token='.$this->token);
@@ -376,12 +374,18 @@ class AdminFeaturesControllerCore extends AdminController
 				$id = (int)Tools::getValue('id_feature_value');
 				$feature_value = new FeatureValue($id);
 				$feature_value->value = array();
+
+				if (!Tools::getValue('value_'.$this->context->language->id))
+					$this->_errors[] = Tools::displayError('The value is required for the default language.');
+
 				$languages = Language::getLanguages(false);
 					foreach ($languages as $language)
 						$feature_value->value[$language['id_lang']] = Tools::getValue('value_'.$language['id_lang']);
 				$feature_value->id_feature = Tools::getValue('id_feature');
 
-				if (isset($id) && !empty($id))
+				if (count($this->_errors) > 0)
+					return false;
+				else if (isset($id) && !empty($id))
 				{
 					// Update
 					if (!$feature_value->update())
@@ -408,10 +412,10 @@ class AdminFeaturesControllerCore extends AdminController
 
 			if (Tools::getValue('submitDel'.$this->table))
 			{
-			 	if ($this->tabAccess['delete'] === '1')
-			 	{
-				 	if (isset($_POST[$this->table.'Box']))
-				 	{
+				if ($this->tabAccess['delete'] === '1')
+				{
+					if (isset($_POST[$this->table.'Box']))
+					{
 						$object = new $this->className();
 						if ($object->deleteSelection($_POST[$this->table.'Box']))
 							Tools::redirectAdmin(self::$currentIndex.'&conf=2'.'&token='.$this->token);

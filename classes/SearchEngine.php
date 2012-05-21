@@ -30,20 +30,18 @@ class SearchEngineCore extends ObjectModel
 	public $server;
 	public $getvar;
 
-	protected	$fieldsRequired = array ('server', 'getvar');	
-	protected	$fieldsValidate = array ('server' => 'isUrl', 'getvar' => 'isModuleName');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'search_engine',
+		'primary' => 'id_search_engine',
+		'fields' => array(
+			'server' => array('type' => self::TYPE_STRING, 'validate' => 'isUrl', 'required' => true),
+			'getvar' => array('type' => self::TYPE_STRING, 'validate' => 'isModuleName', 'required' => true),
+		),
+	);
 
-	protected 	$table = 'search_engine';
-	protected 	$identifier = 'id_search_engine';
-	
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['server'] = pSQL($this->server);
-		$fields['getvar'] = pSQL($this->getvar);
-		return $fields;
-	}
-	
 	public static function getKeywords($url)
 	{
 		$parsedUrl = @parse_url($url);

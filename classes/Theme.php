@@ -29,17 +29,16 @@ class ThemeCore extends ObjectModel
 {
 	public $name;
 
-	protected $fieldsSize = array('name' => 64);
- 	protected $fieldsValidate = array('name' => 'isGenericName');
-	protected $table = 'theme';
-	protected $identifier = 'id_theme';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['name'] = pSQL($this->name);
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'theme',
+		'primary' => 'id_theme',
+		'fields' => array(
+			'name' => array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 64),
+		),
+	);
 
 	public static function getThemes()
 	{

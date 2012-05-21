@@ -74,37 +74,37 @@ class CategoryCore extends ObjectModel
 	/** @var string Object last modification date */
 	public $date_upd;
 
-	protected $langMultiShop = true;
-
 	public $groupBox;
 
 	protected static $_links = array();
 
-	protected $tables = array ('category', 'category_lang');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'category',
+		'primary' => 'id_category',
+		'multilang' => true,
+		'multishop' => true,
+		'fields' => array(
+			'nleft' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'nright' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'level_depth' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
+			'id_parent' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'position' => 			array('type' => self::TYPE_INT),
+			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 
-	protected $fieldsRequired = array('active');
- 	protected $fieldsSize = array('active' => 1);
- 	protected $fieldsValidate = array(
- 		'nleft' => 'isUnsignedInt',
- 		'nright' => 'isUnsignedInt',
- 		'level_depth' => 'isUnsignedInt',
- 		'active' => 'isBool',
- 		'id_parent' => 'isUnsignedInt',
- 		'groupBox' => 'isArrayWithIds'
- 	);
-	protected $fieldsRequiredLang = array('name', 'link_rewrite');
- 	protected $fieldsSizeLang = array('name' => 64, 'link_rewrite' => 64, 'meta_title' => 128, 'meta_description' => 255, 'meta_keywords' => 255);
- 	protected $fieldsValidateLang = array(
- 		'name' => 'isCatalogName',
- 		'link_rewrite' => 'isLinkRewrite',
- 		'description' => 'isString',
- 		'meta_title' => 'isGenericName',
- 		'meta_description' => 'isGenericName',
- 		'meta_keywords' => 'isGenericName'
- 	);
-
-	protected $table = 'category';
-	protected $identifier = 'id_category';
+			// Lang fields
+			'name' => 				array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isCatalogName', 'required' => true, 'size' => 64),
+			'link_rewrite' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isLinkRewrite', 'required' => true, 'size' => 64),
+			'description' => 		array('type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isString'),
+			'meta_title' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 128),
+			'meta_description' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+			'meta_keywords' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+		),
+	);
 
 	/** @var string id_image is the category ID when an image exists and 'default' otherwise */
 	public $id_image = 'default';
@@ -130,22 +130,6 @@ class CategoryCore extends ObjectModel
 		$this->image_dir = _PS_CAT_IMG_DIR_;
 	}
 
-	public function getFields()
-	{
-		$this->validateFields();
-		if (isset($this->id))
-			$fields['id_category'] = (int)$this->id;
-		$fields['active'] = (int)$this->active;
-		$fields['id_parent'] = (int)$this->id_parent;
-		$fields['position'] = (int)$this->position;
-		$fields['level_depth'] = (int)$this->level_depth;
-		$fields['nleft'] = (int)$this->nleft;
-		$fields['nright'] = (int)$this->nright;
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		return $fields;
-	}
-
 	/**
 	  * Allows to display the category description without HTML tags and slashes
 	  *
@@ -154,24 +138,6 @@ class CategoryCore extends ObjectModel
 	public static function getDescriptionClean($description)
 	{
 		return strip_tags(stripslashes($description));
-	}
-
-	/**
-	  * Check then return multilingual fields for database interaction
-	  *
-	  * @return array Multilingual fields
-	  */
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array(
-			'name',
-			'description' => array('html' => true),
-			'link_rewrite',
-			'meta_title',
-			'meta_keywords',
-			'meta_description',
-		));
 	}
 
 	public	function add($autodate = true, $nullValues = false)
@@ -242,7 +208,8 @@ class CategoryCore extends ObjectModel
 			$id_lang = _USER_ID_LANG_;
 
 		$children = array();
-		if (($max_depth == 0 || $current_depth < $max_depth) && $subcats = $this->getSubCategories($id_lang, true) && count($subcats))
+		$subcats = $this->getSubCategories($id_lang, true);
+		if (($max_depth == 0 || $current_depth < $max_depth) && $subcats && count($subcats))
 			foreach ($subcats as &$subcat)
 			{
 				if (!$subcat['id_category'])
@@ -591,12 +558,11 @@ class CategoryCore extends ObjectModel
 					LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON p.`id_product` = cp.`id_product`
 					WHERE cp.`id_category` = '.(int)$this->id.
 					($active ? ' AND p.`active` = 1' : '').
-					($id_supplier ? 'AND p.id_supplier = '.(int)$id_supplier : '').
-					' GROUP BY p.id_product';
+					($id_supplier ? 'AND p.id_supplier = '.(int)$id_supplier : '');
 			return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 		}
 
-		$sql = 'SELECT p.*, stock.out_of_stock, stock.quantity, pa.`id_product_attribute`, pl.`description`, pl.`description_short`, pl.`available_now`,
+		$sql = 'SELECT p.*, stock.out_of_stock, IFNULL(stock.quantity, 0) as quantity, pa.`id_product_attribute`, pl.`description`, pl.`description_short`, pl.`available_now`,
 					pl.`available_later`, pl.`link_rewrite`, pl.`meta_description`, pl.`meta_keywords`, pl.`meta_title`, pl.`name`, i.`id_image`,
 					il.`legend`, m.`name` AS manufacturer_name, tl.`name` AS tax_name, t.`rate`, cl.`name` AS category_default,
 					DATEDIFF(p.`date_add`, DATE_SUB(NOW(),
@@ -638,6 +604,7 @@ class CategoryCore extends ObjectModel
 					.($active ? ' AND p.`active` = 1' : '')
 					.($id_supplier ? ' AND p.id_supplier = '.(int)$id_supplier : '').
 					' GROUP BY p.id_product';
+
 		if ($random === true)
 		{
 			$sql .= ' ORDER BY RAND()';
@@ -702,18 +669,21 @@ class CategoryCore extends ObjectModel
 		ORDER BY `position` ASC');
 	}
 
-	/** return an array of all children of the current category
+	/**
+	 * Return an array of all children of the current category
 	 *
-	 * @return array rows of table category
-	 * @todo return hydrateCollection
+	 * @param int $id_lang
+	 * @return Collection
 	 */
-	public function getAllChildren()
+	public function getAllChildren($id_lang = null)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT *
-			FROM `'._DB_PREFIX_.'category`
-			WHERE '.(int)$this->nleft.' < nleft AND nright < '.(int)$this->nright
-		);
+		if (is_null($id_lang))
+			$id_lang = Context::getContext()->language->id;
+
+		$categories = new Collection('Category', $id_lang);
+		$categories->where('nleft', '>', $this->nleft);
+		$categories->where('nright', '<', $this->nright);
+		return $categories;
 	}
 
 	/**
@@ -939,7 +909,6 @@ class CategoryCore extends ObjectModel
 		return isset($row['id_category']);
 	}
 
-
 	public function cleanGroups()
 	{
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'category_group` WHERE `id_category` = '.(int)$this->id);
@@ -1005,10 +974,15 @@ class CategoryCore extends ObjectModel
 		return false;
 	}
 
+	/**
+	 * Update customer groups associated to the object
+	 *
+	 * @param array $list groups
+	 */
 	public function updateGroup($list)
 	{
 		$this->cleanGroups();
-		if ($list && count($list))
+		if ($list && !empty($list))
 			$this->addGroups($list);
 		else
 			$this->addGroups(array(1));

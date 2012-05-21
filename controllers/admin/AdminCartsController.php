@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminCartsController extends AdminController
+class AdminCartsControllerCore extends AdminController
 {
 	public function __construct()
 	{
@@ -56,7 +56,7 @@ class AdminCartsController extends AdminController
 			),
 			'customer' => array(
 				'title' => $this->l('Customer'),
-				'width' => 80,
+				'width' => 'auto',
 				'filter_key' => 'c!lastname'
 			),
 			'total' => array(
@@ -64,7 +64,7 @@ class AdminCartsController extends AdminController
 				'callback' => 'getOrderTotalUsingTaxCalculationMethod',
 				'orderby' => false,
 				'search' => false,
-				'width' => 50,
+				'width' => 80,
 				'align' => 'right',
 				'prefix' => '<b>',
 				'suffix' => '</b>',
@@ -72,21 +72,21 @@ class AdminCartsController extends AdminController
 			),
 			'carrier' => array(
 				'title' => $this->l('Carrier'),
-				'width' => 25,
+				'width' => 50,
 				'align' => 'center',
 				'callback' => 'replaceZeroByShopName',
 				'filter_key' => 'ca!name'
 			),
 			'date_add' => array(
 				'title' => $this->l('Date'),
-				'width' => 90,
+				'width' => 150,
 				'align' => 'right',
 				'type' => 'datetime',
 				'filter_key' => 'a!date_add'
 			),
 			'id_guest' => array(
 				'title' => $this->l('Online'),
-				'width' => 25,
+				'width' => 40,
 				'align' => 'center',
 				'type' => 'bool',
 				'filter_key' => 'id_guest',
@@ -99,7 +99,7 @@ class AdminCartsController extends AdminController
 		parent::__construct();
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		if (!($cart = $this->loadObject(true)))
 			return;
@@ -178,7 +178,7 @@ class AdminCartsController extends AdminController
 			'customized_datas' => $customized_datas
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function ajaxPreProcess()
@@ -244,7 +244,7 @@ class AdminCartsController extends AdminController
 			if (!$this->context->cart->id)
 				return;
 			if ($this->context->cart->OrderExists())
-				$errors[] = Tools::displayErrors('An order already placed with this cart');
+				$errors[] = Tools::displayError('An order already placed with this cart');
 			elseif (!($id_product = (int)Tools::getValue('id_product')) OR !($product = new Product((int)$id_product, true, $this->context->language->id)))
 				$errors[] = Tools::displayError('Invalid product');
 			elseif (!($qty = Tools::getValue('qty')) || $qty == 0)
@@ -326,7 +326,7 @@ class AdminCartsController extends AdminController
 		{
 			$errors = array();
 			if (!$id_order = Tools::getValue('id_order'))
-				$errors[] = Tools::displayErrors('Invalid order');
+				$errors[] = Tools::displayError('Invalid order');
 			$cart = Cart::getCartByOrderId($id_order);
 			$new_cart = $cart->duplicate();
 			if (!$new_cart || !Validate::isLoadedObject($new_cart['cart']))
@@ -483,6 +483,12 @@ class AdminCartsController extends AdminController
 						);
 	}
 
+	public function initToolbar()
+	{
+		parent::initToolbar();
+		unset($this->toolbar_btn['new']);
+	}
+
 	public function displayAjaxGetSummary()
 	{
 		echo Tools::jsonEncode($this->ajaxReturnVars());
@@ -490,7 +496,25 @@ class AdminCartsController extends AdminController
 
 	public function ajaxProcessUpdateProductPrice()
 	{
-
+		SpecificPrice::deleteByIdCart((int)$this->context->cart->id, (int)Tools::getValue('id_product'), (int)Tools::getValue('id_product_attribute'));
+		$specific_price = new SpecificPrice();
+		$specific_price->id_cart = (int)$this->context->cart->id;
+		$specific_price->id_shop = 0;
+		$specific_price->id_group_shop = 0;
+		$specific_price->id_currency = 0;
+		$specific_price->id_country = 0;
+		$specific_price->id_group = 0;
+		$specific_price->id_customer = (int)$this->context->customer->id;
+		$specific_price->id_product = (int)Tools::getValue('id_product');
+		$specific_price->id_product_attribute = (int)Tools::getValue('id_product_attribute');
+		$specific_price->price = (float)Tools::getValue('price');
+		$specific_price->from_quantity = 1;
+		$specific_price->reduction = 0;
+		$specific_price->reduction_type = 'amount';
+		$specific_price->from = '0000-00-00 00:00:00';
+		$specific_price->to = '0000-00-00 00:00:00';
+		$specific_price->add();
+		echo Tools::jsonEncode($this->ajaxReturnVars());
 	}
 
 	public static function getOrderTotalUsingTaxCalculationMethod($id_cart)

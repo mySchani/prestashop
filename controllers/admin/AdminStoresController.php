@@ -65,8 +65,10 @@ class AdminStoresControllerCore extends AdminController
 			'name' => array('title' => $this->l('Name'), 'width' => 120, 'filter_key' => 'a!name'),
 			'phone' => array('title' => $this->l('Phone'), 'width' => 70),
 			'fax' => array('title' => $this->l('Fax'), 'width' => 70),
-			'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false)
+			'active' => array('title' => $this->l('Enabled'), 'width' => 70, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false)
 		);
+
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->options = array(
 			'general' => array(
@@ -112,12 +114,10 @@ class AdminStoresControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
-
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->_select = 'cl.`name` country, st.`name` state';
 		$this->_join = '
@@ -127,10 +127,10 @@ class AdminStoresControllerCore extends AdminController
 			LEFT JOIN `'._DB_PREFIX_.'state` st
 				ON (st.`id_state` = a.`id_state`)';
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -292,7 +292,7 @@ class AdminStoresControllerCore extends AdminController
 			'hours' => isset($hours_unserialized) ? $hours_unserialized : false
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -373,10 +373,13 @@ class AdminStoresControllerCore extends AdminController
 		{
 			$images_types = ImageType::getImagesTypes('stores');
 			foreach ($images_types as $k => $image_type)
+			{
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				imageResize(_PS_STORE_IMG_DIR_.$id_store.'.jpg',
-							_PS_STORE_IMG_DIR_.$id_store.'-'.stripslashes($image_type['name']).'.jpg',
+							_PS_STORE_IMG_DIR_.$id_store.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 							(int)$image_type['width'], (int)$image_type['height']
 				);
+			}
 		}
 		return $ret;
 	}

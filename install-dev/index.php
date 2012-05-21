@@ -37,7 +37,7 @@ if (!isset($_SERVER['REQUEST_URI']) || $_SERVER['REQUEST_URI'] == '')
 if ($tmp = strpos($_SERVER['REQUEST_URI'], '?'))
 	$_SERVER['REQUEST_URI'] = substr($_SERVER['REQUEST_URI'], 0, $tmp);
 
-define('INSTALL_VERSION', '1.5.0.1');
+define('INSTALL_VERSION', '1.5.0.2');
 define('MINIMUM_VERSION_TO_UPDATE', '0.8.5');
 define('INSTALL_PATH', dirname(__FILE__));
 if (version_compare(phpversion(), '5.0.0', '<'))
@@ -117,8 +117,8 @@ if ($lm->getIncludeTradFilename())
 	<title><?php echo sprintf(lang('PrestaShop %s Installer'), INSTALL_VERSION); ?></title>
 	<link rel="stylesheet" type="text/css" media="all" href="view.css"/>
 	<script type="text/javascript" src="<?php echo PS_BASE_URI ?>js/jquery/jquery-1.4.4.min.js"></script>
-	<script type="text/javascript" src="<?php echo PS_BASE_URI ?>js/jquery/ajaxfileupload.js"></script>
-	<script type="text/javascript" src="<?php echo PS_BASE_URI ?>js/jquery/jquery.pngFix.pack.js"></script>
+	<script type="text/javascript" src="<?php echo PS_BASE_URI ?>js/jquery/plugins/ajaxfileupload/jquery.ajaxfileupload.js"></script>
+	<script type="text/javascript" src="<?php echo PS_BASE_URI ?>js/jquery/plugins/jquery.pngFix.js"></script>
 	<link rel="shortcut icon" href="<?php echo PS_BASE_URI ?>img/favicon.ico" />
 
 	<script type="text/javascript">
@@ -682,7 +682,7 @@ if ($lm->getIncludeTradFilename())
 					<input type="radio" name="catalogMode" id="catalogMode_0" value="0" checked="checked"/>
 							<label for="catalogMode_0" class="radiolabel"><?php echo lang('No'); ?></label>
 						</span>
-						<p class="userInfos aligned"><?php echo lang('If you activate this feature, all purchasing will be disabled. However, you will be able to enable purchasing later in your Back Office.'); ?></p>
+						<p class="userInfos aligned"><?php echo lang('If you activate this feature, all selling features will be disabled. However, this option can be changed later in your Back Office.'); ?></p>
 				</div>
 
 				<div class="field">
@@ -737,8 +737,8 @@ if ($lm->getIncludeTradFilename())
 					if (!isset($_GET['language']))
 						$_GET['language'] = 0;
 				?>
-				<link href="../css/jquery.fancybox-1.3.4.css" rel="stylesheet" type="text/css" media="screen" />
-				<script src="../js/jquery/jquery.fancybox-1.3.4.js" type="text/javascript"></script>
+				<link href="../js/plugins/fancybox/jquery.fancybox.css" rel="stylesheet" type="text/css" media="screen" />
+				<script src="../js/jquery/plugins/fancybox/jquery.fancybox.js" type="text/javascript"></script>
 					<script type="text/javascript">
 					var moduleChecked = new Array();
 					$(document).ready(function() {
@@ -780,7 +780,7 @@ if ($lm->getIncludeTradFilename())
 					}
 
 						$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 3)));
-						$content = @file_get_contents('http://www.prestashop.com/partner/preactivation/partners.php?version=1.0', false, $stream_context);
+						$content = @file_get_contents('http://api.prestashop.com/partner/preactivation/partners.php?version=1.0', false, $stream_context);
 					if ($content && $content[0] == '<')
 					{
 						$result = simplexml_load_string($content);
@@ -1316,7 +1316,7 @@ if ($lm->getIncludeTradFilename())
 
 				<?php
 
-					if (@fsockopen('www.prestashop.com', 80, $errno, $errst, 3))
+					if (@fsockopen('features.prestashop.com', 80, $errno, $errst, 3))
 					{
 						echo '
 						<h2>'.lang('New features in PrestaShop v').INSTALL_VERSION.'</h2>

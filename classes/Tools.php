@@ -35,11 +35,24 @@ class ToolsCore
 	* Random password generator
 	*
 	* @param integer $length Desired length (optional)
+	* @param string $flag Output type (NUMERIC, ALPHANUMERIC, NO_NUMERIC)
 	* @return string Password
 	*/
-	public static function passwdGen($length = 8)
+	public static function passwdGen($length = 8, $flag = 'ALPHANUMERIC')
 	{
-		$str = 'abcdefghijkmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		switch ($flag)
+		{
+			case 'NUMERIC':
+				$str = '0123456789';
+				break;
+			case 'NO_NUMERIC':
+				$str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				break;
+			default:
+				$str = 'abcdefghijkmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+				break;
+		}
+
 		for ($i = 0, $passwd = ''; $i < $length; $i++)
 			$passwd .= self::substr($str, mt_rand(0, self::strlen($str) - 1), 1);
 		return $passwd;
@@ -117,6 +130,20 @@ class ToolsCore
 	{
 		header('Location: '.$url);
 		exit;
+	}
+
+	/**
+	 * getShopProtocol return the available protocol for the current shop in use
+	 * SSL if Configuration is set on and available for the server
+	 * @static
+	 * @return String
+	 */
+	public static function getShopProtocol()
+	{
+		$id_shop = Context::getContext()->shop()->id;
+		$protocol = (Configuration::get('PS_SSL_ENABLED', null, null, $id_shop) || (!empty($_SERVER['HTTPS'])
+			&& strtolower($_SERVER['HTTPS']) != 'off')) ? 'https://' : 'http://';
+		return $protocol;
 	}
 
 	/**
@@ -340,6 +367,10 @@ class ToolsCore
 			$context = Context::getContext();
 		if ($id_lang = (int)(self::getValue('id_lang')) AND Validate::isUnsignedId($id_lang))
 			$context->cookie->id_lang = $id_lang;
+
+		$language = new Language($id_lang);
+		if (Validate::isLoadedObject($language))
+			$context->language = $language;
 	}
 
 	/**
@@ -525,10 +556,14 @@ class ToolsCore
 	*/
 	public static function displayDate($date, $id_lang, $full = false, $separator = '-')
 	{
-	 	if (!$date || !($time = strtotime($date)))
-	 		return $date;
+		if (!$date || !($time = strtotime($date)))
+			return $date;
+
+		if ($date == '0000-00-00 00:00:00' || $date == '0000-00-00')
+			return '';
+
 		if (!Validate::isDate($date) || !Validate::isBool($full))
-			die (self::displayError('Invalid date'));
+			throw new PrestashopException('Invalid date');
 
 		$context = Context::getContext();
 		$date_format = ($full ? $context->language->date_format_full : $context->language->date_format_lite);
@@ -544,7 +579,7 @@ class ToolsCore
 	*/
 	public static function safeOutput($string, $html = false)
 	{
-	 	if (!$html)
+		if (!$html)
 			$string = strip_tags($string);
 		return @Tools::htmlentitiesUTF8($string, ENT_QUOTES);
 	}
@@ -598,6 +633,9 @@ class ToolsCore
 	public static function displayError($string = 'Fatal error', $htmlentities = true, Context $context = null)
 	{
 		global $_ERRORS;
+
+		if (is_null($context))
+			$context = Context::getContext();
 
 		@include_once(_PS_TRANSLATIONS_DIR_.$context->language->iso_code.'/errors.php');
 
@@ -1008,7 +1046,7 @@ class ToolsCore
 		$str = self::replaceAccentedChars($str);
 
 		// Remove all non-whitelist chars.
-		$str = preg_replace('/[^a-zA-Z0-9\s\'\:\/\[\]-]/','', $str);
+		$str = preg_replace('/[^a-zA-Z0-9\s\'\:\/\[\]-\pL]/u','', $str);
 		$str = preg_replace('/[\s\'\:\/\[\]-]+/',' ', $str);
 		$str = preg_replace('/[ ]/','-', $str);
 		$str = preg_replace('/[\/]/','-', $str);
@@ -1264,7 +1302,7 @@ class ToolsCore
 	public static function simplexml_load_file($url, $class_name = null)
 	{
 		if (in_array(ini_get('allow_url_fopen'), array('On', 'on', '1')))
-			return simplexml_load_string(Tools::file_get_contents($url), $class_name);
+			return @simplexml_load_string(Tools::file_get_contents($url), $class_name);
 		else
 			return false;
 	}
@@ -1457,6 +1495,9 @@ class ToolsCore
 
 	public static function generateHtaccess($path, $rewrite_settings, $cache_control, $specific = '', $disable_multiviews = false)
 	{
+		if (defined('PS_INSTALLATION_IN_PROGRESS'))
+			return;
+
 		// Check current content of .htaccess and save all code outside of prestashop comments
 		$specific_before = $specific_after = '';
 		if (file_exists($path))
@@ -1485,12 +1526,12 @@ class ToolsCore
 		$domains = array();
 		foreach (ShopUrl::getShopUrls() as $shop_url)
 		{
-			if (!isset($domains[$shop_url['domain']]))
-				$domains[$shop_url['domain']] = array();
+			if (!isset($domains[$shop_url->domain]))
+				$domains[$shop_url->domain] = array();
 
-			$domains[$shop_url['domain']][] = array(
-				'physical' =>	$shop_url['physical_uri'],
-				'virtual' =>	$shop_url['virtual_uri'],
+			$domains[$shop_url->domain][] = array(
+				'physical' =>	$shop_url->physical_uri,
+				'virtual' =>	$shop_url->virtual_uri,
 			);
 		}
 
@@ -1525,8 +1566,8 @@ class ToolsCore
 			fwrite($write_fd, "# Images\n");
 			if (Configuration::get('PS_LEGACY_IMAGES'))
 			{
-				fwrite($write_fd, 'RewriteRule ^([a-z0-9]+)\-([a-z0-9]+)(\-[_a-zA-Z0-9-]*)/[_a-zA-Z0-9-]*\.jpg$ '._PS_PROD_IMG_.'$1-$2$3.jpg [L]'."\n");
-				fwrite($write_fd, 'RewriteRule ^([0-9]+)\-([0-9]+)/[_a-zA-Z0-9-]*\.jpg$ '._PS_PROD_IMG_.'$1-$2.jpg [L]'."\n");
+				fwrite($write_fd, 'RewriteRule (*UTF8)^([a-z0-9]+)\-([a-z0-9]+)(\-[_a-zA-Z0-9-]*)(-[0-9]+)?/[_a-zA-Z0-9-\pL]*\.jpg$ '._PS_PROD_IMG_.'$1-$2$3$4.jpg [L]'."\n");
+				fwrite($write_fd, 'RewriteRule (*UTF8)^([0-9]+)\-([0-9]+)(-[0-9]+)?/[_a-zA-Z0-9-\pL]*\.jpg$ '._PS_PROD_IMG_.'$1-$2$3.jpg [L]'."\n");
 			}
 
 			// Rewrite product images < 100 millions
@@ -1539,10 +1580,10 @@ class ToolsCore
 					$img_name .= '$'.$j;
 				}
 				$img_name .= '$'.$j;
-				fwrite($write_fd, 'RewriteRule ^'.str_repeat('([0-9])', $i).'(\-[_a-zA-Z0-9-]*)?/[_a-zA-Z0-9-]*\.jpg$ '._PS_PROD_IMG_.$img_path.$img_name.".jpg [L]\n");
+				fwrite($write_fd, 'RewriteRule (*UTF8)^'.str_repeat('([0-9])', $i).'(\-[_a-zA-Z0-9-]*)?(-[0-9]+)?/[_a-zA-Z0-9-\pL]*\.jpg$ '._PS_PROD_IMG_.$img_path.$img_name.'$'.($j+1).".jpg [L]\n");
 			}
-			fwrite($write_fd, 'RewriteRule ^c/([0-9]+)(\-[_a-zA-Z0-9-]*)/[_a-zA-Z0-9-]*\.jpg$ img/c/$1$2.jpg [L]'."\n");
-			fwrite($write_fd, 'RewriteRule ^c/([a-zA-Z-]+)/[a-zA-Z0-9-]+\.jpg$ img/c/$1.jpg [L]'."\n");
+			fwrite($write_fd, 'RewriteRule (*UTF8)^c/([0-9]+)(\-[_a-zA-Z0-9-\pL]*)(-[0-9]+)?/[_a-zA-Z0-9-]*\.jpg$ img/c/$1$2$3.jpg [L]'."\n");
+			fwrite($write_fd, 'RewriteRule (*UTF8)^c/([a-zA-Z-]+)(-[0-9]+)?/[a-zA-Z0-9-\pL]+\.jpg$ img/c/$1$2.jpg [L]'."\n");
 		}
 
 		// Redirections to dispatcher
@@ -1643,8 +1684,8 @@ FileETag INode MTime Size
 				trigger_error($message, E_USER_WARNING);
 			else
 			{
-				trigger_error('Function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['line'].'</strong><br />', E_USER_WARNING);
-				$message = self::displayError('The function').' '.$callee['function'].' ('.self::displayError('Line').' '.$callee['line'].') '.self::displayError('is deprecated and will be removed in the next major version.');
+				trigger_error('Function <b>'.$callee['function'].'()</b> is deprecated in <b>'.$callee['file'].'</b> on line <b>'.$callee['line'].'</b><br />', E_USER_WARNING);
+				$message = 'The function '.$callee['function'].' (Line '.$callee['line'].') is deprecated and will be removed in the next major version.';
 			}
 			$class = isset($callee['class']) ? $callee['class'] : null;
 			Logger::addLog($message, 3, $class);
@@ -1658,9 +1699,10 @@ FileETag INode MTime Size
 	{
 		$backtrace = debug_backtrace();
 		$callee = next($backtrace);
-		$error = 'Parameter <strong>'.$parameter.'</strong> in function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['Line'].'</strong><br />';
-		$message = self::displayError('The parameter').' '.$parameter.' '.self::displayError(' in function ').' '.$callee['function'].' ('.self::displayError('Line').' '.$callee['Line'].') '.self::displayError('is deprecated and will be removed in the next major version.');
+		$error = 'Parameter <b>'.$parameter.'</b> in function <b>'.$callee['function'].'()</b> is deprecated in <b>'.$callee['file'].'</b> on line <b>'.$callee['Line'].'</b><br />';
+		$message = 'The parameter '.$parameter.' in function '.$callee['function'].' (Line '.$callee['Line'].') is deprecated and will be removed in the next major version.';
 
+		trigger_error($message, E_WARNING);
 		$class = isset($callee['class']) ? $callee['class'] : null;
 		self::throwDeprecated($error, $message, $class);
 	}
@@ -1669,8 +1711,8 @@ FileETag INode MTime Size
 	{
 		$backtrace = debug_backtrace();
 		$callee = current($backtrace);
-		$error = 'File <strong>'.$callee['file'].'</strong> is deprecated<br />';
-		$message = Tools::displayError('The file').' '.$callee['file'].' '.Tools::displayError('is deprecated and will be removed in the next major version.');
+		$error = 'File <b>'.$callee['file'].'</b> is deprecated<br />';
+		$message = 'The file '.$callee['file'].' is deprecated and will be removed in the next major version.';
 
 		$class = isset($callee['class']) ? $callee['class'] : null;
 		self::throwDeprecated($error, $message, $class);
@@ -1796,10 +1838,10 @@ FileETag INode MTime Size
 		}
 	}
 
-    /**
-     * @desc extract a zip file to the given directory
-     * @return bool success
-     */
+	/**
+	 * @desc extract a zip file to the given directory
+	 * @return bool success
+	 */
 	public static function ZipExtract($fromFile, $toDir)
 	{
 		if (!file_exists($toDir))
@@ -1828,6 +1870,9 @@ FileETag INode MTime Size
 	 *
 	 * @param string $type by|way
 	 * @param string $value If no index given, use default order from admin -> pref -> products
+	 * @param bool|\bool(false)|string $prefix
+	 *
+	 * @return string Order by sql clause
 	 */
 	public static function getProductsOrder($type, $value = null, $prefix = false)
 	{
@@ -1875,7 +1920,7 @@ FileETag INode MTime Size
 		else
 		{
 			$value_length = strlen($value);
-			$qty = substr($value, 0, $value_length - 1 );
+			$qty = (int)substr($value, 0, $value_length - 1 );
 			$unit = strtolower(substr($value, $value_length - 1));
 			switch ($unit)
 			{
@@ -1959,16 +2004,27 @@ FileETag INode MTime Size
 	{
 		$memory_limit = @ini_get('memory_limit');
 
-		if (preg_match('/[0-9]+k/i', $memory_limit))
-			return 1024 * (int)$memory_limit;
+		return self::getOctets($memory_limit);
+	}
 
-		if (preg_match('/[0-9]+m/i', $memory_limit))
-			return 1024 * 1024 * (int)$memory_limit;
+	/**
+	 * getOctet allow to gets the value of a configuration option in octet
+	 *
+	 * @since 1.5.0
+	 * @return int the value of a configuration option in octet
+	 */
+	public static function getOctets($option)
+	{
+		if (preg_match('/[0-9]+k/i', $option))
+			return 1024 * (int)$option;
 
-		if (preg_match('/[0-9]+g/i', $memory_limit))
-			return 1024 * 1024 * 1024 * (int)$memory_limit;
+		if (preg_match('/[0-9]+m/i', $option))
+			return 1024 * 1024 * (int)$option;
 
-		return $memory_limit;
+		if (preg_match('/[0-9]+g/i', $option))
+			return 1024 * 1024 * 1024 * (int)$option;
+
+		return $option;
 	}
 
 	/**
@@ -2036,6 +2092,36 @@ FileETag INode MTime Size
 
 		return false;
 	}
+
+
+	/**
+	 * @params string $path Path to scan
+	 * @params string $ext Extention to filter files
+	 * @params string $dir Add this to prefix output for example /path/dir/*
+	 *
+	 * @return array List of file found
+	 * @since 1.5.0
+	 */
+	public static function scandir($path, $ext = 'php', $dir = '')
+	{
+		$real_path = $path.$dir;
+		$files = scandir($real_path);
+		if (!$files)
+			return array();
+
+		$filtered_files = array();
+
+		$real_ext =  '';
+		if (!empty($ext))
+			$real_ext = '.' . $ext;
+
+		$real_ext_length = strlen($real_ext);
+
+		foreach ($files as $file)
+			if (strpos($file, $real_ext) && strpos($file, $real_ext) == (strlen($file) - $real_ext_length))
+				$filtered_files[] = $dir . '/' . $file;
+		return $filtered_files;
+	}
 }
 
 /**
@@ -2063,4 +2149,3 @@ function cmpPriceDesc($a,$b)
 		return (-1);
 	return (0);
 }
-

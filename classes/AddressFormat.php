@@ -38,12 +38,17 @@ class AddressFormatCore extends ObjectModel
 
 	private $_errorFormatList = array();
 
-	protected	$fieldsRequired = array ('format');
-	protected	$fieldsValidate = array ('format' => 'isGenericName');
-
-	/* MySQL does not allow 'order detail' for a table name */
-	protected	$table = 'address_format';
-	protected $identifier = 'id_country';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'address_format',
+		'primary' => 'id_country',
+		'fields' => array(
+			'format' => 	array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
+			'id_country' => array('type' => self::TYPE_INT),
+		),
+	);
 
 	public static $requireFormFieldsList = array(
 		'firstname',
@@ -90,16 +95,6 @@ class AddressFormatCore extends ObjectModel
 		'Supplier');
 
 	const _CLEANING_REGEX_ = '#([^\w:_]+)#i';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_country'] = (int)($this->id_country);
-		$fields['format'] = pSQL($this->format);
-
-		return $fields;
-	}
 
 	/*
 	 * Check if the the association of the field name and a class name
@@ -524,7 +519,7 @@ class AddressFormatCore extends ObjectModel
 	{
 		$result = Db::getInstance()->getRow('
 		SELECT format
-		FROM `'._DB_PREFIX_.$this->table.'`
+		FROM `'._DB_PREFIX_.$this->def['table'].'`
 		WHERE `id_country` = '.(int)($id_country));
 
 		return isset($result['format']) ? trim($result['format']) : '';

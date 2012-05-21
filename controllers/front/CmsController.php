@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10174 $
+*  @version  Release: $Revision: 11215 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -107,5 +107,6 @@ class CmsControllerCore extends FrontController
 		}
 
 		$this->setTemplate(_PS_THEME_DIR_.'cms.tpl');
+		parent::initContent();
 	}
 }

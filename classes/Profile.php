@@ -29,30 +29,22 @@ class ProfileCore extends ObjectModel
 {
  	/** @var string Name */
 	public 		$name;
-	
- 	protected 	$fieldsRequiredLang = array('name');
- 	protected 	$fieldsSizeLang = array('name' => 32);
- 	protected 	$fieldsValidateLang = array('name' => 'isGenericName');
 
-	protected 	$table = 'profile';
-	protected 	$identifier = 'id_profile';
-		
-	public function getFields()
-	{
-		return array('id_profile' => $this->id);
-	}
-	
 	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
-	
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'profile',
+		'primary' => 'id_profile',
+		'multilang' => true,
+		'fields' => array(
+			// Lang fields
+			'name' => array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 32),
+		),
+	);
+
+	private static $_cache_accesses = array();
+
 	/**
 	* Get all available profiles
 	*
@@ -112,7 +104,6 @@ class ProfileCore extends ObjectModel
 		return (isset($accesses[$id_tab]) ? $accesses[$id_tab] : false);
 	}
 
-	private static $_cache_accesses = array();
 	public static function getProfileAccesses($id_profile)
 	{
 		if (!isset(self::$_cache_accesses[$id_profile]))

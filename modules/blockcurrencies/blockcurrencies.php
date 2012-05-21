@@ -62,7 +62,8 @@ class BlockCurrencies extends Module
 
 		if (!count(Currency::getCurrencies()))
 			return '';
-
+		// @todo remove this and use smartyTemplate
+		$this->context->smarty->assign('blockcurrencies_sign', $this->context->currency->sign);
 		return $this->display(__FILE__, 'blockcurrencies.tpl');
 	}
 

@@ -36,36 +36,37 @@ class OrderCartRuleCore extends ObjectModel
 	/** @var integer */
 	public $id_cart_rule;
 
+	/** @var integer */
+	public $id_order_invoice;
+
 	/** @var string */
 	public $name;
 
-	/** @var integer */
+	/** @var float value (tax incl.) of voucher */
 	public $value;
 
-	protected $tables = array ('order_cart_rule');
+	/** @var float value (tax excl.) of voucher */
+	public $value_tax_excl;
 
-	protected	$fieldsRequired = array ('id_order', 'name', 'value');
-	protected	$fieldsValidate = array ('id_order' => 'isUnsignedId', 'name' => 'isGenericName', 'value' => 'isInt');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_cart_rule',
+		'primary' => 'id_order_cart_rule',
+		'fields' => array(
+			'id_order' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_order_invoice' =>	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'name' => 				array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
+			'value' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'value_tax_excl' => 	array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true)
+		)
+	);
 
-	/* MySQL does not allow 'order detail' for a table name */
-	protected 	$table = 'order_cart_rule';
-	protected 	$identifier = 'id_order_cart_rule';
-
-	protected	$webserviceParameters = array(
+	protected $webserviceParameters = array(
 		'fields' => array(
 			'id_order' => array('xlink_resource' => 'orders'),
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_order'] = (int)($this->id_order);
-		$fields['name'] = pSQL($this->name);
-		$fields['value'] = (int)($this->value);
-
-		return $fields;
-	}
 }
 

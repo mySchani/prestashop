@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9996 $
+*  @version  Release: $Revision: 11580 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,10 +29,11 @@ var needCheckAll = false;
 var needUncheckAll = false;
 var interval = null;
 var intervalCheck = null;
-var id = 0;
+var id_tree = 0;
 var arrayCatToExpand = new Array();
 
-$(document).ready(function(){
+function buildTreeView()
+{
 	$("#categories-treeview").treeview({
 		url : 'ajax.php',
 		toggle: function () { callbackToggle($(this)); },
@@ -73,7 +74,7 @@ $(document).ready(function(){
 		uncheckAllCategories();
 		return false;
 	});	
-});
+}
 
 function callbackToggle(element)
 {
@@ -112,7 +113,7 @@ function setCategoryToExpand()
 {
 	var ret = false;
 	
-	id = 0;
+	id_tree = 0;
 	arrayCatToExpand = new Array();
 	$('#categories-treeview').find('li.expandable:visible').each(function() {
 		arrayCatToExpand.push($(this).attr('id'));
@@ -144,7 +145,7 @@ function openCategory()
 {
 	// Check readyToExpand in order to don't clearInterval if AJAX request is in progress
 	// readyToExpand = category has been expanded, go to next ;)
-	if (id >= arrayCatToExpand.length && readyToExpand)
+	if (id_tree >= arrayCatToExpand.length && readyToExpand)
 	{
 		if (!setCategoryToExpand())
 		{
@@ -169,10 +170,10 @@ function openCategory()
 	
 	if (readyToExpand)
 	{
-		if ($('#categories-treeview').find('li#'+arrayCatToExpand[id]+'.hasChildren').length > 0)
+		if ($('#categories-treeview').find('li#'+arrayCatToExpand[id_tree]+'.hasChildren').length > 0)
 			readyToExpand = false;
-		$('#categories-treeview').find('li#'+arrayCatToExpand[id]+'.expandable:visible span.category_label').trigger('click');
-		id++;
+		$('#categories-treeview').find('li#'+arrayCatToExpand[id_tree]+'.expandable:visible span.category_label').trigger('click');
+		id_tree++;
 	}
 }
 
@@ -259,7 +260,8 @@ function updateNbSubCategorySelected(category, add)
 		updateNbSubCategorySelected(currentSpan.parent().children('input'), add);
 }
 
-$(document).ready( function() {
+function searchCategory()
+{
 	var category_to_check;
 	if ($('#search_cat').length)
 	{
@@ -282,7 +284,7 @@ $(document).ready( function() {
 			parent_ids = getParentCategoriesIdAndOpen(item[1]);
 		});
 	}
-});
+}
 
 function getParentCategoriesIdAndOpen(id_category)
 {
@@ -309,8 +311,7 @@ function getParentCategoriesIdAndOpen(id_category)
 function openParentCategories()
 {
 	intervalCheck = setInterval(checkCategory, 20);
-	
-	if (id >= arrayCatToExpand.length && !readyToExpand)
+	if (id_tree >= arrayCatToExpand.length && !readyToExpand)
 	{
 		clearInterval(interval);
 		// delete interval value
@@ -320,10 +321,11 @@ function openParentCategories()
 	
 	if (readyToExpand)
 	{
-		if ($('li#'+arrayCatToExpand[id]+'.hasChildren').length > 0)
+		if ($('li#'+arrayCatToExpand[id_tree]+'.hasChildren').length > 0)
 			readyToExpand = false;
-		$('li#'+arrayCatToExpand[id]+'.expandable span').trigger('click');
-		id++;
+
+		$('li#'+arrayCatToExpand[id_tree]+'.expandable span').trigger('click');
+		id_tree++;
 	}
 }
 

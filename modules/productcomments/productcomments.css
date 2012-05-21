@@ -1,21 +1,28 @@
 #product_comments_block_extra {
-	padding-top:10px;
+	padding:10px 0 0 0;
 	border-top:1px solid #ccc;
 	font-weight: bold;
 	font-size:12px;
 	line-height:18px
 }
 	
-#product_comments_block_extra a {text-decoration: none;}
+#product_comments_block_extra a {
+    padding-left: 10px;
+	text-decoration: none;
+	background: url(img/bg_li.png) no-repeat scroll 1px 45% #fff;
+
+}
 
 #product_comments_block_extra a:hover {text-decoration: underline}
 
+#product_comments_block_extra .comments_note {margin-bottom:5px}
 #product_comments_block_extra .comments_note span,
 #product_comments_block_extra .star_content {float:left}
+#product_comments_block_extra .star_content {margin-top:2px}
 
 #product_comments_block_extra div.star {background: url(img/star.gif) no-repeat scroll 0 0 transparent}
 
-#product_comments_block_extra div.star_on {background: url(img/star.gif) no-repeat scroll 0 -16px transparent}
+#product_comments_block_extra div.star_on {background: url(img/star.gif) no-repeat scroll 0 -12px transparent}
 
 #product_comments_block_extra .comments_advices {clear:both;}
 
@@ -39,7 +46,8 @@
 	text-transform: uppercase;
 	background: #333
 }
-
+#new_comment_form ul.grade_content {list-style-type:none}
+#new_comment_form .grade_content li {width:50%}
 #new_comment_form .product {padding:15px}
 #new_comment_form .product img {
 	float:left;
@@ -64,7 +72,7 @@
 #new_comment_form .grade_content span {
 	display:inline-block;
 	padding:0 10px;
-	width:85px;/* 105 */
+	width:150px;/* 160 */
 	font-weight:bold
 }
 #new_comment_form .grade_content .cancel {margin-right:5px}
@@ -84,7 +92,8 @@
 	clear:both;
 	margin-top:20px
 }
-#new_comment_form p.text {
+#new_comment_form p.text
+#new_comment_form p.textarea {
 	margin-bottom:0;
 	padding-bottom:0
 }
@@ -110,6 +119,7 @@
 }
 
 #new_comment_form .submit {
+	margin-top:20px;
 	padding:0;
 	font-size:13px;
 	text-align:right
@@ -157,12 +167,13 @@
 #product_comments_block_tab div.star_on {
 	background: url(img/star.gif) no-repeat 0 0 transparent
 }
-#product_comments_block_tab div.star_on {background-position: 0 -16px}
+#product_comments_block_tab div.star_on {background-position: 0 -12px}
 #product_comments_block_tab .comment_author_infos {clear:both}
 #product_comments_block_tab .comment_author_infos em {color:#999}
 
 #product_comments_block_tab div.comment div.comment_details {
 	float: left;
+	overflow:hidden;
 	width: 360px
 }
 #product_comments_block_tab div.comment_details h4 {padding-bottom:10px}

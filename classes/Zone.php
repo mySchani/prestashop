@@ -32,32 +32,31 @@ class ZoneCore extends ObjectModel
 
 	/** @var boolean Zone status */
 	public $active = true;
-	public $eu_zone = false; /* Obsolete; to remove */
 
- 	protected $fieldsRequired = array('name');
- 	protected $fieldsSize = array('name' => 64);
- 	protected $fieldsValidate = array('name' => 'isGenericName', 'active' => 'isBool');
+	/* @todo Obsolete; to remove */
+	public $eu_zone = false;
 
-	protected $table = 'zone';
-	protected $identifier = 'id_zone';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'zone',
+		'primary' => 'id_zone',
+		'fields' => array(
+			'name' => 	array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+			'active' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
+	);
+
 
 	protected $webserviceParameters = array();
 
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['name'] = pSQL($this->name);
-		$fields['active'] = (int)$this->active;
-
-		return $fields;
-	}
-
 	/**
-	* Get all available geographical zones
-	*
-	* @return array Zones
-	*/
+	 * Get all available geographical zones
+	 *
+	 * @param bool $active
+	 * @return array Zones
+	 */
 	public static function getZones($active = false)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
@@ -68,10 +67,11 @@ class ZoneCore extends ObjectModel
 	}
 
 	/**
-	* Get a zone ID from its default language name
-	*
-	* @return integer id_zone
-	*/
+	 * Get a zone ID from its default language name
+	 *
+	 * @param string $name
+	 * @return integer id_zone
+	 */
 	public static function getIdByName($name)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('

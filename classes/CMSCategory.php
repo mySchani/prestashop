@@ -70,48 +70,34 @@ class CMSCategoryCore extends ObjectModel
 
 	protected static $_links = array();
 
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'cms_category',
+		'primary' => 'id_cms_category',
+		'multilang' => true,
+		'fields' => array(
+			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
+			'id_parent' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'position' => 			array('type' => self::TYPE_INT),
+			'level_depth' => 		array('type' => self::TYPE_INT),
+			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 
-	protected $tables = array ('cms_category', 'cms_category_lang');
-
-	protected 	$fieldsRequired = array('id_parent', 'active');
- 	protected 	$fieldsSize = array('id_parent' => 10, 'active' => 1);
- 	protected 	$fieldsValidate = array('active' => 'isBool', 'id_parent' => 'isUnsignedInt');
-	protected 	$fieldsRequiredLang = array('name', 'link_rewrite');
- 	protected 	$fieldsSizeLang = array('name' => 64, 'link_rewrite' => 64, 'meta_title' => 128, 'meta_description' => 255, 'meta_keywords' => 255);
- 	protected 	$fieldsValidateLang = array('name' => 'isCatalogName', 'link_rewrite' => 'isLinkRewrite', 'description' => 'isCleanHtml',
-											'meta_title' => 'isGenericName', 'meta_description' => 'isGenericName', 'meta_keywords' => 'isGenericName');
-
-	protected 	$table = 'cms_category';
-	protected 	$identifier = 'id_cms_category';
+			// Lang fields
+			'name' => 				array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isCatalogName', 'required' => true, 'size' => 64),
+			'link_rewrite' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isLinkRewrite', 'required' => true, 'size' => 64),
+			'description' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isCleanHtml'),
+			'meta_title' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 128),
+			'meta_description' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+			'meta_keywords' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+		),
+	);
 
 	public function __construct($id_cms_category = NULL, $id_lang = NULL)
 	{
 		parent::__construct($id_cms_category, $id_lang);
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-		if (isset($this->id))
-			$fields['id_cms_category'] = (int)($this->id);
-		$fields['active'] = (int)($this->active);
-		$fields['id_parent'] = (int)($this->id_parent);
-		$fields['position'] = (int)($this->position);
-		$fields['level_depth'] = (int)($this->level_depth);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		return $fields;
-	}
-
-	/**
-	  * Check then return multilingual fields for database interaction
-	  *
-	  * @return array Multilingual fields
-	  */
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name', 'description', 'link_rewrite', 'meta_title', 'meta_keywords', 'meta_description'));
 	}
 
 	public	function add($autodate = true, $nullValues = false)
@@ -190,7 +176,7 @@ class CMSCategoryCore extends ObjectModel
 				FROM `'._DB_PREFIX_.'cms_category` c
 				JOIN `'._DB_PREFIX_.'cms_category_lang` cl ON c.`id_cms_category` = cl.`id_cms_category`
 					WHERE c.`id_cms_category` = '.(int)$current.'
-					AND `id_lang` = '.$id_lang;
+					AND `id_lang` = '.(int)$id_lang;
 		$category = Db::getInstance()->getRow($sql);
 
 		$sql = 'SELECT c.`id_cms_category`
@@ -206,7 +192,8 @@ class CMSCategoryCore extends ObjectModel
 				'.$shop->addSqlAssociation('cms', 'c', false).'
 				JOIN `'._DB_PREFIX_.'cms_lang` cl ON c.`id_cms` = cl.`id_cms`
 				WHERE `id_cms_category` = '.(int)$current.'
-				AND cl.`id_lang` = '.$id_lang.($active ? ' AND c.`active` = 1' : '').'
+				AND cl.`id_lang` = '.(int)$id_lang.($active ? ' AND c.`active` = 1' : '').'
+				GROUP BY c.id_cms
 				ORDER BY c.`position`';
 		$category['cms'] = Db::getInstance()->executeS($sql);
 		if ($links == 1)

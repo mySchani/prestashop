@@ -43,32 +43,33 @@ class PDFCore
 
 	public function __construct($objects, $template, $smarty)
 	{
-		$this->pdf_renderer = new PDFGenerator();
+		$this->pdf_renderer = new PDFGenerator((bool)Configuration::get('PS_PDF_USE_CACHE'));
 		$this->template = $template;
 		$this->smarty = $smarty;
 
 		$this->objects = $objects;
-		if (!is_array($objects))
+		if (!($objects instanceof Iterator))
 			$this->objects = array($objects);
 	}
 
-	public function render()
+	public function render($display = true)
 	{
-
 		$render =  false;
 		$this->pdf_renderer->setFontForLang('fr');
 		foreach ($this->objects as $object)
 		{
-            $template = $this->getTemplateObject($object);
-            if (!$template)
-                continue;
+         $template = $this->getTemplateObject($object);
+         if (!$template)
+             continue;
 
-            if (empty($this->filename))
-            {
-                $this->filename = $template->getFilename();
-                if (count($this->objects) > 1)
-                    $this->filename = $template->getBulkFilename();
-            }
+         if (empty($this->filename))
+         {
+             $this->filename = $template->getFilename();
+             if (count($this->objects) > 1)
+                 $this->filename = $template->getBulkFilename();
+         }
+
+			$template->assignHookData($object);
 
 			$this->pdf_renderer->createHeader($template->getHeader());
 			$this->pdf_renderer->createFooter($template->getFooter());
@@ -80,8 +81,7 @@ class PDFCore
 		}
 
 		if ($render)
-	      $this->pdf_renderer->render($this->filename);
-
+            return $this->pdf_renderer->render($this->filename, $display);
 	}
 
     public function getTemplateObject($object)
@@ -89,12 +89,12 @@ class PDFCore
         $class = false;
         $classname = 'HTMLTemplate'.$this->template;
 
-			if (class_exists($classname))
-			{
-				$class = new $classname($object, $this->smarty);
-				if (!($class instanceof HTMLTemplate))
-					throw new PrestashopException('Invalid class. It should be an instance of HTMLTemplate');
-			}
+		if (class_exists($classname))
+		{
+			$class = new $classname($object, $this->smarty);
+			if (!($class instanceof HTMLTemplate))
+				throw new PrestashopException('Invalid class. It should be an instance of HTMLTemplate');
+		}
 
         return $class;
     }

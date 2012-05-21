@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9317 $
+*  @version  Release: $Revision: 11029 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -76,7 +76,7 @@ class DbPDOCore extends Db
 	{
 		if (!$result)
 			$result = $this->result;
-		return $result->fetch();
+		return $result->fetch(PDO::FETCH_ASSOC);
 	}
 
 	/**
@@ -109,7 +109,7 @@ class DbPDOCore extends Db
 	public function getMsgError($query = false)
 	{
 		$error = $this->link->errorInfo();
-		return $error[2];
+		return ($error[0] == '00000') ? '' : $error[2];
 	}
 
 	/**
@@ -118,7 +118,7 @@ class DbPDOCore extends Db
 	public function getNumberError()
 	{
 		$error = $this->link->errorInfo();
-		return $error[1];
+		return isset($error[1]) ? $error[1] : 0;
 	}
 
 	/**

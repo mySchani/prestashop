@@ -24,25 +24,43 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{if !empty($error)}
-	<div class="hint" style="display:block">{$error}</div>
-{else}
-	<fieldset>
-		<legend>{l s='Account number'}</legend>
-		<div class="hint" style="display:block">
-			{l s='Configure the account number of the product for each zone, if a field is empty, it will use the default one of the shop set in the Accounting Management tab'}
-		</div>
-		<br />
-			{foreach from=$productAccountNumberList['zones'] key=id_zone item=currentZone}
-				<label>{$currentZone['name']}</label>
-				<div class="margin-form">
-					<input type="text" name="zone_{$id_zone}" value="{$currentZone['account_number']}" />
-				</div>
-			{/foreach}
-		</form>
-		<div style="text-align:left; font-size:11px;">
-			<i>{l s='Theses fields are used for the accounting export'}</i>
-		</div>
-		<div class="separation"></div>
-	</fieldset>
+<script type="text/javascript">
+
+	$(document).ready(function() {
+		$('input').keypress(function(e) { 
+			var code = null; 
+			code = (e.keyCode ? e.keyCode : e.which);
+			return (code == 13) ? false : true;
+		});
+	});
+
+</script>
+
+{if isset($product->id)}
+
+	<h4>{l s='Accounting'}</h4>
+	<div class="separation"></div>
+	{if !empty($error)}
+		<div class="hint" style="display:block">{$error}</div>
+	{else}
+		<fieldset>
+			<legend>{l s='Account number'}</legend>
+			<div class="hint" style="display:block">
+				{l s='Configure the account number of the product for each zone, if a field is empty, it will use the default one of the shop set in the Accounting Management tab'}
+			</div>
+			<br />
+				{foreach from=$productAccountNumberList['zones'] key=id_zone item=currentZone}
+					<label>{$currentZone['name']}</label>
+					<div class="margin-form">
+						<input type="text" name="zone_{$id_zone}" value="{$currentZone['account_number']}" />
+					</div>
+				{/foreach}
+			</form>
+			<div style="text-align:left; font-size:11px;">
+				<i>{l s='These fields are used for the accounting export'}</i>
+			</div>
+			<div class="separation"></div>
+		</fieldset>
+	{/if}
+
 {/if}

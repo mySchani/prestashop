@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10286 $
+*  @version  Release: $Revision: 11276 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,6 +32,8 @@ class AdminAddressesControllerCore extends AdminController
 
 	public function __construct()
 	{
+		$this->required_database = true;
+		$this->required_fields = array('company','address2', 'postcode', 'other', 'phone', 'phone_mobile', 'vat_number', 'dni');
 	 	$this->table = 'address';
 	 	$this->className = 'Address';
 	 	$this->lang = false;
@@ -58,7 +60,7 @@ class AdminAddressesControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->_select = 'cl.`name` as country';
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON
@@ -69,10 +71,10 @@ class AdminAddressesControllerCore extends AdminController
 		foreach ($countries AS $country)
 			$this->countriesArray[$country['id_country']] = $country['name'];
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -273,77 +275,75 @@ class AdminAddressesControllerCore extends AdminController
 		// merge address format with the rest of the form
 		array_splice($this->fields_form['input'], 3, 0, $temp_fields);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
-	public function postProcess()
+	public function processSave($token)
 	{
-		if ($this->action == 'save')
+		// Transform e-mail in id_customer for parent processing
+		if (Validate::isEmail(Tools::getValue('email')))
 		{
-			// Transform e-mail in id_customer for parent processing
-			if (Validate::isEmail(Tools::getValue('email')))
-			{
-				$customer = new Customer();
-				$customer->getByEmail(Tools::getValue('email'));
-				if (Validate::isLoadedObject($customer))
-					$_POST['id_customer'] = $customer->id;
-				else
-					$this->_errors[] = Tools::displayError('This e-mail address is not registered.');
-			}
-			elseif ($id_customer = Tools::getValue('id_customer'))
-			{
-				$customer = new Customer((int)($id_customer));
-				if (Validate::isLoadedObject($customer))
-					$_POST['id_customer'] = $customer->id;
-				else
-					$this->_errors[] = Tools::displayError('Unknown customer');
-			}
+			$customer = new Customer();
+			$customer->getByEmail(Tools::getValue('email'));
+			if (Validate::isLoadedObject($customer))
+				$_POST['id_customer'] = $customer->id;
+			else
+				$this->_errors[] = Tools::displayError('This e-mail address is not registered.');
+		}
+		elseif ($id_customer = Tools::getValue('id_customer'))
+		{
+			$customer = new Customer((int)($id_customer));
+			if (Validate::isLoadedObject($customer))
+				$_POST['id_customer'] = $customer->id;
 			else
 				$this->_errors[] = Tools::displayError('Unknown customer');
-			if (Country::isNeedDniByCountryId(Tools::getValue('id_country')) AND !Tools::getValue('dni'))
-				$this->_errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
-
-			/* If the selected country does not contain states */
-			$id_state = (int)(Tools::getValue('id_state'));
-			if ($id_country = Tools::getValue('id_country') AND $country = new Country((int)($id_country)) AND !(int)($country->contains_states) AND $id_state)
-				$this->_errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
-
-			/* If the selected country contains states, then a state have to be selected */
-			if ((int)($country->contains_states) AND !$id_state)
-				$this->_errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
-
-			/* Check zip code */
-			if ($country->need_zip_code)
-			{
-				$zip_code_format = $country->zip_code_format;
-				if (($postcode = Tools::getValue('postcode')) AND $zip_code_format)
-				{
-					$zip_regexp = '/^'.$zip_code_format.'$/ui';
-					$zip_regexp = str_replace(' ', '( |)', $zip_regexp);
-					$zip_regexp = str_replace('-', '(-|)', $zip_regexp);
-					$zip_regexp = str_replace('N', '[0-9]', $zip_regexp);
-					$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
-					$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
-					if (!preg_match($zip_regexp, $postcode))
-						$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
-				}
-				elseif ($zip_code_format)
-					$this->_errors[] = Tools::displayError('Postcode required.');
-				elseif ($postcode AND !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-					$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.');
-			}
-
-			/* If this address come from order's edition and is the same as the other one (invoice or delivery one)
-			** we delete its id_address to force the creation of a new one */
-			if ((int)(Tools::getValue('id_order')))
-			{
-				$this->_redirect = false;
-				if (isset($_POST['address_type']))
-					$_POST['id_address'] = '';
-			}
 		}
-		if (!sizeof($this->_errors))
-			parent::postProcess();
+		else
+			$this->_errors[] = Tools::displayError('Unknown customer');
+		if (Country::isNeedDniByCountryId(Tools::getValue('id_country')) AND !Tools::getValue('dni'))
+			$this->_errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
+
+		/* If the selected country does not contain states */
+		$id_state = (int)(Tools::getValue('id_state'));
+		if ($id_country = Tools::getValue('id_country') AND $country = new Country((int)($id_country)) AND !(int)($country->contains_states) AND $id_state)
+			$this->_errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
+
+		/* If the selected country contains states, then a state have to be selected */
+		if ((int)($country->contains_states) AND !$id_state)
+			$this->_errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
+
+		/* Check zip code */
+		if ($country->need_zip_code)
+		{
+			$zip_code_format = $country->zip_code_format;
+			if (($postcode = Tools::getValue('postcode')) AND $zip_code_format)
+			{
+				$zip_regexp = '/^'.$zip_code_format.'$/ui';
+				$zip_regexp = str_replace(' ', '( |)', $zip_regexp);
+				$zip_regexp = str_replace('-', '(-|)', $zip_regexp);
+				$zip_regexp = str_replace('N', '[0-9]', $zip_regexp);
+				$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
+				$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
+				if (!preg_match($zip_regexp, $postcode))
+					$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
+			}
+			elseif ($zip_code_format)
+				$this->_errors[] = Tools::displayError('Postcode required.');
+			elseif ($postcode AND !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
+				$this->_errors[] = Tools::displayError('Your zip/postal code is incorrect.');
+		}
+
+		/* If this address come from order's edition and is the same as the other one (invoice or delivery one)
+		** we delete its id_address to force the creation of a new one */
+		if ((int)(Tools::getValue('id_order')))
+		{
+			$this->_redirect = false;
+			if (isset($_POST['address_type']))
+				$_POST['id_address'] = '';
+		}
+
+		if (empty($this->_errors))
+			parent::processSave($token);
 
 		/* Reassignation of the order's new (invoice or delivery) address */
 		$address_type = ((int)(Tools::getValue('address_type')) == 2 ? 'invoice' : ((int)(Tools::getValue('address_type')) == 1 ? 'delivery' : ''));

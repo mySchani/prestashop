@@ -50,7 +50,8 @@ class blockcontactinfos extends Module
 		return (parent::install() 
 				AND Configuration::updateValue('blockcontactinfos_company', Configuration::get('PS_SHOP_NAME')) 
 				AND Configuration::updateValue('blockcontactinfos_address', '') AND Configuration::updateValue('blockcontactinfos_phone', '') 
-				AND Configuration::updateValue('blockcontactinfos_email', Configuration::get('PS_SHOP_EMAIL')) AND $this->registerHook('footer'));
+				AND Configuration::updateValue('blockcontactinfos_email', Configuration::get('PS_SHOP_EMAIL')) 
+				AND $this->registerHook('header') AND $this->registerHook('footer'));
 	}
 	
 	public function uninstall()
@@ -96,15 +97,20 @@ class blockcontactinfos extends Module
 		return $content;
 	}
 	
+	public function hookHeader()
+	{
+		$this->context->controller->addCSS(($this->_path).'blockcontactinfos.css', 'all');
+	}
+	
 	public function hookFooter($params)
 	{	
 		global $smarty;
 		
 		$smarty->assign(array(
-			'company' => Configuration::get('blockcontactinfos_company'),
-			'address' => Configuration::get('blockcontactinfos_address'),
-			'phone' => Configuration::get('blockcontactinfos_phone'),
-			'email' => Configuration::get('blockcontactinfos_email')
+			'blockcontactinfos_company' => Configuration::get('blockcontactinfos_company'),
+			'blockcontactinfos_address' => Configuration::get('blockcontactinfos_address'),
+			'blockcontactinfos_phone' => Configuration::get('blockcontactinfos_phone'),
+			'blockcontactinfos_email' => Configuration::get('blockcontactinfos_email')
 		));
 		return $this->display(__FILE__, 'blockcontactinfos.tpl');
 	}

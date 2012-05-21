@@ -69,6 +69,30 @@ class CustomerCore extends ObjectModel
 	/** @var boolean Opt-in subscription */
 	public $optin;
 
+	/** @var string WebSite **/
+	public $website;
+
+	/** @var string Company */
+	public $company;
+
+	/** @var string SIRET */
+	public $siret;
+
+	/** @var string APE */
+	public $ape;
+
+	/** @var float Outstanding allow amount (B2B opt)  */
+	public $outstanding_allow_amount = 0;
+
+	/** @var integer Show public prices (B2B opt) */
+	public $show_public_prices = 0;
+
+	/** @var int Risk ID (B2B opt) */
+	public $id_risk;
+
+	/** @var integer Max payment day */
+	public $max_payment_days = 0;
+
 	/** @var integer Password */
 	public $passwd;
 
@@ -107,26 +131,7 @@ class CustomerCore extends ObjectModel
 	/** @var int id_guest meaning the guest table, not the guest customer  */
 	public $id_guest;
 
-	protected $tables = array ('customer');
-
- 	protected $fieldsRequired = array('lastname', 'passwd', 'firstname', 'email');
- 	protected $fieldsSize = array('lastname' => 32, 'passwd' => 32, 'firstname' => 32, 'email' => 128, 'note' => 65000);
- 	protected $fieldsValidate = array(
- 		'secure_key' => 'isMd5',
- 		'lastname' => 'isName',
- 		'firstname' => 'isName',
- 		'email' => 'isEmail',
- 		'passwd' => 'isPasswd',
-		'id_gender' => 'isUnsignedId',
-		'birthday' => 'isBirthDate',
-		'newsletter' => 'isBool',
-		'optin' => 'isBool',
-		'active' => 'isBool',
-		'note' => 'isCleanHtml',
-		'is_guest' => 'isBool',
-		'id_shop' => 'isUnsignedId',
-		'id_group_shop' => 'isUnsignedId'
- 	);
+	public $groupBox;
 
 	protected $webserviceParameters = array(
 		'fields' => array(
@@ -140,42 +145,48 @@ class CustomerCore extends ObjectModel
 		),
 	);
 
-	protected $table = 'customer';
-	protected $identifier = 'id_customer';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'customer',
+		'primary' => 'id_customer',
+		'fields' => array(
+			'secure_key' => 				array('type' => self::TYPE_STRING, 'validate' => 'isMd5'),
+			'lastname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'firstname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'email' => 						array('type' => self::TYPE_STRING, 'validate' => 'isEmail', 'required' => true, 'size' => 128),
+			'passwd' => 					array('type' => self::TYPE_STRING, 'validate' => 'isPasswd', 'required' => true, 'size' => 32),
+			'last_passwd_gen' =>			array('type' => self::TYPE_STRING),
+			'id_gender' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'birthday' => 					array('type' => self::TYPE_DATE, 'validate' => 'isBirthDate'),
+			'newsletter' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'newsletter_date_add' =>		array('type' => self::TYPE_DATE),
+			'ip_registration_newsletter' =>	array('type' => self::TYPE_STRING),
+			'optin' => 						array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'website' =>					array('type' => self::TYPE_STRING, 'validate' => 'isUrl'),
+			'company' =>					array('type' => self::TYPE_STRING, 'validate' => 'isName'),
+			'siret' =>						array('type' => self::TYPE_STRING, 'validate' => 'isSiret'),
+			'ape' =>						array('type' => self::TYPE_STRING, 'validate' => 'isApe'),
+			'outstanding_allow_amount' =>	array('type' => self::TYPE_INT, 'validate' => 'isFloat'),
+			'show_public_prices' =>			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'id_risk' =>					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'max_payment_days' =>			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'active' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'deleted' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'note' => 						array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65000),
+			'is_guest' =>					array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'id_shop' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_group_shop' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_default_group' => 			array('type' => self::TYPE_INT),
+			'date_add' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	protected static $_defaultGroupId = array();
 	protected static $_customerHasAddress = array();
 	protected static $_customer_groups = array();
-
-	public function getFields()
-	{
-		$this->validateFields();
-		if (isset($this->id))
-			$fields['id_customer'] = (int)$this->id;
-
-		$fields['id_shop'] = (int)$this->id_shop;
-		$fields['id_group_shop'] = (int)$this->id_group_shop;
-		$fields['secure_key'] = pSQL($this->secure_key);
-		$fields['note'] = pSQL($this->note, true);
-		$fields['id_gender'] = (int)$this->id_gender;
-		$fields['id_default_group'] = (int)$this->id_default_group;
-		$fields['lastname'] = pSQL($this->lastname);
-		$fields['firstname'] = pSQL($this->firstname);
-		$fields['birthday'] = pSQL($this->birthday);
-		$fields['email'] = pSQL($this->email);
-		$fields['newsletter'] = (int)$this->newsletter;
-		$fields['newsletter_date_add'] = pSQL($this->newsletter_date_add);
-		$fields['ip_registration_newsletter'] = pSQL($this->ip_registration_newsletter);
-		$fields['optin'] = (int)$this->optin;
-		$fields['passwd'] = pSQL($this->passwd);
-		$fields['last_passwd_gen'] = pSQL($this->last_passwd_gen);
-		$fields['active'] = (int)$this->active;
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['is_guest'] = (int)$this->is_guest;
-		$fields['deleted'] = (int)$this->deleted;
-		return $fields;
-	}
 
 	public function add($autodate = true, $null_values = true)
 	{
@@ -189,14 +200,13 @@ class CustomerCore extends ObjectModel
 				$this->id_default_group = 2;
 			else
 				$this->id_default_group = 3;
+
 		/* Can't create a guest customer, if this feature is disabled */
 		if ($this->is_guest && !Configuration::get('PS_GUEST_CHECKOUT_ENABLED'))
 			return false;
-	 	if (!parent::add($autodate, $null_values))
-			return false;
-
-		$row = array('id_customer' => (int)$this->id, 'id_group' => (int)$this->id_default_group);
-		return Db::getInstance()->AutoExecute(_DB_PREFIX_.'customer_group', $row, 'INSERT');
+	 	$success = parent::add($autodate, $null_values);
+		$this->updateGroup($this->groupBox);
+		return $success;
 	}
 
 	public function update($nullValues = false)
@@ -204,6 +214,7 @@ class CustomerCore extends ObjectModel
 		$this->birthday = (empty($this->years) ? $this->birthday : (int)$this->years.'-'.(int)$this->months.'-'.(int)$this->days);
 		if ($this->newsletter && !$this->newsletter_date_add)
 			$this->newsletter_date_add = date('Y-m-d H:i:s');
+		$this->updateGroup($this->groupBox);
 	 	return parent::update(true);
 	}
 
@@ -221,10 +232,10 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Return customers list
-	  *
-	  * @return array Customers
-	  */
+	 * Return customers list
+	 *
+	 * @return array Customers
+	 */
 	public static function getCustomers(Shop $shop = null)
 	{
 		if (!$shop)
@@ -238,21 +249,21 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Return customer instance from its e-mail (optionnaly check password)
-	  *
-	  * @param string $email e-mail
-	  * @param string $passwd Password is also checked if specified
-	  * @return Customer instance
-	  */
+	 * Return customer instance from its e-mail (optionnaly check password)
+	 *
+	 * @param string $email e-mail
+	 * @param string $passwd Password is also checked if specified
+	 * @return Customer instance
+	 */
 	public function getByEmail($email, $passwd = null, Shop $shop = null)
 	{
-	 	if (!Validate::isEmail($email) || ($passwd && !Validate::isPasswd($passwd)))
-	 		die (Tools::displayError());
+		if (!Validate::isEmail($email) || ($passwd && !Validate::isPasswd($passwd)))
+			die (Tools::displayError());
 
 		if (!$shop)
 			$shop = Context::getContext()->shop;
 
-	 	$sql = 'SELECT *
+		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `active` = 1
 					AND `email` = \''.pSQL($email).'\'
@@ -273,13 +284,13 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Check id the customer is active or not
-	  *
-	  * @return boolean customer validity
-	  */
+	 * Check id the customer is active or not
+	 *
+	 * @return boolean customer validity
+	 */
 	public static function isBanned($id_customer)
 	{
-	 	if (!Validate::isUnsignedId($id_customer))
+		if (!Validate::isUnsignedId($id_customer))
 			return true;
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `id_customer`
@@ -289,30 +300,30 @@ class CustomerCore extends ObjectModel
 		AND `deleted` = 0');
 		if (isset($result['id_customer']))
 			return false;
-        return true;
+		return true;
 	}
 
 	/**
-	  * Check if e-mail is already registered in database
-	  *
-	  * @param string $email e-mail
-	  * @param $return_id boolean
-	  * @param $ignore_guest boolean, to exclude guest customer
-	  * @return Customer ID if found, false otherwise
-	  */
+	 * Check if e-mail is already registered in database
+	 *
+	 * @param string $email e-mail
+	 * @param $return_id boolean
+	 * @param $ignore_guest boolean, to exclude guest customer
+	 * @return Customer ID if found, false otherwise
+	 */
 	public static function customerExists($email, $return_id = false, $ignore_guest = true, Shop $shop = null)
 	{
-	 	if (!Validate::isEmail($email))
-	 		die (Tools::displayError());
+		if (!Validate::isEmail($email))
+			die (Tools::displayError());
 
 		if (!$shop)
 			$shop = Context::getContext()->shop;
 
-	 	$sql = 'SELECT `id_customer`
+		$sql = 'SELECT `id_customer`
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `email` = \''.pSQL($email).'\'
 					'.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER).
-					($ignore_guest ? 'AND `is_guest` = 0' : '');
+					($ignore_guest ? ' AND `is_guest` = 0' : '');
 		$result = Db::getInstance()->getRow($sql);
 
 		if ($return_id)
@@ -321,12 +332,12 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Check if an address is owned by a customer
-	  *
-	  * @param integer $id_customer Customer ID
-	  * @param integer $id_address Address ID
-	  * @return boolean result
-	  */
+	 * Check if an address is owned by a customer
+	 *
+	 * @param integer $id_customer Customer ID
+	 * @param integer $id_address Address ID
+	 * @return boolean result
+	 */
 	public static function customerHasAddress($id_customer, $id_address)
 	{
 		if (!array_key_exists($id_customer, self::$_customerHasAddress))
@@ -348,11 +359,11 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Return customer addresses
-	  *
-	  * @param integer $id_lang Language ID
-	  * @return array Addresses
-	  */
+	 * Return customer addresses
+	 *
+	 * @param integer $id_lang Language ID
+	 * @return array Addresses
+	 */
 	public function getAddresses($id_lang)
 	{
 		$sql = 'SELECT a.*, cl.`name` AS country, s.name AS state, s.iso_code AS state_iso
@@ -365,11 +376,11 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Count the number of addresses for a customer
-	  *
-	  * @param integer $id_customer Customer ID
-	  * @return integer Number of addresses
-	  */
+	 * Count the number of addresses for a customer
+	 *
+	 * @param integer $id_customer Customer ID
+	 * @return integer Number of addresses
+	 */
 	public static function getAddressesTotalById($id_customer)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
@@ -381,17 +392,17 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Check if customer password is the right one
-	  *
-	  * @param string $passwd Password
-	  * @return boolean result
-	  */
+	 * Check if customer password is the right one
+	 *
+	 * @param string $passwd Password
+	 * @return boolean result
+	 */
 	public static function checkPassword($id_customer, $passwd)
 	{
-	 	if (!Validate::isUnsignedId($id_customer) || !Validate::isMd5($passwd))
-	 		die (Tools::displayError());
+		if (!Validate::isUnsignedId($id_customer) || !Validate::isMd5($passwd))
+			die (Tools::displayError());
 
-	 	$sql = 'SELECT `id_customer`
+		$sql = 'SELECT `id_customer`
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `id_customer` = '.$id_customer.'
 					AND `passwd` = \''.$passwd.'\'';
@@ -399,11 +410,11 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Light back office search for customers
-	  *
-	  * @param string $query Searched string
-	  * @return array Corresponding customers
-	  */
+	 * Light back office search for customers
+	 *
+	 * @param string $query Searched string
+	 * @return array Corresponding customers
+	 */
 	public static function searchByName($query, Shop $shop = null)
 	{
 		if (!$shop)
@@ -419,12 +430,12 @@ class CustomerCore extends ObjectModel
 					)'.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER);
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 	}
-	
+
 	/**
-	  * Search for customers by ip address
-	  *
-	  * @param string $ip Searched string
-	  */
+	 * Search for customers by ip address
+	 *
+	 * @param string $ip Searched string
+	 */
 	public static function searchByIp($ip)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
@@ -436,10 +447,10 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Return several useful statistics about customer
-	  *
-	  * @return array Stats
-	  */
+	 * Return several useful statistics about customer
+	 *
+	 * @return array Stats
+	 */
 	public function getStats()
 	{
 		$result = Db::getInstance()->getRow('
@@ -466,15 +477,15 @@ class CustomerCore extends ObjectModel
 
 	public function getLastConnections()
 	{
-        return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-        SELECT c.date_add, COUNT(cp.id_page) AS pages, TIMEDIFF(MAX(cp.time_end), c.date_add) as time, http_referer,INET_NTOA(ip_address) as ipaddress
-        FROM `'._DB_PREFIX_.'guest` g
-        LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_guest = g.id_guest
-        LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
-        WHERE g.`id_customer` = '.(int)$this->id.'
-        GROUP BY c.`id_connections`
-        ORDER BY c.date_add DESC
-        LIMIT 10');
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		SELECT c.date_add, COUNT(cp.id_page) AS pages, TIMEDIFF(MAX(cp.time_end), c.date_add) as time, http_referer,INET_NTOA(ip_address) as ipaddress
+		FROM `'._DB_PREFIX_.'guest` g
+		LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_guest = g.id_guest
+		LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
+		WHERE g.`id_customer` = '.(int)$this->id.'
+		GROUP BY c.`id_connections`
+		ORDER BY c.date_add DESC
+		LIMIT 10');
 	}
 
 	/*
@@ -499,6 +510,20 @@ class CustomerCore extends ObjectModel
 		return isset($row['id_customer']);
 	}
 
+	/**
+	 * Update customer groups associated to the object
+	 *
+	 * @param array $list groups
+	 */
+	public function updateGroup($list)
+	{
+		$this->cleanGroups();
+		if ($list && !empty($list))
+			$this->addGroups($list);
+		else
+			$this->addGroups(array($this->id_default_group));
+	}
+
 	public function cleanGroups()
 	{
 		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'customer_group` WHERE `id_customer` = '.(int)$this->id);
@@ -508,19 +533,8 @@ class CustomerCore extends ObjectModel
 	{
 		foreach ($groups as $group)
 		{
-			$groups_customers = $this->getGroups();
-			if (count($groups_customers) == 0)
-			{
-				$row = array('id_customer' => (int)$this->id, 'id_group' => (int)$group);
-				Db::getInstance()->AutoExecute(_DB_PREFIX_.'customer_group', $row, 'INSERT');
-			}
-			else
-				foreach ($groups_customers as $group_customers)
-					if ($group_customers != $group)
-					{
-						$row = array('id_customer' => (int)$this->id, 'id_group' => (int)$group);
-						Db::getInstance()->AutoExecute(_DB_PREFIX_.'customer_group', $row, 'INSERT');
-					}
+			$row = array('id_customer' => (int)$this->id, 'id_group' => (int)$group);
+			Db::getInstance()->AutoExecute(_DB_PREFIX_.'customer_group', $row, 'INSERT');
 		}
 	}
 
@@ -547,8 +561,12 @@ class CustomerCore extends ObjectModel
 		return self::getGroupsStatic((int)$this->id);
 	}
 
+	/**
+	 * @deprecated since 1.5
+	 */
 	public function isUsed()
 	{
+		Tools::displayAsDeprecated();
 		return false;
 	}
 
@@ -597,9 +615,9 @@ class CustomerCore extends ObjectModel
 
 		/* Change status to active/inactive */
 		return Db::getInstance()->execute('
-		UPDATE `'.pSQL(_DB_PREFIX_.$this->table).'`
+		UPDATE `'.pSQL(_DB_PREFIX_.$this->def['table']).'`
 		SET `date_upd` = NOW()
-		WHERE `'.pSQL($this->identifier).'` = '.(int)$this->id);
+		WHERE `'.$this->def['primary'].'` = '.(int)$this->id);
 	}
 
 
@@ -626,14 +644,14 @@ class CustomerCore extends ObjectModel
 			$vars = array(
 				'{firstname}' => $this->firstname,
 				'{lastname}' => $this->lastname,
-			    '{email}' => $this->email,
-			    '{passwd}' => $password
+				'{email}' => $this->email,
+				'{passwd}' => $password
 			);
 
 			Mail::Send(
 				(int)$id_lang,
 				'guest_to_customer',
-				Mail::l('Your guest account has been transformed to customer account'),
+				Mail::l('Your guest account has been transformed to customer account', (int)$id_lang),
 				$vars,
 				$this->email,
 				$this->firstname.' '.$this->lastname
@@ -656,28 +674,28 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Check customer informations and return customer validity
-	  *
-	  * @since 1.5.0
-	  * @param boolean $with_guest
-	  * @return boolean customer validity
-	  */
+	 * Check customer informations and return customer validity
+	 *
+	 * @since 1.5.0
+	 * @param boolean $with_guest
+	 * @return boolean customer validity
+	 */
 	public function isLogged($with_guest = false)
 	{
 		if (!$with_guest && $this->is_guest == 1)
 			return false;
 
 		/* Customer is valid only if it can be load and if object password is the same as database one */
-	 	if ($this->logged == 1 && $this->id && Validate::isUnsignedId($this->id) && self::checkPassword($this->id, $this->passwd))
-        	return true;
-        return false;
+		if ($this->logged == 1 && $this->id && Validate::isUnsignedId($this->id) && self::checkPassword($this->id, $this->passwd))
+			return true;
+		return false;
 	}
 
 	/**
-	  * Logout
-	  *
-	  * @since 1.5.0
-	  */
+	 * Logout
+	 *
+	 * @since 1.5.0
+	 */
 	public function logout()
 	{
 		if (isset(Context::getContext()->cookie))
@@ -686,11 +704,11 @@ class CustomerCore extends ObjectModel
 	}
 
 	/**
-	  * Soft logout, delete everything links to the customer
-	  * but leave there affiliate's informations
-	  *
-	  * @since 1.5.0
-	  */
+	 * Soft logout, delete everything links to the customer
+	 * but leave there affiliate's informations
+	 *
+	 * @since 1.5.0
+	 */
 	public function mylogout()
 	{
 		if (isset(Context::getContext()->cookie))
@@ -706,5 +724,26 @@ class CustomerCore extends ObjectModel
 		$cart = array_shift($carts);
 		$cart = new Cart((int)$cart['id_cart']);
 		return ($cart->nbProducts() === 0 ? (int)$cart->id : false);
+	}
+
+	public function getOutstanding()
+	{
+		$query = new DbQuery();
+		$query->select('SUM(oi.total_paid_tax_incl)')
+			->from('order_invoice', 'oi')
+			->leftJoin('orders', 'o', 'oi.id_order = o.id_order')
+			->groupBy('o.id_customer')
+			->where('o.id_customer = '.(int)$this->id);
+		$total_paid = (float)Db::getInstance()->getValue($query->build());
+
+		$query = new DbQuery();
+		$query->select('SUM(op.amount)')
+			->from('order_payment', 'op')
+			->leftJoin('orders', 'o', 'op.id_order = o.id_order')
+			->groupBy('o.id_customer')
+			->where('o.id_customer = '.(int)$this->id);
+		$total_rest = (float)Db::getInstance()->getValue($query->build());
+
+		return $total_paid - $total_rest;
 	}
 }

@@ -50,14 +50,22 @@ if(!headers_sent())
 if (!file_exists(dirname(__FILE__).'/settings.inc.php'))
 {
 	$dir = ((is_dir($_SERVER['REQUEST_URI']) OR substr($_SERVER['REQUEST_URI'], -1) == '/') ? $_SERVER['REQUEST_URI'] : dirname($_SERVER['REQUEST_URI']).'/');
-	if(!file_exists(dirname(__FILE__).'/../install'))
+	if(!file_exists(dirname(__FILE__).'/../install-new'))
 		die('Error: \'install\' directory is missing');
-	header('Location: install/');
+	header('Location: install-new/');
 	exit;
 }
 require_once(dirname(__FILE__).'/settings.inc.php');
 require_once(dirname(__FILE__).'/defines.inc.php');
 require_once(dirname(__FILE__).'/autoload.php');
+
+if (_PS_DEBUG_PROFILING_)
+{
+	include_once(_PS_ROOT_DIR_.'/override/classes/_Controller.php');
+	include_once(_PS_ROOT_DIR_.'/override/classes/_Module.php');
+	include_once(_PS_ROOT_DIR_.'/override/classes/_ObjectModel.php');
+	include_once(_PS_ROOT_DIR_.'/override/classes/db/_Db.php');
+}
 
 /* Redefine REQUEST_URI if empty (on some webservers...) */
 if (!isset($_SERVER['REQUEST_URI']) OR empty($_SERVER['REQUEST_URI']))
@@ -113,7 +121,7 @@ $cookieLifetime = (time() + (((int)Configuration::get('PS_COOKIE_LIFETIME_BO') >
 if (defined('_PS_ADMIN_DIR_'))
 	$cookie = new Cookie('psAdmin', '', $cookieLifetime);
 else
-	$cookie = new Cookie('ps', '', $cookieLifetime);
+	$cookie = new Cookie('ps'.Context::getContext()->shop->getID(), '', $cookieLifetime);
 Context::getContext()->cookie = $cookie;
 
 /* Create employee if in BO, customer else */
@@ -130,6 +138,14 @@ else
 	{
 		$customer = new Customer($cookie->id_customer);
 		$customer->logged = $cookie->logged;
+
+		if (!isset($cookie->id_cart))
+		{
+			$shops_share = Context::getContext()->shop->getListOfID(Shop::SHARE_ORDER);
+			$id_cart = Db::getInstance()->getValue('SELECT `id_cart` FROM `'._DB_PREFIX_.'cart` WHERE `id_customer` = "'.(int)$customer->id.'" AND `id_shop` IN ("'.implode('","', $shops_share).'") ORDER BY `id_cart` DESC');
+			if ($id_cart != false)
+				$cookie->id_cart = $id_cart;
+		}
 	}
 	else
 		$customer = new Customer();

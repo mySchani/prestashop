@@ -83,6 +83,7 @@ class SupplierControllerCore extends FrontController
 			$this->assignAll();
 			$this->setTemplate(_PS_THEME_DIR_.'supplier-list.tpl');
 		}
+		parent::initContent();
 	}
 
 	/**
@@ -119,7 +120,7 @@ class SupplierControllerCore extends FrontController
 				'pages_nb' => ceil($nbProducts / (int)$this->n),
 				'nbSuppliers' => $nbProducts,
 				'mediumSize' => Image::getSize('medium'),
-				'suppliers' => $suppliers,
+				'suppliers_list' => $suppliers,
 				'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
 			));
 		}

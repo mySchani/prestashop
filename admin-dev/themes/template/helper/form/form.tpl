@@ -27,7 +27,7 @@
 {if $show_toolbar}
 	<div class="toolbar-placeholder">
 		<div class="toolbarBox {if $toolbar_fix}toolbarHead{/if}">
-				{include file="toolbar.tpl" toolbar_btn=$toolbar_btn}
+				{include file="toolbar.tpl"}
 				<div class="pageTitle">
 				<h3>
 					{block name=pageTitle}
@@ -42,7 +42,7 @@
 
 {if isset($fields.title)}<h2>{$fields.title}</h2>{/if}
 {block name="defaultForm"}
-<form id="{$table}_form" class="defaultForm" action="{$current}&{$submit_action}=1&token={$token}" method="post" enctype="multipart/form-data" {if isset($style)}style="{$style}"{/if}>
+<form id="{$table}_form" class="defaultForm {$name_controller}" action="{$current}&{$submit_action}=1&token={$token}" method="post" enctype="multipart/form-data" {if isset($style)}style="{$style}"{/if}>
 	{if $form_id}
 		<input type="hidden" name="id_{$table}" id="id_{$table}" value="{$form_id}" />
 	{/if}
@@ -94,10 +94,9 @@
 														name="{$input.name}_{$language.id_lang}"
 														id="{if isset($input.id)}{$input.id}_{$language.id_lang}{else}{$input.name}_{$language.id_lang}{/if}"
 														value="{$fields_value[$input.name][$language.id_lang]}"
-														class="{if $input.type == 'tags'}tagify {/if}"
+														class="{if $input.type == 'tags'}tagify {/if}{if isset($input.class)}{$input.class}{/if}"
 														{if isset($input.size)}size="{$input.size}"{/if}
 														{if isset($input.maxlength)}maxlength="{$input.maxlength}"{/if}
-														{if isset($input.class)}class="{$input.class}"{/if}
 														{if isset($input.readonly) && $input.readonly}readonly="readonly"{/if}
 														{if isset($input.disabled) && $input.disabled}disabled="disabled"{/if} />
 												{if isset($input.hint)}<span class="hint" name="help_box">{$input.hint}<span class="hint-pointer">&nbsp;</span></span>{/if}
@@ -158,7 +157,7 @@
 															{else}
 																{if $fields_value[$input.name] == $option[$input.options.options.id]}selected="selected"{/if}
 															{/if}
-														>{$option[$input.options.options.name]|escape:'htmlall':'UTF-8'}</option>
+														>{$option[$input.options.options.name]}</option>
 													{/foreach}
 												</optgroup>
 											{/foreach}
@@ -172,7 +171,7 @@
 													{else}
 														{if $fields_value[$input.name] == $option[$input.options.id]}selected="selected"{/if}
 													{/if}
-												>{$option[$input.options.name]|escape:'htmlall':'UTF-8'}</option>
+												>{$option[$input.options.name]}</option>
 											{/foreach}
 										{/if}
 									</select>
@@ -259,7 +258,7 @@
 								{assign var=groups value=$input.values}
 								{include file='helper/form/form_group.tpl'}
 							{elseif $input.type == 'shop' OR $input.type == 'group_shop'}
-								{include file='helper/form/form_shop.tpl' input=$input fields_value=$fields_value}
+								{include file='helper/assoshop.tpl' input=$input fields_value=$fields_value}
 							{elseif $input.type == 'categories'}
 								{include file='helper/form/form_category.tpl' categories=$input.values}
 							{elseif $input.type == 'asso_shop' && isset($asso_shop) && $asso_shop}
@@ -283,9 +282,9 @@
 							{elseif $input.type == 'free'}
 								{$fields_value[$input.name]}
 							{/if}
-							{if isset($input.required) && $input.required} <sup>*</sup>{/if}
+							{if isset($input.required) && $input.required && $input.type != 'radio'} <sup>*</sup>{/if}
 							{if isset($input.desc)}
-								<p class="clear">
+								<p class="preference_description">
 									{if is_array($input.desc)}
 										{foreach $input.desc as $p}
 											{if is_array($p)}
@@ -299,7 +298,7 @@
 									{/if}
 								</p>
 							{/if}
-							{if isset($languages)}<div class="clear"></div>{/if}
+							{if isset($input.lang) && isset($languages)}<div class="clear"></div>{/if}
 						{block name="end_field_block"}</div>{/block}
 						{/if}
 						{if $input.name == 'id_state'}

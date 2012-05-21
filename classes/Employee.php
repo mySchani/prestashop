@@ -67,14 +67,28 @@ class EmployeeCore extends ObjectModel
 
 	public $remote_addr;
 
- 	protected $fieldsRequired = array('lastname', 'firstname', 'email', 'passwd', 'id_profile', 'id_lang');
- 	protected $fieldsSize = array('lastname' => 32, 'firstname' => 32, 'email' => 128, 'passwd' => 32, 'bo_color' => 32, 'bo_theme' => 32);
- 	protected $fieldsValidate = array('lastname' => 'isName', 'firstname' => 'isName', 'email' => 'isEmail', 'id_lang' => 'isUnsignedInt',
-		'passwd' => 'isPasswdAdmin', 'active' => 'isBool', 'id_profile' => 'isInt', 'bo_color' => 'isColor', 'bo_theme' => 'isGenericName',
-		'bo_show_screencast' => 'isBool');
-
-	protected $table = 'employee';
-	protected $identifier = 'id_employee';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'employee',
+		'primary' => 'id_employee',
+		'fields' => array(
+			'lastname' => 			array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'firstname' => 			array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'email' => 				array('type' => self::TYPE_STRING, 'validate' => 'isEmail', 'required' => true, 'size' => 128),
+			'id_lang' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'passwd' => 			array('type' => self::TYPE_STRING, 'validate' => 'isPasswdAdmin', 'required' => true, 'size' => 32),
+			'last_passwd_gen' => 	array('type' => self::TYPE_STRING),
+			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'id_profile' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt', 'required' => true),
+			'bo_color' => 			array('type' => self::TYPE_STRING, 'validate' => 'isColor', 'size' => 32),
+			'bo_theme' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 32),
+			'bo_show_screencast' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'stats_date_from' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'stats_date_to' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	protected	$webserviceParameters = array(
 		'fields' => array(
@@ -86,39 +100,38 @@ class EmployeeCore extends ObjectModel
 		),
 	);
 
-
-	public	function getFields()
+	/**
+	 * @see ObjectModel::getFields()
+	 * @return array
+	 */
+	public function getFields()
 	{
-	 	$this->validateFields();
-
-		$fields['id_profile'] = (int)$this->id_profile;
-		$fields['id_lang'] = (int)$this->id_lang;
-		$fields['lastname'] = pSQL($this->lastname);
-		$fields['firstname'] = pSQL(Tools::ucfirst($this->firstname));
-		$fields['email'] = pSQL($this->email);
-		$fields['passwd'] = pSQL($this->passwd);
-		$fields['last_passwd_gen'] = pSQL($this->last_passwd_gen);
-
 		if (empty($this->stats_date_from))
 			$this->stats_date_from = date('Y-m-d 00:00:00');
-		$fields['stats_date_from'] = pSQL($this->stats_date_from);
 
 		if (empty($this->stats_date_to))
 			$this->stats_date_to = date('Y-m-d 23:59:59');
-		$fields['stats_date_to'] = pSQL($this->stats_date_to);
 
-		$fields['bo_color'] = pSQL($this->bo_color);
-		$fields['bo_theme'] = pSQL($this->bo_theme);
-		$fields['bo_show_screencast'] = (int)$this->bo_show_screencast;
-		$fields['active'] = (int)$this->active;
-
-		return $fields;
+		return parent::getFields();
 	}
 
 	public function add($autodate = true, $null_values = true)
 	{
 		$this->last_passwd_gen = date('Y-m-d H:i:s', strtotime('-'.Configuration::get('PS_PASSWD_TIME_BACK').'minutes'));
 	 	return parent::add($autodate, $null_values);
+	}
+
+	/**
+	 * Return list of employees
+	 */
+	public static function getEmployees()
+	{
+		return Db::getInstance()->executeS('
+			SELECT `id_employee`, `firstname`, `lastname`
+			FROM `'._DB_PREFIX_.'employee`
+			WHERE `active` = 1
+			ORDER BY `lastname` ASC
+		');
 	}
 
 	/**

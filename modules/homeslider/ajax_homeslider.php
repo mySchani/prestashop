@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10593 $
+*  @version  Release: $Revision: 11554 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,7 +32,7 @@ $context = Context::getContext();
 $homeSlider = new HomeSlider();
 $slides = array();
 
-if (!Tools::isSubmit('secure_key') OR Tools::getValue('secure_key') != $homeSlider->secure_key OR !Tools::getValue('action'))
+if (!Tools::isSubmit('secure_key') || Tools::getValue('secure_key') != $homeSlider->secure_key || !Tools::getValue('action'))
 	die(1);
 
 if (Tools::getValue('action') == 'updateSlidesPosition' && Tools::getValue('slides'))
@@ -43,8 +43,8 @@ if (Tools::getValue('action') == 'updateSlidesPosition' && Tools::getValue('slid
 	foreach ($slides as $position => $id_slide)
 	{
 		$res = Db::getInstance()->execute('
-			UPDATE `'._DB_PREFIX_.'homeslider_slides` SET `position` = '.(int)($position).'
-			WHERE `id_slide` = '.(int)($id_slide)
+			UPDATE `'._DB_PREFIX_.'homeslider_slides` SET `position` = '.(int)$position.'
+			WHERE `id_homeslider_slides` = '.(int)$id_slide
 		);
 
 	}

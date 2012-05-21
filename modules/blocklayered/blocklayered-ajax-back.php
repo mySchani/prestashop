@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 8513 $
+*  @version  Release: $Revision: 11083 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
@@ -40,5 +40,4 @@ if (isset($_GET['categoryBox']) AND is_array($_GET['categoryBox']))
 		$value = (int)$value;
 
 $blockLayered = new BlockLayered();
-echo $blockLayered->ajaxCallBackOffice((isset($_GET['categoryBox']) AND is_array($_GET['categoryBox'])) ? $_GET['categoryBox'] : array(), 
-(isset($_GET['id_layered_filter']) AND !empty($_GET['id_layered_filter'])) ? (int)$_GET['id_layered_filter'] : array());
+echo $blockLayered->ajaxCallBackOffice(Tools::getValue('categoryBox'), Tools::getValue('id_layered_filter'));

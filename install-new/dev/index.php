@@ -29,21 +29,21 @@ class SynchronizeController extends InstallControllerHttp
 		$this->loader->setLanguages($languages);
 
 		if (Tools::getValue('submit'))
-			$this->synchronizeDatabase();
+			$this->generateSchemas();
+		else if (Tools::getValue('synchronize'))
+			$this->synchronizeEntities();
 
 		if ($this->type == 'demo')
 			$this->loader->setFixturesPath();
+		else
+			$this->loader->setDefaultPath();
 		$this->displayTemplate('index');
 	}
 
-	public function synchronizeDatabase()
+	public function generateSchemas()
 	{
 		if ($this->type == 'demo')
-		{
-			$this->loader->setDefaultPath();
-			$this->loader->generateAllEntityFiles();
 			$this->loader->setFixturesPath();
-		}
 
 		$tables = isset($_POST['tables']) ? (array)$_POST['tables'] : array();
 		$columns = isset($_POST['columns']) ? (array)$_POST['columns'] : array();
@@ -52,7 +52,9 @@ class SynchronizeController extends InstallControllerHttp
 		$primaries = isset($_POST['primary']) ? (array)$_POST['primary'] : array();
 		$classes = isset($_POST['class']) ? (array)$_POST['class'] : array();
 		$sqls = isset($_POST['sql']) ? (array)$_POST['sql'] : array();
+		$orders = isset($_POST['order']) ? (array)$_POST['order'] : array();
 		$images = isset($_POST['image']) ? (array)$_POST['image'] : array();
+		$nulls = isset($_POST['null']) ? (array)$_POST['null'] : array();
 
 		$entities = array();
 		foreach ($tables as $table)
@@ -70,8 +72,14 @@ class SynchronizeController extends InstallControllerHttp
 			if (isset($sqls[$table]) && $sqls[$table])
 				$config['sql'] = $sqls[$table];
 
+			if (isset($orders[$table]) && $orders[$table])
+				$config['ordersql'] = $orders[$table];
+
 			if (isset($images[$table]) && $images[$table])
 				$config['image'] = $images[$table];
+
+			if (isset($nulls[$table]) && $nulls[$table])
+				$config['null'] = $nulls[$table];
 
 			$fields = array();
 			if (isset($columns[$table]))
@@ -89,16 +97,30 @@ class SynchronizeController extends InstallControllerHttp
 				'fields' => $fields,
 			);
 		}
-		$this->loader->generateEntityFiles($entities);
 
-		if ($this->type != 'demo')
+		foreach ($entities as $entity => $info)
+			$this->loader->generateEntitySchema($entity, $info['fields'], $info['config']);
+
+		$this->errors = $this->loader->getErrors();
+	}
+
+	public function synchronizeEntities()
+	{
+		$entities = Tools::getValue('entities');
+		if (isset($entities['common']))
+		{
+			$this->loader->setDefaultPath();
+			$this->loader->generateEntityFiles($entities['common']);
+		}
+
+		if (isset($entities['fixture']))
 		{
 			$this->loader->setFixturesPath();
-			$this->loader->generateAllEntityFiles();
-			$this->loader->setDefaultPath();
+			$this->loader->generateEntityFiles($entities['fixture']);
 		}
 
 		$this->errors = $this->loader->getErrors();
+		$this->loader->setDefaultPath();
 	}
 }
 

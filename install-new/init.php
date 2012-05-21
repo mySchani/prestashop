@@ -20,14 +20,15 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11743 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('_PS_INSTALL_VERSION_', '1.5.0.0');
+define('_PS_INSTALL_VERSION_', '1.5.0.2');
 
 // Generate common constants
+define('PS_INSTALLATION_IN_PROGRESS', true);
 define('_PS_INSTALL_PATH_', dirname(__FILE__).'/');
 define('_PS_INSTALL_DATA_PATH_', _PS_INSTALL_PATH_.'data/');
 define('_PS_INSTALL_CONTROLLERS_PATH_', _PS_INSTALL_PATH_.'controllers/');
@@ -50,3 +51,47 @@ require_once _PS_INSTALL_PATH_.'classes/model.php';
 require_once _PS_INSTALL_PATH_.'classes/session.php';
 require_once _PS_INSTALL_PATH_.'classes/sqlLoader.php';
 require_once _PS_INSTALL_PATH_.'classes/xmlLoader.php';
+
+class InstallLog
+{
+	/**
+	 * @return InstallLog
+	 */
+	public function getInstance()
+	{
+		static $instance = null;
+
+		if (!$instance)
+			$instance = new InstallLog();
+		return $instance;
+	}
+
+	protected $fd;
+	protected $start_time = array();
+	protected $last_time;
+
+	public function __construct()
+	{
+		$this->fd = fopen(_PS_INSTALL_PATH_.'log.txt', 'w');
+		$this->last_time = microtime(true);
+	}
+
+	public function write($id)
+	{
+		$str = "[$id]";
+		$str .= ' - [Time: '.round(microtime(true) - $this->last_time, 4).']';
+		if (isset($this->start_time[$id]))
+			$str .= ' - [Length: '.round(microtime(true) - $this->start_time[$id], 4).']';
+		fwrite($this->fd, "$str\n");
+	}
+
+	public function start($id)
+	{
+		$this->start_time[$id] = microtime(true);
+	}
+
+	public function __destruct()
+	{
+		fclose($this->fd);
+	}
+}

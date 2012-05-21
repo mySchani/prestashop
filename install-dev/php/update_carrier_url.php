@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,9 +35,9 @@ function update_carrier_url()
 
 	// Check each one and erase carrier URL if not correct URL
 	foreach ($carriers as $carrier)
-		if (empty($carrier['url']) || !preg_match('/^https?:\/\/[:#%&_=\(\)\.\? \+\-@\/a-zA-Z0-9]+$/', $carrier['url']))
+		if (!Validate::isAbsoluteUrl($carrier['url']))
 			Db::getInstance()->execute('
 				UPDATE `'._DB_PREFIX_.'carrier`
-				SET `url` = ""
-				WHERE  `id_carrier`= '.(int)$carrier['id_carrier']);
+				SET `url` = \'\'
+				WHERE  `id_carrier`= '.(int)($carrier['id_carrier']));
 }

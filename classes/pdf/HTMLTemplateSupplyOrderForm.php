@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10516 $
+*  @version  Release: $Revision: 10998 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,11 +28,12 @@
 /**
  * @since 1.5
  */
-class HTMLTemplateSupplyOrderForm extends HTMLTemplate
+class HTMLTemplateSupplyOrderFormCore extends HTMLTemplate
 {
 	public $supply_order;
 	public $warehouse;
 	public $address_warehouse;
+	public $address_supplier;
 	public $context;
 
 	public function __construct(SupplyOrder $supply_order, $smarty)
@@ -42,6 +43,7 @@ class HTMLTemplateSupplyOrderForm extends HTMLTemplate
         $this->context = Context::getContext();
         $this->warehouse = new Warehouse($supply_order->id_warehouse);
         $this->address_warehouse = new Address($this->warehouse->id_address);
+        $this->address_supplier = new Address(Address::getAddressIdBySupplierId($supply_order->id_supplier));
 
    		// header informations
 		$this->date = Tools::displayDate($supply_order->date_add, (int)$this->supply_order->id_lang);
@@ -64,6 +66,7 @@ class HTMLTemplateSupplyOrderForm extends HTMLTemplate
 		$this->smarty->assign(array(
 			'warehouse' => $this->warehouse,
 			'address_warehouse' => $this->address_warehouse,
+			'address_supplier' => $this->address_supplier,
 			'supply_order' => $this->supply_order,
 			'supply_order_details' => $supply_order_details,
 			'tax_order_summary' => $tax_order_summary,

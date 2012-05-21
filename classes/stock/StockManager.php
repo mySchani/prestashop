@@ -93,7 +93,7 @@ class StockManagerCore implements StockManagerInterface
 					$stock_exists = true;
 
 					// for a warehouse using WA, there is one and only one stock for a given product
-					$stock = $stock_collection[0];
+					$stock = $stock_collection->current();
 
 					// calculates WA price
 					$last_wa = $stock->price_te;
@@ -133,7 +133,7 @@ class StockManagerCore implements StockManagerInterface
 					$stock_exists = true;
 
 					// there is one and only one stock for a given product in a warehouse and at the current unit price
-					$stock = $stock_collection[0];
+					$stock = $stock_collection->current();
 
 					$stock_params = array(
 						'physical_quantity' => ($stock->physical_quantity + $quantity),
@@ -207,10 +207,11 @@ class StockManagerCore implements StockManagerInterface
 		// Special case of a pack
 		if (Pack::isPack($id_product))
 		{
-			$products_pack = Pack::getItems((int)$product['id_product'], (int)Configuration::get('PS_LANG_DEFAULT'));
+			$products_pack = Pack::getItems($id_product, (int)Configuration::get('PS_LANG_DEFAULT'));
 			foreach ($products_pack as $product_pack)
 			{
-				$pack_id_product_attribute = Product::getDefaultAttribute($tab_product_pack['id_product'], 1); //@TODO is there a better way to retrieve the product attribute assciated to the pack ?
+				//@TODO is there a better way to retrieve the product attribute assciated to the pack ?
+				$pack_id_product_attribute = Product::getDefaultAttribute($id_product_attribute, 1);
 				$this->removeProduct($product_pack->id, $pack_id_product_attribute, $product_pack->pack_quantity * $quantity, $warehouse, $id_order);
 			}
 		}
@@ -231,6 +232,7 @@ class StockManagerCore implements StockManagerInterface
 				return $return;
 
 			$stock_collection = $this->getStockCollection($id_product, $id_product_attribute, $warehouse->id);
+			$stock_collection->getAll();
 
 			// check if the collection is loaded
 			if (count($stock_collection) <= 0)
@@ -248,7 +250,7 @@ class StockManagerCore implements StockManagerInterface
 				// case CUMP mode
 				case 'WA':
 					// There is one and only one stock for a given product in a warehouse in this mode
-					$stock = $stock_collection[0];
+					$stock = $stock_collection->current();
 
 					$mvt_params = array(
 						'id_stock' => $stock->id,
@@ -293,7 +295,7 @@ class StockManagerCore implements StockManagerInterface
 						if ($left_quantity_to_check <= 0)
 							continue;
 
-						$resource = Db::getInstance(_PS_USE_SQL_SLAVE_)->execute('
+						$resource = Db::getInstance(_PS_USE_SQL_SLAVE_)->query('
 							SELECT sm.`id_stock_mvt`, sm.`date_add`, sm.`physical_quantity`,
 								IF ((sm2.`physical_quantity` is null), sm.`physical_quantity`, (sm.`physical_quantity` - SUM(sm2.`physical_quantity`))) as qty
 							FROM `'._DB_PREFIX_.'stock_mvt` sm
@@ -424,7 +426,7 @@ class StockManagerCore implements StockManagerInterface
 
 		$query = new DbQuery();
 		$query->select('SUM('.($usable ? 's.usable_quantity' : 's.physical_quantity').')');
-		$query->from('stock s');
+		$query->from('stock', 's');
 		$query->where('s.id_product = '.(int)$id_product);
 		if (0 != $id_product_attribute)
 			$query->where('s.id_product_attribute = '.(int)$id_product_attribute);
@@ -454,24 +456,27 @@ class StockManagerCore implements StockManagerInterface
 
 		// Gets client_orders_qty
 		$query = new DbQuery();
-		$query->select('SUM(od.product_quantity)');
-		$query->from('order_detail od');
-		$query->leftjoin('orders o ON o.id_order = od.id_order');
+		$query->select('SUM(od.product_quantity) + SUM(od.product_quantity_refunded)');
+		$query->from('order_detail', 'od');
+		$query->leftjoin('orders', 'o', 'o.id_order = od.id_order');
 		$query->where('od.product_id = '.(int)$id_product);
 		if (0 != $id_product_attribute)
 			$query->where('od.product_attribute_id = '.(int)$id_product_attribute);
-		$query->where('o.delivery_number = 0');
-		$query->where('o.valid = 1');
-		// @FIXME: Once part-shipping is done, remove the comment on the line below.
-		// $query->where('o.id_warehouse IN (0, '.implode(', ', $ids_warehouse).')');
+		$query->leftJoin('order_history', 'oh', 'oh.id_order = o.id_order AND oh.date_add = o.date_upd');
+		$query->leftJoin('order_state', 'os', 'os.id_order_state = oh.id_order_state');
+		$query->where('os.shipped != 1');
+		$query->where('o.valid = 1 OR (os.id_order_state != '.(int)Configuration::get('PS_OS_ERROR').'
+					   AND os.id_order_state != '.(int)Configuration::get('PS_OS_CANCELED').')');
+		//if (count($ids_warehouse))
+			//$query->where('od.id_warehouse IN('.implode(', ', $ids_warehouse).')');
 		$client_orders_qty = (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 
 		// Gets supply_orders_qty
 		$query = new DbQuery();
 		$query->select('SUM(sod.quantity_expected)');
-		$query->from('supply_order so');
-		$query->leftjoin('supply_order_detail sod ON (sod.id_supply_order = so.id_supply_order)');
-		$query->leftjoin('supply_order_state sos ON (sos.id_supply_order_state = so.id_supply_order_state)');
+		$query->from('supply_order', 'so');
+		$query->leftjoin('supply_order_detail', 'sod', 'sod.id_supply_order = so.id_supply_order');
+		$query->leftjoin('supply_order_state', 'sos', 'sos.id_supply_order_state = so.id_supply_order_state');
 		$query->where('sos.pending_receipt = 1');
 		$query->where('sod.id_product = '.(int)$id_product.' AND sod.id_product_attribute = '.(int)$id_product_attribute);
 		if (count($ids_warehouse))
@@ -551,7 +556,7 @@ class StockManagerCore implements StockManagerInterface
 	/**
 	 * @see StockManagerInterface::getProductCoverage()
 	 * Here, $coverage is a number of days
-	 * @return int number of days left
+	 * @return int number of days left (-1 if infinite)
 	 */
 	public function getProductCoverage($id_product, $id_product_attribute, $coverage, $id_warehouse = null)
 	{
@@ -581,14 +586,14 @@ class StockManagerCore implements StockManagerInterface
 
 		$quantity_out = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 		if (!$quantity_out)
-			return '--';
+			return -1;
 
-		$quantity_per_day = round($quantity_out / $coverage);
+		$quantity_per_day = Tools::ps_round($quantity_out / $coverage);
 		$physical_quantity = $this->getProductPhysicalQuantities($id_product,
 															     $id_product_attribute,
 															     ($id_warehouse ? array($id_warehouse) : null),
 															     true);
-		$time_left = ($quantity_per_day == 0) ? '--' : round($physical_quantity / $quantity_per_day);
+		$time_left = ($quantity_per_day == 0) ? (-1) : Tools::ps_round($physical_quantity / $quantity_per_day);
 
 		return $time_left;
 	}
@@ -612,22 +617,18 @@ class StockManagerCore implements StockManagerInterface
 	 *
 	 * @param int $id_product
 	 * @param int $id_product_attribute
-	 * @return array
+	 * @return Collection
 	 */
 	protected function getStockCollection($id_product, $id_product_attribute, $id_warehouse = null, $price_te = null)
 	{
-		// build query
-		$query = new DbQuery();
-		$query->select('s.id_stock, s.physical_quantity, s.usable_quantity, s.price_te, s.id_product, s.id_product_attribute, s.id_warehouse');
-		$query->from('stock s');
-		$query->where('s.id_product = '.(int)$id_product.' AND s.id_product_attribute = '.(int)$id_product_attribute);
+		$stocks = new Collection('Stock');
+		$stocks->where('id_product', '=', $id_product);
+		$stocks->where('id_product_attribute', '=', $id_product_attribute);
 		if ($id_warehouse)
-			$query->where('s.id_warehouse = '.(int)$id_warehouse);
+			$stocks->where('id_warehouse', '=', $id_warehouse);
 		if ($price_te)
-			$query->where('s.price_te = '.(float)$price_te);
+			$stocks->where('price_te', '=', $price_te);
 
-		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
-
-		return ObjectModel::hydrateCollection('Stock', $results);
+		return $stocks;
 	}
 }

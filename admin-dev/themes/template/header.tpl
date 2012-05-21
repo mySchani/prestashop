@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10564 $
+*  @version  Release: $Revision: 11378 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -64,6 +64,7 @@
 				var see_msg = '{l s='Click here to see that message'}';
 				var token_admin_orders = '{getAdminToken tab='AdminOrders'}';
 				var token_admin_customers = '{getAdminToken tab='AdminCustomers'}';
+				var token_admin_customer_threads = '{getAdminToken tab='AdminCustomerThreads'}';
 			</script>
 		{/if}
 
@@ -83,7 +84,7 @@
 			{$HOOK_HEADER}
 		{/if}
 		<!--[if IE]>
-		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'admin-ie.css" />
+		<link type="text/css" rel="stylesheet" href="{$base_url}css/admin-ie.css" />
 		<![endif]-->
 		<style type="text/css">
 			div#header_infos, div#header_infos a#header_shopname, div#header_infos a#header_logout, div#header_infos a#header_foaccess {
@@ -91,7 +92,7 @@
 			}
 		</style>
 	</head>
-	<body {if $bo_color} style="background:{$bo_color}" {/if}>
+	<body{if $bo_color} style="background:{$bo_color}"{/if}>
 {if $display_header}
 	<div id="top_container">
 		<div id="container">
@@ -126,15 +127,15 @@
 					</div>
 				{/if}
 				{if {$show_new_messages} == 1}
-					<div id="messages_notif" class="notifs">
-						<span id="messages_notif_number_wrapper" class="number_wrapper">
-							<span id="messages_notif_value">0</span>
+					<div id="customer_messages_notif" class="notifs">
+						<span id="customer_messages_notif_number_wrapper" class="number_wrapper">
+							<span id="customer_messages_notif_value">0</span>
 						</span>
-						<div id="messages_notif_wrapper" class="notifs_wrapper">
+						<div id="customer_messages_notif_wrapper" class="notifs_wrapper">
 							<h3>{l s='Last messages'}</h3>
 							<p class="no_notifs">{l s='No new messages posted on your shop'}</p>
-							<ul id="list_messages_notif"></ul>
-							<p><a href="index.php?controller=AdminMessages&token={getAdminToken tab='AdminMessages'}">{l s='Show all messages'}</a></p>
+							<ul id="list_customer_messages_notif"></ul>
+							<p><a href="index.php?tab=AdminCustomerThreads&token={getAdminToken tab='AdminCustomerThreads'}">{l s='Show all messages'}</a></p>
 						</div>
 					</div>
 				{/if}
@@ -151,18 +152,18 @@
 			</span>
 			<div id="header_search">
 			<form method="post" action="index.php?controller=AdminSearch&token={getAdminToken tab='AdminSearch'}">
-				<input type="text" name="bo_query" id="bo_query" value="{$bo_query}" />
-				<select name="bo_search_type" id="bo_search_type">
+			<select name="bo_search_type" id="bo_search_type">
 					<option value="0">{l s='everywhere'}</option>
 					<option value="1" {if {$search_type} == 1} selected="selected" {/if}>{l s='catalog'}</option>
 					<optgroup label="{l s='customers'}:">
-						<option value="2" {if {$search_type} == 2} selected="selected" {/if}>{l s='by name'}</option>
-						<option value="6" {if {$search_type} == 6} selected="selected" {/if}>{l s='by ip address'}</option>
+					<option value="2" {if {$search_type} == 2} selected="selected" {/if}>{l s='by name'}</option>
+					<option value="6" {if {$search_type} == 6} selected="selected" {/if}>{l s='by ip address'}</option>
 					</optgroup>
 					<option value="3" {if {$search_type} == 3} selected="selected" {/if}>{l s='orders'}</option>
 					<option value="4" {if {$search_type} == 4} selected="selected" {/if}>{l s='invoices'}</option>
 					<option value="5" {if {$search_type} == 5} selected="selected" {/if}>{l s='carts'}</option>
 				</select>
+				<input type="text" name="bo_query" id="bo_query" value="{$bo_query}" />
 				<input type="submit" id="bo_search_submit" class="button" value="{l s='Search'}"/>
 			</form>
 		</div>

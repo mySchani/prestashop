@@ -56,20 +56,32 @@ class OrderStateCore extends ObjectModel
 	/** @var boolean Shipped */
 	public $shipped;
 
- 	protected $fieldsValidate = array(
- 		'send_email' => 'isBool',
- 		'invoice' => 'isBool',
- 		'color' => 'isColor',
- 		'logable' => 'isBool',
- 		'shipped' => 'isBool'
- 	);
+	/** @var boolean Paid */
+	public $paid;
 
-	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 64, 'template' => 64);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_state',
+		'primary' => 'id_order_state',
+		'multilang' => true,
+		'fields' => array(
+			'send_email' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'invoice' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'color' => 		array('type' => self::TYPE_STRING, 'validate' => 'isColor'),
+			'logable' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'shipped' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'unremovable' =>array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'delivery' =>	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'hidden' =>		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'paid' =>		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 
-	protected $table = 'order_state';
-	protected $identifier = 'id_order_state';
+			// Lang fields
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+			'template' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isTplName', 'size' => 64),
+		),
+	);
 
 	protected $webserviceParameters = array(
 		'fields' => array(
@@ -78,31 +90,6 @@ class OrderStateCore extends ObjectModel
 			'hidden' => array(),
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['send_email'] = (int)$this->send_email;
-		$fields['invoice'] = (int)$this->invoice;
-		$fields['color'] = pSQL($this->color);
-		$fields['unremovable'] = (int)$this->unremovable;
-		$fields['logable'] = (int)$this->logable;
-		$fields['delivery'] = (int)$this->delivery;
-		$fields['hidden'] = (int)$this->hidden;
-		$fields['shipped'] = (int)$this->shipped;
-		return $fields;
-	}
-
-	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name', 'template'));
-	}
 
 	/**
 	* Get all available order states

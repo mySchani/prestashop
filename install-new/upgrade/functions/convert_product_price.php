@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11561 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,9 +32,7 @@ function convert_product_price()
 	$taxRates = array();
 	foreach ($taxes as $data)
 		$taxRates[$data['id_tax']] = (float)($data['rate']) / 100;
-	$resource = DB::getInstance()->executeS('SELECT `id_product`, `price`, `id_tax` FROM `'._DB_PREFIX_.'product`', false);
-	if (!$resource)
-		die(Db::getInstance()->getMsgError());
+	$resource = DB::getInstance()->query('SELECT `id_product`, `price`, `id_tax` FROM `'._DB_PREFIX_.'product`');
 	while ($row = DB::getInstance()->nextRow($resource))
 		if ($row['id_tax'])
 		{

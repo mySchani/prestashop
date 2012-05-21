@@ -103,7 +103,7 @@ class AdminSearchControllerCore extends AdminController
 	}
 
 
-	public function	searchIP()
+	public function searchIP()
 	{
 		if (!ip2long(trim($this->query)))
 		{
@@ -130,7 +130,7 @@ class AdminSearchControllerCore extends AdminController
 	*
 	* @params string $query String to find in the catalog
 	*/
-	public function	searchCustomer()
+	public function searchCustomer()
 	{
 		$this->_list['customers'] = Customer::searchByName($this->query);
 	}
@@ -144,11 +144,18 @@ class AdminSearchControllerCore extends AdminController
 	{
 		global $_LANGADM;
 		$tabs = array();
+		$key_match = array();
 		$result = Db::getInstance()->executeS('SELECT class_name, name FROM '._DB_PREFIX_.'tab t INNER JOIN '._DB_PREFIX_.'tab_lang tl ON t.id_tab = tl.id_tab AND tl.id_lang = '.(int)$this->context->language->id);
 		foreach ($result as $row)
-			$tabs[$row['class_name']] = $row['name'];
+		{
+			$tabs[strtolower($row['class_name'])] = $row['name'];
+			$key_match[strtolower($row['class_name'])] = $row['class_name'];
+		}
 		foreach (AdminTab::$tabParenting as $key => $value)
-			$tabs[$key] = $tabs[$value];
+		{
+			$tabs[strtolower($key)] = $tabs[strtolower($value)];
+			$key_match[strtolower($key)] = $key;
+		}
 		$this->_list['features'] = array();
 
 		foreach ($_LANGADM as $key => $value)
@@ -163,7 +170,7 @@ class AdminSearchControllerCore extends AdminController
 					continue;
 				if (!isset($this->_list['features'][$tabs[$key]]))
 					$this->_list['features'][$tabs[$key]] = array();
-				$this->_list['features'][$tabs[$key]][] = array('link' => '?tab='.Tools::safeOutput($key).'&token='.Tools::getAdminTokenLite($key) , 'value' => Tools::safeOutput($value));
+				$this->_list['features'][$tabs[$key]][] = array('link' => Context::getContext()->link->getAdminLink($key_match[$key]), 'value' => Tools::safeOutput($value));
 			}
 		}
 
@@ -203,7 +210,8 @@ class AdminSearchControllerCore extends AdminController
 			'manufacturer_name' => array('title' => $this->l('Manufacturer'), 'align' => 'center'),
 			'reference' => array('title' => $this->l('Reference'), 'align' => 'center'),
 			'name' => array('title' => $this->l('Name')),
-			'price' => array('title' => $this->l('Price'), 'align' => 'right', 'type' => 'price'),
+			'price_tax_excl' => array('title' => $this->l('Price tax excl'), 'align' => 'right', 'type' => 'price'),
+			'price_tax_incl' => array('title' => $this->l('Price tax incl'), 'align' => 'right', 'type' => 'price'),
 			'status' => array('title' => $this->l('Status'), 'align' => 'center'),
 		));
 	}
@@ -224,13 +232,13 @@ class AdminSearchControllerCore extends AdminController
 		$this->toolbar_title = $this->l('Search results');
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		$this->tpl_view_vars['query'] = $this->query;
 		$this->tpl_view_vars['show_toolbar'] = true;
 
 		if (sizeof($this->_errors))
-			return parent::initView();
+			return parent::renderView();
 		else
 		{
 			$helper = new HelperList();
@@ -273,7 +281,7 @@ class AdminSearchControllerCore extends AdminController
 				}
 				$this->tpl_view_vars['customers'] =  $view;
 			}
-			return parent::initView();
+			return parent::renderView();
 		}
 	}
 }

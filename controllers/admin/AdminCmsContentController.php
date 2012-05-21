@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10355 $
+*  @version  Release: $Revision: 10799 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -69,23 +69,15 @@ class AdminCmsContentControllerCore extends AdminController
 		return $result;
 	}
 
-
-	public function displayErrors()
-	{
-		parent::displayErrors();
-		$this->adminCMS->displayErrors();
-		$this->adminCMSCategories->displayErrors();
-	}
-
 	public function initContent()
 	{
 		$this->adminCMSCategories->token = $this->token;
 		$this->adminCMS->token = $this->token;
 
 		if ($this->display == 'edit_category')
-			$this->content .= $this->adminCMSCategories->initForm();
+			$this->content .= $this->adminCMSCategories->renderForm();
 		elseif ($this->display == 'edit_page')
-			$this->content .= $this->adminCMS->initForm();
+			$this->content .= $this->adminCMS->renderForm();
 		elseif ($this->display == 'view_page'){}
 		else
 		{
@@ -101,9 +93,9 @@ class AdminCmsContentControllerCore extends AdminController
 				if (Tools::getValue($tab.'Orderby') && Tools::getValue($tab.'Orderway'))
 					$catBarIndex = preg_replace('/&'.$tab.'Orderby=([a-z _]*)&'.$tab.'Orderway=([a-z]*)/i', '', self::$currentIndex);
 
-			$this->content .= $this->adminCMSCategories->initList();
+			$this->content .= $this->adminCMSCategories->renderList();
 			$this->adminCMS->id_cms_category = $id_cms_category;
-			$this->content .= $this->adminCMS->initList();
+			$this->content .= $this->adminCMS->renderList();
 			$this->context->smarty->assign(array(
 				'cms_breadcrumb' => getPath($catBarIndex, $id_cms_category,'','','cms'),
 			));

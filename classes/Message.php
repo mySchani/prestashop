@@ -49,30 +49,23 @@ class MessageCore extends ObjectModel
 	
 	/** @var string Object creation date */
 	public 		$date_add;
-	
-	protected	$fieldsRequired = array('message');
-	protected	$fieldsSize = array('message' => 1600);
-	protected	$fieldsValidate = array(
-		'message' => 'isCleanHtml', 'id_cart' => 'isUnsignedId', 'id_order' => 'isUnsignedId',
-		'id_customer' => 'isUnsignedId', 'id_employee' => 'isUnsignedId', 'private' => 'isBool');
 
-	protected 	$table = 'message';
-	protected 	$identifier = 'id_message';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['message'] = pSQL($this->message, true);
-		$fields['id_cart'] = (int)($this->id_cart);
-		$fields['id_order'] = (int)($this->id_order);
-		$fields['id_customer'] = (int)($this->id_customer);
-		$fields['id_employee'] = (int)($this->id_employee);
-		$fields['private'] = (int)($this->private);
-		$fields['date_add'] = pSQL($this->date_add);
-
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'message',
+		'primary' => 'id_message',
+		'fields' => array(
+			'message' => 		array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'required' => true, 'size' => 1600),
+			'id_cart' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_order' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_customer' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_employee' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'private' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'date_add' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	/**
 	  * Return the last message from cart

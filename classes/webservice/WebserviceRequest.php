@@ -56,7 +56,7 @@ class WebserviceRequestCore
 	 * PrestaShop Webservice Documentation URL
 	 * @var string
 	 */
-	protected $_docUrl = 'http://prestashop.com/docs/1.4/webservice';
+	protected $_docUrl = 'http://doc.prestashop.com/display/PS14/Using+the+REST+webservice';
 
 	/**
 	 * Set if the authentication key was checked
@@ -238,10 +238,13 @@ class WebserviceRequestCore
 			'image_types' => array('description' => 'The image types', 'class' => 'ImageType'),
 			'languages' => array('description' => 'Shop languages', 'class' => 'Language'),
 			'manufacturers' => array('description' => 'The product manufacturers','class' => 'Manufacturer'),
+			'order_carriers' => array('description' => 'The Order carriers','class' => 'OrderCarrier'),
 			'order_details' => array('description' => 'Details of an order', 'class' => 'OrderDetail'),
 			'order_discounts' => array('description' => 'Discounts of an order', 'class' => 'OrderDiscount'),
 			'order_histories' => array('description' => 'The Order histories','class' => 'OrderHistory'),
+			'order_invoices' => array('description' => 'The Order invoices','class' => 'OrderInvoice'),
 			'orders' => array('description' => 'The Customers orders','class' => 'Order'),
+			'order_payments' => array('description' => 'The Order payments','class' => 'OrderPayment'),
 			'order_states' => array('description' => 'The Order states','class' => 'OrderState'),
 			'price_ranges' => array('description' => 'Price ranges', 'class' => 'RangePrice'),
 			'product_features' => array('description' => 'The product features','class' => 'Feature'),
@@ -257,12 +260,17 @@ class WebserviceRequestCore
 			'weight_ranges' => array('description' => 'Weight ranges', 'class' => 'RangeWeight'),
 			'zones' => array('description' => 'The Countries zones','class' => 'Zone'),
 			'employees' => array('description' => 'The Employees', 'class' => 'Employee'),
-			'stock_movements' => array('description' => 'Stock movements management', 'class' => 'StockMvt', 'forbidden_method' => array('PUT')),
 			'search' => array('description' => 'Search', 'specific_management' => true, 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
-			'stock_movement_reasons' => array('description' => 'The stock movement reason', 'class' => 'StockMvtReason'),
+			'content_management_system' => array('description' => 'Content management system', 'class' => 'CMS'),
 			'shops' => array('description' => 'Shops from multi-shop feature', 'class' => 'Shop'),
 			'shop_groups' => array('description' => 'Shop groups from multi-shop feature', 'class' => 'GroupShop'),
 			'taxes' => array('description' => 'The tax rate', 'class' => 'Tax'),
+			'stock_movements' => array('description' => 'Stock movements', 'class' => 'StockMvtWS', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
+			'stock_movement_reasons' => array('description' => 'Stock movement reason', 'class' => 'StockMvtReason'),
+			'warehouses' => array('description' => 'Warehouses', 'class' => 'Warehouse', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
+			'stocks' => array('description' => 'Stocks', 'class' => 'Stock', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
+			'available_quantities' => array('description' => 'Available quantities', 'class' => 'StockAvailable', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
+			'warehouse_product_locations' => array('description' => 'Location of products in warehouses', 'class' => 'WarehouseProductLocation', 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
 		);
 		ksort($resources);
 		return $resources;
@@ -305,25 +313,27 @@ class WebserviceRequestCore
 		$arr_return = $this->specificPriceCalculation($parameters);
 		return $arr_return;
 	}
+
 	public function specificPriceCalculation($parameters)
 	{
 		$arr_return = array();
 		foreach($parameters as $name => $value)
 		{
-			$id_country = (isset($value['country']) ? $value['country'] : (int)(Configuration::get('PS_COUNTRY_DEFAULT')));
-			$id_state = (isset($value['state']) ? $value['state'] : 0);
-			$id_currency = (isset($value['currency']) ? $value['currency'] : Configuration::get('PS_CURRENCY_DEFAULT'));
-			$id_group = (isset($value['group']) ? $value['group'] : Configuration::get('_PS_DEFAULT_CUSTOMER_GROUP_'));
-			$quantity = (isset($value['quantity']) ? $value['quantity'] : 1);
-			$use_tax = (isset($value['use_tax']) ? $value['use_tax'] : Configuration::get('PS_TAX'));
-			$decimals = (isset($value['decimals']) ? $value['decimals'] : Configuration::get('PS_PRICE_ROUND_MODE'));
-			$id_product_attribute = (isset($value['product_attribute']) ? $value['product_attribute'] : null);
-			$id_county = (isset($value['county']) ? $value['county'] : null);
+			$id_country = (int)(isset($value['country']) ? $value['country'] : (Configuration::get('PS_COUNTRY_DEFAULT')));
+			$id_state = (int)(isset($value['state']) ? $value['state'] : 0);
+			$id_currency = (int)(isset($value['currency']) ? $value['currency'] : Configuration::get('PS_CURRENCY_DEFAULT'));
+			$id_group = (int)(isset($value['group']) ? $value['group'] : Configuration::get('_PS_DEFAULT_CUSTOMER_GROUP_'));
+			$quantity = (int)(isset($value['quantity']) ? $value['quantity'] : 1);
+			$use_tax = (int)(isset($value['use_tax']) ? $value['use_tax'] : Configuration::get('PS_TAX'));
+			$decimals = (int)(isset($value['decimals']) ? $value['decimals'] : Configuration::get('PS_PRICE_ROUND_MODE'));
+			$id_product_attribute = (int)(isset($value['product_attribute']) ? $value['product_attribute'] : null);
+			$id_county = (int)(isset($value['county']) ? $value['county'] : null);
 
-			$only_reduc = (isset($value['only_reduction']) ? $value['only_reduction'] : false);
-			$use_reduc = (isset($value['use_reduction']) ? $value['use_reduction'] : true);
-			$use_ecotax = (isset($value['use_ecotax']) ? $value['use_ecotax'] : Configuration::get('PS_USE_ECOTAX'));
+			$only_reduc = (int)(isset($value['only_reduction']) ? $value['only_reduction'] : false);
+			$use_reduc = (int)(isset($value['use_reduction']) ? $value['use_reduction'] : true);
+			$use_ecotax = (int)(isset($value['use_ecotax']) ? $value['use_ecotax'] : Configuration::get('PS_USE_ECOTAX'));
 			$specific_price_output = null;
+			$id_county = (isset($value['county']) ? $value['county'] : 0);
 			$return_value = Product::priceCalculation(null, $value['object_id'], $id_product_attribute, $id_country, $id_state, $id_county, $id_currency, $id_group, $quantity,
 									$use_tax, $decimals, $only_reduc, $use_reduc, $use_ecotax, $specific_price_output, null);
 			$arr_return[$name] = array('sqlId'=>strtolower($name), 'value'=>$return_value);
@@ -377,7 +387,7 @@ class WebserviceRequestCore
 		$webservice_call = true;
 		$display_errors = strtolower(ini_get('display_errors')) != 'off';
 		// __PS_BASE_URI__ is from Shop::$current_base_uri
-		$this->wsUrl = Tools::getHttpHost(true).__PS_BASE_URI__;
+		$this->wsUrl = Tools::getHttpHost(true).__PS_BASE_URI__.'api/';
 		// set the output object which manage the content and header structure and informations
 		$this->objOutput = new WebserviceOutputBuilder($this->wsUrl);
 
@@ -390,8 +400,9 @@ class WebserviceRequestCore
 		$this->outputFormat = isset($params['output_format']) ? $params['output_format'] : $this->outputFormat;
 		// Set the render object to build the output on the asked format (XML, JSON, CSV, ...)
 		$this->objOutput->setObjectRender($this->getOutputObject($this->outputFormat));
+		$this->params = $params;
 		// Check webservice activation and request authentication
-		if ($this->isActivated() && $this->authenticate() && $this->shopExists($params) && $this->shopHasRight($key))
+		if ($this->webserviceChecks())
 		{
 			if ($bad_class_name)
 				$this->setError(500, 'Bad override class name for this key. Please update class_name field', 126);
@@ -481,7 +492,7 @@ class WebserviceRequestCore
 				// if the management is specific
 				else
 				{
-					$specificObjectName = 'WebserviceSpecificManagement'.ucfirst($this->urlSegment[0]);
+					$specificObjectName = 'WebserviceSpecificManagement'.ucfirst(Tools::toCamelCase($this->urlSegment[0]));
 					if(!class_exists($specificObjectName))
 						$this->setError(501, sprintf('The specific management class is not implemented for the "%s" entity.', $this->urlSegment[0]), 124);
 					else
@@ -508,6 +519,10 @@ class WebserviceRequestCore
 		unset ($display_errors);
 	}
 
+	protected function webserviceChecks()
+	{
+		return ($this->isActivated() && $this->authenticate() && $this->shopExists($this->params) && $this->shopHasRight($this->_key));
+	}
 
 	/**
 	 * Set a webservice error
@@ -1011,7 +1026,7 @@ class WebserviceRequestCore
 								if (isset($this->resourceConfiguration['linked_tables']) && isset($this->resourceConfiguration['linked_tables'][$field]))
 								{
 									// contruct SQL join for linked tables
-									$sql_join .= 'LEFT JOIN `'._DB_PREFIX_.pSQL($this->resourceConfiguration['linked_tables'][$field]['table']).'` '.pSQL($field).' ON (main.`'.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).'` = '.pSQL($field).'.`'.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).'`)'."\n";
+									$sql_join .= 'LEFT JOIN `'.bqSQL(_DB_PREFIX_.$this->resourceConfiguration['linked_tables'][$field]['table']).'` '.bqSQL($field).' ON (main.`'.bqSQL($this->resourceConfiguration['fields']['id']['sqlId']).'` = '.bqSQL($field).'.`'.bqSQL($this->resourceConfiguration['fields']['id']['sqlId']).'`)'."\n";
 
 									// construct SQL filter for linked tables
 									foreach ($url_param as $field2 => $value)
@@ -1033,7 +1048,7 @@ class WebserviceRequestCore
 								{
 									if (!is_array($url_param))
 										$url_param = array($url_param);
-									$sql_join .= 'LEFT JOIN `'._DB_PREFIX_.pSQL($this->resourceConfiguration['retrieveData']['table']).'_lang` AS main_i18n ON (main.`'.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).'` = main_i18n.`'.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).'`)'."\n";
+									$sql_join .= 'LEFT JOIN `'.bqSQL(_DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table']).'_lang` AS main_i18n ON (main.`'.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).'` = main_i18n.`'.bqSQL($this->resourceConfiguration['fields']['id']['sqlId']).'`)'."\n";
 									foreach ($url_param as $field2 => $value)
 									{
 										$linked_field = $this->resourceConfiguration['fields'][$field];
@@ -1122,9 +1137,7 @@ class WebserviceRequestCore
 					$sql_sort .= 'main_i18n.`'.pSQL($this->resourceConfiguration['fields'][$fieldName]['sqlId']).'` '.$direction.', ';// ORDER BY main_i18n.`field` ASC|DESC
 				}
 				else
-				{
 					$sql_sort .= (isset($this->resourceConfiguration['retrieveData']['tableAlias']) ? $this->resourceConfiguration['retrieveData']['tableAlias'].'.' : '').'`'.pSQL($this->resourceConfiguration['fields'][$fieldName]['sqlId']).'` '.$direction.', ';// ORDER BY `field` ASC|DESC
-				}
 			}
 			$sql_sort = rtrim($sql_sort, ', ')."\n";
 		}
@@ -1169,9 +1182,7 @@ class WebserviceRequestCore
 		if ($sqlObjects)
 		{
 			foreach ($sqlObjects as $sqlObject)
-			{
-				$objects[] = new $this->resourceConfiguration['retrieveData']['className']($sqlObject[$this->resourceConfiguration['fields']['id']['sqlId']]);
-			}
+				$objects[] = new $this->resourceConfiguration['retrieveData']['className']((int)$sqlObject[$this->resourceConfiguration['fields']['id']['sqlId']]);
 			return $objects;
 		}
 	}
@@ -1187,15 +1198,15 @@ class WebserviceRequestCore
 		if (array_key_exists($this->resourceConfiguration['retrieveData']['table'] ,$assoc))
 		{
 			$sql = 'SELECT 1
-					FROM '._DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type'].' ';
+					FROM '.bqSQL(_DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type']).' ';
 			foreach (self::$shopIDs as $id_shop)
-				$OR[] = ' id_shop = '.$id_shop.' ';
-			$check = ' WHERE ('.implode('OR', $OR).') AND '.$this->resourceConfiguration['fields']['id']['sqlId'].' = '.(int)$this->urlSegment[1];
+				$OR[] = ' id_shop = '.(int)$id_shop.' ';
+			$check = ' WHERE ('.implode('OR', $OR).') AND '.bqSQL($this->resourceConfiguration['fields']['id']['sqlId']).' = '.(int)$this->urlSegment[1];
 			if (!Db::getInstance()->getValue($sql.$check))
 				$this->setError(403, 'Bad id_shop : You are not allowed to access this '.$this->resourceConfiguration['retrieveData']['className'].' ('.(int)$this->urlSegment[1].')', 131);
 		}
 		//get entity details
-		$object = new $this->resourceConfiguration['retrieveData']['className']($this->urlSegment[1]);
+		$object = new $this->resourceConfiguration['retrieveData']['className']((int)$this->urlSegment[1]);
 		if ($object->id)
 		{
 			$objects[] = $object;
@@ -1254,11 +1265,7 @@ class WebserviceRequestCore
 	protected function executeEntityPut()
 	{
 		return $this->saveEntityFromXml(200);
-
 	}
-
-
-
 
 	/**
 	 * Execute DELETE method on a PrestaShop entity
@@ -1327,12 +1334,6 @@ class WebserviceRequestCore
 			}
 		}
 	}
-
-	/**
-	 * Write XML output after GET and HEAD action
-	 *
-	 * @return void
-	 */
 
 	/**
 	 * save Entity Object from XML
@@ -1496,9 +1497,9 @@ class WebserviceRequestCore
 						if (array_key_exists($this->resourceConfiguration['retrieveData']['table'] ,$assoc))
 						{
 							// PUT nor POST is destructive, no deletion
-							$sql = 'INSERT IGNORE INTO `'._DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type'].'` (id_shop, '.$this->resourceConfiguration['fields']['id']['sqlId'].') VALUES ';
+							$sql = 'INSERT IGNORE INTO `'.bqSQL(_DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type']).'` (id_shop, '.pSQL($this->resourceConfiguration['fields']['id']['sqlId']).') VALUES ';
 							foreach (self::$shopIDs as $id)
-								$sql .= '('.$id.','.$object->id.')';
+								$sql .= '('.(int)$id.','.(int)$object->id.')';
 							Db::getInstance()->execute($sql);
 						}
 					}
@@ -1525,45 +1526,43 @@ class WebserviceRequestCore
 	protected function getSQLRetrieveFilter($sqlId, $filterValue, $tableAlias = 'main.')
 	{
 		$ret = '';
-		// "LIKE" case (=%[foo]%, =%[foo], =[foo]%)
 		preg_match('/^(.*)\[(.*)\](.*)$/', $filterValue, $matches);
 		if (count($matches) > 1)
 		{
 			if ($matches[1] == '%' || $matches[3] == '%')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` LIKE "'.$matches[1].pSQL($matches[2]).$matches[3]."\"\n";// AND field LIKE %value%
+				$ret .= ' AND '.bqSQL($tableAlias).'`'.bqSQL($sqlId).'` LIKE "'.pSQL($matches[1].$matches[2].$matches[3])."\"\n";
 			elseif ($matches[1] == '' && $matches[3] == '')
 			{
-				// "OR" case
 				if (strpos($matches[2], '|') > 0)
 				{
 					$values = explode('|', $matches[2]);
 					$ret .= ' AND (';
 					$temp = '';
 					foreach ($values as $value)
-						$temp .= $tableAlias.'`'.pSQL($sqlId).'` = "'.pSQL($value).'" OR ';// AND (field = value3 OR field = value7 OR field = value9)
+						$temp .= bqSQL($tableAlias).'`'.bqSQL($sqlId).'` = "'.bqSQL($value).'" OR ';
 					$ret .= rtrim($temp, 'OR ').')'."\n";
 				}
-				elseif (preg_match('/^([\d\.:-\s]+),([\d\.:-\s]+)$/', $matches[2], $matches3))// "AND" case
+				elseif (preg_match('/^([\d\.:-\s]+),([\d\.:-\s]+)$/', $matches[2], $matches3))
 				{
 					unset($matches3[0]);
 					if (count($matches3) > 0)
 					{
 						sort($matches3);
-						$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` BETWEEN "'.$matches3[0].'" AND "'.$matches3[1]."\"\n";// AND field BETWEEN value3 AND value4
+						$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'` BETWEEN "'.pSQL($matches3[0]).'" AND "'.pSQL($matches3[1])."\"\n";
 					}
 				}
 				else
-					$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'`="'.$matches[2].'"'."\n";// AND field = value1
+					$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'`="'.pSQL($matches[2]).'"'."\n";
 			}
 			elseif ($matches[1] == '>')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` > "'.pSQL($matches[2])."\"\n";// AND field > value3
+				$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'` > "'.pSQL($matches[2])."\"\n";
 			elseif ($matches[1] == '<')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` < "'.pSQL($matches[2])."\"\n";// AND field < value3
+				$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'` < "'.pSQL($matches[2])."\"\n";
 			elseif ($matches[1] == '!')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` != "'.pSQL($matches[2])."\"\n";// AND field IS NOT value3
+				$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'` != "'.pSQL($matches[2])."\"\n";
 		}
 		else
-			$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` '.(Validate::isFloat(pSQL($filterValue)) ? 'LIKE' : '=').' "'.pSQL($filterValue)."\"\n";
+			$ret .= ' AND '.$tableAlias.'`'.bqSQL($sqlId).'` '.(Validate::isFloat(pSQL($filterValue)) ? 'LIKE' : '=').' "'.pSQL($filterValue)."\"\n";
 		return $ret;
 	}
 

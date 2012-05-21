@@ -82,7 +82,7 @@ class CompareControllerCore extends FrontController
 		if (!Configuration::get('PS_COMPARATOR_MAX_ITEM'))
 				return Tools::redirect('index.php?controller=404');
 
-		if ($product_list = Tools::getValue('compare_product_list') && ($postProducts = (isset($product_list) ? rtrim($product_list, '|') : '')))
+		if (($product_list = Tools::getValue('compare_product_list')) && ($postProducts = (isset($product_list) ? rtrim($product_list, '|') : '')))
 			$ids = array_unique(explode('|', $postProducts));
 		else if (isset(self::$cookie->id_compare))
 			$ids = CompareProduct::getCompareProducts($this->context->cookie->id_compare);
@@ -153,6 +153,7 @@ class CompareControllerCore extends FrontController
 		$this->context->smarty->assign('hasProduct', $hasProduct);
 
 		$this->setTemplate(_PS_THEME_DIR_.'products-comparison.tpl');
+		parent::initContent();
 	}
 }
 

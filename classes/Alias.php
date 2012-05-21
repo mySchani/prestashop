@@ -31,18 +31,27 @@ class AliasCore extends ObjectModel
 	public $search;
 	public $active = true;
 
- 	protected 	$fieldsRequired = array('alias', 'search');
- 	protected 	$fieldsSize = array('alias' => 255, 'search' => 255);
- 	protected 	$fieldsValidate = array('search' => 'isValidSearch', 'alias' => 'isValidSearch', 'active' => 'isBool');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'alias',
+		'primary' => 'id_alias',
+		'fields' => array(
+			'search' => array('type' => self::TYPE_STRING, 'validate' => 'isValidSearch', 'required' => true, 'size' => 255),
+			'alias' => 	array('type' => self::TYPE_STRING, 'validate' => 'isValidSearch', 'required' => true, 'size' => 255),
+			'active' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
+	);
 
-	protected 	$table = 'alias';
-	protected 	$identifier = 'id_alias';
-
-	function __construct($id = NULL, $alias = NULL, $search = NULL, $id_lang = NULL)
+	public function __construct($id = NULL, $alias = NULL, $search = NULL, $id_lang = NULL)
 	{
+		$this->def = self::getDefinition($this);
+		$this->setDefinitionRetrocompatibility();
+
 		if ($id)
 			parent::__construct($id);
-		elseif ($alias AND Validate::isValidSearch($alias))
+		else if ($alias && Validate::isValidSearch($alias))
 		{
 			if (!self::isFeatureActive())
 			{
@@ -87,7 +96,7 @@ class AliasCore extends ObjectModel
 		if (parent::delete())
 		{
 			// Refresh cache of feature detachable
-			Configuration::updateGlobalValue('PS_ALIAS_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+			Configuration::updateGlobalValue('PS_ALIAS_FEATURE_ACTIVE', self::isCurrentlyUsed($this->def['table'], true));
 			return true;
 		}
 		return false;
@@ -105,16 +114,6 @@ class AliasCore extends ObjectModel
 
 		$aliases = array_map('implode', $aliases);
 		return implode(', ', $aliases);
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['alias'] = pSQL($this->alias);
-		$fields['search'] = pSQL($this->search);
-		$fields['active'] = (int)($this->active);
-		return $fields;
 	}
 
 	/**

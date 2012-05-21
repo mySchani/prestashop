@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10622 $
+*  @version  Release: $Revision: 11675 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -64,6 +64,8 @@ class AdminControllerCore extends Controller
 	/** @var array noTabLink array of admintab names witch have no content */
 	public $noTabLink = array('AdminCatalog', 'AdminTools', 'AdminStock', 'AdminAccounting');
 
+	public $required_database = false;
+
 	/** @var string Security token */
 	public $token;
 
@@ -78,8 +80,10 @@ class AdminControllerCore extends Controller
 	public $tpl_delete_link_vars = array();
 	public $tpl_option_vars = array();
 	public $tpl_view_vars = array();
+	public $tpl_required_fields_vars = array();
 
 	public $base_tpl_view = null;
+	public $base_tpl_form = null;
 
 	/** @var bool if you want more fieldsets in the form */
 	public $multiple_fieldsets = false;
@@ -157,6 +161,9 @@ class AdminControllerCore extends Controller
 	/** @var array $cache_lang cache for traduction */
 	public static $cache_lang = array();
 
+	/** @var array required_fields to display in the Required Fields form */
+	public $required_fields = array();
+
 	/**
 	 * @var array actions to execute on multiple selections
 	 * Usage:
@@ -231,12 +238,12 @@ class AdminControllerCore extends Controller
 	/** @var instanciation of the class associated with the AdminController */
 	protected $object;
 
+	/** @var current object ID */
+	protected $id_object;
+
 	public function __construct()
 	{
-	// retro-compatibility : className for admin without controller
-	// This can be overriden in controllers (like for AdminCategories or AdminProducts
 		$controller = get_class($this);
-
 		// temporary fix for Token retrocompatibility
 		// This has to be done when url is built instead of here)
 		if (strpos($controller, 'Controller'))
@@ -263,6 +270,7 @@ class AdminControllerCore extends Controller
 			25 => $this->l('Images successfully moved'),
 			26 => $this->l('Cover selection saved'),
 			27 => $this->l('Image shop association modified'),
+			28 => $this->l('Zone affected to the selection successfully'),
 		);
 		if (!$this->identifier) $this->identifier = 'id_'.$this->table;
 		if (!$this->_defaultOrderBy) $this->_defaultOrderBy = $this->identifier;
@@ -295,26 +303,28 @@ class AdminControllerCore extends Controller
 		$tabs = array_reverse($tabs);
 
 		$bread = '';
-			switch ($this->display)
+		switch ($this->display)
 		{
 			case 'edit':
 				$current_tab = array_pop($tabs);
 				$tabs[] = array('name' => sprintf($this->l('Edit %s'), $current_tab['name']));
 				break;
+
 			case 'add':
 				$current_tab = array_pop($tabs);
 				$tabs[] = array('name' => sprintf($this->l('Add %s'), $current_tab['name']));
 				break;
+
 			case 'view':
 				$current_tab = array_pop($tabs);
 				$tabs[] = array('name' => sprintf($this->l('View %s'), $current_tab['name']));
 				break;
 		}
 		// note : this should use a tpl file
-		foreach ($tabs AS $key => $item)
+		foreach ($tabs as $key => $item)
 			$bread .= '<span class="breadcrumb item-'.$key.' ">'.$item['name'].'</span> : ';
 
-		$bread = rtrim($bread,  ': ');
+		$bread = rtrim($bread, ': ');
 
 		$this->toolbar_title = $bread;
 	}
@@ -322,6 +332,7 @@ class AdminControllerCore extends Controller
 	/**
 	 * Check rights to view the current tab
 	 *
+	 * @param bool $disable
 	 * @return boolean
 	 */
 	public function viewAccess($disable = false)
@@ -349,15 +360,85 @@ class AdminControllerCore extends Controller
 	{
 		$this->json = true;
 		$item = Tools::getValue('item');
-		$isoUser = Tools::getValue('isoUser');
+		$iso_user = Tools::getValue('isoUser');
 		$country = Tools::getValue('country');
 		$version = Tools::getValue('version');
 
-		if (isset($item) && isset($isoUser) && isset($country))
-			$this->content = HelpAccess::getHelp($item, $isoUser, $country, $version);
+		if (isset($item) && isset($iso_user) && isset($country))
+			$this->content = HelpAccess::getHelp($item, $iso_user, $country, $version);
 		else
 			$this->content = 'none';
 		$this->display = 'content';
+	}
+
+	/**
+	 * Set the filters used for the list display
+	 */
+	public function processFilter()
+	{
+		$filters = $this->context->cookie->getFamily($this->table.'Filter_');
+
+		foreach ($filters as $key => $value)
+		{
+			/* Extracting filters from $_POST on key filter_ */
+			if ($value != null && !strncmp($key, $this->table.'Filter_', 7 + Tools::strlen($this->table)))
+			{
+				$key = Tools::substr($key, 7 + Tools::strlen($this->table));
+				/* Table alias could be specified using a ! eg. alias!field */
+				$tmp_tab = explode('!', $key);
+				$filter = count($tmp_tab) > 1 ? $tmp_tab[1] : $tmp_tab[0];
+
+				if ($field = $this->filterToField($key, $filter))
+				{
+					$type = (array_key_exists('filter_type', $field) ? $field['filter_type'] : (array_key_exists('type', $field) ? $field['type'] : false));
+					if (($type == 'date' || $type == 'datetime') && is_string($value))
+						$value = unserialize($value);
+					$key = isset($tmp_tab[1]) ? $tmp_tab[0].'.`'.$tmp_tab[1].'`' : '`'.$tmp_tab[0].'`';
+
+					// Assignement by reference
+					if (array_key_exists('tmpTableFilter', $field))
+						$sql_filter = & $this->_tmpTableFilter;
+					else if (array_key_exists('havingFilter', $field))
+						$sql_filter = & $this->_filterHaving;
+					else
+						$sql_filter = & $this->_filter;
+
+					/* Only for date filtering (from, to) */
+					if (is_array($value))
+					{
+						if (isset($value[0]) && !empty($value[0]))
+						{
+							if (!Validate::isDate($value[0]))
+								$this->_errors[] = Tools::displayError('\'from:\' date format is invalid (YYYY-MM-DD)');
+							else
+								$sql_filter .= ' AND '.pSQL($key).' >= \''.pSQL(Tools::dateFrom($value[0])).'\'';
+						}
+
+						if (isset($value[1]) && !empty($value[1]))
+						{
+							if (!Validate::isDate($value[1]))
+								$this->_errors[] = Tools::displayError('\'to:\' date format is invalid (YYYY-MM-DD)');
+							else
+								$sql_filter .= ' AND '.pSQL($key).' <= \''.pSQL(Tools::dateTo($value[1])).'\'';
+						}
+					}
+					else
+					{
+						$sql_filter .= ' AND ';
+						$check_key = ($key == $this->identifier || $key == '`'.$this->identifier.'`');
+
+						if ($type == 'int' || $type == 'bool')
+							$sql_filter .= (($check_key || $key == '`active`') ? 'a.' : '').pSQL($key).' = '.(int)$value.' ';
+						else if ($type == 'decimal')
+							$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' = '.(float)$value.' ';
+						else if ($type == 'select')
+							$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' = \''.pSQL($value).'\' ';
+						else
+							$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' LIKE \'%'.pSQL($value).'%\' ';
+					}
+				}
+			}
+		}
 	}
 
 	/**
@@ -375,9 +456,7 @@ class AdminControllerCore extends Controller
 			else if (method_exists($this, 'ajaxProcess'))
 				return $this->ajaxProcess();
 
-			// @TODO We should use a displayAjaxError
-			/*$this->displayErrors();
-			if (!empty($action) && method_exists($this, 'displayAjax'.Tools::toCamelCase($action)))
+			/*if (!empty($action) && method_exists($this, 'displayAjax'.Tools::toCamelCase($action)))
 				$this->{'displayAjax'.$action}();
 			else
 				$this->displayAjax();	*/
@@ -389,78 +468,33 @@ class AdminControllerCore extends Controller
 			// set token
 			$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
 
-			// Sub included tab postProcessing
-			$this->includeSubTab('postProcess', array('status', 'submitAdd1', 'submitDel', 'delete', 'submitFilter', 'submitReset'));
-			if (!empty($this->action) && method_exists($this, 'process'.ucfirst(Tools::toCamelCase($this->action))))
-				return $this->{'process'.Tools::toCamelCase($this->action)}($token);
-			else if (method_exists($this, $this->action))
-				return call_user_func(array($this, $this->action), $this->boxes);
-
-			// @todo put list filtering somewhere else
-			/* Manage list filtering */
+			// Process list filtering
 			if ($this->filter)
+				$this->processFilter();
+
+			if (!empty($this->action) && method_exists($this, 'process'.ucfirst(Tools::toCamelCase($this->action))))
 			{
-				$_POST = array_merge($this->context->cookie->getFamily($this->table.'Filter_'), (isset($_POST) ? $_POST : array()));
+				/* Hook Before Action */
+				Hook::exec('action'.get_class($this).ucfirst($this->action).'Before', array('controller' => $this));
 
-				foreach ($_POST as $key => $value)
-				{
-					/* Extracting filters from $_POST on key filter_ */
-					if ($value != null && !strncmp($key, $this->table.'Filter_', 7 + Tools::strlen($this->table)))
-					{
-						$key = Tools::substr($key, 7 + Tools::strlen($this->table));
-						/* Table alias could be specified using a ! eg. alias!field */
-						$tmp_tab = explode('!', $key);
-						$filter = count($tmp_tab) > 1 ? $tmp_tab[1] : $tmp_tab[0];
+				$return = $this->{'process'.Tools::toCamelCase($this->action)}($token);
 
-						if ($field = $this->filterToField($key, $filter))
-						{
-							$type = (array_key_exists('filter_type', $field) ? $field['filter_type'] : (array_key_exists('type', $field) ? $field['type'] : false));
-							if (($type == 'date' || $type == 'datetime') && is_string($value))
-								$value = unserialize($value);
-							$key = isset($tmp_tab[1]) ? $tmp_tab[0].'.`'.$tmp_tab[1].'`' : '`'.$tmp_tab[0].'`';
-							if (array_key_exists('tmpTableFilter', $field))
-								$sql_filter = & $this->_tmpTableFilter;
-							else if (array_key_exists('havingFilter', $field))
-								$sql_filter = & $this->_filterHaving;
-							else
-								$sql_filter = & $this->_filter;
+				/* Hook After Action */
+				Hook::exec('action'.get_class($this).ucfirst($this->action).'After', array('controller' => $this, 'return' => $return));
 
-							/* Only for date filtering (from, to) */
-							if (is_array($value))
-							{
-								if (isset($value[0]) && !empty($value[0]))
-								{
-									if (!Validate::isDate($value[0]))
-										$this->_errors[] = Tools::displayError('\'from:\' date format is invalid (YYYY-MM-DD)');
-									else
-										$sql_filter .= ' AND '.pSQL($key).' >= \''.pSQL(Tools::dateFrom($value[0])).'\'';
-								}
+				return $return;
+			}
+			else if (method_exists($this, $this->action))
+			{
+				/* Hook Before Action */
+				Hook::exec('action'.get_class($this).ucfirst($this->action).'Before', array('controller' => $this));
 
-								if (isset($value[1]) && !empty($value[1]))
-								{
-									if (!Validate::isDate($value[1]))
-										$this->_errors[] = Tools::displayError('\'to:\' date format is invalid (YYYY-MM-DD)');
-									else
-										$sql_filter .= ' AND '.pSQL($key).' <= \''.pSQL(Tools::dateTo($value[1])).'\'';
-								}
-							}
-							else
-							{
-								$sql_filter .= ' AND ';
-								$check_key = ($key == $this->identifier || $key == '`'.$this->identifier.'`');
+				$return = call_user_func(array($this, $this->action), $this->boxes);
 
-								if ($type == 'int' || $type == 'bool')
-									$sql_filter .= (($check_key || $key == '`active`') ? 'a.' : '').pSQL($key).' = '.(int)$value.' ';
-								else if ($type == 'decimal')
-									$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' = '.(float)$value.' ';
-								else if ($type == 'select')
-									$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' = \''.pSQL($value).'\' ';
-								else
-									$sql_filter .= ($check_key ? 'a.' : '').pSQL($key).' LIKE \'%'.pSQL($value).'%\' ';
-							}
-						}
-					}
-				}
+				/* Hook After Action */
+				Hook::exec('action'.get_class($this).ucfirst($this->action).'After', array('controller' => $this, 'return' => $return));
+
+				return $return;
 			}
 		}
 	}
@@ -494,8 +528,9 @@ class AdminControllerCore extends Controller
 	 */
 	public function processDelete($token)
 	{
-		if (Validate::isLoadedObject($object = $this->loadObject()) && isset($this->fieldImageSettings))
+		if (Validate::isLoadedObject($object = $this->loadObject()))
 		{
+			$res = true;
 			// check if request at least one object with noZeroObject
 			if (isset($object->noZeroObject) && count(call_user_func(array($this->className, $object->noZeroObject))) <= 1)
 			{
@@ -509,7 +544,12 @@ class AdminControllerCore extends Controller
 			{
 				if ($this->deleted)
 				{
-					$object->deleteImage();
+					if (!empty($this->fieldImageSettings))
+						$res = $object->deleteImage();
+					
+					if (!$res)
+						$this->_errors[] = Tools::displayError('Unable to delete associated images');
+
 					$object->deleted = 1;
 					if ($object->update())
 						$this->redirect_after = self::$currentIndex.'&conf=1&token='.$token;
@@ -533,12 +573,71 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Object update and creation
-	 * TODO: split processAdd and processUpdate
+	 * Call the right method for creating or updating object
+	 *
+	 * @param $token
+	 * @return mixed
+	 */
+	public function processSave($token)
+	{
+		if ($this->id_object)
+			return $this->processUpdate($token);
+		else
+			return $this->processAdd($token);
+	}
+
+	/**
+	 * Object creation
 	 *
 	 * @param string $token
 	 */
-	public function processSave($token)
+	public function processAdd($token)
+	{
+		/* Checking fields validity */
+		$this->validateRules();
+
+		if (!count($this->_errors))
+		{
+			$object = new $this->className();
+			$this->copyFromPost($object, $this->table);
+			$this->beforeAdd($object);
+			if (!$object->add())
+			{
+				$this->_errors[] = Tools::displayError('An error occurred while creating object.').
+					' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
+			}
+			/* voluntary do affectation here */
+			else if (($_POST[$this->identifier] = $object->id) && $this->postImage($object->id) && !count($this->_errors) && $this->_redirect)
+			{
+				$parent_id = (int)Tools::getValue('id_parent', 1);
+				$this->afterAdd($object);
+				$this->updateAssoShop($object->id);
+				// Save and stay on same form
+				if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
+					$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=3&update'.$this->table.'&token='.$token;
+				// Save and back to parent
+				if (Tools::isSubmit('submitAdd'.$this->table.'AndBackToParent'))
+					$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$parent_id.'&conf=3&token='.$token;
+				// Default behavior (save and back)
+				if (empty($this->redirect_after))
+					$this->redirect_after = self::$currentIndex.($parent_id ? '&'.$this->identifier.'='.$object->id : '').'&conf=3&token='.$token;
+			}
+		}
+
+		$this->_errors = array_unique($this->_errors);
+		if (count($this->_errors) > 0)
+			return;
+
+		return $object;
+	}
+
+
+	/**
+	 * Object update
+	 *
+	 * @param string $token
+	 */
+	public function processUpdate($token)
 	{
 		/* Checking fields validity */
 		$this->validateRules();
@@ -550,115 +649,73 @@ class AdminControllerCore extends Controller
 			/* Object update */
 			if (isset($id) && !empty($id))
 			{
-				if ($this->tabAccess['edit'] === '1' || (
-					$this->table == 'employee' &&
-					$this->context->employee->id == Tools::getValue('id_employee') &&
-					Tools::isSubmit('updateemployee')
-				))
+				$object = new $this->className($id);
+				if (Validate::isLoadedObject($object))
 				{
-					$object = new $this->className($id);
-					if (Validate::isLoadedObject($object))
+					/* Specific to objects which must not be deleted */
+					if ($this->deleted && $this->beforeDelete($object))
 					{
-						/* Specific to objects which must not be deleted */
-						if ($this->deleted && $this->beforeDelete($object))
-						{
-							// Create new one with old objet values
-							$object_new = new $this->className($object->id);
-							$object_new->id = null;
-							$object_new->date_add = '';
-							$object_new->date_upd = '';
+						// Create new one with old objet values
+						$object_new = new $this->className($object->id);
+						$object_new->id = null;
+						$object_new->date_add = '';
+						$object_new->date_upd = '';
 
-							// Update old object to deleted
-							$object->deleted = 1;
-							$object->update();
+						// Update old object to deleted
+						$object->deleted = 1;
+						$object->update();
 
-							// Update new object with post values
-							$this->copyFromPost($object_new, $this->table);
-							$result = $object_new->add();
-							if (Validate::isLoadedObject($object_new))
-								$this->afterDelete($object_new, $object->id);
-						}
-						else
-						{
-							$this->copyFromPost($object, $this->table);
-							$result = $object->update();
-							$this->afterUpdate($object);
-						}
-
-						if ($object->id)
-							$this->updateAssoShop($object->id);
-
-						if (!$result)
-						{
-							$this->_errors[] = Tools::displayError('An error occurred while updating object.').
-								' <b>'.$this->table.'</b> ('.Db::getInstance()->getMsgError().')';
-						}
-						else if ($this->postImage($object->id) && !count($this->_errors))
-						{
-							$parent_id = (int)Tools::getValue('id_parent', 1);
-							// Specific back redirect
-							if ($back = Tools::getValue('back'))
-								$this->redirect_after = urldecode($back).'&conf=4';
-							// Specific scene feature
-							// @todo change stay_here submit name (not clear for redirect to scene ... )
-							if (Tools::getValue('stay_here') == 'on' || Tools::getValue('stay_here') == 'true' || Tools::getValue('stay_here') == '1')
-								$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=4&updatescene&token='.$token;
-							// Save and stay on same form
-							// @todo on the to following if, we may prefer to avoid override redirect_after previous value
-							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
-								$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=4&update'.$this->table.'&token='.$token;
-							// Save and back to parent
-							if (Tools::isSubmit('submitAdd'.$this->table.'AndBackToParent'))
-								$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$parent_id.'&conf=4&token='.$token;
-							// Default behavior (save and back)
-							if (empty($this->redirect_after))
-								$this->redirect_after = self::$currentIndex.($parent_id ? '&'.$this->identifier.'='.$object->id : '').'&conf=4&token='.$token;
-						}
+						// Update new object with post values
+						$this->copyFromPost($object_new, $this->table);
+						$result = $object_new->add();
+						if (Validate::isLoadedObject($object_new))
+							$this->afterDelete($object_new, $object->id);
 					}
 					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating object.').
-							' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-				}
-				else
-					$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-			}
-
-			/* Object creation */
-			else
-			{
-				if ($this->tabAccess['add'] === '1')
-				{
-					$object = new $this->className();
-					$this->copyFromPost($object, $this->table);
-					if (!$object->add())
 					{
-						$this->_errors[] = Tools::displayError('An error occurred while creating object.').
-							' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
+						$this->copyFromPost($object, $this->table);
+						$result = $object->update();
+						$this->afterUpdate($object);
 					}
-					 /* voluntary do affectation here */
-					else if (($_POST[$this->identifier] = $object->id) && $this->postImage($object->id) && !count($this->_errors) && $this->_redirect)
+
+					if ($object->id)
+						$this->updateAssoShop($object->id);
+
+					if (!$result)
+					{
+						$this->_errors[] = Tools::displayError('An error occurred while updating object.').
+							' <b>'.$this->table.'</b> ('.Db::getInstance()->getMsgError().')';
+					}
+					else if ($this->postImage($object->id) && !count($this->_errors))
 					{
 						$parent_id = (int)Tools::getValue('id_parent', 1);
-						$this->afterAdd($object);
-						$this->updateAssoShop($object->id);
+						// Specific back redirect
+						if ($back = Tools::getValue('back'))
+							$this->redirect_after = urldecode($back).'&conf=4';
+						// Specific scene feature
+						// @todo change stay_here submit name (not clear for redirect to scene ... )
+						if (Tools::getValue('stay_here') == 'on' || Tools::getValue('stay_here') == 'true' || Tools::getValue('stay_here') == '1')
+							$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=4&updatescene&token='.$token;
 						// Save and stay on same form
+						// @todo on the to following if, we may prefer to avoid override redirect_after previous value
 						if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
-							$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=3&update'.$this->table.'&token='.$token;
+							$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$object->id.'&conf=4&update'.$this->table.'&token='.$token;
 						// Save and back to parent
 						if (Tools::isSubmit('submitAdd'.$this->table.'AndBackToParent'))
-							$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$parent_id.'&conf=3&token='.$token;
+							$this->redirect_after = self::$currentIndex.'&'.$this->identifier.'='.$parent_id.'&conf=4&token='.$token;
 						// Default behavior (save and back)
 						if (empty($this->redirect_after))
-							$this->redirect_after = self::$currentIndex.($parent_id ? '&'.$this->identifier.'='.$object->id : '').'&conf=3&token='.$token;
+							$this->redirect_after = self::$currentIndex.($parent_id ? '&'.$this->identifier.'='.$object->id : '').'&conf=4&token='.$token;
 					}
 				}
 				else
-					$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+					$this->_errors[] = Tools::displayError('An error occurred while updating object.').
+						' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			}
 		}
 
 		$this->_errors = array_unique($this->_errors);
-		if (count($this->_errors) > 0);
+		if (count($this->_errors) > 0)
 			return;
 
 		return $object;
@@ -684,7 +741,7 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Change object statuts (active, inactive)
+	 * Change object status (active, inactive)
 	 *
 	 * @param string $token
 	 */
@@ -911,9 +968,9 @@ class AdminControllerCore extends Controller
 				if (empty($back))
 					$back = self::$currentIndex.'&token='.$this->token;
 
-				$this->toolbar_btn['cancel'] = array(
+				$this->toolbar_btn['back'] = array(
 					'href' => $back,
-					'desc' => $this->l('Cancel')
+					'desc' => $this->l('Back to list')
 				);
 				break;
 			case 'options':
@@ -964,7 +1021,6 @@ class AdminControllerCore extends Controller
 			return false;
 		}
 
-		$this->content = $this->displayErrors();
 		return $this->object;
 	}
 
@@ -988,13 +1044,6 @@ class AdminControllerCore extends Controller
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * @TODO
-	 */
-	public function includeSubTab($methodname, $actions = array())
-	{
 	}
 
 	protected function filterToField($key, $filter)
@@ -1183,9 +1232,10 @@ class AdminControllerCore extends Controller
 
 		// Tab list
 		$tabs = Tab::getTabs($this->context->language->id, 0);
+		$current_id = Tab::getCurrentParentId();
 		foreach ($tabs as $index => $tab)
 		{
-			if (Tab::checkTabRights($tab['id_tab']) === true)
+			if (Tab::checkTabRights($tab['id_tab']) === true AND (bool)$tab['active'])
 			{
 				if ($tab['name'] == 'Stock' && Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') == 0)
 				{
@@ -1207,7 +1257,7 @@ class AdminControllerCore extends Controller
 				if (!file_exists(dirname(_PS_ROOT_DIR_).$img))
 					$img = str_replace('png', 'gif', $img);
 				// tab[class_name] does not contains the "Controller" suffix
-				$tabs[$index]['current'] = ($tab['class_name'].'Controller' == get_class($this)) || (Tab::getCurrentParentId() == $tab['id_tab']);
+				$tabs[$index]['current'] = ($tab['class_name'].'Controller' == get_class($this)) || ($current_id == $tab['id_tab']);
 				$tabs[$index]['img'] = $img;
 				$tabs[$index]['href'] = $this->context->link->getAdminLink($tab['class_name']);
 
@@ -1215,7 +1265,7 @@ class AdminControllerCore extends Controller
 				foreach ($sub_tabs as $index2 => $sub_tab)
 				{
 					// class_name is the name of the class controller
-					if (Tab::checkTabRights($sub_tab) === true)
+					if (Tab::checkTabRights($sub_tab) === true AND (bool)$sub_tab['active'])
 						$sub_tabs[$index2]['href'] = $this->context->link->getAdminLink($sub_tab['class_name']);
 					else
 						unset($sub_tabs[$index2]);
@@ -1309,19 +1359,23 @@ class AdminControllerCore extends Controller
 			if (!$this->loadObject(true))
 				return;
 
-			$this->content .= $this->initForm();
+			$this->content .= $this->renderForm();
 		}
 		else if ($this->display == 'view')
 		{
 			// Some controllers use the view action without an object
 			if ($this->className)
 				$this->loadObject(true);
-			$this->content .= $this->initView();
+			$this->content .= $this->renderView();
 		}
 		else if (!$this->ajax)
 		{
-			$this->content .= $this->initList();
-			$this->content .= $this->initOptions();
+			$this->content .= $this->renderList();
+			$this->content .= $this->renderOptions();
+
+			// if we have to display the required fields form
+			if ($this->required_database)
+				$this->content .= $this->displayRequiredFields();
 		}
 
 		$this->context->smarty->assign(array(
@@ -1361,9 +1415,9 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Function used to initialise the list to display for this controller
+	 * Function used to render the list to display for this controller
 	 */
-	public function initList()
+	public function renderList()
 	{
 		if (!($this->fieldsDisplay && is_array($this->fieldsDisplay)))
 			return false;
@@ -1393,9 +1447,9 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Override to init display of the view page
+	 * Override to render the view page
 	 */
-	public function initView()
+	public function renderView()
 	{
 		$helper = new HelperView($this);
 		$this->setHelperDisplay($helper);
@@ -1408,9 +1462,9 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Function used to initialise the form to display for this controller
+	 * Function used to render the form for this controller
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		if (Tools::getValue('submitFormAjax'))
 			$this->content .= $this->context->smarty->fetch($this->context->smarty->template_dir[0].'form_submit_ajax.tpl');
@@ -1424,6 +1478,7 @@ class AdminControllerCore extends Controller
 			$this->setHelperDisplay($helper);
 			$helper->fields_value = $this->getFieldsValue($this->object);
 			$helper->tpl_vars = $this->tpl_form_vars;
+			!is_null($this->base_tpl_form) ? $helper->base_tpl = $this->base_tpl_form : '';
 			if ($this->tabAccess['view'])
 			{
 				if (Tools::getValue('back'))
@@ -1439,9 +1494,9 @@ class AdminControllerCore extends Controller
 	}
 
 	/**
-	 * Function used to initialise the options to display for this controller
+	 * Function used to render the options for this controller
 	 */
-	public function initOptions()
+	public function renderOptions()
 	{
 		if ($this->options && is_array($this->options))
 		{
@@ -1487,6 +1542,7 @@ class AdminControllerCore extends Controller
 		$helper->currentIndex = self::$currentIndex;
 		$helper->className = $this->className;
 		$helper->table = $this->table;
+		$helper->name_controller = Tools::getValue('controller');
 		$helper->orderBy = $this->_orderBy;
 		$helper->orderWay = $this->_orderWay;
 		$helper->listTotal = $this->_listTotal;
@@ -1516,7 +1572,7 @@ class AdminControllerCore extends Controller
 			$this->addCSS(_THEME_CSS_DIR_.'rtl.css');
 
 		$this->addJquery();
-		$this->addjQueryPlugin(array('cluetip', 'hoverIntent'));
+		$this->addjQueryPlugin(array('cluetip', 'hoverIntent', 'scrollTo'));
 
 		$this->addJS(array(
 			_PS_JS_DIR_.'admin.js',
@@ -1570,13 +1626,13 @@ class AdminControllerCore extends Controller
 		// retrocomp :
 		// if value is not set, try with "AdminTab" as prefix.
 		// @todo : change AdminTab to Helper
-		if ( isset($_LANGADM[$class.$key]))
+		if (isset($_LANGADM[$class.$key]))
 			$str = $_LANGADM[$class.$key];
-		elseif ( isset($_LANGADM['admincontroller'.$key]))
+		else if (isset($_LANGADM['admincontroller'.$key]))
 			$str = $_LANGADM['admincontroller'.$key];
-		elseif ( isset($_LANGADM['helper'.$key]))
+		else if (isset($_LANGADM['helper'.$key]))
 			$str = $_LANGADM['helper'.$key];
-		elseif ( isset($_LANGADM['admintab'.$key]))
+		else if (isset($_LANGADM['admintab'.$key]))
 			$str = $_LANGADM['admintab'.$key];
 		else
 			// note in 1.5, some translations has moved from AdminXX to helper/*.tpl
@@ -1610,7 +1666,8 @@ class AdminControllerCore extends Controller
 	 */
 	public function init()
 	{
-		// ob_start();
+		parent::init();
+
 		if (Tools::getValue('ajax'))
 			$this->ajax = '1';
 
@@ -1629,17 +1686,10 @@ class AdminControllerCore extends Controller
 
 		// Set current index
 		$current_index = $_SERVER['SCRIPT_NAME'].(($controller = Tools::getValue('controller')) ? '?controller='.$controller : '');
-
 		if ($back = Tools::getValue('back'))
 			$current_index .= '&back='.urlencode($back);
 		self::$currentIndex = $current_index;
 
-
-		// @todo : put the definitions in Controller class
-		if (!defined('_PS_BASE_URL_'))
-			define('_PS_BASE_URL_', Tools::getShopDomain(true));
-		if (!defined('_PS_BASE_URL_SSL_'))
-			define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
 		if ((int)Tools::getValue('liteDisplaying'))
 		{
 			$this->display_header = false;
@@ -1677,9 +1727,28 @@ class AdminControllerCore extends Controller
 		else
 			Employee::getEmployeeShopAccess((int)$this->context->employee->id);
 
-		$this->context->shop = new Shop($shop_id);
+		// Replace existing shop if necessary
+		if ($this->context->shop->id != $shop_id)
+			$this->context->shop = new Shop($shop_id);
 
-		/* Filter memorization */
+		if ($this->ajax && method_exists($this, 'ajaxPreprocess'))
+			$this->ajaxPreProcess();
+
+		$this->context->smarty->assign(array(
+			'table' => $this->table,
+			'current' => self::$currentIndex,
+			'token' => $this->token,
+		));
+
+		$this->initProcess();
+	}
+
+	/**
+	 * Retrieve GET and POST value and translate them to actions
+	 */
+	public function initProcess()
+	{
+		// Filter memorization
 		if (isset($_POST) && !empty($_POST) && isset($this->table))
 			foreach ($_POST as $key => $value)
 				if (is_array($this->table))
@@ -1701,9 +1770,11 @@ class AdminControllerCore extends Controller
 				else if (strncmp($key, $this->table.'OrderBy', 7) === 0 || strncmp($key, $this->table.'Orderway', 12) === 0)
 					$this->context->cookie->$key = $value;
 
-		/* Manage list filtering */
+		// Manage list filtering
 		if (Tools::isSubmit('submitFilter'.$this->table) || $this->context->cookie->{'submitFilter'.$this->table} !== false)
 			$this->filter = true;
+
+		$this->id_object = (int)Tools::getValue('id_'.$this->table);
 
 		/* Delete object image */
 		if (isset($_GET['deleteImage']))
@@ -1739,10 +1810,12 @@ class AdminControllerCore extends Controller
 		}
 		else if ($submitted_action = Tools::getValue('submitAction'.$this->table))
 				$this->action = $submitted_action;
-		else if (Tools::getValue('submitAdd'.$this->table) || Tools::getValue('submitAdd'.$this->table.'AndStay'))
+		else if (Tools::getValue('submitAdd'.$this->table)
+				 || Tools::getValue('submitAdd'.$this->table.'AndStay')
+				 || Tools::getValue('submitAdd'.$this->table.'AndPreview'))
 		{
 			// case 1: updating existing entry
-			if ((int)(Tools::getValue('id_'.$this->table)))
+			if ($this->id_object)
 			{
 				if ($this->tabAccess['edit'] === '1')
 				{
@@ -1769,7 +1842,6 @@ class AdminControllerCore extends Controller
 			if ($this->tabAccess['add'] === '1')
 			{
 				$this->action = 'new';
-				$this->action = 'Informations';
 				$this->display = 'add';
 			}
 			else
@@ -1777,8 +1849,7 @@ class AdminControllerCore extends Controller
 		}
 		else if (isset($_GET['update'.$this->table]) && isset($_GET['id_'.$this->table]))
 		{
-			// @TODO move the employee condition to AdminEmployee
-			if ($this->tabAccess['edit'] === '1' || ($this->table == 'employee' && $this->context->employee->id == Tools::getValue('id_employee')))
+			if ($this->tabAccess['edit'] === '1')
 				$this->display = 'edit';
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
@@ -1799,39 +1870,26 @@ class AdminControllerCore extends Controller
 		/* Submit options list */
 		else if (Tools::getValue('submitOptions'.$this->table) || Tools::getValue('submitOptions'))
 			$this->action = 'update_options';
-		else if (Tools::isSubmit('submitFields') && $this->requiredDatabase && $this->tabAccess['add'] === '1' && $this->tabAccess['delete'] === '1')
+		else if (Tools::isSubmit('submitFields') && $this->required_database && $this->tabAccess['add'] === '1' && $this->tabAccess['delete'] === '1')
 			$this->action = 'update_fields';
 		else if (is_array($this->bulk_actions))
 			foreach ($this->bulk_actions as $bulk_action => $params)
 			{
-				if (Tools::isSubmit('submitBulk'.$bulk_action.$this->table))
+				if (Tools::isSubmit('submitBulk'.$bulk_action.$this->table) || Tools::isSubmit('submitBulk'.$bulk_action))
 				{
 					$this->action = 'bulk'.$bulk_action;
+					$this->boxes = Tools::getValue($this->table.'Box');
+					break;
+				}
+				else if(Tools::isSubmit('submitBulk'))
+				{
+					$this->action = 'bulk'.Tools::getValue('select_submitBulk');
 					$this->boxes = Tools::getValue($this->table.'Box');
 					break;
 				}
 			}
 		else if (!empty($this->options) && empty($this->fieldsDisplay))
 			$this->display = 'options';
-
-		if ($this->ajax && method_exists($this, 'ajaxPreprocess'))
-			$this->ajaxPreProcess();
-
-		$this->context->smarty->assign(array(
-			'table' => $this->table,
-			'current' => self::$currentIndex,
-			'token' => $this->token,
-		));
-	}
-
-	/**
-	 * Display errors
-	 */
-	public function displayErrors()
-	{
-		// @TODO includesubtab
-		$content = $this->includeSubTab('displayErrors');
-		return $content;
 	}
 
 	/**
@@ -2009,7 +2067,7 @@ class AdminControllerCore extends Controller
 			if (isset($fieldset['form']['input']))
 				foreach ($fieldset['form']['input'] as $input)
 					if (empty($this->fields_value[$input['name']]))
-						if ($input['type'] == 'group_shop' || $input['type'] == 'shop')
+						if (isset($input['type']) && ($input['type'] == 'group_shop' || $input['type'] == 'shop'))
 						{
 							if ($obj->id)
 							{
@@ -2234,23 +2292,25 @@ class AdminControllerCore extends Controller
 	 */
 	protected static function getAssoShop($table, $id_object = false)
 	{
-		$shopAsso = Shop::getAssoTables();
-		$groupShopAsso = GroupShop::getAssoTables();
-		if (isset($shopAsso[$table]) && $shopAsso[$table]['type'] == 'shop')
+		$shop_asso = Shop::getAssoTables();
+		$group_shop_asso = GroupShop::getAssoTables();
+		if (isset($shop_asso[$table]) && $shop_asso[$table]['type'] == 'shop')
 			$type = 'shop';
-		else if (isset($groupShopAsso[$table]) && $groupShopAsso[$table]['type'] == 'group_shop')
+		else if (isset($group_shop_asso[$table]) && $group_shop_asso[$table]['type'] == 'group_shop')
 			$type = 'group_shop';
 		else
 			return;
 
 		$assos = array();
-		foreach ($_POST as $k => $row)
-		{
-			if (!preg_match('/^checkBox'.Tools::toCamelCase($type, true).'Asso_'.$table.'_([0-9]+)?_([0-9]+)$/Ui', $k, $res))
-				continue;
-			$id_asso_object = (!empty($res[1]) ? $res[1] : $id_object);
-			$assos[] = array('id_object' => (int)$id_asso_object, 'id_'.$type => (int)$res[2]);
-		}
+		if (isset($_POST['checkBox'.Tools::toCamelCase($type, true).'Asso_'.$table]))
+			foreach ($_POST['checkBox'.Tools::toCamelCase($type, true).'Asso_'.$table] as $id_asso_object => $row)
+			{
+				if (!(int)$id_asso_object)
+					$id_asso_object = $id_object;
+				foreach ($row as $id_shop => $value)
+					$assos[] = array('id_object' => (int)$id_asso_object, 'id_'.$type => (int)$id_shop);
+			}
+
 		return array($assos, $type);
 	}
 
@@ -2267,22 +2327,13 @@ class AdminControllerCore extends Controller
 
 		$shop_asso = Shop::getAssoTables();
 		$group_shop_asso = GroupShop::getAssoTables();
-		if (isset($shop_asso[$this->table]) && $shop_asso[$this->table]['type'] == 'shop')
-			$type = 'shop';
-		else if (isset($group_shop_asso[$this->table]) && $group_shop_asso[$this->table]['type'] == 'group_shop')
-			$type = 'group_shop';
-		else
+		$assos_data = $this->getAssoShop($this->table, $id_object);
+		$assos = $assos_data[0];
+		$type = $assos_data[1];
+
+		if (!$type)
 			return;
-
-		$assos = array();
-		foreach ($_POST as $k => $row)
-		{
-			if (!preg_match('/^checkBox'.Tools::toCamelCase($type, true).'Asso_'.$this->table.'_([0-9]+)?_([0-9]+)$/Ui', $k, $res))
-				continue;
-			$id_asso_object = (!empty($res[1]) ? $res[1] : $id_object);
-			$assos[] = array('id_object' => (int)$id_asso_object, 'id_'.$type => (int)$res[2]);
-		}
-
+		
 		Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.$this->table.'_'.$type.($id_object ? ' WHERE `'.$this->identifier.'`='.(int)$id_object : ''));
 
 		foreach ($assos as $asso)
@@ -2314,119 +2365,6 @@ class AdminControllerCore extends Controller
 	public function beforeUpdateOptions()
 	{
 	}
-
-	/**
-	 * displayAssoShop
-	 * @todo : create assoshop.tpl and use smarty var asso_shop in pages
-	 *
-	 * @param string $type
-	 * @return void
-	 */
-	protected function displayAssoShop($type = 'shop')
-	{
-		if (!Shop::isFeatureActive() || (!$this->object && $this->context->shop->getContextType() != Shop::CONTEXT_ALL))
-			return;
-
-		if ($type != 'shop' && $type != 'group_shop')
-			$type = 'shop';
-
-		$assos = array();
-		$sql = 'SELECT id_'.$type.', `'.pSQL($this->identifier).'`
-				FROM `'._DB_PREFIX_.pSQL($this->table).'_'.$type.'`';
-		foreach (Db::getInstance()->executeS($sql) as $row)
-			$assos[$row['id_'.$type]][] = $row[$this->identifier];
-
-		$html = <<<EOF
-			<script type="text/javascript">
-			$().ready(function()
-			{
-				// Click on "all shop"
-				$('.input_all_shop').click(function()
-				{
-					var checked = $(this).attr('checked');
-					$('.input_group_shop').attr('checked', checked);
-					$('.input_shop').attr('checked', checked);
-				});
-
-				// Click on a group shop
-				$('.input_group_shop').click(function()
-				{
-					$('.input_shop[value='+$(this).val()+']').attr('checked', $(this).attr('checked'));
-					check_all_shop();
-				});
-
-				// Click on a shop
-				$('.input_shop').click(function()
-				{
-					check_group_shop_status($(this).val());
-					check_all_shop();
-				});
-
-				// Initialize checkbox
-				$('.input_shop').each(function(k, v)
-				{
-					check_group_shop_status($(v).val());
-					check_all_shop();
-				});
-			});
-
-			function check_group_shop_status(id_group)
-			{
-				var groupChecked = true;
-				$('.input_shop[value='+id_group+']').each(function(k, v)
-				{
-					if (!$(v).attr('checked'))
-						groupChecked = false;
-				});
-				$('.input_group_shop[value='+id_group+']').attr('checked', groupChecked);
-			}
-
-			function check_all_shop()
-			{
-				var allChecked = true;
-				$('.input_group_shop').each(function(k, v)
-				{
-					if (!$(v).attr('checked'))
-						allChecked = false;
-				});
-				$('.input_all_shop').attr('checked', allChecked);
-			}
-			</script>
-EOF;
-
-		$html .= '<div class="assoShop">';
-		$html .= '<table class="table" cellpadding="0" cellspacing="0" width="100%">
-					<tr><th>'.$this->l('Shop').'</th></tr>';
-		$html .= '<tr'.(($type == 'group_shop') ? ' class="alt_row"' : '').'><td><label class="t"><input class="input_all_shop" type="checkbox" /> '.$this->l('All shops').'</label></td></tr>';
-		foreach (Shop::getTree() as $groupID => $groupData)
-		{
-			$groupChecked = ($type == 'group_shop' && ((isset($assos[$groupID]) && in_array($this->object->id, $assos[$groupID])) || !$this->object->id));
-			$html .= '<tr'.(($type == 'shop') ? ' class="alt_row"' : '').'>';
-			$html .= '<td><img style="vertical-align: middle;" alt="" src="../img/admin/lv2_b.gif" /><label class="t"><input class="input_group_shop" type="checkbox" name="checkBoxGroupShopAsso_'.$this->table.'_'.$this->object->id.'_'.$groupID.'" value="'.$groupID.'" '.($groupChecked ? 'checked="checked"' : '').' /> '.$groupData['name'].'</label></td>';
-			$html .= '</tr>';
-
-			if ($type == 'shop')
-			{
-				$total = count($groupData['shops']);
-				$j = 0;
-				foreach ($groupData['shops'] as $shopID => $shopData)
-				{
-					$checked = ((isset($assos[$shopID]) && in_array($this->object->id, $assos[$shopID])) || !$this->object->id);
-					$html .= '<tr>';
-					$html .= '<td><img style="vertical-align: middle;" alt="" src="../img/admin/lv3_'.(($j < $total - 1) ? 'b' : 'f').'.png" /><label class="child">';
-					$html .= '<input class="input_shop" type="checkbox" value="'.$groupID.'" name="checkBoxShopAsso_'.$this->table.'_'.$this->object->id.'_'.$shopID.'" id="checkedBox_'.$shopID.'" '.($checked ? 'checked="checked"' : '').' /> ';
-					$html .= $shopData['name'].'</label></td>';
-					$html .= '</tr>';
-					$j++;
-				}
-			}
-		}
-		$html .= '</table></div>';
-		$this->context->smarty->assign('asso_shop', $html);
-		return $html;
-	}
-
-
 
 	/**
 	 * Overload this method for custom checking
@@ -2527,7 +2465,25 @@ EOF;
 		return $result;
 	}
 
+	protected function processBulkAffectZone($token)
+	{
+		if (is_array($this->boxes) && !empty($this->boxes))
+		{
+			$object = new $this->className();
+			$result = $object->affectZoneToSelection(Tools::getValue($this->table.'Box'), Tools::getValue('zone_to_affect'));
+
+			if ($result)
+				$this->redirect_after = self::$currentIndex.'&conf=28&token='.$token;
+			$this->_errors[] = Tools::displayError('An error occurred while affecting a zone to the selection.');
+		}
+		else
+			$this->_errors[] = Tools::displayError('You must select at least one element to affect a new zone.');
+
+		return $result;
+	}
+
 	/**
+	  * @TODO delete method after AdminProducts cleanup
 	  * Display flags in forms for translations
 	  *
 	  * @param array $languages All languages available
@@ -2536,7 +2492,6 @@ EOF;
 	  * @param string $id Current div id]
 	  * @param boolean $use_vars_instead_of_ids use an js vars instead of ids seperate by "¤"
 	  *
-		* @todo : delete return params :
 		* @param return define the return way : false for a display, true for a return
 		*
 		*	@return string
@@ -2553,15 +2508,42 @@ EOF;
 			'.$this->l('Choose language:').'<br /><br />';
 		foreach ($languages as $language)
 			if ($use_vars_instead_of_ids)
-				$output .= '<img src="../img/l/'.(int)($language['id_lang']).'.jpg" class="pointer" alt="'.$language['name'].'" title="'.$language['name'].'" onclick="changeLanguage(\''.$id.'\', '.$ids.', '.$language['id_lang'].', \''.$language['iso_code'].'\');" /> ';
+				$output .= '<img src="../img/l/'.(int)$language['id_lang'].'.jpg" class="pointer" alt="'.$language['name'].'" title="'.$language['name'].'"
+								onclick="changeLanguage(\''.$id.'\', '.$ids.', '.$language['id_lang'].', \''.$language['iso_code'].'\');" /> ';
 			else
-			$output .= '<img src="../img/l/'.(int)($language['id_lang']).'.jpg" class="pointer" alt="'.$language['name'].'" title="'.$language['name'].'" onclick="changeLanguage(\''.$id.'\', \''.$ids.'\', '.$language['id_lang'].', \''.$language['iso_code'].'\');" /> ';
+				$output .= '<img src="../img/l/'.(int)$language['id_lang'].'.jpg" class="pointer" alt="'.$language['name'].'" title="'.$language['name'].'"
+								onclick="changeLanguage(\''.$id.'\', \''.$ids.'\', '.$language['id_lang'].', \''.$language['iso_code'].'\');" /> ';
 		$output .= '</div>';
 
 		if ($return)
 			return $output;
 
 		return $output;
+	}
+
+	/**
+	 * Called before Add
+	 *
+	 * @param object $object Object
+	 * @return boolean
+	 */
+	protected function beforeAdd($object)
+	{
+		return true;
+	}
+
+	/**
+	 * prepare the view to display the required fields form
+	 */
+	public function displayRequiredFields()
+	{
+		if (!$this->tabAccess['add'] || !$this->tabAccess['delete'] === '1' || !$this->required_database)
+			return;
+
+		$helper = new Helper();
+		$helper->currentIndex = self::$currentIndex;
+		$helper->token = $this->token;
+		return $helper->renderRequiredFields($this->className, $this->identifier, $this->required_fields);
 	}
 }
 

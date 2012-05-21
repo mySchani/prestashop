@@ -64,7 +64,7 @@ class OrderOpcControllerCore extends ParentOrderController
 							}
 							break;
 						case 'updateCarrierAndGetPayments':
-							if (Tools::isSubmit('delivery_option') AND Tools::isSubmit('recyclable') AND Tools::isSubmit('gift') AND Tools::isSubmit('gift_message'))
+							if ((Tools::isSubmit('delivery_option') || Tools::isSubmit('id_carrier')) AND Tools::isSubmit('recyclable') AND Tools::isSubmit('gift') AND Tools::isSubmit('gift_message'))
 							{
 								if ($this->_processCarrier())
 								{
@@ -315,6 +315,7 @@ class OrderOpcControllerCore extends ParentOrderController
 
 		$this->_processAddressFormat();
 		$this->setTemplate(_PS_THEME_DIR_.'order-opc.tpl');
+		parent::initContent();
 	}
 
 	protected function _getGuestInformations()
@@ -358,11 +359,12 @@ class OrderOpcControllerCore extends ParentOrderController
 	{
 		if (!$this->isLogged)
 		{
-			$carriers = Carrier::getCarriersForOrder(Country::getIdZone((int)Configuration::get('PS_COUNTRY_DEFAULT')));
+			$carriers = $this->context->cart->simulateCarriersOutput();
 			$this->context->smarty->assign(array(
 				'HOOK_EXTRACARRIER' => NULL,
 				'HOOK_BEFORECARRIER' => Hook::exec('beforeCarrier', array(
 					'carriers' => $carriers,
+					'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
 					'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
 					'delivery_option' => $this->context->cart->getDeliveryOption()
 				))
@@ -392,7 +394,14 @@ class OrderOpcControllerCore extends ParentOrderController
 		$address_invoice = ($this->context->cart->id_address_delivery == $this->context->cart->id_address_invoice ? $address_delivery : new Address($this->context->cart->id_address_invoice));
 		if (!$this->context->cart->id_address_delivery OR !$this->context->cart->id_address_invoice OR !Validate::isLoadedObject($address_delivery) OR !Validate::isLoadedObject($address_invoice) OR $address_invoice->deleted OR $address_delivery->deleted)
 			return '<p class="warning">'.Tools::displayError('Error: please choose an address').'</p>';
-		if (!$this->context->cart->delivery_option AND !$this->context->cart->isVirtualCart())
+		if (count($this->context->cart->getDeliveryOptionList()) == 0)
+		{
+			if ($this->context->cart->isMultiAddressDelivery())
+				return '<p class="warning">'.Tools::displayError('Error: There are no carriers available that deliver to some of your addresses').'</p>';
+			else
+				return '<p class="warning">'.Tools::displayError('Error: There are no carriers available that deliver to this address').'</p>';
+		}
+		if (!$this->context->cart->getDeliveryOption() AND !$this->context->cart->isVirtualCart())
 			return '<p class="warning">'.Tools::displayError('Error: please choose a carrier').'</p>';
 		if (!$this->context->cart->id_currency)
 			return '<p class="warning">'.Tools::displayError('Error: no currency has been selected').'</p>';
@@ -432,6 +441,8 @@ class OrderOpcControllerCore extends ParentOrderController
 		else
 			$link_conditions .= '&content_only=1';
 		
+		$carriers = $this->context->cart->simulateCarriersOutput();
+		
 		$this->context->smarty->assign(array(
 			'checkedTOS' => (int)($this->context->cookie->checkedTOS),
 			'recyclablePackAllowed' => (int)(Configuration::get('PS_RECYCLABLE_PACK')),
@@ -442,6 +453,8 @@ class OrderOpcControllerCore extends ParentOrderController
 			'recyclable' => (int)($this->context->cart->recyclable),
 			'gift_wrapping_price' => (float)(Configuration::get('PS_GIFT_WRAPPING_PRICE')),
 			'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
+			'carriers' => $carriers,
+			'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
 			'delivery_option' => $this->context->cart->getDeliveryOption(),
 			'address_collection' => $this->context->cart->getAddressCollection(),
 			'opc' => true));
@@ -456,8 +469,6 @@ class OrderOpcControllerCore extends ParentOrderController
 			$this->errors[] = Tools::displayError('This address is invalid.');
 		else
 		{
-			$carriers = Carrier::getCarriersForOrder((int)Address::getZoneById((int)($address_delivery->id)), $groups);
-			
 			$result = array(
 				'HOOK_BEFORECARRIER' => Hook::exec('beforeCarrier', array(
 					'carriers' => $carriers,

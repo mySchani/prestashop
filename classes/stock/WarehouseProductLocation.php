@@ -49,29 +49,32 @@ class WarehouseProductLocationCore extends ObjectModel
 	 * */
 	public $location;
 
- 	protected $fieldsRequired = array('id_product', 'id_product_attribute', 'id_warehouse');
- 	protected $fieldsSize = array('location' => 64);
- 	protected $fieldsValidate = array(
- 		'location' => 'isReference',
- 		'id_product' => 'isUnsignedId',
- 		'id_product_attribute' => 'isUnsignedId',
- 		'id_warehouse' => 'isUnsignedId',
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'warehouse_product_location',
+		'primary' => 'id_warehouse_product_location',
+		'fields' => array(
+			'location' => 				array('type' => self::TYPE_STRING, 'validate' => 'isReference', 'size' => 64),
+			'id_product' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product_attribute' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_warehouse' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+		),
+	);
+
+	/**
+	 * @see ObjectModel::$webserviceParameters
+	 */
+ 	protected $webserviceParameters = array(
+ 		'fields' => array(
+ 			'id_product' => array('xlink_resource' => 'products'),
+ 			'id_product_attribute' => array('xlink_resource' => 'combinations'),
+ 			'id_warehouse' => array('xlink_resource' => 'warehouses'),
+ 		),
+ 		'hidden_fields' => array(
+ 		),
  	);
-
-	protected $table = 'warehouse_product_location';
-	protected $identifier = 'id_warehouse_product_location';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_product_attribute'] = (int)$this->id_product_attribute;
-		$fields['id_warehouse'] = (int)$this->id_warehouse;
-		$fields['location'] = pSQL($this->location);
-
-		return $fields;
-	}
 
 	/**
 	 * For a given product and warehouse, get the location
@@ -86,7 +89,7 @@ class WarehouseProductLocationCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('wpl.location');
-		$query->from('warehouse_product_location wpl');
+		$query->from('warehouse_product_location', 'wpl');
 		$query->where('wpl.id_product = '.(int)$id_product.'
 			AND wpl.id_product_attribute = '.(int)$id_product_attribute.'
 			AND wpl.id_warehouse = '.(int)$id_warehouse
@@ -108,7 +111,7 @@ class WarehouseProductLocationCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('wpl.id_warehouse_product_location');
-		$query->from('warehouse_product_location wpl');
+		$query->from('warehouse_product_location', 'wpl');
 		$query->where('wpl.id_product = '.(int)$id_product.'
 			AND wpl.id_product_attribute = '.(int)$id_product_attribute.'
 			AND wpl.id_warehouse = '.(int)$id_warehouse
@@ -122,18 +125,12 @@ class WarehouseProductLocationCore extends ObjectModel
 	 *
 	 * @param int $id_product
 	 * @param int $id_lang
-	 * @return array
+	 * @return Collection
 	 */
 	public static function getCollection($id_product)
 	{
-		// build query
-		$query = new DbQuery();
-		$query->select('*');
-		$query->from('warehouse_product_location wpl');
-		$query->where('wpl.id_product = '.(int)$id_product);
-
-		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
-
-		return ObjectModel::hydrateCollection('WarehouseProductLocation', $results);
+		$collection = new Collection('WarehouseProductLocation');
+		$collection->where('id_product', '=', $id_product);
+		return $collection;
 	}
 }

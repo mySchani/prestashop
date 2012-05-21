@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10621 $
+*  @version  Release: $Revision: 11509 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -48,14 +48,21 @@ class ShopCore extends ObjectModel
 	 */
 	protected $group;
 
-	protected $fieldsRequired = array('id_theme', 'id_category', 'id_group_shop', 'name');
-	protected $fieldsSize = array('name' => 64);
- 	protected $fieldsValidate = array(
- 		'active' => 'isBool',
-		'name' => 'isGenericName',
- 	);
-	protected $table = 'shop';
-	protected $identifier = 'id_shop';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'shop',
+		'primary' => 'id_shop',
+		'fields' => array(
+			'active' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'deleted' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+			'id_theme' => 		array('type' => self::TYPE_INT, 'required' => true),
+			'id_category' => 	array('type' => self::TYPE_INT, 'required' => true),
+			'id_group_shop' => 	array('type' => self::TYPE_INT, 'required' => true),
+		),
+	);
 
 	/** @var array List of shops cached */
 	protected static $shops;
@@ -85,7 +92,7 @@ class ShopCore extends ObjectModel
 		'store' => array('type' => 'shop'),
 		'webservice_account' => array('type' => 'shop'),
 		'warehouse' => array('type' => 'shop'),
-		'stock_available' => array('type' => 'fk_shop', 'primary' => 'id_stock_available'),
+		/* 'stock_available' => array('type' => 'fk_shop', 'primary' => 'id_stock_available'), */
 	);
 
 	protected $webserviceParameters = array(
@@ -108,19 +115,6 @@ class ShopCore extends ObjectModel
 	 */
 	const SHARE_CUSTOMER = 'share_customer';
 	const SHARE_ORDER = 'share_order';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_group_shop'] = (int)$this->id_group_shop;
-		$fields['id_category'] = (int)$this->id_category;
-		$fields['id_theme'] = (int)$this->id_theme;
-		$fields['name'] = pSQL($this->name);
-		$fields['active'] = (int)$this->active;
-		$fields['deleted'] = (int)$this->deleted;
-		return $fields;
-	}
 
 	public function __construct($id = null, $id_lang = null, $id_shop = null)
 	{
@@ -172,6 +166,11 @@ class ShopCore extends ObjectModel
 			);
 		}
 
+		// removes stock available
+		$res &= Db::getInstance()->execute('
+			DELETE FROM '._DB_PREFIX_.'stock_available
+			WHERE id_shop = '.(int)$this->id);
+
 		Shop::cacheShops(true);
 
 		return $res;
@@ -186,7 +185,7 @@ class ShopCore extends ObjectModel
 	{
 		$has_dependency = false;
 		$nbr_customer = (int)Db::getInstance()->getValue('
-			SELECT `id_customer`
+			SELECT count(*)
 			FROM `'._DB_PREFIX_.'customer`
 			WHERE `id_shop`='.(int)$id_shop
 		);
@@ -195,7 +194,7 @@ class ShopCore extends ObjectModel
 		else
 		{
 			$nbr_order = (int)Db::getInstance()->getValue('
-				SELECT `id_order`
+				SELECT count(*)
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE `id_shop`='.(int)$id_shop
 			);
@@ -219,6 +218,7 @@ class ShopCore extends ObjectModel
 
 	/**
 	 * Find the shop from current domain / uri and get an instance of this shop
+	 * if INSTALL_VERSION is defined, will return an empty shop object
 	 *
 	 * @return Shop
 	 */
@@ -269,19 +269,29 @@ class ShopCore extends ObjectModel
 				}
 		}
 
-		// Get instance of found shop
-		$shop = new Shop($id_shop);
-		if (!Validate::isLoadedObject($shop) || !$shop->active)
+		if($id_shop)
 		{
-			// No shop found ... too bad, let's redirect to default shop
-			$default_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
-			if (!$default_shop)
+			// Get instance of found shop
+			$shop = new Shop($id_shop);
+			if (!Validate::isLoadedObject($shop) || !$shop->active)
+			{
+				// No shop found ... too bad, let's redirect to default shop
+				$default_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
 				// Hmm there is something really bad in your Prestashop !
-				die('Shop not found');
-			$url = 'http://'.$default_shop->domain.$default_shop->getBaseURI().ltrim($_SERVER['SCRIPT_NAME'], '/').'?'.$_SERVER['QUERY_STRING'];
-			header('location: '.$url);
-			exit;
+				if (!Validate::isLoadedObject($default_shop))
+					throw new PrestashopException('Shop not found');
+
+				$url = 'http://'.$default_shop->domain.$default_shop->getBaseURI().ltrim($_SERVER['SCRIPT_NAME'], '/').'?'.$_SERVER['QUERY_STRING'];
+				header('location: '.$url);
+				exit;
+			}
 		}
+		else
+			if (defined('INSTALL_VERSION'))
+				$shop = new Shop();
+			else
+				throw new PrestashopException('Shop not found');
+
 		return $shop;
 	}
 
@@ -341,7 +351,7 @@ class ShopCore extends ObjectModel
 	{
 		if (!$this->domain)
 			return false;
-		return 'http://'.$this->domain.$this->physical_uri.$this->virtual_uri;
+		return 'http://'.$this->domain.$this->getBaseURI();
 	}
 
 	/**
@@ -823,13 +833,13 @@ class ShopCore extends ObjectModel
 			if ($tables_import && !isset($tables_import[$table_name]))
 				continue;
 
-			// Special case for stock if current shop is in a share stock group
-			/*if ($table_name == 'stock')
+			// Special case for stock_available if current shop is in a share stock group
+			if ($table_name == 'stock_available')
 			{
 				$group = new GroupShop($this->id_group_shop);
 				if ($group->share_stock && $group->haveShops())
 					continue;
-			}*/
+			}
 
 			$id = 'id_'.$row['type'];
 			if ($row['type'] == 'fk_shop')

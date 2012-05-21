@@ -38,37 +38,40 @@ class AdminAttributesGroupsControllerCore extends AdminController
 		$this->fieldsDisplay = array(
 			'id_attribute_group' => array(
 				'title' => $this->l('ID'),
-				'width' => 25
+				'width' => 25,
+				'align' => 'center'
 			),
 			'name' => array(
 				'title' => $this->l('Name'),
 				'width' => 'auto',
-				'filter_key' => 'b!name'
+				'filter_key' => 'b!name',
+				'align' => 'left'
 			),
 			'position' => array(
 				'title' => $this->l('Position'),
 				'width' => 40,
 				'filter_key' => 'cp!position',
-				'position' => 'position'
+				'position' => 'position',
+				'align' => 'center'
 			)
 		);
+
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		parent::__construct();
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 		$this->addRowAction('details');
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	/**
@@ -117,8 +120,6 @@ class AdminAttributesGroupsControllerCore extends AdminController
 			$this->addRowAction('edit');
 			$this->addRowAction('delete');
 
-	 		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
 			// override attributes
 			$this->display = 'list';
 			$this->tpl_folder = 'attributes/';
@@ -154,10 +155,10 @@ class AdminAttributesGroupsControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		$group_type = array(
 			array(
@@ -232,7 +233,7 @@ class AdminAttributesGroupsControllerCore extends AdminController
 		if (!($obj = $this->loadObject(true)))
 			return;
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initFormAttributes()
@@ -341,7 +342,7 @@ class AdminAttributesGroupsControllerCore extends AdminController
 			'imageTextureUrl' => Tools::safeOutput($_SERVER['REQUEST_URI']).'&deleteImage=1'
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	/**
@@ -377,7 +378,7 @@ class AdminAttributesGroupsControllerCore extends AdminController
 		{
 			if (!($this->object = $this->loadObject(true)))
 				return;
-			$this->content .= $this->initForm();
+			$this->content .= $this->renderForm();
 		}
 		else if ($this->display == 'editAttributes')
 		{
@@ -388,8 +389,8 @@ class AdminAttributesGroupsControllerCore extends AdminController
 		}
 		else if ($this->display != 'view' && !$this->ajax)
 		{
-			$this->content .= $this->initList();
-			$this->content .= $this->initOptions();
+			$this->content .= $this->renderList();
+			$this->content .= $this->renderOptions();
 		}
 
 		$this->context->smarty->assign(array(
@@ -428,7 +429,8 @@ class AdminAttributesGroupsControllerCore extends AdminController
 				);
 				$this->toolbar_btn['newAttributes'] = array(
 					'href' => self::$currentIndex.'&amp;updateattribute&amp;token='.$this->token,
-					'desc' => $this->l('Add new Attributes')
+					'desc' => $this->l('Add new Attributes'),
+					'class' => 'toolbar-new'
 				);
 		}
 	}

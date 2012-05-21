@@ -96,17 +96,17 @@ class AdminStatusesControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
-	 	$list_orders_status = parent::initList();
+	 	$list_orders_status = parent::renderList();
 
 	 	// Added new list
 
@@ -150,7 +150,7 @@ class AdminStatusesControllerCore extends AdminController
 		$this->postProcess();
 
 		$this->toolbar_title = $this->l('Return statuses');
-		$list_orders_returns_status = parent::initList();
+		$list_orders_returns_status = parent::renderList();
 
 		return $list_orders_status.$list_orders_returns_status;
 	}
@@ -176,7 +176,7 @@ class AdminStatusesControllerCore extends AdminController
         return $this->context->smarty->fetch(_PS_ADMIN_DIR_.'/themes/template/manufacturers/list_action_edit_adresses.tpl');
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'tinymce' => true,
@@ -284,6 +284,21 @@ class AdminStatusesControllerCore extends AdminController
 					)
 				),
 				array(
+					'type' => 'checkbox',
+					'name' => 'paid',
+					'values' => array(
+						'query' => array(
+							array(
+								'id' => 'on',
+								'name' => $this->l('Set order as paid'),
+								'val' => '1'
+							),
+						),
+						'id' => 'id',
+						'name' => 'name'
+					)
+				),
+				array(
 					'type' => 'select_template',
 					'label' => $this->l('Template:'),
 					'name' => 'template',
@@ -311,10 +326,11 @@ class AdminStatusesControllerCore extends AdminController
 			'invoice_on' => $this->getFieldValue($obj, 'invoice'),
 			'hidden_on' => $this->getFieldValue($obj, 'hidden'),
 			'send_email_on' => $this->getFieldValue($obj, 'send_email'),
-			'shipped_on' => $this->getFieldValue($obj, 'shipped')
+			'shipped_on' => $this->getFieldValue($obj, 'shipped'),
+			'paid_on' => $this->getFieldValue($obj, 'paid')
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initFormStatus()
@@ -491,6 +507,7 @@ class AdminStatusesControllerCore extends AdminController
 			$_POST['send_email'] = (int)Tools::getValue('send_email_on');
 			$_POST['hidden'] = (int)Tools::getValue('hidden_on');
 			$_POST['shipped'] = (int)Tools::getValue('shipped_on');
+			$_POST['paid'] = (int)Tools::getValue('paid_on');
 			if (!$_POST['send_email'])
 			{
 				$languages = Language::getLanguages(false);

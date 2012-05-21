@@ -138,17 +138,23 @@ class AdminReferrersControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		parent::__construct();
 	}
 
-	public function initList()
+	public function setMedia()
+	{
+		parent::setMedia();
+		$this->context->controller->addJqueryUI('ui.datepicker');
+	}
+
+	public function renderList()
 	{
 		// Display list Referrers:
 		$this->addRowAction('view');
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
-
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->_select = 'SUM(sa.cache_visitors) AS cache_visitors, SUM(sa.cache_visits) AS cache_visits, SUM(sa.cache_pages) AS cache_pages,
 							SUM(sa.cache_registrations) AS cache_registrations, SUM(sa.cache_orders) AS cache_orders, SUM(sa.cache_sales) AS cache_sales,
@@ -166,10 +172,10 @@ class AdminReferrersControllerCore extends AdminController
 			'settings_form' => $this->displaySettings()
 		);
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$uri = Tools::getHttpHost(true, true).__PS_BASE_URI__;
 
@@ -342,7 +348,7 @@ class AdminReferrersControllerCore extends AdminController
 
 		$this->tpl_form_vars = array('uri' => $uri);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function displayCalendar($action = null, $table = null, $identifier = null, $id = null)
@@ -397,7 +403,7 @@ class AdminReferrersControllerCore extends AdminController
 		return parent::postProcess();
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		$referrer = new Referrer((int)Tools::getValue('id_referrer'));
 
@@ -424,7 +430,7 @@ class AdminReferrersControllerCore extends AdminController
 			'id_lang' => (int)$this->context->language->id
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 }
 

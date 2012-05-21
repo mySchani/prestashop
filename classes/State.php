@@ -42,30 +42,27 @@ class StateCore extends ObjectModel
 	/** @var boolean Status for delivery */
 	public		$active = true;
 
- 	protected 	$fieldsRequired = array('id_country', 'id_zone', 'iso_code', 'name');
- 	protected 	$fieldsSize = array('iso_code' => 4, 'name' => 32);
- 	protected 	$fieldsValidate = array('id_country' => 'isUnsignedId', 'id_zone' => 'isUnsignedId', 'iso_code' => 'isStateIsoCode', 'name' => 'isGenericName', 'active' => 'isBool');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'state',
+		'primary' => 'id_state',
+		'fields' => array(
+			'id_country' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_zone' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'iso_code' => 	array('type' => self::TYPE_STRING, 'validate' => 'isStateIsoCode', 'required' => true, 'size' => 4),
+			'name' => 		array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 32),
+			'active' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
+	);
 
-	protected 	$table = 'state';
-	protected 	$identifier = 'id_state';
-
-	protected	$webserviceParameters = array(
+	protected $webserviceParameters = array(
 		'fields' => array(
 			'id_zone' => array('xlink_resource'=> 'zones'),
 			'id_country' => array('xlink_resource'=> 'countries')
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_country'] = (int)($this->id_country);
-		$fields['id_zone'] = (int)($this->id_zone);
-		$fields['iso_code'] = pSQL(strtoupper($this->iso_code));
-		$fields['name'] = pSQL($this->name);
-		$fields['active'] = (int)($this->active);
-		return $fields;
-	}
 
 	public static function getStates($id_lang = false, $active = false)
 	{
@@ -130,19 +127,16 @@ class StateCore extends ObjectModel
 	*/
 	public function delete()
 	{
-		if (!Validate::isTableOrIdentifier($this->identifier) OR !Validate::isTableOrIdentifier($this->table))
-			die(Tools::displayError());
-
 		if (!$this->isUsed())
 		{
 			/* Database deletion */
-			$result = Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
+			$result = Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->def['table']).'` WHERE `'.$this->def['primary'] .'` = '.(int)$this->id);
 			if (!$result)
 				return false;
 
 			/* Database deletion for multilingual fields related to the object */
-			if (method_exists($this, 'getTranslationsFieldsChild'))
-				Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'_lang` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
+			if (!empty($this->def['multilang']))
+				Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->def['table']).'_lang` WHERE `'.$this->def['primary'].'` = '.(int)$this->id);
 			return $result;
 		}
 		else
@@ -169,7 +163,7 @@ class StateCore extends ObjectModel
 		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT COUNT(*) AS nb_used
 		FROM `'._DB_PREFIX_.'address`
-		WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
+		WHERE `'.$this->def['primary'].'` = '.(int)($this->id));
 		return $row['nb_used'];
 	}
 
@@ -200,5 +194,19 @@ class StateCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'state`
 		WHERE `id_state` = '.(int)($id_state));
 	}
+
+		/**
+		 * @param $ids_states
+		 * @param $id_zone
+		 * @return bool
+		 */
+		public function affectZoneToSelection($ids_states, $id_zone)
+		{
+			// cast every array values to int (security)
+			$ids_states = array_map('intval', $ids_states);
+			return Db::getInstance()->execute('
+			UPDATE `'._DB_PREFIX_.'state` SET `id_zone` = '.(int)$id_zone.' WHERE `id_state` IN ('.implode(',', $ids_states).')
+			');
+		}
 }
 

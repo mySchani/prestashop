@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10058 $
+*  @version  Release: $Revision: 11740 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -366,8 +366,7 @@ class InstallModelInstall extends InstallAbstractModel
 		Configuration::updateGlobalValue('PS_MAIL_SMTP_PORT', 		$data['smtp_port']);
 
 		// Activate rijndael 128 encrypt algorihtm if mcrypt is activated
-		if (function_exists('mcrypt_encrypt'))
-			Configuration::updateGlobalValue('PS_CIPHER_ALGORITHM', 1);
+		Configuration::updateGlobalValue('PS_CIPHER_ALGORITHM', function_exists('mcrypt_encrypt') ? 1 : 0);
 
 		// Set logo configuration
 		if (file_exists(_PS_IMG_DIR_.'logo.jpg'))
@@ -411,18 +410,16 @@ class InstallModelInstall extends InstallAbstractModel
 			return false;
 		}
 
-		// Create default contact
+		// Update default contact
 		if (isset($data['admin_email']))
 		{
 			Configuration::updateGlobalValue('PS_SHOP_EMAIL', $data['admin_email']);
 
-			$contact = new Contact();
-			$contact->email = $data['admin_email'];
-			$contact->customer_service = true;
-			if (!$contact->add())
+			$contacts = new Collection('Contact');
+			foreach ($contacts as $contact)
 			{
-				$this->setError($this->language->l('Cannot create default contact'));
-				return false;
+				$contact->email = $data['admin_email'];
+				$contact->update();
 			}
 		}
 
@@ -465,21 +462,32 @@ class InstallModelInstall extends InstallAbstractModel
 				'blockcart',
 				'blockcategories',
 				'blockcms',
+				'blockcontact',
+				'blockcontactinfos',
 				'blockcurrencies',
+				'blockcustomerprivacy',
 				'blocklanguages',
 				'blockmanufacturer',
 				'blockmyaccount',
+				'blockmyaccountfooter',
 				'blocknewproducts',
+				'blocknewsletter',
 				'blockpaymentlogo',
 				'blockpermanentlinks',
+				'blockreinsurance',
 				'blocksearch',
+				'blocksharefb',
+				'blocksocial',
 				'blockspecials',
 				'blockstore',
+				'blocksupplier',
 				'blocktags',
+				'blocktopmenu',
 				'blockuserinfo',
 				'blockviewed',
 				'cheque',
-				'editorial',
+				'favoriteproducts',
+				'feeder',
 				'graphartichow',
 				'graphgooglechart',
 				'graphvisifire',
@@ -487,6 +495,7 @@ class InstallModelInstall extends InstallAbstractModel
 				'gridhtml',
 				'gsitemap',
 				'homefeatured',
+				'homeslider',
 				'moneybookers',
 				'pagesnotfound',
 				'sekeywords',
@@ -517,6 +526,9 @@ class InstallModelInstall extends InstallAbstractModel
 		$errors = array();
 		foreach ($modules as $module_name)
 		{
+			if (!file_exists(_PS_MODULE_DIR_.$module_name))
+				continue;
+
 			$module = Module::getInstanceByName($module_name);
 			if (!$module->install())
 				$errors[] = $this->language->l('Cannot install module "%s"', $module_name);
@@ -536,7 +548,8 @@ class InstallModelInstall extends InstallAbstractModel
 	 */
 	public function installFixtures()
 	{
-		Db::getInstance()->delete('prefix_manufacturer');
+		// @todo REMOVE THIS
+		/*Db::getInstance()->delete('prefix_manufacturer');
 		Db::getInstance()->delete('prefix_manufacturer_lang');
 		Db::getInstance()->delete('prefix_supplier');
 		Db::getInstance()->delete('prefix_supplier_lang');
@@ -582,7 +595,7 @@ class InstallModelInstall extends InstallAbstractModel
 		Db::getInstance()->delete('prefix_range_weight');
 		Db::getInstance()->delete('prefix_delivery');
 		Db::getInstance()->delete('prefix_specific_price');
-		Db::getInstance()->delete('prefix_tag');
+		Db::getInstance()->delete('prefix_tag');*/
 
 		// Load class (use fixture class if one exists, or use InstallXmlLoader)
 		if (file_exists(_PS_INSTALL_FIXTURES_PATH_.'apple/install.php'))
@@ -625,5 +638,26 @@ class InstallModelInstall extends InstallAbstractModel
 		Search::indexation(true);
 
 		return true;
+	}
+
+	/**
+	 * PROCESS : installTheme
+	 * Install theme
+	 */
+	public function installTheme()
+	{
+		// @todo do a real install of the theme
+		$sql_loader = new InstallSqlLoader();
+		$sql_loader->setMetaData(array(
+			'PREFIX_' => _DB_PREFIX_,
+			'ENGINE_TYPE' => _MYSQL_ENGINE_,
+		));
+
+		$sql_loader->parse_file(_PS_INSTALL_DATA_PATH_.'theme.sql', false);
+		if ($errors = $sql_loader->getErrors())
+		{
+			$this->setError($errors);
+			return false;
+		}
 	}
 }

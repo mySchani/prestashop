@@ -33,7 +33,6 @@ virtual_product_nb_days, is_shareable)
 {
 	var link = '';
 	init_elems();
-	$("#virtual_good_attributes").show();
 	$('#stock_mvt_attribute').show();
 	$('#initial_stock_attribute').hide();
 	$('#attribute_quantity').html(quantity);
@@ -144,7 +143,6 @@ virtual_product_nb_days, is_shareable)
 		var opt = document.createElement('option');
 		opt.text = old_attr[i++];
 		opt.value = old_attr[i];
-
 		try {
 			elem.add(opt, null);
 		}
@@ -153,14 +151,8 @@ virtual_product_nb_days, is_shareable)
 		}
 	}
 	getE('id_product_attribute').value = id_product_attribute;
-	if (document.getElementById)
-		var style = document.getElementById('ResetSpan').style;
-	else if (document.all)
-		var style = document.all['ResetSpan'].style;
-	else if (document.layers)
-		var style = document.layers['ResetSpan'].style;
-	if (style.display == 'none')
-		style.display = 'block';
+
+	$('#available_date_attribute').val(available_date);
 }
 
 function populate_attrs()
@@ -220,9 +212,6 @@ function check_unit_impact()
 
 function init_elems()
 {
-	$('#stock_mvt_attribute').hide();
-	$('#initial_stock_attribute').show();
-	$('#attr_qty_stock').hide();
 	var elem = getE('product_att_list');
 
 	if (elem.length)
@@ -230,15 +219,23 @@ function init_elems()
 			if (elem[i])
 				elem.remove(i);
 
+	$('input[name="id_image_attr[]"]').each(function (){
+		$(this).attr('checked', false);
+	});
+	
+	$('#attribute_default').attr('checked', false);
+
 	getE('attribute_price_impact').selectedIndex = 0;
 	getE('attribute_weight_impact').selectedIndex = 0;
 	getE('attribute_unit_impact').selectedIndex = 0;
 	$('#span_unit_impact').hide();
 	$('#unity_third').html($('#unity_second').html());
-	if ($('#unity').get(0).value.length > 0)
-		$('#tr_unit_impact').show();
-	else
-		$('#tr_unit_impact').hide();
+
+	if ($('#unity').is())
+		if ($('#unity').get(0).value.length > 0)
+			$('#tr_unit_impact').show();
+		else
+			$('#tr_unit_impact').hide();
 	try
 	{
 		if (impact.options[impact.selectedIndex].value == 0)
@@ -345,14 +342,14 @@ function add_attr()
 {
 	var attr_group = $('#attribute_group option:selected');
 	if (attr_group.val() == 0)
-		return alert('Please choose a group');
+		return alert(msg_combination_1);
 
 	var attr_name = $('#attribute option:selected');
 	if (attr_name.val() == 0)
-		return alert('Please choose an attribute');
+		return alert(msg_combination_2);
 	
 	if (attr_group.val() in storeUsedGroups)
-		return alert('You can only add one type of group per combination');
+		return alert(msg_combination_3);
 
 	storeUsedGroups[attr_group.val()] = true;
 	$('<option></option>')

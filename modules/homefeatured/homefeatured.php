@@ -49,7 +49,7 @@ class HomeFeatured extends Module
 
 	function install()
 	{
-		if (!Configuration::updateValue('HOME_FEATURED_NBR', 8) OR !parent::install() OR !$this->registerHook('home'))
+		if (!Configuration::updateValue('HOME_FEATURED_NBR', 8) || !parent::install() || !$this->registerHook('home') || !$this->registerHook('displayHeader'))
 			return false;
 		return true;
 	}
@@ -90,13 +90,18 @@ class HomeFeatured extends Module
 		return $output;
 	}
 
-	function hookHome($params)
+	public function hookDisplayHeader($params)
+	{
+		$this->context->controller->addCss($this->_path.'homefeatured.css');
+	}
+
+	public function hookDisplayHome($params)
 	{
 		$category = new Category(Context::getContext()->shop->getCategory(), Configuration::get('PS_LANG_DEFAULT'));
 		$nb = (int)(Configuration::get('HOME_FEATURED_NBR'));
 		$products = $category->getProducts($params['cookie']->id_lang, 1, ($nb ? $nb : 10));
 
-		$this->templateAssign(array(
+		$this->smarty->assign(array(
 			'products' => $products,
 			'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
 			'homeSize' => Image::getSize('home'),

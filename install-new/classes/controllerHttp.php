@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11660 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -235,7 +235,8 @@ abstract class InstallControllerHttp
 	 */
 	public function l($str)
 	{
-		return call_user_func_array(array($this->language, 'l'), func_get_args());
+		$args = func_get_args();
+		return call_user_func_array(array($this->language, 'l'), $args);
 	}
 
 	/**

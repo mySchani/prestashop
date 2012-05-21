@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminLoginController extends AdminController
+class AdminLoginControllerCore extends AdminController
 {
 	public function __construct()
 	{
@@ -52,7 +52,7 @@ class AdminLoginController extends AdminController
 	{
 		if ((empty($_SERVER['HTTPS']) OR strtolower($_SERVER['HTTPS']) == 'off') AND Configuration::get('PS_SSL_ENABLED'))
 		{
-			// You can uncomment theses lines if you want to force https even from localhost and automatically redirect
+			// You can uncomment these lines if you want to force https even from localhost and automatically redirect
 			// header('HTTP/1.1 301 Moved Permanently');
 			// header('Location: '.Tools::getShopDomainSsl(true).$_SERVER['REQUEST_URI']);
 			// exit();
@@ -70,7 +70,9 @@ class AdminLoginController extends AdminController
 		
 		
 		
-		if(file_exists(_PS_ADMIN_DIR_.'/../install') OR file_exists(_PS_ADMIN_DIR_.'/../admin'))
+		if (file_exists(_PS_ADMIN_DIR_.'/../install') || file_exists(_PS_ADMIN_DIR_.'/../admin')
+		|| (file_exists(_PS_ADMIN_DIR_.'/../install-new') && (!defined('_PS_MODE_DEV_') || !_PS_MODE_DEV_))
+		)
 			$this->context->smarty->assign(
 				array(
 				'randomNb' => rand(100, 999),
@@ -194,7 +196,7 @@ class AdminLoginController extends AdminController
 							'{passwd}' => $pwd
 							);
 							
-				if (Mail::Send((int)Configuration::get('PS_LANG_DEFAULT'), 'password', Mail::l('Your new admin password'), $params, $employee->email, $employee->firstname.' '.$employee->lastname))
+				if (Mail::Send((int)Configuration::get('PS_LANG_DEFAULT'), 'password', Mail::l('Your new admin password', (int)Configuration::get('PS_LANG_DEFAULT')), $params, $employee->email, $employee->firstname.' '.$employee->lastname))
 					die(Tools::jsonEncode(array('hasErrors' => false, 'confirm' => $this->l('Your password has been e-mailed to you'))));
 				else
 					die(Tools::jsonEncode(array('hasErrors' => true, 'errors' => array(Tools::displayError('An error occurred during your password change.')))));

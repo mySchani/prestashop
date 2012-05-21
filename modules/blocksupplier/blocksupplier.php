@@ -48,9 +48,9 @@ class BlockSupplier extends Module
 	{
 		if (!parent::install())
 			return false;
-		if (!$this->registerHook('leftColumn'))
+		if (!$this->registerHook('displayLeftColumn'))
 			return false;
-		if (!$this->registerHook('header'))
+		if (!$this->registerHook('displayHeader'))
 			return false;
 		Configuration::updateValue('SUPPLIER_DISPLAY_TEXT', true);
 		Configuration::updateValue('SUPPLIER_DISPLAY_TEXT_NB', 5);
@@ -58,7 +58,7 @@ class BlockSupplier extends Module
 		return true;
 	}
 
-	function hookLeftColumn($params)
+	function hookDisplayLeftColumn($params)
 	{
 		$this->context->smarty->assign(array(
 			'suppliers' => Supplier::getSuppliers(false),
@@ -125,12 +125,12 @@ class BlockSupplier extends Module
 		return $output;
 	}
 	
-	function hookRightColumn($params)
+	function hookDisplayRightColumn($params)
 	{
-		return $this->hookLeftColumn($params);
+		return $this->hookDisplayLeftColumn($params);
 	}
 	
-	function hookHeader($params)
+	function hookDisplayHeader($params)
 	{
 		$this->context->controller->addCSS(($this->_path).'blocksupplier.css', 'all');
 	}

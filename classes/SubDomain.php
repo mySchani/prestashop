@@ -29,19 +29,16 @@ class SubDomainCore extends ObjectModel
 {
 	public $name;
 
-	protected $fieldsRequired = array('name');
-	protected $fieldsSize = array('name' => 16);
-	protected $fieldsValidate = array('name' => 'isSubDomainName');
-
-	protected $table = 'subdomain';
-	protected $identifier = 'id_subdomain';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['name'] = pSQL($this->name);
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'subdomain',
+		'primary' => 'id_subdomain',
+		'fields' => array(
+			'name' => array('type' => self::TYPE_STRING, 'validate' => 'isSubDomainName', 'required' => true, 'size' => 16),
+		),
+	);
 
 	public static function getSubDomains()
 	{

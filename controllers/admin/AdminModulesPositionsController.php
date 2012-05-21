@@ -219,7 +219,7 @@ class AdminModulesPositionsControllerCore extends AdminController
 		if (array_key_exists('addToHook', $_GET) OR array_key_exists('editGraft', $_GET) OR (Tools::isSubmit('submitAddToHook') AND $this->_errors))
 		{
 			$this->display = 'edit';
-			$this->content .= $this->initForm();
+			$this->content .= $this->renderForm();
 		}
 		else
 			$this->content .= $this->initMain();
@@ -255,8 +255,9 @@ class AdminModulesPositionsControllerCore extends AdminController
 			$hooks[$key]['module_count'] = count($hooks[$key]['modules']);
 			// If modules were found, link to the previously created Module instances
 			if (is_array($hooks[$key]['modules']) && !empty($hooks[$key]['modules']))
-				foreach($hooks[$key]['modules'] as $module_key => $module)
-					$hooks[$key]['modules'][$module_key]['instance'] = $module_instances[$assoc_modules_id[$module['id_module']]];
+				foreach($hooks[$key]['modules'] as $module_key => $module) 
+					if (isset($assoc_modules_id[$module['id_module']]))
+						$hooks[$key]['modules'][$module_key]['instance'] = $module_instances[$assoc_modules_id[$module['id_module']]];
 		}
 
 		$this->addJqueryPlugin("tablednd");
@@ -287,7 +288,7 @@ class AdminModulesPositionsControllerCore extends AdminController
 		return $this->context->smarty->fetch('modules_positions/list_modules.tpl');
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		// Init toolbar
 		$this->initToolbarTitle();

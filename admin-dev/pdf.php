@@ -36,6 +36,7 @@ $functionArray = array(
 	'pdf' => 'generateInvoicePDF',
 	'id_order_slip' => 'generateOrderSlipPDF',
 	'id_delivery' => 'generateDeliverySlipPDF',
+	'delivery' => 'generateDeliverySlipPDF',
 	'invoices' => 'generateInvoicesPDF',
 	'invoices2' => 'generateInvoicesPDF2',
 	'slips' => 'generateOrderSlipsPDF',
@@ -66,10 +67,10 @@ function generateSupplyOrderFormPDF()
 
 function generateInvoicePDF()
 {
-    if (Tools::isSubmit('id_order'))
-    	generateInvoicePDFByIdOrder(Tools::getValue('id_order'));
-    elseif (Tools::isSubmit('id_order_invoice'))
-    	generateInvoicePDFByIdOrderInvoice(Tools::getValue('id_order_invoice'));
+	if (Tools::isSubmit('id_order'))
+		generateInvoicePDFByIdOrder(Tools::getValue('id_order'));
+	elseif (Tools::isSubmit('id_order_invoice'))
+		generateInvoicePDFByIdOrderInvoice(Tools::getValue('id_order_invoice'));
 	else
 		die (Tools::displayError('Missing order ID or invoice order ID'));
 	exit;
@@ -81,7 +82,9 @@ function generateInvoicePDFByIdOrder($id_order)
 	if (!Validate::isLoadedObject($order))
 		die(Tools::displayError('Cannot find order in database'));
 
-	generatePDF($order->getInvoicesCollection(), PDF::TEMPLATE_INVOICE);
+	$order_invoice_list = $order->getInvoicesCollection();
+	Hook::exec('actionPDFInvoiceRender', array('order_invoice_list' => $order_invoice_list));
+	generatePDF($order_invoice_list, PDF::TEMPLATE_INVOICE);
 }
 
 function generateInvoicePDFByIdOrderInvoice($id_order_invoice)
@@ -90,6 +93,7 @@ function generateInvoicePDFByIdOrderInvoice($id_order_invoice)
 	if (!Validate::isLoadedObject($order_invoice))
 		die(Tools::displayError('Cannot find order invoice in database'));
 
+	Hook::exec('actionPDFInvoiceRender', array('order_invoice_list' => array($order_invoice)));
 	generatePDF($order_invoice, PDF::TEMPLATE_INVOICE);
 }
 
@@ -107,24 +111,47 @@ function generateOrderSlipPDF()
 
 function generateDeliverySlipPDF()
 {
-	$order = Order::getByDelivery((int)($_GET['id_delivery']));
-	if (!Validate::isLoadedObject($order))
-		die(Tools::displayError('Cannot find order in database'));
+	if (Tools::isSubmit('id_order'))
+		generateDeliverySlipPDFByIdOrder(Tools::getValue('id_order'));
+	elseif (Tools::isSubmit('id_order_invoice'))
+		generateDeliverySlipPDFByIdOrderInvoice(Tools::getValue('id_order_invoice'));
+	elseif (Tools::isSubmit('id_delivery'))
+	{
+		$order = Order::getByDelivery(Tools::getValue('id_delivery'));
+		generateDeliverySlipPDFByIdOrder($order->id);
+	}
+	else
+		die (Tools::displayError('Missing order ID or invoice order ID'));
+	exit;
+}
 
-    generatePDF($order, PDF::TEMPLATE_DELIVERY_SLIP);
+function generateDeliverySlipPDFByIdOrder($id_order)
+{
+	$order = new Order($id_order);
+	if (!Validate::isLoadedObject($order))
+		throw new PrestashopException('Can\'t load Order object');
+
+	$order_invoice_collection = $order->getInvoicesCollection();
+	generatePDF($order_invoice_collection, PDF::TEMPLATE_DELIVERY_SLIP);
+}
+
+function generateDeliverySlipPDFByIdOrderInvoice($id_order_invoice)
+{
+	$order_invoice = new OrderInvoice($id_order_invoice);
+	if (!Validate::isLoadedObject($order_invoice))
+		throw new PrestashopException('Can\'t load Order Invoice object');
+
+	generatePDF($order_invoice, PDF::TEMPLATE_DELIVERY_SLIP);
 }
 
 function generateInvoicesPDF()
 {
-	$id_orders_list = Order::getOrdersIdInvoiceByDate($_GET['date_from'], $_GET['date_to'], NULL, 'invoice');
+	$id_orders_list = OrderInvoice::getByDateInterval($_GET['date_from'], $_GET['date_to'], NULL, 'invoice');
+
 	if (!is_array($id_orders_list))
 		die (Tools::displayError('No invoices found'));
 
-    $orders = array();
-    foreach ($id_orders_list as $id_order)
-        $orders[] = new Order((int)$id_order);
-
-    generatePDF($orders, PDF::TEMPLATE_INVOICE);
+ 	 generateOrderInvoicesPDF($id_orders_list);
 }
 
 function generateInvoicesPDF2()
@@ -134,11 +161,19 @@ function generateInvoicesPDF2()
 		if (is_array($id_orders = Order::getOrderIdsByStatus((int)$id_order_state)))
 			$id_orders_list = array_merge($id_orders_list, $id_orders);
 
-    $orders = array();
-    foreach ($id_orders_list as $id_order)
-        $orders[] = new Order((int)$id_order);
+ 	 generateOrderInvoicesPDF($id_orders_list);
+}
 
-    generatePDF($orders, PDF::TEMPLATE_INVOICE);
+function generateOrderInvoicesPDF($id_orders_list)
+{
+    $orders_invoices = array();
+    foreach ($id_orders_list as $id_order)
+    {
+			$order = new Order((int)$id_order);
+			$orders_invoices = array_merge($orders_invoices, $order->getInvoicesCollection());
+	 }
+
+    generatePDF($orders_invoices, PDF::TEMPLATE_INVOICE);
 }
 
 function generateOrderSlipsPDF()
@@ -168,4 +203,3 @@ function generatePDF($object, $template)
     $pdf = new PDF($object, $template, $smarty);
     $pdf->render();
 }
-

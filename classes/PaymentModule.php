@@ -59,10 +59,6 @@ abstract class PaymentModuleCore extends Module
 		$return = Db::getInstance()->execute('
 		INSERT INTO `'._DB_PREFIX_.'module_country` (id_module, id_country)
 		SELECT '.(int)($this->id).', id_country FROM `'._DB_PREFIX_.'country` WHERE active = 1');
-		// Insert group availability
-		$return &= Db::getInstance()->execute('
-		INSERT INTO `'._DB_PREFIX_.'module_group` (id_module, id_group)
-		SELECT '.(int)($this->id).', id_group FROM `'._DB_PREFIX_.'group`');
 
 		return $return;
 	}
@@ -103,8 +99,8 @@ abstract class PaymentModuleCore extends Module
 			// For each package, generate an order
 			$delivery_option_list = $cart->getDeliveryOptionList();
 			$package_list = $cart->getPackageList();
-			$cart_delivery_option = unserialize($cart->delivery_option);
-			
+			$cart_delivery_option = $cart->getDeliveryOption();
+
 			// If some delivery options are not defined, or not valid, use the first valid option
 			foreach ($delivery_option_list as $id_address => $package)
 				if (!isset($cart_delivery_option[$id_address]) || !array_key_exists($cart_delivery_option[$id_address], $package))
@@ -122,7 +118,7 @@ abstract class PaymentModuleCore extends Module
 			$id_currency = $currency_special ? (int)($currency_special) : (int)($cart->id_currency);
 			$currency = new Currency($id_currency);
 
-			$this->context->cart->order_reference = $reference;
+			$cart->order_reference = $reference;
 
 			$orderCreationFailed = false;
 			$cart_total_paid = (float)Tools::ps_round((float)($cart->getOrderTotal(true, Cart::BOTH)), 2);
@@ -133,6 +129,10 @@ abstract class PaymentModuleCore extends Module
 				Logger::addLog($errorMessage, 4, '0000001', 'Cart', intval($cart->id));
 				die($errorMessage);
 			}
+
+			$order_status = new OrderState((int)$id_order_state, (int)$cart->id_lang);
+			if (!Validate::isLoadedObject($order_status))
+				throw new PrestashopException('Can\'t load Order state status');
 
 			foreach ($cart_delivery_option as $id_address => $key_carriers)
 				foreach ($delivery_option_list[$id_address][$key_carriers]['carrier_list'] as $id_carrier => $data)
@@ -147,7 +147,6 @@ abstract class PaymentModuleCore extends Module
 						$order->id_address_delivery = (int)$id_address;
 						$order->id_currency = $id_currency;
 						$order->id_lang = (int)($cart->id_lang);
-						$order->id_warehouse = $package_list[$id_address][$id_package]['id_warehouse'];
 						$order->id_cart = (int)($cart->id);
 						$order->reference = $reference;
 
@@ -199,25 +198,29 @@ abstract class PaymentModuleCore extends Module
 						// Creating order
 						$result = $order->add();
 
+						// Register Payment only if the order status validate the order
+						if ($result && $order_status->logable)
+						{
+							if (!$order->addOrderPayment($amountPaid))
+								throw new PrestashopException('Can\'t save Order Payment');
+						}
+
 						$order_list[] = $order;
 
 						// Insert new Order detail list using cart for the current order
 						$order_detail = new OrderDetail(null, null, $this->context);
-						$order_detail->createList($order, $cart, $id_order_state, $product_list);
+						$order_detail->createList($order, $cart, $id_order_state, $product_list, 0, true, $package_list[$id_address][$id_package]['id_warehouse']);
 						$order_detail_list[] = $order_detail;
 
 						// Adding an entry in order_carrier table
-						Db::getInstance()->execute('
-						INSERT INTO `'._DB_PREFIX_.'order_carrier` (`id_order`, `id_carrier`, `weight`, `shipping_cost_tax_excl`, `shipping_cost_tax_incl`, `date_add`) VALUES
-						('.(int)$order->id.', '.(int)$carrier->id.', '.(float)$order->getTotalWeight().', '.(float)$order->total_shipping_tax_excl.', '.(float)$order->total_shipping_tax_incl.', NOW())');
+						$order_carrier = new OrderCarrier();
+						$order_carrier->id_order = (int)$order->id;
+						$order_carrier->id_carrier = (int)$carrier->id;
+						$order_carrier->weight = (float)$order->getTotalWeight();
+						$order_carrier->shipping_cost_tax_excl = (float)$order->total_shipping_tax_excl;
+						$order_carrier->shipping_cost_tax_incl = (float)$order->total_shipping_tax_incl;
+						$order_carrier->add();
 					}
-			// Register Payment
-			if (!$order->addOrderPayment($amountPaid))
-			{
-				$errorMessage = Tools::displayError('Can\'t save payment');
-				Logger::addLog($errorMessage, 4, '0000003', 'Order', intval($order->id));
-				die($errorMessage);
-			}
 
 			// Next !
 			foreach ($order_detail_list as $key => $order_detail)
@@ -244,8 +247,6 @@ abstract class PaymentModuleCore extends Module
 					// Insert new Order detail list using cart for the current order
 					//$orderDetail = new OrderDetail(null, null, $this->context);
 					//$orderDetail->createList($order, $cart, $id_order_state);
-
-					//$this->addPCC($order->id, $order->id_currency, $amountPaid);
 
 					// Construct order detail table for the email
 					$productsList = '';
@@ -297,17 +298,20 @@ abstract class PaymentModuleCore extends Module
 
 					$cartRulesList = '';
 					$result = $cart->getCartRules();
-					$cartRules = ObjectModel::hydrateCollection('CartRule', $result, (int)$order->id_lang);
-					foreach ($cartRules as $cartRule)
+					foreach ($result as $cart_rule)
 					{
-						$value = $cartRule->getContextualValue(true);
+						$cartRule = $cart_rule['obj'];
+						$values = array(
+							'tax_incl' => $cartRule->getContextualValue(true),
+							'tax_excl' => $cartRule->getContextualValue(false)
+						);
 						// Todo : has not been tested because order processing wasn't functionnal
-						if ($value > $order->total_products_wt && $cartRule->partial_use == 1 && $cartRule->reduction_amount > 0)
+						if ($values['tax_incl'] > $order->total_products_wt && $cartRule->partial_use == 1 && $cartRule->reduction_amount > 0)
 						{
 							$voucher = clone $cartRule;
 							unset($voucher->id);
 							$voucher->code = empty($voucher->code) ? substr(md5($order->id.'-'.$order->id_customer.'-'.$cartRule->id), 0, 16) : $voucher->code.'-2';
-							$voucher->reduction_amount = $value - $order->total_products_wt;
+							$voucher->reduction_amount = $values['tax_incl'] - $order->total_products_wt;
 							$voucher->id_customer = $order->id_customer;
 							$voucher->quantity = 1;
 							if ($voucher->add())
@@ -318,19 +322,24 @@ abstract class PaymentModuleCore extends Module
 								$params['{firstname}'] = $customer->firstname;
 								$params['{lastname}'] = $customer->lastname;
 								$params['{id_order}'] = $order->id;
-								Mail::Send((int)$order->id_lang, 'voucher', Mail::l('New voucher regarding your order #').$order->id, $params, $customer->email, $customer->firstname.' '.$customer->lastname);
+								Mail::Send((int)$order->id_lang, 'voucher', Mail::l('New voucher regarding your order #', (int)$order->id_lang).$order->id, $params, $customer->email, $customer->firstname.' '.$customer->lastname);
 							}
 						}
 
-						$order->addCartRule($cartRule->id, $cartRule->name, $value);
+						$order->addCartRule($cartRule->id, $cartRule->name, $values);
+
 						if ($id_order_state != Configuration::get('PS_OS_ERROR') AND $id_order_state != Configuration::get('PS_OS_CANCELED'))
-							$cartRule->quantity = $cartRule->quantity - 1;
-						$cartRule->update();
+						{
+							// Create a new instance of Cart Rule without id_lang, in order to update it quantity
+							$cart_rule_to_update = new CartRule($cartRule->id);
+							$cart_rule_to_update->quantity = $cart_rule_to_update->quantity - 1;
+							$cart_rule_to_update->update();
+						}
 
 						$cartRulesList .= '
 						<tr style="background-color:#EBECEE;">
 							<td colspan="4" style="padding:0.6em 0.4em;text-align:right">'.$this->l('Voucher name:').' '.$cartRule->name.'</td>
-							<td style="padding:0.6em 0.4em;text-align:right">'.($value != 0.00 ? '-' : '').Tools::displayPrice($value, $currency, false).'</td>
+							<td style="padding:0.6em 0.4em;text-align:right">'.($values['tax_incl'] != 0.00 ? '-' : '').Tools::displayPrice($values['tax_incl'], $currency, false).'</td>
 						</tr>';
 					}
 
@@ -344,14 +353,10 @@ abstract class PaymentModuleCore extends Module
 					}
 
 					// Hook validate order
-					$orderStatus = new OrderState((int)$id_order_state, (int)$order->id_lang);
-					if (Validate::isLoadedObject($orderStatus))
-					{
-						Hook::exec('newOrder', array('cart' => $cart, 'order' => $order, 'customer' => $customer, 'currency' => $currency, 'orderStatus' => $orderStatus));
-						foreach ($cart->getProducts() AS $product)
-							if ($orderStatus->logable)
-								ProductSale::addProductSale((int)$product['id_product'], (int)$product['cart_quantity']);
-					}
+					Hook::exec('newOrder', array('cart' => $cart, 'order' => $order, 'customer' => $customer, 'currency' => $currency, 'orderStatus' => $order_status));
+					foreach ($cart->getProducts() AS $product)
+						if ($order_status->logable)
+							ProductSale::addProductSale((int)$product['id_product'], (int)$product['cart_quantity']);
 
 					if (Configuration::get('PS_STOCK_MANAGEMENT') && $order_detail->getStockState())
 					{
@@ -434,9 +439,10 @@ abstract class PaymentModuleCore extends Module
 							$data = array_merge($data, $extraVars);
 
 						// Join PDF invoice
-						if ((int)(Configuration::get('PS_INVOICE')) AND Validate::isLoadedObject($orderStatus) AND $orderStatus->invoice AND $order->invoice_number)
+						if ((int)(Configuration::get('PS_INVOICE')) && $order_status->invoice && $order->invoice_number)
 						{
-							$fileAttachment['content'] = PDF::invoice($order, 'S');
+                            $pdf = new PDF($order->getInvoicesCollection(), PDF::TEMPLATE_INVOICE, $this->context->smarty);
+							$fileAttachment['content'] = $pdf->render(false);
 							$fileAttachment['name'] = Configuration::get('PS_INVOICE_PREFIX', (int)($order->id_lang)).sprintf('%06d', $order->invoice_number).'.pdf';
 							$fileAttachment['mime'] = 'application/pdf';
 						}

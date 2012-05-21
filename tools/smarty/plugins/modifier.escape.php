@@ -29,12 +29,19 @@ function smarty_modifier_escape($string, $esc_type = 'html', $char_set = null, $
 
     switch ($esc_type) {
         case 'html':
+        		/* PrestaShop 
             return htmlspecialchars($string, ENT_QUOTES, $char_set, $double_encode);
-
+            */
+            return htmlspecialchars($string, ENT_QUOTES, $char_set);
+            /* END */
         case 'htmlall':
             if (SMARTY_MBSTRING /* ^phpunit */ && empty($_SERVER['SMARTY_PHPUNIT_DISABLE_MBSTRING'])/* phpunit$ */) {
                 // mb_convert_encoding ignores htmlspecialchars()
-                $string = htmlspecialchars($string, ENT_QUOTES, $char_set, $double_encode);
+        		/* PrestaShop 
+            return htmlspecialchars($string, ENT_QUOTES, $char_set, $double_encode);
+            */
+            return htmlspecialchars($string, ENT_QUOTES, $char_set);
+            /* END */
                 // htmlentities() won't convert everything, so use mb_convert_encoding
                 return mb_convert_encoding($string, 'HTML-ENTITIES', $char_set);
             }

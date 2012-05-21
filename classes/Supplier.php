@@ -59,19 +59,33 @@ class SupplierCore extends ObjectModel
 	/** @var boolean active */
 	public $active;
 
- 	protected $fieldsRequired = array('name');
- 	protected $fieldsSize = array('name' => 64);
- 	protected $fieldsValidate = array('name' => 'isCatalogName');
-	protected $fieldsSizeLang = array('meta_title' => 128, 'meta_description' => 255, 'meta_keywords' => 255);
-	protected $fieldsValidateLang = array(
-		'description' => 'isGenericName',
-		'meta_title' => 'isGenericName',
-		'meta_description' => 'isGenericName',
-		'meta_keywords' => 'isGenericName'
-	);
+	/**
+	 * @since 1.5.0
+	 * @var int address
+	 * */
+	public $id_address;
 
-	protected $table = 'supplier';
-	protected $identifier = 'id_supplier';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'supplier',
+		'primary' => 'id_supplier',
+		'multilang' => true,
+		'fields' => array(
+			'name' => 				array('type' => self::TYPE_STRING, 'validate' => 'isCatalogName', 'required' => true, 'size' => 64),
+			'id_address' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'active' => 			array('type' => self::TYPE_BOOL),
+			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+
+			// Lang fields
+			'description' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName'),
+			'meta_title' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 128),
+			'meta_description' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+			'meta_keywords' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+		),
+	);
 
 	protected	$webserviceParameters = array(
 		'fields' => array(
@@ -90,24 +104,6 @@ class SupplierCore extends ObjectModel
 	public function getLink()
 	{
 		return Tools::link_rewrite($this->name, false);
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-		if (isset($this->id))
-			$fields['id_supplier'] = (int)$this->id;
-		$fields['name'] = pSQL($this->name);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['active'] = (int)$this->active;
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('description', 'meta_title', 'meta_keywords', 'meta_description'));
 	}
 
 	/**
@@ -231,6 +227,7 @@ class SupplierCore extends ObjectModel
 		$nb_days_new_product = Validate::isUnsignedInt(Configuration::get('PS_NB_DAYS_NEW_PRODUCT')) ? Configuration::get('PS_NB_DAYS_NEW_PRODUCT') : 20;
 
 		$sql = 'SELECT p.*, stock.out_of_stock,
+					IFNULL(stock.quantity, 0) as quantity,
 					pl.`description`,
 					pl.`description_short`,
 					pl.`link_rewrite`,
@@ -290,12 +287,20 @@ class SupplierCore extends ObjectModel
 
 	public function getProductsLite($id_lang)
 	{
-		return Db::getInstance()->executeS('
+		$sql = '
 			SELECT p.`id_product`,  pl.`name`
 			FROM `'._DB_PREFIX_.'product` p
-			LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.')
-			WHERE p.`id_supplier` = '.(int)$this->id
-		);
+			LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
+				p.`id_product` = pl.`id_product`
+				AND pl.`id_lang` = '.(int)$id_lang.'
+			)
+			INNER JOIN `'._DB_PREFIX_.'product_supplier` ps ON (
+				ps.`id_product` = p.`id_product`
+				AND ps.`id_supplier` = '.(int)$this->id.'
+			)
+			GROUP BY p.`id_product`';
+
+		return Db::getInstance()->executeS($sql);
 	}
 
 	/*

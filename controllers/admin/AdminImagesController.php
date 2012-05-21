@@ -20,12 +20,12 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10286 $
+*  @version  Release: $Revision: 11723 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminImagesController extends AdminController
+class AdminImagesControllerCore extends AdminController
 {
 	private $start_time = 0;
 	private $max_execution_time = 7200;
@@ -41,7 +41,7 @@ class AdminImagesController extends AdminController
 
 		$this->fieldsDisplay = array(
 			'id_image_type' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-			'name' => array('title' => $this->l('Name'), 'width' => 140, 'size' => 16),
+			'name' => array('title' => $this->l('Name'), 'size' => 16),
 			'width' => array('title' => $this->l('Width'), 'align' => 'right', 'suffix' => ' px', 'width' => 50, 'size' => 5),
 			'height' => array('title' => $this->l('Height'), 'align' => 'right', 'suffix' => ' px', 'width' => 50, 'size' => 5)
 		);
@@ -76,6 +76,17 @@ class AdminImagesController extends AdminController
 					'name' => 'name',
 					'required' => true,
 					'desc' => $this->l('Letters only (e.g., small, medium, large, extra-large)')
+				),
+				array(
+					'type' => 'select',
+					'label' => $this->l('Theme:'),
+					'name' => 'id_theme',
+					'required' => true,
+					'options' => array(
+						'query' => Theme::getThemes(),
+						'id' => 'id_theme',
+						'name' => 'name'
+					)
 				),
 				array(
 					'type' => 'text',
@@ -363,6 +374,8 @@ class AdminImagesController extends AdminController
 				if (preg_match('/^[0-9]*\.jpg$/', $image))
 					foreach ($type AS $k => $imageType)
 					{
+
+						$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
 						// Customizable writing dir
 						$newDir = $dir;
 						if ($imageType['name'] == 'thumb_scene')
@@ -370,7 +383,7 @@ class AdminImagesController extends AdminController
 						if (!file_exists($newDir))
 							continue;
 						if (!file_exists($newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).'.jpg'))
-							if (!imageResize($dir.$image, $newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+							if (!imageResize($dir.$image, $newDir.substr($image, 0, -4).'-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
 								$errors = true;
 						if (time() - $this->start_time > $this->max_execution_time - 4) // stop 4 seconds before the tiemout, just enough time to process the end of the page on a slow server
 							return 'timeout';
@@ -385,14 +398,16 @@ class AdminImagesController extends AdminController
 				if (file_exists($dir.$imageObj->getExistingImgPath().'.jpg'))
 					foreach ($type AS $k => $imageType)
 					{
+						$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
 						if (!file_exists($dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).'.jpg'))
-							if (!imageResize($dir.$imageObj->getExistingImgPath().'.jpg', $dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+							if (!imageResize($dir.$imageObj->getExistingImgPath().'.jpg', $dir.$imageObj->getExistingImgPath().'-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
 								$errors = true;
 						if (time() - $this->start_time > $this->max_execution_time - 4) // stop 4 seconds before the tiemout, just enough time to process the end of the page on a slow server
 							return 'timeout';
 					}
+			}
 		}
-		}
+
 		return $errors;
 	}
 
@@ -401,15 +416,18 @@ class AdminImagesController extends AdminController
 	{
 		$errors = false;
 		foreach ($type AS $k => $imageType)
+		{
+			$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
 			foreach ($languages AS $language)
 			{
 				$file = $dir.$language['iso_code'].'.jpg';
 				if (!file_exists($file))
 					$file = _PS_PROD_IMG_DIR_.Language::getIsoById((int)(Configuration::get('PS_LANG_DEFAULT'))).'.jpg';
 				if (!file_exists($dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).'.jpg'))
-					if (!imageResize($file, $dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
+					if (!imageResize($file, $dir.$language['iso_code'].'-default-'.stripslashes($imageType['name']).$theme.'.jpg', (int)($imageType['width']), (int)($imageType['height'])))
 						$errors = true;
 			}
+		}
 		return $errors;
 	}
 

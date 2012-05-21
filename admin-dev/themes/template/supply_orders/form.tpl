@@ -74,7 +74,7 @@
 										{$product.reference}
 										<input type="hidden" name="input_check_{$product.id_product}_{$product.id_product_attribute}" value="{$product.checksum}" />
 										<input type="hidden" name="input_reference_{$product.id_product}_{$product.id_product_attribute}" value="{$product.reference}" />
-										<input type="hidden" name="input_id_{$product.id_product}_{$product.id_product_attribute}" value="{$product.id_supply_order_detail}" />
+										<input type="hidden" name="input_id_{$product.id_product}_{$product.id_product_attribute}" value="{if isset($product.id_supply_order_detail)}{$product.id_supply_order_detail}{/if}" />
 									</td>
 									<td>
 										{$product.ean13}
@@ -216,7 +216,7 @@
 			// set autocomplete on search field
 			$('#cur_product_name').autocomplete("ajax-tab.php", {
 				delay: 100,
-				minChars: 4,
+				minChars: 3,
 				autoFill: true,
 				max:20,
 				matchContains: true,

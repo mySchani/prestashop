@@ -32,19 +32,17 @@ class PageCore extends ObjectModel
 
 	public $name;
 
-	protected $fieldsRequired = array ('id_page_type');
-	protected $fieldsValidate = array ('id_page_type' => 'isUnsignedId', 'id_object' => 'isUnsignedId');
-
-	protected $table = 'page';
-	protected $identifier = 'id_page';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_page_type'] = (int)($this->id_page_type);
-		$fields['id_object'] = (int)($this->id_object);
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'page',
+		'primary' => 'id_page',
+		'fields' => array(
+			'id_page_type' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_object' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+		),
+	);
 
 	/**
 	 * @return int Current page ID
@@ -72,7 +70,7 @@ class PageCore extends ObjectModel
 		{
 			$objectID = Tools::getValue($specialArray[$controller], null);
 			$where = ' AND `id_object` = '.(int)$objectID;
-			$insertData['id_object'] = $objectID;
+			$insertData['id_object'] = (int)$objectID;
 		}
 
 		$sql = 'SELECT `id_page`
@@ -115,7 +113,7 @@ class PageCore extends ObjectModel
 				SET `counter` = `counter` + 1
 				WHERE `id_date_range` = '.(int)$id_date_range.'
 					AND `id_page` = '.(int)$id_page.'
-					AND `id_shop` = '.$context->shop->getID();
+					AND `id_shop` = '.(int)$context->shop->getID();
 		Db::getInstance()->execute($sql);
 
 		// If no one has seen the page in this date range, it is added
@@ -124,8 +122,8 @@ class PageCore extends ObjectModel
 				'id_date_range' =>	(int)$id_date_range,
 				'id_page' =>		(int)$id_page,
 				'counter' =>		1,
-				'id_shop' =>		$context->shop->getID(),
-				'id_group_shop' =>	$context->shop->getGroupID(),
+				'id_shop' =>		(int)$context->shop->getID(),
+				'id_group_shop' =>	(int)$context->shop->getGroupID(),
 			), 'INSERT');
 	}
 }

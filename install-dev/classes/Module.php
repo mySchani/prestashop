@@ -608,7 +608,7 @@ abstract class Module
 	{
 		$db = Db::getInstance();
 
-		$module_list_xml = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'modules_list.xml';
+		$module_list_xml = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'xml'.DIRECTORY_SEPARATOR.'modules_list.xml';
 		$nativeModules = simplexml_load_file($module_list_xml);
 		$nativeModules = $nativeModules->modules;
 		foreach ($nativeModules as $nativeModulesType)
@@ -666,17 +666,17 @@ abstract class Module
 		if (!isset(self::$_hookModulesCache))
 		{
 			$db = Db::getInstance(_PS_USE_SQL_SLAVE_);
-			$result = $db->executeS('
+			$results = $db->executeS('
 			SELECT h.`name` as hook, m.`id_module`, h.`id_hook`, m.`name` as module, h.`live_edit`
 			FROM `'._DB_PREFIX_.'module` m
 			LEFT JOIN `'._DB_PREFIX_.'hook_module` hm ON hm.`id_module` = m.`id_module`
 			LEFT JOIN `'._DB_PREFIX_.'hook` h ON hm.`id_hook` = h.`id_hook`
 			AND m.`active` = 1
-			ORDER BY hm.`position`', false);
+			ORDER BY hm.`position`');
 			self::$_hookModulesCache = array();
 
-			if ($result)
-				while ($row = $db->nextRow())
+			if ($results)
+				foreach ($results as $row)
 				{
 					$row['hook'] = strtolower($row['hook']);
 					if (!isset(self::$_hookModulesCache[$row['hook']]))

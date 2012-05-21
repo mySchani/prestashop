@@ -37,40 +37,31 @@ class CMSCore extends ObjectModel
 	public $position;
 	public $active;
 
- 	protected $fieldsValidate = array('id_cms_category' => 'isUnsignedInt');
-	protected $fieldsRequiredLang = array('meta_title', 'link_rewrite');
-	protected $fieldsSizeLang = array('meta_description' => 255, 'meta_keywords' => 255, 'meta_title' => 128, 'link_rewrite' => 128, 'content' => 3999999999999);
-	protected $fieldsValidateLang = array('meta_description' => 'isGenericName', 'meta_keywords' => 'isGenericName', 'meta_title' => 'isGenericName', 'link_rewrite' => 'isLinkRewrite', 'content' => 'isString');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'cms',
+		'primary' => 'id_cms',
+		'multilang' => true,
+		'fields' => array(
+			'id_cms_category' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'position' => 			array('type' => self::TYPE_INT),
+			'active' => 			array('type' => self::TYPE_BOOL),
 
-	protected $table = 'cms';
-	protected $identifier = 'id_cms';
+			// Lang fields
+			'meta_description' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+			'meta_keywords' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255),
+			'meta_title' =>			array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 128),
+			'link_rewrite' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isLinkRewrite', 'required' => true, 'size' => 128),
+			'content' => 			array('type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isString', 'size' => 3999999999999),
+		),
+	);
 
 	protected	$webserviceParameters = array(
 		'objectNodeName' => 'content',
 		'objectsNodeName' => 'content_management_system',
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_cms'] = (int)($this->id);
-		$fields['id_cms_category'] = (int)($this->id_cms_category);
-		$fields['position'] = (int)($this->position);
-		$fields['active'] = (int)($this->active);
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array(
-			'meta_description',
-			'meta_keywords',
-			'meta_title',
-			'link_rewrite',
-			'content' => array('html' => true),
-		));
-	}
 
 	public function add($autodate = true, $nullValues = false)
 	{
@@ -194,9 +185,9 @@ class CMSCore extends ObjectModel
 	{
 		$sql = new DbQuery();
 		$sql->select('*');
-		$sql->from('cms c');
+		$sql->from('cms', 'c');
 		if ($id_lang)
-			$sql->innerJoin('cms_lang l ON c.id_cms = l.id_cms AND l.id_lang = '.(int)$id_lang);
+			$sql->innerJoin('cms_lang', 'l', 'c.id_cms = l.id_cms AND l.id_lang = '.(int)$id_lang);
 
 		if ($active)
 			$sql->where('c.active = 1');

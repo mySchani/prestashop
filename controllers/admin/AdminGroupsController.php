@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminGroupsController extends AdminController
+class AdminGroupsControllerCore extends AdminController
 {
 	public function __construct()
 	{
@@ -50,11 +50,41 @@ class AdminGroupsController extends AdminController
 		);
 
 		$this->fieldsDisplay = array(
-			'id_group' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-			'name' => array('title' => $this->l('Name'), 'width' => 80, 'filter_key' => 'b!name'),
-			'reduction' => array('title' => $this->l('Discount'), 'width' => 50, 'align' => 'right'),
-			'nb' => array('title' => $this->l('Members'), 'width' => 25, 'align' => 'center'),
-			'date_add' => array('title' => $this->l('Creation date'), 'width' => 60, 'type' => 'date', 'align' => 'right'));
+			'id_group' => array(
+				'title' => $this->l('ID'),
+				'align' => 'center',
+				'width' => 25
+			),
+			'name' => array(
+				'title' => $this->l('Name'),
+				'filter_key' => 'b!name'
+			),
+			'reduction' => array(
+				'title' => $this->l('Discount'),
+				'width' => 50,
+				'align' =>
+				'right'
+			),
+			'nb' => array(
+				'title' => $this->l('Members'),
+				'width' => 25,
+				'align' => 'center'
+			),
+			'show_prices' => array(
+				'title' => $this->l('Show prices'),
+				'width' => 25,
+				'align' => 'center',
+				'type' => 'bool',
+				'callback' => 'printShowPricesIcon',
+				'orderby' => false
+			),
+			'date_add' => array(
+				'title' => $this->l('Creation date'),
+				'width' => 150,
+				'type' => 'date',
+				'align' => 'right'
+			)
+		);
 
 		$this->addRowActionSkipList('delete', $groups_to_keep);
 
@@ -68,7 +98,17 @@ class AdminGroupsController extends AdminController
 		$this->addJqueryUi('ui.sortable');
 	}
 
-	public function initView()
+	public function initProcess()
+	{
+		$this->id_object = Tools::getValue('id_'.$this->table);
+
+		if (Tools::isSubmit('changeShowPricesVal') && $this->id_object)
+			$this->action = 'change_show_prices_val';
+
+		parent::initProcess();
+	}
+
+	public function renderView()
 	{
 		$this->context = Context::getContext();
 		if (!($group = $this->loadObject(true)))
@@ -76,14 +116,15 @@ class AdminGroupsController extends AdminController
 
 		$this->tpl_view_vars = array(
 			'group' => $group,
-			'customerList' => $this->initCustomersList($group),
+			'language' => $this->context->language,
+			'customerList' => $this->renderCustomersList($group),
 			'categorieReductions' => $this->formatCategoryDiscountList($group->id)
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
-	protected function initCustomersList($group)
+	protected function renderCustomersList($group)
 	{
 		$genders = array(0 => $this->l('?'));
 		foreach (Gender::getGenders() as $gender)
@@ -116,7 +157,7 @@ class AdminGroupsController extends AdminController
 		return $helper->generateList($customer_list, $customer_fields_display);
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		if (!($group = $this->loadObject(true)))
 			return;
@@ -156,16 +197,37 @@ class AdminGroupsController extends AdminController
 						'query' => array(
 							array(
 								'id_method' => PS_TAX_EXC,
-								'name' => $this->l('Tax excluded'),
-								array(
-									'id_method' => PS_TAX_INC,
-									'name' => $this->l('Tax included')
-								)
+								'name' => $this->l('Tax excluded')
+							),
+							array(
+								'id_method' => PS_TAX_INC,
+								'name' => $this->l('Tax included')
 							)
 						),
 						'id' => 'id_method',
 						'name' => 'name'
 					)
+				),
+				array(
+					'type' => 'radio',
+					'label' => $this->l('Show prices:'),
+					'name' => 'show_prices',
+					'required' => false,
+					'class' => 't',
+					'is_bool' => true,
+					'values' => array(
+						array(
+							'id' => 'show_prices_on',
+							'value' => 1,
+							'label' => $this->l('Enabled')
+						),
+						array(
+							'id' => 'show_prices_off',
+							'value' => 0,
+							'label' => $this->l('Disabled')
+						)
+					),
+					'desc' => $this->l('Customers in this group can view price')
 				),
 				array(
 					'type' => 'group_discount_category',
@@ -194,7 +256,7 @@ class AdminGroupsController extends AdminController
 		);
 		$this->tpl_form_vars['categoryTreeView'] = Helper::renderAdminCategorieTree($trads, array(), 'id_category', true);
 
-		return parent::initForm();
+		return parent::renderForm();
 
 	}
 
@@ -268,33 +330,24 @@ class AdminGroupsController extends AdminController
 
 		$unauth_modules_tmp = array();
 		foreach ($unauth_modules as $key => $val)
-			$unauth_modules_tmp[] = Module::getInstanceById($val['id_module']);
+			if (($tmp_obj = Module::getInstanceById($val['id_module'])))
+				$unauth_modules_tmp[] = $tmp_obj;
 
 		$unauth_modules = $unauth_modules_tmp;
 
 		return array('unauth_modules' => $unauth_modules, 'auth_modules' => $auth_modules);
 	}
 
-	public function postProcess()
+	public function processSave($token)
 	{
-		if (Tools::isSubmit('submitAddgroup'))
-		{
-			if ($this->tabAccess['add'] === '1')
-			{
-				if (!$this->validateDiscount(Tools::getValue('reduction')))
-					$this->_errors[] = Tools::displayError('Discount value is incorrect (must be a percentage)');
-				else
-				{
-					$this->updateCategoryReduction();
-					$this->updateRestrictions();
-					parent::postProcess();
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
+		if (!$this->validateDiscount(Tools::getValue('reduction')))
+			$this->_errors[] = Tools::displayError('Discount value is incorrect (must be a percentage)');
 		else
-			parent::postProcess();
+		{
+			$this->updateCategoryReduction();
+			$this->updateRestrictions();
+			parent::processSave($token);
+		}
 	}
 
 	protected function validateDiscount($reduction)
@@ -337,16 +390,13 @@ class AdminGroupsController extends AdminController
 	protected function updateRestrictions()
 	{
 		$id_group = Tools::getValue('id_group');
-		$unauth_modules = Tools::getValue('modulesBoxUnauth');
 		$auth_modules = Tools::getValue('modulesBoxAuth');
 		$return = true;
 		if ($id_group)
 			Group::truncateModulesRestrictions((int)$id_group);
-
+		$shops = Shop::getShops(true, null, true);
 		if (is_array($auth_modules))
-			$return &= Group::addModulesRestrictions($id_group, $auth_modules, 1);
-		if (is_array($unauth_modules))
-			$return &= Group::addModulesRestrictions($id_group, $unauth_modules, 0);
+			$return &= Group::addModulesRestrictions($id_group, $auth_modules, $shops);
 		return $return;
 	}
 
@@ -381,5 +431,55 @@ class AdminGroupsController extends AdminController
 				}
 			}
 		}
+	}
+
+	/**
+	 * Toggle show prices flag
+	 *
+	 * @param string $token
+	 */
+	public function processChangeShowPricesVal($token)
+	{
+		$group = new Group($this->id_object);
+		if (!Validate::isLoadedObject($group))
+			$this->_errors[] = Tools::displayError('An error occurred while updating group.');
+		$update = Db::getInstance()->execute('UPDATE `'._DB_PREFIX_.'group` SET show_prices = '.($group->show_prices ? 0 : 1).' WHERE `id_group` = '.(int)$group->id);
+		if (!$update)
+			$this->_errors[] = Tools::displayError('An error occurred while updating group.');
+		Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token);
+	}
+
+	/**
+	 * Print enable / disable icon for show prices option
+	 * @static
+	 * @param $id_group integer Group ID
+	 * @param $tr array Row data
+	 * @return string HTML link and icon
+	 */
+	public static function printShowPricesIcon($id_group, $tr)
+	{
+		$group = new Group($tr['id_group']);
+		if (!Validate::isLoadedObject($group))
+			return;
+		return '<a href="index.php?tab=AdminGroups&id_group='.(int)$group->id.'&changeShowPricesVal&token='.Tools::getAdminTokenLite('AdminGroups').'">
+				'.($group->show_prices ? '<img src="../img/admin/enabled.gif" />' : '<img src="../img/admin/disabled.gif" />').
+			'</a>';
+	}
+
+	public function renderList()
+	{
+		$unidentified = new Group(Configuration::get('PS_UNIDENTIFIED_GROUP'));
+		$guest = new Group(Configuration::get('PS_GUEST_GROUP'));
+		$default = new Group(Configuration::get('PS_CUSTOMER_GROUP'));
+
+		$unidentified_group_information = sprintf($this->l('%s - This group is for visitors.'), "<b>".$unidentified->name[$this->context->language->id]."</b>");
+		$guest_group_information = sprintf($this->l('%s - This group is for the guest customers. They have ordered a cart as guest.'), "<b>".$guest->name[$this->context->language->id]."</b>");
+		$default_group_information = sprintf($this->l('%s - This group is the default group customer.'), "<b>".$default->name[$this->context->language->id]."</b>");
+
+		$this->displayInformation($this->l('You have now three default customer groups.'));
+		$this->displayInformation($unidentified_group_information);
+		$this->displayInformation($guest_group_information);
+		$this->displayInformation($default_group_information);
+		return parent::renderList();
 	}
 }

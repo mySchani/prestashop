@@ -36,13 +36,18 @@ class WebserviceKeyCore extends ObjectModel
 	/** @var string Webservice Account description */
 	public $description;
 
- 	protected $fieldsRequired = array('key');
- 	protected $fieldsSize = array('key' => 32);
- 	protected $fieldsValidate = array('active' => 'isBool');
-
-	protected $table = 'webservice_account';
-	protected $identifier = 'id_webservice_account';
-
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'webservice_account',
+		'primary' => 'id_webservice_account',
+		'fields' => array(
+			'active' =>			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'key' => 			array('type' => self::TYPE_STRING, 'required' => true, 'size' => 32),
+			'description' => 	array('type' => self::TYPE_STRING),
+		),
+	);
 
 	public function add($autodate = true, $nullValues = false)
 	{
@@ -56,16 +61,6 @@ class WebserviceKeyCore extends ObjectModel
 		return (!Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('SELECT `key`
 			FROM '._DB_PREFIX_.'webservice_account
 			WHERE `key` = \''.pSQL($key).'\'') ? false : true);
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['key'] = pSQL($this->key);
-		$fields['active'] = (int)$this->active;
-		$fields['description'] = pSQL($this->description);
-		return $fields;
 	}
 
 	public function delete()

@@ -26,6 +26,7 @@
 */
 
 define('_PS_MODE_DEV_', true);
+define('_PS_DEBUG_PROFILING_', false);
 define('_PS_MODE_DEMO_', false);
 
 $currentDir = dirname(__FILE__);
@@ -119,9 +120,9 @@ define('_PS_ADMIN_PROFILE_', 1);
 define('_STOCK_MOVEMENT_ORDER_REASON_', 3);
 define('_STOCK_MOVEMENT_MISSING_REASON_', 4);
 
-/** 
+/**
  * @deprecated 1.5.0.1
- * @see Group::CUSTOMER 
+ * @see Group::CUSTOMER
  */
 define('_PS_DEFAULT_CUSTOMER_GROUP_', 3);
 
@@ -136,5 +137,9 @@ define('MIN_PASSWD_LENGTH', 8);
 define('_PS_SMARTY_NO_COMPILE_', 0);
 define('_PS_SMARTY_CHECK_COMPILE_', 1);
 define('_PS_SMARTY_FORCE_COMPILE_', 2);
+
+define('_PS_SMARTY_CONSOLE_CLOSE_', 0);
+define('_PS_SMARTY_CONSOLE_OPEN_BY_URL_', 1);
+define('_PS_SMARTY_CONSOLE_OPEN_', 2);
 
 define('_PS_JQUERY_VERSION_', '1.4.4');

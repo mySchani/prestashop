@@ -59,35 +59,25 @@ class ProductDownloadCore extends ObjectModel
 
 	protected static $_productIds = array();
 
-	protected	$fieldsRequired = array(
-		'id_product'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'product_download',
+		'primary' => 'id_product_download',
+		'fields' => array(
+			'id_product' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product_attribute' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'display_filename' => 		array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 255),
+			'filename' => 				array('type' => self::TYPE_STRING, 'validate' => 'isSha1', 'size' => 255),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_expiration' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'nb_days_accessible' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'size' => 10),
+			'nb_downloadable' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'size' => 10),
+			'active' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'is_shareable' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
 	);
-
-	protected	$fieldsSize = array(
-		'display_filename' => 255,
-		'filename' => 255,
-		'date_add' => 20,
-		'date_expiration' => 20,
-		'nb_days_accessible' => 10,
-		'nb_downloadable' => 10,
-		'active' => 1,
-		'is_shareable' => 1
-	);
-	protected	$fieldsValidate = array(
-		'id_product' => 'isUnsignedId',
-		'id_product_attribute ' => 'isUnsignedId',
-		'display_filename' => 'isGenericName',
-		'filename' => 'isSha1',
-		'date_add' => 'isDate',
-		'date_expiration' => 'isDate',
-		'nb_days_accessible' => 'isUnsignedInt',
-		'nb_downloadable' => 'isUnsignedInt',
-		'active' => 'isUnsignedInt',
-		'is_shareable' => 'isUnsignedInt'
-	);
-
-	protected $table = 'product_download';
-	protected $identifier = 'id_product_download';
 
 	/**
 	 * Build a virtual product
@@ -98,6 +88,19 @@ class ProductDownloadCore extends ObjectModel
 	{
 		parent::__construct($id_product_download);
 		// @TODO check if the file is present on hard drive
+	}
+
+	/**
+	 * @see ObjectModel::getFields()
+	 * @return array
+	 */
+	public function getFields()
+	{
+		$fields = parent::getFields();
+		if (!$fields['date_expiration'])
+			$fields['date_expiration'] = '0000-00-00 00:00:00';
+
+		return $fields;
 	}
 
 	public function add($autodate = true, $nullValues = false)
@@ -117,7 +120,7 @@ class ProductDownloadCore extends ObjectModel
 		if (parent::update($nullValues))
 		{
 			// Refresh cache of feature detachable because the row can be deactive
-			Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+			Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', self::isCurrentlyUsed($this->def['table'], true));
 			return true;
 		}
 		return false;
@@ -128,26 +131,6 @@ class ProductDownloadCore extends ObjectModel
 		if ($deleteFile)
 			return $this->deleteFile();
 		return true;
-	}
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$date_expiration = $this->date_expiration;
-		if (!$date_expiration)
-			$date_expiration = '0000-00-00 00:00:00';
-
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_product_attribute'] = pSQL($this->id_product_attribute);
-		$fields['display_filename'] = pSQL($this->display_filename);
-		$fields['filename'] = pSQL($this->filename);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_expiration'] = pSQL($date_expiration);
-		$fields['nb_days_accessible'] = (int)$this->nb_days_accessible;
-		$fields['nb_downloadable'] = (int)$this->nb_downloadable;
-		$fields['active'] = (int)$this->active;
-		$fields['is_shareable'] = (int)$this->is_shareable;
-		return $fields;
 	}
 
 	/**
@@ -244,6 +227,23 @@ class ProductDownloadCore extends ObjectModel
 		SELECT `id_product_download`
 		FROM `'._DB_PREFIX_.'product_download`
 		WHERE `id_product` = '.(int)$id_product.' AND `active` = 1');
+	}
+	
+	/**
+	 * Return the result from an id_product_attribute
+	 *
+	 * @param int $id_product Product the id
+	 * @param int $id_product_attribute Attribute the id
+	 * @return array result for this virtual product
+	 */
+	public static function getAttributeFromIdAttribute($id_product, $id_product_attribute)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		SELECT *
+		FROM `'._DB_PREFIX_.'product_download`
+		WHERE `id_product` = '.(int)$id_product.'
+		AND `id_product_attribute` = '.(int)$id_product_attribute.'
+		AND `active` = 1');
 	}
 
 	/**

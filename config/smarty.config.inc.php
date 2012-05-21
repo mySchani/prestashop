@@ -31,14 +31,21 @@ require_once(_PS_SMARTY_DIR_.'Smarty.class.php');
 
 global $smarty;
 $smarty = new Smarty();
-$smarty->compile_dir = _PS_CACHE_DIR_.'smarty/compile';
-$smarty->cache_dir = _PS_CACHE_DIR_.'smarty/cache';
-$smarty->config_dir = _PS_SMARTY_DIR_.'configs';
+$smarty->setCompileDir(_PS_CACHE_DIR_.'smarty/compile');
+$smarty->setCacheDir(_PS_CACHE_DIR_.'smarty/cache');
+$smarty->setConfigDir(_PS_SMARTY_DIR_.'configs');
 $smarty->caching = false;
 $smarty->force_compile = (Configuration::get('PS_SMARTY_FORCE_COMPILE') == _PS_SMARTY_FORCE_COMPILE_) ? true : false;
 $smarty->compile_check = (Configuration::get('PS_SMARTY_FORCE_COMPILE') == _PS_SMARTY_CHECK_COMPILE_) ? true : false;
+
+// Production mode
 $smarty->debugging = false;
-$smarty->debugging_ctrl = 'URL'; // 'NONE' on production
+$smarty->debugging_ctrl = 'NONE';
+
+if (Configuration::get('PS_SMARTY_CONSOLE') == _PS_SMARTY_CONSOLE_OPEN_BY_URL_)
+	$smarty->debugging_ctrl = 'URL';
+else if (Configuration::get('PS_SMARTY_CONSOLE') == _PS_SMARTY_CONSOLE_OPEN_)
+	$smarty->debugging = true;
 
 if (defined('_PS_ADMIN_DIR_'))
 	require_once (dirname(__FILE__).'/smartyadmin.config.inc.php');
@@ -58,6 +65,7 @@ smartyRegisterFunction($smarty, 'function', 'm', 'smartyMaxWords'); // unused
 smartyRegisterFunction($smarty, 'function', 'p', 'smartyShowObject'); // Debug only
 smartyRegisterFunction($smarty, 'function', 'd', 'smartyDieObject'); // Debug only
 smartyRegisterFunction($smarty, 'function', 'l', 'smartyTranslate');
+smartyRegisterFunction($smarty, 'function', 'hook', 'smartyHook');
 
 smartyRegisterFunction($smarty, 'function', 'dateFormat', array('Tools', 'dateFormat'));
 smartyRegisterFunction($smarty, 'function', 'convertPrice', array('Product', 'convertPrice'));
@@ -142,4 +150,10 @@ function smartyRegisterFunction($smarty, $type, $function, $params)
 	if (!in_array($type, array('function', 'modifier')))
 		return false;
 	$smarty->registerPlugin($type, $function, $params);
+}
+
+function smartyHook($params, &$smarty)
+{
+	if (isset($params['h']) && !empty($params['h']))
+		return Hook::exec($params['h']);
 }

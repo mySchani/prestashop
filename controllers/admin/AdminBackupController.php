@@ -44,6 +44,8 @@ class AdminBackupControllerCore extends AdminController
 			'filesize' => array('title' => $this->l('File size'))
 		);
 
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		$this->options = array(
 			'general' => array(
 				'title' =>	$this->l('Backup options'),
@@ -69,16 +71,15 @@ class AdminBackupControllerCore extends AdminController
 		);
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('view');
 		$this->addRowAction('delete');
-		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		if (!($object = $this->loadObject()))
 			$this->_errors[] = Tools::displayError('The object could not be loaded.');
@@ -88,14 +89,14 @@ class AdminBackupControllerCore extends AdminController
 		else if ($object->error)
 			$this->_errors[] = $object->error;
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initViewDownload()
 	{
 		$this->tpl_folder = $this->tpl_folder.'download/';
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initToolbar()
@@ -129,18 +130,19 @@ class AdminBackupControllerCore extends AdminController
 			// Some controllers use the view action without an object
 			if ($this->className)
 				$this->loadObject(true);
-			$this->content .= $this->initView();
+			$this->content .= $this->renderView();
 		}
 		else if (!$this->ajax)
 		{
-			$this->content .= $this->initList();
-			$this->content .= $this->initOptions();
+			$this->content .= $this->renderList();
+			$this->content .= $this->renderOptions();
 		}
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
 			'url_post' => self::$currentIndex.'&token='.$this->token,
 		));
+		parent::initContent();
 	}
 
 	/**

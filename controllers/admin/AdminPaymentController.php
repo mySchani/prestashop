@@ -86,16 +86,25 @@ class AdminPaymentControllerCore extends AdminController
 
 	public function postProcess()
 	{
+		if ($this->action)
+			$this->saveRestrictions($this->action);
+	}
+
+	public function initProcess()
+	{
 		if ($this->tabAccess['edit'] === '1')
 		{
 			if (Tools::isSubmit('submitModulecountry'))
-				$this->saveRestrictions('country');
+				$this->action = 'country';
 			else if (Tools::isSubmit('submitModulecurrency'))
-				$this->saveRestrictions('currency');
+				$this->action ='currency';
 			else if (Tools::isSubmit('submitModulegroup'))
-				$this->saveRestrictions('group');
+				$this->action ='group';
 		}
+		else
+			$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
 	}
+
 
 	private function saveRestrictions($type)
 	{
@@ -116,7 +125,7 @@ class AdminPaymentControllerCore extends AdminController
 		return parent::initContent();
 	}
 
-	public function initView()
+	public function renderView()
 	{	
 		// link to modules page
 		if (isset($this->payment_modules[0]))
@@ -191,8 +200,8 @@ class AdminPaymentControllerCore extends AdminController
 		);
 
 		$this->toolbar_title = $this->l('Paiement');
-		unset($this->toolbar_btn['cancel']);
-		return parent::initView();
+		unset($this->toolbar_btn['back']);
+		return parent::renderView();
 	}
 }
 

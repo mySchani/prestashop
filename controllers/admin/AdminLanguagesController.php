@@ -90,6 +90,9 @@ class AdminLanguagesControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+	 	$this->specificConfirmDelete = $this->l('When you delete a language, ALL RELATED TRANSLATIONS IN THE DATABASE WILL BE DELETED, are you sure you want to delete this language?', __CLASS__, true, false);
+
 		$this->options = array(
 			'general' => array(
 				'title' =>	$this->l('Languages options'),
@@ -110,19 +113,16 @@ class AdminLanguagesControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-	 	$this->specificConfirmDelete = $this->l('When you delete a language, ALL RELATED TRANSLATIONS IN THE DATABASE WILL BE DELETED, are you sure you want to delete this language?', __CLASS__, true, false);
-
 		$this->displayWarning($this->l('When you delete a language, all related translations in the database will be deleted.'));
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -290,7 +290,7 @@ class AdminLanguagesControllerCore extends AdminController
 
 		$this->addJS(_PS_JS_DIR_.'checkLangPack.js');
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -433,11 +433,12 @@ class AdminLanguagesControllerCore extends AdminController
 					$images_types = ImageType::getImagesTypes('products');
 					foreach ($images_types as $k => $image_type)
 					{
-						if (!imageResize($tmp_name, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+						$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
+						if (!imageResize($tmp_name, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
 							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your product directory.');
-						if (!imageResize($tmp_name, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+						if (!imageResize($tmp_name, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
 							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your category directory.');
-						if (!imageResize($tmp_name, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+						if (!imageResize($tmp_name, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
 							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your manufacturer directory.');
 					}
 				}

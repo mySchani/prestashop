@@ -49,29 +49,31 @@ class ProductSupplierCore extends ObjectModel
 	 * */
 	public $product_supplier_reference;
 
- 	protected $fieldsRequired = array('id_product', 'id_product_attribute', 'id_supplier');
- 	protected $fieldsSize = array('supplier_reference' => 32);
- 	protected $fieldsValidate = array(
- 		'product_supplier_reference' => 'isReference',
- 		'id_product' => 'isUnsignedId',
- 		'id_product_attribute' => 'isUnsignedId',
- 		'id_supplier' => 'isUnsignedId',
- 	);
+	/**
+	 * @var integer the currency ID for unit price tax excluded
+	 * */
+	public $id_currency;
 
-	protected $table = 'product_supplier';
-	protected $identifier = 'id_product_supplier';
+	/**
+	 * @var string The unit price tax excluded of the product
+	 * */
+	public $product_supplier_price_te;
 
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_product_attribute'] = (int)$this->id_product_attribute;
-		$fields['id_supplier'] = (int)$this->id_supplier;
-		$fields['product_supplier_reference'] = pSQL($this->product_supplier_reference);
-
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'product_supplier',
+		'primary' => 'id_product_supplier',
+		'fields' => array(
+			'product_supplier_reference' => array('type' => self::TYPE_STRING, 'validate' => 'isReference', 'size' => 32),
+			'id_product' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product_attribute' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_supplier' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'product_supplier_price_te' => 	array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'id_currency' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+		),
+	);
 
 	/**
 	 * For a given product and supplier, get the product reference
@@ -86,7 +88,29 @@ class ProductSupplierCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('ps.product_supplier_reference');
-		$query->from('product_supplier ps');
+		$query->from('product_supplier', 'ps');
+		$query->where('ps.id_product = '.(int)$id_product.'
+			AND ps.id_product_attribute = '.(int)$id_product_attribute.'
+			AND ps.id_supplier = '.(int)$id_supplier
+		);
+
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+	}
+
+	/**
+	 * For a given product and supplier, get the product unit price
+	 *
+	 * @param int $id_product
+	 * @param int $id_product_attribute
+	 * @param int $id_supplier
+	 * @return array
+	 */
+	public static function getProductSupplierPrice($id_product, $id_product_attribute, $id_supplier)
+	{
+		// build query
+		$query = new DbQuery();
+		$query->select('ps.product_supplier_price_te');
+		$query->from('product_supplier', 'ps');
 		$query->where('ps.id_product = '.(int)$id_product.'
 			AND ps.id_product_attribute = '.(int)$id_product_attribute.'
 			AND ps.id_supplier = '.(int)$id_supplier
@@ -108,7 +132,7 @@ class ProductSupplierCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('ps.id_product_supplier');
-		$query->from('product_supplier ps');
+		$query->from('product_supplier', 'ps');
 		$query->where('ps.id_product = '.(int)$id_product.'
 			AND ps.id_product_attribute = '.(int)$id_product_attribute.'
 			AND ps.id_supplier = '.(int)$id_supplier
@@ -122,22 +146,17 @@ class ProductSupplierCore extends ObjectModel
 	 *
 	 * @param int $id_product
 	 * @param int $group_by_supplier
-	 * @return array
+	 * @return Collection
 	 */
 	public static function getSupplierCollection($id_product, $group_by_supplier = true)
 	{
-		// build query
-		$query = new DbQuery();
-		$query->select('*');
-		$query->from('product_supplier ps');
-		$query->where('ps.id_product = '.(int)$id_product);
+		$suppliers = new Collection('ProductSupplier');
+		$suppliers->where('id_product', '=', $id_product);
 
 		if ($group_by_supplier)
-			$query->groupBy('ps.id_supplier');
+			$suppliers->groupBy('id_supplier');
 
-		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
-
-		return ObjectModel::hydrateCollection('ProductSupplier', $results);
+		return $suppliers;
 	}
 
 	public function delete()
@@ -147,7 +166,7 @@ class ProductSupplierCore extends ObjectModel
 		if ($res && $this->id_product_attribute == 0)
 		{
 			$items = self::getSupplierCollection($this->id_product, false);
-			foreach ($items as &$item)
+			foreach ($items as $item)
 			{
 				if ($item->id_product_attribute > 0)
 					$item->delete();
@@ -155,5 +174,26 @@ class ProductSupplierCore extends ObjectModel
 		}
 
 		return $res;
+	}
+
+	/**
+	 * For a given Supplier, Product, returns the purchased price
+	 *
+	 * @param int $id_product
+	 * @param int $id_product_attribute Optional
+	 * @return Array keys: price_te, id_currency
+	 */
+	public static function getProductPrice($id_supplier, $id_product, $id_product_attribute = 0)
+	{
+		if (is_null($id_supplier) || is_null($id_product))
+			return;
+
+		$query = new DbQuery();
+		$query->select('product_supplier_price_te as price_te, id_currency');
+		$query->from('product_supplier');
+		$query->where('id_product = '.(int)$id_product.' AND id_product_attribute = '.(int)$id_product_attribute);
+		$query->where('id_supplier = '.(int)$id_supplier);
+
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($query);
 	}
 }

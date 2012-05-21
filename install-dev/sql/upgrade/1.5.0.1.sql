@@ -1,5 +1,32 @@
 SET NAMES 'utf8';
 
+CREATE TABLE IF NOT EXISTS `PREFIX_module_access` (
+  `id_profile` int(10) unsigned NOT NULL,
+  `id_module` int(10) unsigned NOT NULL,
+  `view` tinyint(1) NOT NULL,
+  `configure` tinyint(1) NOT NULL,
+  PRIMARY KEY (`id_profile`,`id_module`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (5);
+
+/* Create SuperAdmin */
+UPDATE `PREFIX_profile_lang` SET `id_profile` = 5 WHERE `id_profile` = 4;
+UPDATE `PREFIX_profile_lang` SET `id_profile` = 4 WHERE `id_profile` = 3;
+UPDATE `PREFIX_profile_lang` SET `id_profile` = 3 WHERE `id_profile` = 2;
+UPDATE `PREFIX_profile_lang` SET `id_profile` = 2 WHERE `id_profile` = 1;
+INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1, 'SuperAdmin'),(1, 2, 'SuperAdmin'),(1, 3, 'SuperAdmin'),(1, 4, 'SuperAdmin'),(1, 5, 'SuperAdmin');
+UPDATE `PREFIX_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
+UPDATE `PREFIX_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
+UPDATE `PREFIX_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
+UPDATE `PREFIX_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
+INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`,	`delete`) (SELECT 1, `id_tab`, 1, 1, 1, 1 FROM `PREFIX_tab`);
+UPDATE `PREFIX_module_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
+UPDATE `PREFIX_module_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
+UPDATE `PREFIX_module_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
+UPDATE `PREFIX_module_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 1, `id_module`, 1, 1 FROM `PREFIX_module`);
+
 CREATE TABLE IF NOT EXISTS `PREFIX_accounting_zone_shop` (
   `id_accounting_zone_shop` int(11) NOT NULL AUTO_INCREMENT,
   `id_zone` int(11) NOT NULL,
@@ -21,27 +48,21 @@ CREATE TABLE IF NOT EXISTS `PREFIX_accounting_product_zone_shop` (
 
 /* PHP:add_accounting_tab(); */;
 
-CREATE TABLE IF NOT EXISTS `PREFIX_module_access` (
-  `id_profile` int(10) unsigned NOT NULL,
-  `id_module` int(10) unsigned NOT NULL,
-  `view` tinyint(1) NOT NULL,
-  `configure` tinyint(1) NOT NULL,
-  PRIMARY KEY (`id_profile`,`id_module`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
-INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (
-	SELECT id_profile, id_module, 0, 1
-	FROM PREFIX_access a, PREFIX_module m
-	WHERE id_tab = (SELECT `id_tab` FROM PREFIX_tab WHERE class_name = 'AdminModules' LIMIT 1)
-	AND a.`view` = 0
-);
+-- INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (
+-- 	SELECT `id_profile`, `id_module`, 0, 1
+-- 	FROM `PREFIX_access` a, PREFIX_module m
+-- 	WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` WHERE `class_name` = 'AdminModules' LIMIT 1)
+-- 	AND a.`view` = 0
+-- );
+--
+-- INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (
+-- 	SELECT `id_profile`, `id_module`, 1, 1
+-- 	FROM `PREFIX_access` a, PREFIX_module m
+-- 	WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` WHERE `class_name` = 'AdminModules' LIMIT 1)
+-- 	AND a.`view` = 1
+-- );
 
-INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (
-	SELECT id_profile, id_module, 1, 1
-	FROM PREFIX_access a, PREFIX_module m
-	WHERE id_tab = (SELECT `id_tab` FROM PREFIX_tab WHERE class_name = 'AdminModules' LIMIT 1)
-	AND a.`view` = 1
-);
 
 UPDATE `PREFIX_tab` SET `class_name` = 'AdminThemes' WHERE `class_name` = 'AdminAppearance';
 
@@ -83,7 +104,7 @@ DROP TABLE `PREFIX_county`;
 
 ALTER TABLE `PREFIX_employee`
 	ADD `id_last_order` tinyint(1) unsigned NOT NULL default '0',
-	ADD `id_last_message` tinyint(1) unsigned NOT NULL default '0',
+	ADD `id_last_customer_message` tinyint(1) unsigned NOT NULL default '0',
 	ADD `id_last_customer` tinyint(1) unsigned NOT NULL default '0';
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES
@@ -196,10 +217,7 @@ ALTER TABLE `PREFIX_product` ADD `is_virtual` TINYINT( 1 ) NOT NULL DEFAULT '0' 
 
 /* PHP:add_new_tab(AdminProducts, fr:Products|es:Products|en:Products|de:Products|it:Products, 1); */;
 /* PHP:add_new_tab(AdminCategories, fr:Categories|es:Categories|en:Categories|de:Categories|it:Categories, 1); */;
-/* PHP:add_new_tab(AdminStocks, fr:Stocks|es:Stocks|en:Stocks|de:Stocks|it:Stocks, 1); */;
 /* PHP:add_default_restrictions_modules_groups(); */;
-
-
 
 CREATE TABLE IF NOT EXISTS `PREFIX_employee_shop` (
 `id_employee` INT( 11 ) UNSIGNED NOT NULL ,
@@ -209,35 +227,14 @@ PRIMARY KEY ( `id_employee` , `id_shop` )
 
 INSERT INTO `PREFIX_employee_shop` (`id_employee`, `id_shop`) (SELECT `id_employee`, 1 FROM `PREFIX_employee`);
 
-UPDATE `PREFIX_access` SET `view` = 0, `add` = 0, `edit` = 0, `delete` = 0 WHERE `id_tab` = 88 AND `id_profile` != 1;
-
-INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (5);
-
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_profile_lang` SET `id_profile` = 2 WHERE `id_profile` = 1;
-
-INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1, 'SuperAdmin'),(1, 2, 'SuperAdmin'),(1, 3, 'SuperAdmin'),(1, 4, 'SuperAdmin'),(1, 5, 'SuperAdmin');
-
-UPDATE `PREFIX_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
-
-UPDATE `PREFIX_module_access` SET `id_profile` = 5 WHERE `id_profile` = 4;
-UPDATE `PREFIX_module_access` SET `id_profile` = 4 WHERE `id_profile` = 3;
-UPDATE `PREFIX_module_access` SET `id_profile` = 3 WHERE `id_profile` = 2;
-UPDATE `PREFIX_module_access` SET `id_profile` = 2 WHERE `id_profile` = 1;
-
-INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 1, `id_module`, 1, 1 FROM `PREFIX_module`);
+UPDATE `PREFIX_access` SET `view` = 0, `add` = 0, `edit` = 0, `delete` = 0 WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` t WHERE t.`class_name` = 'AdminShop' LIMIT 1) AND `id_profile` != 1;
 
 ALTER TABLE `PREFIX_carrier` ADD `position` INT( 10 ) UNSIGNED NOT NULL DEFAULT '0';
 
-/* PHP:add_carrier_position();*/
+/* PHP:add_carrier_position(); */;
 
 ALTER TABLE `PREFIX_order_state` ADD COLUMN `shipped` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0 AFTER `delivery`;
-UPDATE `PREFIX_order_state` SET `shipped` = 1 WHERE id_order_states IN (4, 5);
+UPDATE `PREFIX_order_state` SET `shipped` = 1 WHERE id_order_state IN (4, 5);
 
 CREATE TABLE `PREFIX_order_invoice` (
   `id_order_invoice` int(11) NOT NULL AUTO_INCREMENT,
@@ -419,8 +416,8 @@ INSERT INTO `PREFIX_cart_rule` (
 );
 
 RENAME TABLE `PREFIX_discount_lang` TO `PREFIX_cart_rule_lang`;
-ALTER TABLE `PREFIX_discount_lang` CHANGE `id_discount` `id_cart_rule` int(10) unsigned NOT NULL;
-ALTER TABLE `PREFIX_discount_lang` CHANGE `description` `name` varchar(254) NOT NULL;
+ALTER TABLE `PREFIX_cart_rule_lang` CHANGE `id_discount` `id_cart_rule` int(10) unsigned NOT NULL;
+ALTER TABLE `PREFIX_cart_rule_lang` CHANGE `description` `name` varchar(254) NOT NULL;
 RENAME TABLE `PREFIX_discount_category` TO `PREFIX_cart_rule_product_rule_value`;
 ALTER TABLE `PREFIX_cart_rule_product_rule_value` CHANGE `id_category` `id_item` int(10) unsigned NOT NULL;
 ALTER TABLE `PREFIX_cart_rule_product_rule_value` CHANGE `id_discount` `id_product_rule` int(10) unsigned NOT NULL;
@@ -551,7 +548,7 @@ ALTER TABLE `PREFIX_hook` ADD `is_native` TINYINT( 1 ) NOT NULL DEFAULT '0';
 
 ALTER TABLE `PREFIX_tax` ADD COLUMN `account_number` VARCHAR(64) NOT NULL;
 
-/* PHP:add_new_tab(AdminAttributeGenerator, fr:Générateur de combinaisons|es:Combinations generator|en:Combinations generator|de:Combinations generator|it:Combinations generator, -1); */;
+/* PHP:add_new_tab(AdminAttributeGenerator, fr:Générateur de déclinaisons|es:Combinations generator|en:Combinations generator|de:Combinations generator|it:Combinations generator, -1); */;
 /* PHP:add_new_tab(AdminCMSCategories, fr:Catégories CMS|es:CMS categories|en:CMS categories|de:CMS categories|it:CMS categories, -1); */;
 /* PHP:add_new_tab(AdminCMS, fr:Pages CMS|es:CMS pages|en:CMS pages|de:CMS pages|it:CMS pages, -1); */;
 
@@ -559,45 +556,13 @@ UPDATE `PREFIX_quick_access` SET `link` = 'index.php?controller=AdminCategories&
 
 UPDATE `PREFIX_quick_access` SET `link` = 'index.php?controller=AdminProducts&addproduct' WHERE `id_quick_access` = 4;
 
-UPDATE `PREFIX_access` SET `view` = '1' WHERE `id_profile` = 5 AND `id_tab` = 95;
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('1', '100', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('2', '100', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('3', '100', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('4', '100', '0', '0', '0', '0');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('5', '100', '1', '0', '0', '0');
+UPDATE `PREFIX_access` SET `view` = '0', `add` = '0', `edit` = '0', `delete` = '0' WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` t WHERE t.`class_name` = 'AdminCmsCategories' LIMIT 1) AND `id_profile` = '3';
+UPDATE `PREFIX_access` SET `view` = '0', `add` = '0', `edit` = '0', `delete` = '0' WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` t WHERE t.`class_name` = 'AdminCmsCategories' LIMIT 1) AND `id_profile` = '5';
 
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 93, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-);
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 94, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-);
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 101, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-);
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 102, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-);
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 103, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-);
-INSERT INTO `PREFIX_access` ( `id_profile` , `id_tab` , `view` , `add` , `edit` , `delete` ) (
-	SELECT `id_profile`, 104, 1, 1, 1, 1 FROM `PREFIX_profile` WHERE `id_profile` != 1 AND `id_profile` != 2
-)
+UPDATE `PREFIX_access` SET `view` = '0', `add` = '0', `edit` = '0', `delete` = '0' WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` t WHERE t.`class_name` = 'AdminCms' LIMIT 1) AND `id_profile` = '3';
+UPDATE `PREFIX_access` SET `view` = '0', `add` = '0', `edit` = '0', `delete` = '0' WHERE `id_tab` = (SELECT `id_tab` FROM `PREFIX_tab` t WHERE t.`class_name` = 'AdminCms' LIMIT 1) AND `id_profile` = '5';
 
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('1', '105', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('2', '105', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('3', '105', '0', '0', '0', '0');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('4', '105', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('5', '105', '0', '0', '0', '0');
-
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('1', '106', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('2', '106', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('3', '106', '0', '0', '0', '0');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('4', '106', '1', '1', '1', '1');
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES ('5', '106', '0', '0', '0', '0');
-
-INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) ('PS_CUSTOMER_GROUP', '1', NOW(), NOW());
+INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES ('PS_CUSTOMER_GROUP', '1', NOW(), NOW());
 
 /* PHP:add_new_groups('Non identifié', 'Unidentified'); */;
 /* PHP:add_new_groups('Invité', 'Guest'); */;
@@ -610,16 +575,18 @@ UPDATE `PREFIX_tab` SET `class_name` = 'AdminCmsCategories' WHERE `class_name` =
 UPDATE `PREFIX_tab` SET `class_name` = 'AdminPdf' WHERE `class_name` = 'AdminPDF';
 
 CREATE TABLE `PREFIX_order_carrier` (
+  `id_order_carrier` int(11) NOT NULL AUTO_INCREMENT,
   `id_order` int(11) unsigned NOT NULL,
   `id_carrier` int(11) unsigned NOT NULL,
   `id_order_invoice` int(11) unsigned DEFAULT NULL,
   `weight` float DEFAULT NULL,
   `shipping_cost_tax_excl` decimal(20,6) DEFAULT NULL,
   `shipping_cost_tax_incl` decimal(20,6) DEFAULT NULL,
-  `tracking_number` int(11) unsigned DEFAULT NULL,
+  `tracking_number` varchar(64) DEFAULT NULL,
   `date_add` datetime NOT NULL,
-  KEY `id_order` (`id_order`,`id_carrier`),
-  KEY `id_order_2` (`id_order`),
+  PRIMARY KEY (`id_order_carrier`),
+  KEY `id_order` (`id_order`),
+  KEY `id_carrier` (`id_carrier`),
   KEY `id_order_invoice` (`id_order_invoice`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
@@ -627,3 +594,101 @@ ALTER TABLE `PREFIX_order_slip` ADD COLUMN `amount` DECIMAL(10,2) NOT NULL AFTER
 ALTER TABLE `PREFIX_order_slip` ADD COLUMN `shipping_cost_amount` DECIMAL(10,2) NOT NULL AFTER `amount`;
 ALTER TABLE `PREFIX_order_slip` ADD COLUMN `partial` TINYINT(1) NOT NULL AFTER `shipping_cost_amount`;
 ALTER TABLE `PREFIX_order_slip_detail` ADD COLUMN `amount` DECIMAL(10,2) NOT NULL AFTER `product_quantity`;
+
+INSERT INTO `PREFIX_tab` (`id_parent`, `class_name`, `position`) VALUES (-1, 'AdminLogin', 0);
+
+CREATE TABLE `PREFIX_hook_alias` (
+  `id_hook_alias` int(10) unsigned NOT NULL auto_increment,
+  `alias` varchar(64) NOT NULL,
+  `name` varchar(64) NOT NULL,
+  PRIMARY KEY  (`id_hook_alias`),
+  UNIQUE KEY `alias` (`alias`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+INSERT INTO `PREFIX_hook_alias` (`id_hook_alias`, `name`, `alias`) VALUES
+(1, 'displayPayment', 'payment'),
+(2, 'actionValidateOrder', 'newOrder'),
+(3, 'actionPaymentConfirmation', 'paymentConfirm'),
+(4, 'displayPaymentReturn', 'paymentReturn'),
+(5, 'actionUpdateQuantity', 'updateQuantity'),
+(6, 'displayRightColumn', 'rightColumn'),
+(7, 'displayLeftColumn', 'leftColumn'),
+(8, 'displayHome', 'home'),
+(9, 'displayHeader', 'header'),
+(10, 'actionCartSave', 'cart'),
+(11, 'actionAuthentication', 'authentication'),
+(12, 'actionProductAdd', 'addproduct'),
+(13, 'actionProductUpdate', 'updateproduct'),
+(14, 'displayTop', 'top'),
+(15, 'displayRightColumnProduct', 'extraRight'),
+(16, 'actionProductDelete', 'deleteproduct'),
+(17, 'displayFooterProduct', 'productfooter'),
+(18, 'displayInvoice', 'invoice'),
+(19, 'actionOrderStatusUpdate', 'updateOrderStatus'),
+(20, 'displayAdminOrder', 'adminOrder'),
+(21, 'displayFooter', 'footer'),
+(22, 'displayPDFInvoice', 'PDFInvoice'),
+(23, 'displayAdminCustomers', 'adminCustomers'),
+(24, 'displayOrderConfirmation', 'orderConfirmation'),
+(25, 'actionCustomerAccountAdd', 'createAccount'),
+(26, 'displayCustomerAccount', 'customerAccount'),
+(27, 'actionOrderSlipAdd', 'orderSlip'),
+(28, 'displayProductTab', 'productTab'),
+(29, 'displayProductTabContent', 'productTabContent'),
+(30, 'displayShoppingCartFooter', 'shoppingCart'),
+(31, 'displayCustomerAccountForm', 'createAccountForm'),
+(32, 'displayAdminStatsModules', 'AdminStatsModules'),
+(33, 'displayAdminStatsGraphEngine', 'GraphEngine'),
+(34, 'actionOrderReturn', 'orderReturn'),
+(35, 'displayProductButtons', 'productActions'),
+(36, 'displayBackOfficeHome', 'backOfficeHome'),
+(37, 'displayAdminStatsGridEngine', 'GridEngine'),
+(38, 'actionWatermark', 'watermark'),
+(39, 'actionProductCancel', 'cancelProduct'),
+(40, 'displayLeftColumnProduct', 'extraLeft'),
+(41, 'actionProductOutOfStock', 'productOutOfStock'),
+(42, 'actionProductAttributeUpdate', 'updateProductAttribute'),
+(43, 'displayCarrierList', 'extraCarrier'),
+(44, 'displayShoppingCart', 'shoppingCartExtra'),
+(45, 'actionSearch', 'search'),
+(46, 'displayBeforePayment', 'backBeforePayment'),
+(47, 'actionCarrierUpdate', 'updateCarrier'),
+(48, 'actionOrderStatusPostUpdate', 'postUpdateOrderStatus'),
+(49, 'displayCustomerAccountFormTop', 'createAccountTop'),
+(50, 'displayBackOfficeHeader', 'backOfficeHeader'),
+(51, 'displayBackOfficeTop', 'backOfficeTop'),
+(52, 'displayBackOfficeFooter', 'backOfficeFooter'),
+(53, 'actionProductAttributeDelete', 'deleteProductAttribute'),
+(54, 'actionCarrierProcess', 'processCarrier'),
+(55, 'actionOrderDetail', 'orderDetail'),
+(56, 'displayBeforeCarrier', 'beforeCarrier'),
+(57, 'displayOrderDetail', 'orderDetailDisplayed'),
+(58, 'actionPaymentCCAdd', 'paymentCCAdded'),
+(59, 'displayProductComparison', 'extraProductComparison'),
+(60, 'actionCategoryAdd', 'categoryAddition'),
+(61, 'actionCategoryUpdate', 'categoryUpdate'),
+(62, 'actionCategoryDelete', 'categoryDeletion'),
+(63, 'actionBeforeAuthentication', 'beforeAuthentication'),
+(64, 'displayPaymentTop', 'paymentTop'),
+(65, 'actionHtaccessCreate', 'afterCreateHtaccess'),
+(66, 'actionAdminMetaSave', 'afterSaveAdminMeta'),
+(67, 'displayAttributeGroupForm', 'attributeGroupForm'),
+(68, 'actionAttributeGroupSave', 'afterSaveAttributeGroup'),
+(69, 'actionAttributeGroupDelete', 'afterDeleteAttributeGroup'),
+(70, 'displayFeatureForm', 'featureForm'),
+(71, 'actionFeatureSave', 'afterSaveFeature'),
+(72, 'actionFeatureDelete', 'afterDeleteFeature'),
+(73, 'actionProductSave', 'afterSaveProduct'),
+(74, 'actionProductListOverride', 'productListAssign'),
+(75, 'displayAttributeGroupPostProcess', 'postProcessAttributeGroup'),
+(76, 'displayFeaturePostProcess', 'postProcessFeature'),
+(77, 'displayFeatureValueForm', 'featureValueForm'),
+(78, 'displayFeatureValuePostProcess', 'postProcessFeatureValue'),
+(79, 'actionFeatureValueDelete', 'afterDeleteFeatureValue'),
+(80, 'actionFeatureValueSave', 'afterSaveFeatureValue'),
+(81, 'displayAttributeForm', 'attributeForm'),
+(82, 'actionAttributePostProcess', 'postProcessAttribute'),
+(83, 'actionAttributeDelete', 'afterDeleteAttribute'),
+(84, 'actionAttributeSave', 'afterSaveAttribute'),
+(85, 'actionTaxManager', 'taxManager');
+

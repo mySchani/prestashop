@@ -25,13 +25,11 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-include_once(_PS_ADMIN_DIR_.'/../tools/tar/Archive_Tar.php');
-include_once(_PS_ADMIN_DIR_.'/../tools/pear/PEAR.php');
 define ('TEXTAREA_SIZED', 70);
 
 class AdminTranslationsControllerCore extends AdminController
 {
-	protected $link_lang_pack = 'http://www.prestashop.com/download/lang_packs/get_each_language_pack.php';
+	protected $link_lang_pack = 'http://api.prestashop.com/download/lang_packs/get_each_language_pack.php';
 	protected $total_expression = 0;
 	protected $all_iso_lang = array();
 	protected $modules_translations = array();
@@ -49,6 +47,11 @@ class AdminTranslationsControllerCore extends AdminController
 	public function __construct()
 	{
 		parent::__construct();
+
+	 	$this->table = 'translations';
+		include_once(_PS_ADMIN_DIR_.'/../tools/tar/Archive_Tar.php');
+		include_once(_PS_ADMIN_DIR_.'/../tools/pear/PEAR.php');
+
 		self::$tpl_regexp = '/\{l s=\''._PS_TRANS_PATTERN_.'\'( mod=\'.+\')?( js=1)?\}/U';
 		// added ? after spaces because some peoples forget them. see PSCFI-2501
 		self::$php_regexp = '/->l\(\''._PS_TRANS_PATTERN_.'\'(, ?\'(.+)\')?(, ?(.+))?\)/U';
@@ -67,7 +70,7 @@ class AdminTranslationsControllerCore extends AdminController
 	public function initToolbar()
 	{
 		$this->toolbar_btn['save'] = array(
-			'href' => self::$currentIndex.'&token='.$this->token,
+			'href' => '#',
 			'desc' => $this->l('Update translations')
 		);
 		$this->toolbar_btn['cancel'] = array(
@@ -117,7 +120,7 @@ class AdminTranslationsControllerCore extends AdminController
 
 		$this->toolbar_fix = false;
 		$this->base_tpl_view = 'main.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	/**
@@ -312,7 +315,7 @@ class AdminTranslationsControllerCore extends AdminController
 		if (Validate::isLangIsoCode($arr_import_lang[0]))
 		{
 			if ($content = Tools::file_get_contents(
-				'http://www.prestashop.com/download/lang_packs/gzip/'.$arr_import_lang[1].'/'.$arr_import_lang[0].'.gzip', false,
+				'http://api.prestashop.com/download/lang_packs/gzip/'.$arr_import_lang[1].'/'.$arr_import_lang[0].'.gzip', false,
 				@stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)))))
 			{
 				$file = _PS_TRANSLATIONS_DIR_.$arr_import_lang[0].'.gzip';
@@ -400,7 +403,7 @@ class AdminTranslationsControllerCore extends AdminController
 					if (array_key_exists($post_key, $_POST) && !empty($_POST[$post_key]) && !in_array($pattern, $array_check_duplicate))
 					{
 						$array_check_duplicate[] = $pattern;
-						$str_write .= '$_MODULE['.$pattern.'] = \''.pSQL($_POST[$post_key]).'\';'."\n";
+						$str_write .= '$_MODULE['.$pattern.'] = \''.pSQL(str_replace(array("\r\n", "\r", "\n"), ' ', $_POST[$post_key])).'\';'."\n";
 						$this->total_expression++;
 					}
 				}
@@ -730,7 +733,7 @@ class AdminTranslationsControllerCore extends AdminController
 			{
 				if ($group == 'core_mail' || $group == 'module_mail')
 					$array_subjects['core_and_modules']['translations'] = array_merge($array_subjects['core_and_modules']['translations'], $subject_translation);
-				else if ( isset($array_subjects['themes_and_modules']) && ($group == 'theme_mail' || $group == 'theme_module_mail')) {
+				elseif ( isset($array_subjects['themes_and_modules']) && ($group == 'theme_mail' || $group == 'theme_module_mail')) {
 					$array_subjects['themes_and_modules']['translations'] = array_merge($array_subjects['themes_and_modules']['translations'], $subject_translation);
 				}
 			}
@@ -891,27 +894,28 @@ class AdminTranslationsControllerCore extends AdminController
 		);
 
 		// Add js variables needed for autotranslate
-		$this->tpl_view_vars = array_merge($this->tpl_view_vars, $this->initAutoTranslate());
+		//$this->tpl_view_vars = array_merge($this->tpl_view_vars, $this->initAutoTranslate());
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_form.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initFormBack($lang)
 	{
 		$_LANGADM = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'admin.php', '_LANGADM');
-		$str_output = '';
 		// count will contain the number of expressions of the page
 		$count = 0;
 		$missing_translations = array();
 		// parsing .php files
 		$tabs = scandir(_PS_ADMIN_CONTROLLER_DIR_);
+		$tabs = array_merge($tabs, Tools::scandir(_PS_ADMIN_CONTROLLER_DIR_, 'php', '../../classes/helper'));
 		$tabs[] = '../../classes/AdminController.php';
+
 		$files = array();
 		$i=0;
 		foreach ($tabs as $tab)
-			if (preg_match('/^(.*)\.php$/', $tab) AND file_exists($tpl = _PS_ADMIN_CONTROLLER_DIR_.$tab))
+			if (preg_match('/^(.*)\.php$/', $tab) && file_exists($tpl = _PS_ADMIN_CONTROLLER_DIR_.$tab))
 			{
 				// -4 becomes -14 to remove the ending "Controller.php" from the filename
 				$prefix_key = basename(substr($tab, 0, -14));
@@ -919,6 +923,8 @@ class AdminTranslationsControllerCore extends AdminController
 				// @todo this is retrocompatible, but we should not leave this
 				if ( $prefix_key == 'Admin')
 					$prefix_key = 'AdminController';
+				elseif ($prefix_key == 'helper' || $prefix_key == 'Hel')
+					$prefix_key = 'Helper';
 				$fd = fopen($tpl, 'r');
 				$content = fread($fd, filesize($tpl));
 				fclose($fd);
@@ -1045,11 +1051,11 @@ class AdminTranslationsControllerCore extends AdminController
 		);
 
 		// Add js variables needed for autotranslate
-		$this->tpl_view_vars = array_merge($this->tpl_view_vars, $this->initAutoTranslate());
+		//$this->tpl_view_vars = array_merge($this->tpl_view_vars, $this->initAutoTranslate());
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_form.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initFormErrors($lang)
@@ -1098,14 +1104,14 @@ class AdminTranslationsControllerCore extends AdminController
 			'limit_warning' => $this->displayLimitPostWarning($count),
 			'suoshin_exceeded' => $this->suhosin_limit_exceed,
 			'url_submit' => self::$currentIndex.'&submitTranslationsErrors=1&token='.$this->token,
-			'auto_translate' => $this->displayAutoTranslate(),
+			'auto_translate' => '',
 			'type' => 'errors',
 			'errorsArray' => $stringToTranslate
 		);
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_errors.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initFormFields($lang)
@@ -1161,7 +1167,7 @@ class AdminTranslationsControllerCore extends AdminController
 			'suoshin_exceeded' => $this->suhosin_limit_exceed,
 			'url_submit' => self::$currentIndex.'&submitTranslationsFields=1&token='.$this->token,
 			'toggle_button' => $this->displayToggleButton(),
-			'auto_translate' => $this->displayAutoTranslate(),
+			'auto_translate' => '',
 			'tabsArray' => $tabs_array,
 			'missing_translations' => $missing_translations,
 			'textarea_sized' => TEXTAREA_SIZED,
@@ -1170,7 +1176,7 @@ class AdminTranslationsControllerCore extends AdminController
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_form.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	/**
@@ -1510,7 +1516,7 @@ class AdminTranslationsControllerCore extends AdminController
 			'suoshin_exceeded' => $this->suhosin_limit_exceed,
 			'url_submit' => self::$currentIndex.'&submitTranslationsMails=1&token='.$this->token,
 			'toggle_button' => $this->displayToggleButton(),
-			'auto_translate' => $this->displayAutoTranslate(),
+			'auto_translate' => '',
 			'type' => 'mails',
 			'tinyMCE' => $this->getTinyMCEForMails($obj_lang->iso_code),
 			'mail_content' => $this->displayMailContent($core_mails, $subject_mail, $obj_lang, 'core', $this->l('Core e-mails')),
@@ -1520,7 +1526,7 @@ class AdminTranslationsControllerCore extends AdminController
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_mails.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	protected static function getSubjectMail($directory, $subject_mail)
@@ -1699,7 +1705,6 @@ class AdminTranslationsControllerCore extends AdminController
 				'suoshin_exceeded' => $this->suhosin_limit_exceed,
 				'url_submit' => self::$currentIndex.'&submitTranslationsModules=1&token='.$this->token,
 				'toggle_button' => $this->displayToggleButton(),
-				'auto_translate' => $this->displayAutoTranslate(),
 				'textarea_sized' => TEXTAREA_SIZED,
 				'type' => 'modules',
 				'modules_translations' => isset($this->modules_translations) ? $this->modules_translations : array()
@@ -1707,7 +1712,7 @@ class AdminTranslationsControllerCore extends AdminController
 
 			$this->initToolbar();
 			$this->base_tpl_view = 'translation_modules.tpl';
-			return parent::initView();
+			return parent::renderView();
 		}
 	}
 
@@ -1737,11 +1742,11 @@ class AdminTranslationsControllerCore extends AdminController
 		$missing_translations = array();
 		$str_output = '';
 
-        if (!Validate::isLangIsoCode($lang))
-            die('Invalid iso lang ('.$lang.')');
+		if (!Validate::isLangIsoCode($lang))
+			die('Invalid iso lang ('.$lang.')');
 
-        $i18n_dir = _PS_THEME_DIR_.'pdf/lang/';
-        $i18n_file = $i18n_dir.$lang.'.php';
+		$i18n_dir = _PS_THEME_DIR_.'pdf/lang/';
+		$i18n_file = $i18n_dir.$lang.'.php';
 		if (!file_exists($i18n_file))
 			if (!mkdir($i18n_dir, 0700))
 				die('Please create a "'.$lang.'" directory in '._PS_TRANSLATIONS_DIR_);
@@ -1758,20 +1763,20 @@ class AdminTranslationsControllerCore extends AdminController
 		$regex = '/self::l\(\''._PS_TRANS_PATTERN_.'\'[\)|\,]/U';
 		// need to parse PDF.php in order to find $regex and add this to $tabs_array
 		// this has to be done for the core class, and eventually for the override
-        foreach (glob(_PS_CLASS_DIR_.'pdf/'."*.php") as $filename)
-        {
-    		$tabs_array = $this->_parsePdfClass($filename, $regex, $_LANGPDF, $prefix_key, $tabs_array);
-	    	if (file_exists(_PS_ROOT_DIR_.'/override/classes/pdf/'.basename($filename)))
-	    		$tabs_array = $this->_parsePdfClass(_PS_ROOT_DIR_.'/override/classes/pdf/'.basename($filename), $regex, $_LANGPDF, $prefix_key, $tabs_array);
-        }
+		foreach (glob(_PS_CLASS_DIR_.'pdf/'."*.php") as $filename)
+		{
+			$tabs_array = $this->_parsePdfClass($filename, $regex, $_LANGPDF, $prefix_key, $tabs_array);
+			if (file_exists(_PS_ROOT_DIR_.'/override/classes/pdf/'.basename($filename)))
+				$tabs_array = $this->_parsePdfClass(_PS_ROOT_DIR_.'/override/classes/pdf/'.basename($filename), $regex, $_LANGPDF, $prefix_key, $tabs_array);
+		}
 
-        // parse pdf template
+		// parse pdf template
 		/* Search language tags (eg {l s='to translate'}) */
 		$regex = '/\{l s=\''._PS_TRANS_PATTERN_.'\'( js=1)?( pdf=\'true\')?\}/U';
-        foreach (glob( _PS_THEME_DIR_.'/pdf/*.tpl') as $filename)
-        {
+		foreach (glob( _PS_THEME_DIR_.'/pdf/*.tpl') as $filename)
+		{
 			preg_match_all($regex, file_get_contents($filename), $matches);
-    		foreach ($matches[1] as $key)
+			foreach ($matches[1] as $key)
 			{
 				// Caution ! front has underscore between prefix key and md5, back has not
 				if (isset($_LANGPDF[$prefix_key.md5($key)]))
@@ -1786,7 +1791,7 @@ class AdminTranslationsControllerCore extends AdminController
 						$missing_translations[$prefix_key]++;
 				}
 			}
-        }
+		}
 
 		$count += isset($tabs_array[$prefix_key]) ? count($tabs_array[$prefix_key]) : 0;
 
@@ -1798,7 +1803,7 @@ class AdminTranslationsControllerCore extends AdminController
 			'suoshin_exceeded' => $this->suhosin_limit_exceed,
 			'url_submit' => self::$currentIndex.'&submitTranslationsPdf=1&token='.$this->token,
 			'toggle_button' => $this->displayToggleButton(),
-			'auto_translate' => $this->displayAutoTranslate(),
+			'auto_translate' => '',
 			'textarea_sized' => TEXTAREA_SIZED,
 			'type' => 'pdf',
 			'tabsArray' => $tabs_array,
@@ -1807,7 +1812,7 @@ class AdminTranslationsControllerCore extends AdminController
 
 		$this->initToolbar();
 		$this->base_tpl_view = 'translation_form.tpl';
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	/**

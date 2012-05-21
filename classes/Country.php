@@ -64,26 +64,29 @@ class CountryCore extends ObjectModel
 
 	protected static $_idZones = array();
 
-	protected $tables = array ('country', 'country_lang');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'country',
+		'primary' => 'id_country',
+		'multilang' => true,
+		'fields' => array(
+			'id_zone' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_currency' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'call_prefix' => 				array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+			'iso_code' => 					array('type' => self::TYPE_STRING, 'validate' => 'isLanguageIsoCode', 'required' => true, 'size' => 3),
+			'active' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'contains_states' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
+			'need_identification_number' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
+			'need_zip_code' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'zip_code_format' => 			array('type' => self::TYPE_STRING, 'validate' => 'isZipCodeFormat'),
+			'display_tax_label' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'required' => true),
 
- 	protected $fieldsRequired = array('id_zone', 'iso_code', 'contains_states', 'need_identification_number', 'display_tax_label');
- 	protected $fieldsSize = array('iso_code' => 3);
- 	protected $fieldsValidate = array(
- 		'id_zone' => 'isUnsignedId',
- 		'id_currency' => 'isUnsignedId',
- 		'call_prefix' => 'isInt',
- 		'iso_code' => 'isLanguageIsoCode',
- 		'active' => 'isBool',
- 		'contains_states' => 'isBool',
- 		'need_identification_number' => 'isBool',
- 		'need_zip_code' => 'isBool',
- 		'zip_code_format' => 'isZipCodeFormat',
- 		'display_tax_label' => 'isBool'
- 	);
-
- 	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 64);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName');
+			// Lang fields
+			'name' => 						array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+		),
+	);
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'countries',
@@ -92,36 +95,6 @@ class CountryCore extends ObjectModel
 			'id_currency' => array('sqlId' => 'id_currency', 'xlink_resource'=> 'currencies'),
 		),
 	);
-
-	protected $table = 'country';
-	protected $identifier = 'id_country';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_zone'] = (int)$this->id_zone;
-		$fields['id_currency'] = (int)$this->id_currency;
-		$fields['iso_code'] = pSQL(strtoupper($this->iso_code));
-		$fields['call_prefix'] = (int)$this->call_prefix;
-		$fields['active'] = (int)$this->active;
-		$fields['contains_states'] = (int)$this->contains_states;
-		$fields['need_identification_number'] = (int)$this->need_identification_number;
-		$fields['need_zip_code'] = (int)$this->need_zip_code;
-		$fields['zip_code_format'] = $this->zip_code_format;
-		$fields['display_tax_label'] = $this->display_tax_label;
-		return $fields;
-	}
-
-	/**
-	  * Check then return multilingual fields for database interaction
-	  *
-	  * @return array Multilingual fields
-	  */
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	public function delete()
 	{
@@ -214,14 +187,16 @@ class CountryCore extends ObjectModel
 	*/
 	public static function getNameById($id_lang, $id_country)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-			SELECT `name`
-			FROM `'._DB_PREFIX_.'country_lang`
-			WHERE `id_lang` = '.(int)$id_lang.'
-			AND `id_country` = '.(int)$id_country
-		);
+		$key = 'country_getNameById_'.$id_country.'_'.$id_lang;
+		if (!Cache::isStored($key))
+			Cache::store($key, Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+				SELECT `name`
+				FROM `'._DB_PREFIX_.'country_lang`
+				WHERE `id_lang` = '.(int)$id_lang.'
+				AND `id_country` = '.(int)$id_country
+			));
 
-		return $result['name'];
+		return Cache::retrieve($key);
 	}
 
 	/**
@@ -333,5 +308,19 @@ class CountryCore extends ObjectModel
 			SELECT `contains_states`
 			FROM `'._DB_PREFIX_.'country`
 			WHERE `id_country` = '.(int)$id_country);
+	}
+
+	/**
+	 * @param $ids_countries
+	 * @param $id_zone
+	 * @return bool
+	 */
+	public function affectZoneToSelection($ids_countries, $id_zone)
+	{
+		// cast every array values to int (security)
+		$ids_countries = array_map('intval', $ids_countries);
+		return Db::getInstance()->execute('
+		UPDATE `'._DB_PREFIX_.'country` SET `id_zone` = '.(int)$id_zone.' WHERE `id_country` IN ('.implode(',', $ids_countries).')
+		');
 	}
 }

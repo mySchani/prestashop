@@ -33,6 +33,12 @@ class OrderInvoiceCore extends ObjectModel
 	/** @var integer */
 	public $number;
 
+	/** @var integer */
+	public $delivery_number;
+
+	/** @var integer */
+	public $delivery_date;
+
 	/** @var float */
 	public $total_discount_tax_excl;
 
@@ -63,41 +69,48 @@ class OrderInvoiceCore extends ObjectModel
 	/** @var float */
 	public $total_wrapping_tax_incl;
 
+	/** @var string note */
+	public $note;
+
 	/** @var intger */
 	public $date_add;
 
-	protected $fieldsRequired = array('id_order', 'number');
-	protected $fieldsValidate = array('id_order' => 'isUnsignedId', 'number' => 'isUnsignedId');
+	/** @var array Total paid cache */
+	protected static $_total_paid_cache = array();
 
-	protected $table = 'order_invoice';
-	protected $identifier = 'id_order_invoice';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_order'] = (int)$this->id_order;
-		$fields['number'] = (int)$this->number;
-		$fields['total_discount_tax_excl'] = (float)$this->total_discount_tax_excl;
-		$fields['total_discount_tax_incl'] = (float)$this->total_discount_tax_incl;
-		$fields['total_paid_tax_excl'] = (float)$this->total_paid_tax_excl;
-		$fields['total_paid_tax_incl'] = (float)$this->total_paid_tax_incl;
-		$fields['total_products'] = (float)$this->total_products;
-		$fields['total_products_wt'] = (float)$this->total_products_wt;
-		$fields['total_shipping_tax_excl'] = (float)$this->total_shipping_tax_excl;
-		$fields['total_shipping_tax_incl'] = (float)$this->total_shipping_tax_incl;
-		$fields['total_wrapping_tax_excl'] = (float)$this->total_wrapping_tax_excl;
-		$fields['total_wrapping_tax_incl'] = (float)$this->total_wrapping_tax_incl;
-		$fields['date_add'] = pSQL($this->date_add);
-
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_invoice',
+		'primary' => 'id_order_invoice',
+		'fields' => array(
+			'id_order' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'number' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'delivery_number' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'delivery_date' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'total_discount_tax_excl' =>array('type' => self::TYPE_FLOAT),
+			'total_discount_tax_incl' =>array('type' => self::TYPE_FLOAT),
+			'total_paid_tax_excl' =>	array('type' => self::TYPE_FLOAT),
+			'total_paid_tax_incl' =>	array('type' => self::TYPE_FLOAT),
+			'total_products' =>			array('type' => self::TYPE_FLOAT),
+			'total_products_wt' =>		array('type' => self::TYPE_FLOAT),
+			'total_shipping_tax_excl' =>array('type' => self::TYPE_FLOAT),
+			'total_shipping_tax_incl' =>array('type' => self::TYPE_FLOAT),
+			'total_wrapping_tax_excl' =>array('type' => self::TYPE_FLOAT),
+			'total_wrapping_tax_incl' =>array('type' => self::TYPE_FLOAT),
+			'note' => 					array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65000),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	public function getProductsDetail()
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'order_detail` od
+		LEFT JOIN `'._DB_PREFIX_.'product` p
+		ON p.id_product = od.product_id
 		WHERE od.`id_order` = '.(int)$this->id_order.'
 		AND od.`id_order_invoice` = '.(int)$this->id);
 	}
@@ -170,7 +183,12 @@ class OrderInvoiceCore extends ObjectModel
 	 */
 	protected function setProductCurrentStock(&$product)
 	{
-		$product['current_stock'] = StockManagerFactory::getManager()->getProductPhysicalQuantities($product['product_id'], $product['product_attribute_id'], null, true);
+		if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT')
+			&& (int)$product['advanced_stock_management'] == 1
+			&& (int)$product['id_warehouse'] > 0)
+			$product['current_stock'] = StockManagerFactory::getManager()->getProductPhysicalQuantities($product['product_id'], $product['product_attribute_id'], null, true);
+		else
+			$product['current_stock'] = '--';
 	}
 
 	/**
@@ -225,7 +243,7 @@ class OrderInvoiceCore extends ObjectModel
 
 		if ($row['reduction_amount'] != 0)
 		{
-			if ($this->_taxCalculationMethod == PS_TAX_EXC)
+			if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
 				$row['product_price'] = ($row['product_price'] - ($tax_calculator->removeTaxes($row['reduction_amount'])));
 			else
 				$row['product_price_wt'] = Tools::ps_round(($row['product_price_wt'] - $row['reduction_amount']), 2);
@@ -233,7 +251,7 @@ class OrderInvoiceCore extends ObjectModel
 
 		if ($row['group_reduction'] > 0)
 		{
-			if ($this->_taxCalculationMethod == PS_TAX_EXC)
+			if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
 				$row['product_price'] = $row['product_price'] * $group_reduction;
 			else
 				$row['product_price_wt'] = Tools::ps_round($row['product_price_wt'] * $group_reduction , 2);
@@ -258,7 +276,7 @@ class OrderInvoiceCore extends ObjectModel
 	 * This method returns true if at least one order details uses the
 	 * One After Another tax computation method.
 	 *
-	 * @since 1.5.0.1
+	 * @since 1.5
 	 * @return boolean
 	 */
 	public function useOneAfterAnotherTaxComputationMethod()
@@ -277,7 +295,7 @@ class OrderInvoiceCore extends ObjectModel
 	/**
 	 * Returns the correct product taxes breakdown.
 	 *
-	 * @since 1.5.0.1
+	 * @since 1.5
 	 * @return array
 	 */
 	public function getProductTaxesBreakdown()
@@ -322,9 +340,11 @@ class OrderInvoiceCore extends ObjectModel
 			foreach ($taxes_infos as $tax_infos)
 			{
 				if (!isset($tmp_tax_infos[$tax_infos['rate']]))
-					$tmp_tax_infos[$tax_infos['rate']] = array('total_amount' => 0,
-																'name' => 0,
-																'total_price_tax_excl' => 0);
+					$tmp_tax_infos[$tax_infos['rate']] = array(
+						'total_amount' => 0,
+						'name' => 0,
+						'total_price_tax_excl' => 0
+					);
 
 				$tmp_tax_infos[$tax_infos['rate']]['total_amount'] += $tax_infos['total_amount'];
 				$tmp_tax_infos[$tax_infos['rate']]['name'] = $tax_infos['name'];
@@ -338,7 +358,7 @@ class OrderInvoiceCore extends ObjectModel
 	/**
 	 * Returns the shipping taxes breakdown
 	 *
-	 * @since 1.5.0.1
+	 * @since 1.5
 	 * @return array
 	 */
 	public function getShippingTaxesBreakdown($order)
@@ -360,7 +380,7 @@ class OrderInvoiceCore extends ObjectModel
 	 * Returns the wrapping taxes breakdown
 	 * @todo
 
-	 * @since 1.5.0.1
+	 * @since 1.5
 	 * @return array
 	 */
 	public function getWrappingTaxesBreakdown()
@@ -372,7 +392,7 @@ class OrderInvoiceCore extends ObjectModel
 	/**
 	 * Returns the ecotax taxes breakdown
 	 *
-	 * @since 1.5.0.1
+	 * @since 1.5
 	 * @return array
 	 */
 	public function getEcoTaxTaxesBreakdown()
@@ -383,5 +403,128 @@ class OrderInvoiceCore extends ObjectModel
 		WHERE `id_order` = '.(int)$this->id_order.'
 		AND `id_order_invoice` = '.(int)$this->id
 		);
+	}
+
+	/**
+	 * Returns all the order invoice that match the date interval
+	 *
+	 * @since 1.5
+	 * @static
+	 * @param $date_from
+	 * @param $date_to
+	 * @return array collection of OrderInvoice
+	 */
+	public static function getByDateInterval($date_from, $date_to)
+	{
+		$order_invoice_list = Db::getInstance()->ExecuteS('
+			SELECT oi.*
+			FROM `'._DB_PREFIX_.'order_invoice` oi
+			LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_order` = oi.`id_order`)
+			WHERE DATE_ADD(oi.date_add, INTERVAL -1 DAY) <= \''.pSQL($date_to).'\'
+			AND oi.date_add >= \''.pSQL($date_from).'\'
+			'.Context::getContext()->shop->addSqlRestriction().
+			' ORDER BY oi.date_add ASC
+		');
+
+		return ObjectModel::hydrateCollection('OrderInvoice', $order_invoice_list);
+	}
+
+	/**
+	 * @since 1.5
+	 * @static
+	 * @param $id_order_invoice
+	 */
+	public static function getCarrier($id_order_invoice)
+	{
+		$carrier = false;
+		if ($id_carrier = OrderInvoice::getCarrierId($id_order_invoice))
+			$carrier = new Carrier((int)$id_carrier);
+
+		return $carrier;
+	}
+
+    /**
+     * @since 1.5
+     * @static
+     * @param $id_order_invoice
+     */
+	public static function getCarrierId($id_order_invoice)
+	{
+		$sql = 'SELECT `id_carrier`
+				FROM `'._DB_PREFIX_.'order_carrier`
+				WHERE `id_order_invoice` = '.(int)$id_order_invoice;
+
+		return Db::getInstance()->getValue($sql);
+	}
+
+	/**
+	 * @static
+	 * @param $id
+	 * @return OrderInvoice
+	 */
+	public static function retrieveOneById($id)
+	{
+		$order_invoice = new OrderInvoice($id);
+		if (!Validate::isLoadedObject($order_invoice))
+			throw new PrestashopException('Can\'t load Order Invoice object for id: '.$id);
+		return $order_invoice;
+	}
+
+	/**
+	 * Amounts of payments
+	 * @since 1.5.0.2
+	 * @return float Total paid
+	 */
+	public function getTotalPaid()
+	{
+		if (!array_key_exists($this->id, self::$_total_paid_cache))
+		{
+			self::$_total_paid_cache[$this->id] = 0;
+			$payments = OrderPayment::getByInvoiceId($this->id);
+			foreach ($payments as $payment)
+				self::$_total_paid_cache[$this->id] += $payment->amount;
+		}
+		return self::$_total_paid_cache[$this->id];
+	}
+
+	/**
+	 * Rest Paid
+	 * @since 1.5.0.2
+	 * @return float Rest Paid
+	 */
+	public function getRestPaid()
+	{
+		return $this->total_paid_tax_incl - $this->getTotalPaid();
+	}
+
+	/**
+	 * @since 1.5.0.2
+	 * @return bool Is paid ?
+	 */
+	public function isPaid()
+	{
+		return $this->getTotalPaid() == $this->total_paid_tax_incl;
+	}
+
+	/**
+	 * @since 1.5.0.2
+	 * @return Collection of Order payment
+	 */
+	public function getOrderPaymentCollection()
+	{
+		$order_payments = new Collection('OrderPayment');
+		$order_payments->where('id_order_invoice', '=', $this->id);
+		return $order_payments;
+	}
+
+	/**
+	 * Get the formatted number of invoice
+	 * @since 1.5.0.2
+	 * @param int $id_lang for invoice_prefix
+	 * @return string
+	 */
+	public function getInvoiceNumberFormatted($id_lang)
+	{
+		return '#'.Configuration::get('PS_INVOICE_PREFIX', $id_lang).sprintf('%06d', $this->number);
 	}
 }

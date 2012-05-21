@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10398 $
+*  @version  Release: $Revision: 11439 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,6 +39,7 @@ class AdminStockCoverControllerCore extends AdminController
 		$this->table = 'product';
 		$this->className = 'Product';
 		$this->lang = true;
+		$this->colorOnBackground = true;
 
 		$this->fieldsDisplay = array(
 			'reference' => array(
@@ -63,12 +64,19 @@ class AdminStockCoverControllerCore extends AdminController
 				'title' => $this->l('Name'),
 				'filter_key' => 'b!name'
 			),
+			'qty_sold' => array(
+				'title' => $this->l('Quantity sold'),
+				'width' => 160,
+				'orderby' => false,
+				'search' => false,
+				'hint' => $this->l('Quantity sold during the defined period.'),
+			),
 			'coverage' => array(
 				'title' => $this->l('Coverage'),
 				'width' => 160,
 				'orderby' => false,
 				'search' => false,
-				'hint' => $this->l('Days left before you run out of stock.')
+				'hint' => $this->l('Days left before you run out of stock.'),
 			),
 			'stock' => array(
 				'title' => $this->l('Quantity'),
@@ -110,22 +118,24 @@ class AdminStockCoverControllerCore extends AdminController
 			$id_product = (int)Tools::getValue('id');
 			$period = (Tools::getValue('period') ? (int)Tools::getValue('period') : 7);
 			$warehouse = Tools::getValue('id_warehouse', -1);
+			$where_warehouse = '';
+			if ($warehouse != -1)
+				$where_warehouse = ' AND s.id_warehouse = '.(int)$warehouse;
 
 			$query = new DbQuery();
 			$query->select('pa.id_product_attribute as id, pa.id_product, stock_view.reference, stock_view.ean13,
 							stock_view.upc, stock_view.usable_quantity as stock');
-			$query->from('product_attribute pa
-						  INNER JOIN
+			$query->from('product_attribute', 'pa');
+			$query->join('INNER JOIN
 						  (
 						  	SELECT SUM(s.usable_quantity) as usable_quantity, s.id_product_attribute, s.reference, s.ean13, s.upc
 						   	FROM '._DB_PREFIX_.'stock s
-						   	WHERE s.id_product = '.($id_product).'
+						   	WHERE s.id_product = '.($id_product).
+							$where_warehouse.'
 						   	GROUP BY s.id_product_attribute
 						   )
 						   stock_view ON (stock_view.id_product_attribute = pa.id_product_attribute)');
 			$query->where('pa.id_product = '.$id_product);
-			if ($warehouse != -1)
-				$query->where('s.id_warehouse = '.(int)$warehouse);
 			$query->groupBy('pa.id_product_attribute');
 
 			$datas = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
@@ -133,21 +143,35 @@ class AdminStockCoverControllerCore extends AdminController
 			{
 				$data['name'] = Product::getProductName($data['id_product'], $data['id']);
 
-				if ($this->getCurrentCoverageWarehouse() == -1)
-					$data['coverage'] = StockManagerFactory::getManager()->getProductCoverage($data['id_product'], $data['id'], $period);
-				else
-					$data['coverage'] = StockManagerFactory::getManager()->getProductCoverage($data['id_product'], $data['id'], $period, $warehouse);
+				// computes coverage
+				$coverage = StockManagerFactory::getManager()->getProductCoverage(
+					$data['id_product'],
+					$data['id'],
+					$period,
+					(($this->getCurrentCoverageWarehouse() == -1) ? null : $warehouse)
+				);
+				if ($coverage != -1)  // if coverage is available
+				{
+					if ($coverage < $this->getCurrentWarning()) // if highlight needed
+						$data['color'] = '#BDE5F8';
+					$data['coverage'] = $coverage;
+				}
+				else // infinity
+					$data['coverage'] = '--';
+
+				$data['qty_sold'] = $this->getQuantitySold($data['id_product'], $data['id'], $this->getCurrentCoveragePeriod());
 			}
+
 			echo Tools::jsonEncode(array('data'=> $datas, 'fields_display' => $this->fieldsDisplay));
 		}
 		die;
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('details');
 
@@ -167,12 +191,17 @@ class AdminStockCoverControllerCore extends AdminController
 		$this->tpl_list_vars['stock_cover_cur_period'] = $this->getCurrentCoveragePeriod();
 		$this->tpl_list_vars['stock_cover_warehouses'] = $this->stock_cover_warehouses;
 		$this->tpl_list_vars['stock_cover_cur_warehouse'] = $this->getCurrentCoverageWarehouse();
-		$this->ajax_params = array('period' => $this->getCurrentCoveragePeriod(), 'id_warehouse' => $this->getCurrentCoverageWarehouse());
+		$this->tpl_list_vars['stock_cover_warn_days'] = $this->getCurrentWarning();
+		$this->ajax_params = array(
+			'period' => $this->getCurrentCoveragePeriod(),
+			'id_warehouse' => $this->getCurrentCoverageWarehouse(),
+			'warn_days' => $this->getCurrentWarning()
+		);
 
-		$this->displayInformation($this->l('Considering the coverage period choosen and the quantity of products/combinations that you sold,
-					  						this interface gives you an idea of when one product will run out of stock.'));
+		$this->displayInformation($this->l('Considering the coverage period choosen and the quantity of products/combinations that you sold,'));
+		$this->displayInformation($this->l('this interface gives you an idea of when a product will run out of stock.'));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	/**
@@ -189,22 +218,30 @@ class AdminStockCoverControllerCore extends AdminController
 			$item = &$this->_list[$i];
 			if ((int)$item['variations'] <= 0)
 			{
-				if ($this->getCurrentCoverageWarehouse() == -1) // if all warehouses
-					$item['coverage'] = StockManagerFactory::getManager()->getProductCoverage(
-						$item['id'],
-						0,
-						$this->getCurrentCoveragePeriod()
-					);
-				else // else selected warehouse
-					$item['coverage'] = StockManagerFactory::getManager()->getProductCoverage(
-						$item['id'],
-						0,
-						$this->getCurrentCoveragePeriod(),
-						$this->getCurrentCoverageWarehouse()
-					);
+				// computes coverage and displays (highlights if needed)
+				$coverage = StockManagerFactory::getManager()->getProductCoverage(
+								$item['id'],
+								0,
+								$this->getCurrentCoveragePeriod(),
+								(($this->getCurrentCoverageWarehouse() == -1) ? null : $this->getCurrentCoverageWarehouse())
+				);
+				if ($coverage != -1) // coverage is available
+				{
+					if ($coverage < $this->getCurrentWarning())
+						$item['color'] = '#BDE5F8';
+
+					$item['coverage'] = $coverage;
+				}
+				else // infinity
+					$item['coverage'] = '--';
+
+				// computes quantity sold
+				$item['qty_sold'] = $this->getQuantitySold($item['id'], 0, $this->getCurrentCoveragePeriod());
 
 				// removes 'details' action on products without attributes
 				$this->addRowActionSkipList('details', array($item['id']));
+
+
 			}
 			else
 			{
@@ -250,5 +287,49 @@ class AdminStockCoverControllerCore extends AdminController
 				$warehouse = (int)Tools::getValue('id_warehouse');
 		}
 		return $warehouse;
+	}
+
+	/**
+	 * Gets the current warning
+	 *
+	 * @return int warn_days
+	 */
+	private function getCurrentWarning()
+	{
+		static $warning = 0;
+
+		if ($warning == 0)
+		{
+			$warning = 0;
+			if (Tools::getValue('warn_days') && Validate::isInt(Tools::getValue('warn_days')))
+				$warning = (int)Tools::getValue('warn_days');
+		}
+		return $warning;
+	}
+
+	/**
+	 * For a given product, and a given period, returns the quantity sold
+	 *
+	 * @param int $id_product
+	 * @param int $id_product_attribute
+	 * @param int $coverage
+	 * @return int $quantity
+	 */
+	protected function getQuantitySold($id_product, $id_product_attribute, $coverage)
+	{
+		$query = new DbQuery();
+		$query->select('SUM(od.product_quantity)');
+		$query->from('order_detail', 'od');
+		$query->leftJoin('orders', 'o', 'od.id_order = o.id_order');
+		$query->leftJoin('order_history', 'oh', 'o.date_upd = oh.date_add');
+		$query->leftJoin('order_state', 'os', 'os.id_order_state = oh.id_order_state');
+		$query->where('od.product_id = '.(int)$id_product);
+		$query->where('od.product_attribute_id = '.(int)$id_product_attribute);
+		$query->where('TO_DAYS(NOW()) - TO_DAYS(oh.date_add) <= '.(int)$coverage);
+		$query->where('o.valid = 1');
+		$query->where('os.logable = 1 AND os.delivery = 1 AND os.shipped = 1');
+
+		$quantity = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+		return $quantity;
 	}
 }

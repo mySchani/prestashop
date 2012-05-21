@@ -60,6 +60,14 @@ class AdminTabsControllerCore extends AdminController
 			'module' => array(
 				'title' => $this->l('Module')
 			),
+			'active' => array(
+				'title' => $this->l('Enabled'),
+				'width' => 70,
+				'align' => 'center',
+				'active' => 'status',
+				'type' => 'bool',
+				'orderby' => false
+ 			),
 			'position' => array(
 				'title' => $this->l('Position'),
 				'width' => 40,
@@ -72,10 +80,10 @@ class AdminTabsControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		$tabs = Tab::getTabs($this->context->language->id, 0);
 
@@ -124,6 +132,27 @@ class AdminTabsControllerCore extends AdminController
 					'desc' => $this->l('Upload logo from your computer').' (.gif, .jpg, .jpeg '.$this->l('or').' .png)'
 				),
 				array(
+					'type' => 'radio',
+					'label' => $this->l('Status:'),
+					'name' => 'active',
+					'required' => false,
+					'class' => 't',
+					'is_bool' => true,
+					'values' => array(
+						array(
+							'id' => 'active_on',
+							'value' => 1,
+							'label' => $this->l('Enabled')
+						),
+						array(
+							'id' => 'active_off',
+							'value' => 0,
+							'label' => $this->l('Disabled')
+						)
+					),
+					'desc' => $this->l('Show or hide tab.')
+				),
+				array(
 					'type' => 'select',
 					'label' => $this->l('Parent:'),
 					'name' => 'id_parent',
@@ -144,14 +173,14 @@ class AdminTabsControllerCore extends AdminController
 			)
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
@@ -160,7 +189,7 @@ class AdminTabsControllerCore extends AdminController
 		$this->_where = 'AND a.`id_parent` = 0';
 		$this->_orderBy = 'position';
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	/**
@@ -242,7 +271,8 @@ class AdminTabsControllerCore extends AdminController
 		else
 		{
 			// Temporary add the position depend of the selection of the parent category
-			$_POST['position'] = Tab::getNbTabs(Tools::getValue('id_parent'));
+			if (!Tools::isSubmit('id_tab')) // @todo Review
+				$_POST['position'] = Tab::getNbTabs(Tools::getValue('id_parent'));
 			parent::postProcess();
 		}
 	}

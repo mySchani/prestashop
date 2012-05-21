@@ -10,7 +10,7 @@
 * http://opensource.org/licenses/osl-3.0.php
 * If you did not receive a copy of the license and are unable to
 * obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
+* to license@prestashop.com so we can send you a copy 502immediately.
 *
 * DISCLAIMER
 *
@@ -57,83 +57,46 @@ class CartRuleCore extends ObjectModel
 	public $date_add;
 	public $date_upd;
 
-	protected $table = 'cart_rule';
-	protected $identifier = 'id_cart_rule';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'cart_rule',
+		'primary' => 'id_cart_rule',
+		'multilang' => true,
+		'fields' => array(
+			'id_customer' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'date_from' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
+			'date_to' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
+			'description' => 			array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65534),
+			'quantity' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'quantity_per_user' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'priority' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'code' => 					array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 254),
+			'minimum_amount' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat'),
+			'minimum_amount_tax' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'minimum_amount_currency' =>array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+			'minimum_amount_shipping' =>array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'country_restriction' =>	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'carrier_restriction' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'group_restriction' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'cart_rule_restriction' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'product_restriction' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'free_shipping' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'reduction_percent' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat'),
+			'reduction_amount' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat'),
+			'reduction_tax' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'reduction_currency' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'reduction_product' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+			'gift_product' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'active' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 
- 	protected $fieldsRequired = array('date_from', 'date_to');
- 	protected $fieldsSize = array('code' => 254, 'description' => 65534);
- 	protected $fieldsValidate = array(
-		'id_customer' => 'isUnsignedId',
-		'date_from' => 'isDate',
-		'date_to' => 'isDate',
-		'description' => 'isCleanHtml',
-		'quantity' => 'isUnsignedInt',
-		'quantity_per_user' => 'isUnsignedInt',
-		'priority' => 'isUnsignedInt',
-		'code' => 'isCleanHtml',
-		'minimum_amount' => 'isFloat',
-		'minimum_amount_tax' => 'isBool',
-		'minimum_amount_currency' => 'isInt',
-		'minimum_amount_shipping' => 'isBool',
-		'country_restriction' => 'isBool',
-		'carrier_restriction' => 'isBool',
-		'group_restriction' => 'isBool',
-		'cart_rule_restriction' => 'isBool',
-		'product_restriction' => 'isBool',
-		'free_shipping' => 'isBool',
-		'reduction_percent' => 'isFloat',
-		'reduction_amount' => 'isFloat',
-		'reduction_tax' => 'isBool',
-		'reduction_currency' => 'isUnsignedId',
-		'reduction_product' => 'isInt',
-		'gift_product' => 'isUnsignedId',
-		'active' => 'isBool',
-		'date_add' => 'isDate',
-		'date_upd' => 'isDate'
+			// Lang fields
+			'name' => 					array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isCleanHtml', 'required' => true, 'size' => 254),
+		),
 	);
- 	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 254);
- 	protected $fieldsValidateLang = array('name' => 'isCleanHtml');
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_customer'] = (int)$this->id_customer;
-		$fields['priority'] = (int)$this->priority;
-		$fields['code'] = pSQL($this->code);
-		$fields['quantity'] = (int)$this->quantity;
-		$fields['quantity_per_user'] = (int)$this->quantity_per_user;
-		$fields['date_from'] = pSQL($this->date_from);
-		$fields['date_to'] = pSQL($this->date_to);
-		$fields['description'] = pSQL($this->description);
-		$fields['minimum_amount'] = (float)$this->minimum_amount;
-		$fields['minimum_amount_tax'] = (int)$this->minimum_amount_tax;
-		$fields['minimum_amount_currency'] = (int)$this->minimum_amount_currency;
-		$fields['minimum_amount_shipping'] = (int)$this->minimum_amount_shipping;
-		$fields['country_restriction'] = (int)$this->country_restriction;
-		$fields['carrier_restriction'] = (int)$this->carrier_restriction;
-		$fields['group_restriction'] = (int)$this->group_restriction;
-		$fields['cart_rule_restriction'] = (int)$this->cart_rule_restriction;
-		$fields['product_restriction'] = (int)$this->product_restriction;
-		$fields['free_shipping'] = (int)$this->free_shipping;
-		$fields['reduction_percent'] = (float)$this->reduction_percent;
-		$fields['reduction_amount'] = (float)$this->reduction_amount;
-		$fields['reduction_tax'] = (int)$this->reduction_tax;
-		$fields['reduction_currency'] = (int)$this->reduction_currency;
-		$fields['reduction_product'] = (int)$this->reduction_product;
-		$fields['gift_product'] = (int)$this->gift_product;
-		$fields['active'] = (int)$this->active;
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		if (!$this->validateFieldsLang())
-			return false;
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	public function add($autodate = true, $nullValues = false)
 	{
@@ -149,7 +112,7 @@ class CartRuleCore extends ObjectModel
 		if (!parent::delete())
 			return false;
 
-		Configuration::updateGlobalValue('PS_CART_RULE_FEATURE_ACTIVE', CartRule::isCurrentlyUsed($this->table, true));
+		Configuration::updateGlobalValue('PS_CART_RULE_FEATURE_ACTIVE', CartRule::isCurrentlyUsed($this->def['table'], true));
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'cart_cart_rule` WHERE `id_cart_rule` = '.(int)$this->id);
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'cart_rule_carrier` WHERE `id_cart_rule` = '.(int)$this->id);
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'cart_rule_group` WHERE `id_cart_rule` = '.(int)$this->id);
@@ -174,12 +137,12 @@ class CartRuleCore extends ObjectModel
 		INSERT INTO `'._DB_PREFIX_.'cart_rule_combination` (`id_cart_rule_1`, `id_cart_rule_2`)
 		(SELECT '.(int)$id_cart_rule_destination.', IF(id_cart_rule_1 != '.(int)$id_cart_rule_source.', id_cart_rule_1, id_cart_rule_2) FROM `'._DB_PREFIX_.'cart_rule_combination`
 		WHERE `id_cart_rule_1` = '.(int)$id_cart_rule_source.' OR `id_cart_rule_2` = '.(int)$id_cart_rule_source.')');
-		
+
 		// Todo : should be changed soon, be must be copied too
 		// Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'cart_rule_product_rule` WHERE `id_cart_rule` = '.(int)$this->id);
 		// Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'cart_rule_product_rule_value` WHERE `id_product_rule` NOT IN (SELECT `id_product_rule` FROM `'._DB_PREFIX_.'cart_rule_product_rule`)');
 	}
-	
+
 	public static function getIdByCode($code)
 	{
 		if (!Validate::isDiscountName($code))
@@ -188,12 +151,12 @@ class CartRuleCore extends ObjectModel
 	}
 
 	public static function getCustomerCartRules($id_lang, $id_customer, $active = false, $includeGeneric = true, $inStock = false, Cart $cart = null)
-    {
+	{
 		if (!CartRule::isFeatureActive())
 			return array();
 
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-        SELECT *
+		SELECT *
 		FROM `'._DB_PREFIX_.'cart_rule` cr
 		LEFT JOIN `'._DB_PREFIX_.'cart_rule_lang` crl ON (cr.`id_cart_rule` = crl.`id_cart_rule` AND crl.`id_lang` = '.(int)$id_lang.')
 		WHERE (
@@ -244,10 +207,10 @@ class CartRuleCore extends ObjectModel
 	public static function deleteByIdCustomer($id_customer)
 	{
 		$return = true;
-		$result = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'cart_rule` WHERE `id_customer` = '.(int)$id_customer);
-		$cartRules = ObjectModel::hydrateCollection('CartRule', $result);
-		foreach ($cartRules as $cartRule)
-			$return &= $cartRule->delete();
+		$cart_rules = new Collection('CartRule');
+		$cart_rules->where('id_customer', '=', $id_customer);
+		foreach ($cart_rules as $cart_rule)
+			$return &= $cart_rule->delete();
 		return $return;
 	}
 
@@ -257,12 +220,12 @@ class CartRuleCore extends ObjectModel
 			return array();
 
 		$productRules = array();
-		$result = Db::getInstance()->ExecuteS('
+		$results = Db::getInstance()->ExecuteS('
 		SELECT *
 		FROM '._DB_PREFIX_.'cart_rule_product_rule pr
 		LEFT JOIN '._DB_PREFIX_.'cart_rule_product_rule_value prv ON pr.id_product_rule = prv.id_product_rule
 		WHERE pr.id_cart_rule = '.(int)$this->id, false);
-		while ($row = Db::getInstance()->nextRow($result))
+		foreach ($results as $row)
 		{
 			if (!isset($productRules[$row['id_product_rule']]))
 				$productRules[$row['id_product_rule']] = array('quantity' => $row['quantity'], 'type' => $row['type'], 'values' => array());
@@ -428,7 +391,11 @@ class CartRuleCore extends ObjectModel
 			{
 				$minimumAmountCurrency = new Currency($this->minimum_amount_currency);
 				//p($this->minimum_amount_currency);
-				$minimum_amount = $this->minimum_amount / $minimumAmountCurrency->convertion_rate;
+
+				if ($this->minimum_amount == 0 || $minimumAmountCurrency->conversion_rate == 0)
+					$minimum_amount = 0;
+				else
+					$minimum_amount = $this->minimum_amount / $minimumAmountCurrency->convertion_rate;
 			}
 			$cartTotal = $context->cart->getOrderTotal($this->minimum_amount_tax, Cart::ONLY_PRODUCTS);
 			if ($this->minimum_amount_shipping)
@@ -452,16 +419,17 @@ class CartRuleCore extends ObjectModel
 		if ($this->free_shipping)
 		{
 			if (!$this->carrier_restriction)
-				$reductionValue += $context->cart->getOrderShippingCost($context->cart->id_carrier, $useTax = true, $context->country);
-			elseif ($context->cart->id_carrier)
+				$reductionValue += $context->cart->getTotalShippingCost(null, $useTax = true, $context->country);
+			else
 			{
-				$id_cart_rule = (int)Db::getInstance()->getValue('
-				SELECT crc.id_cart_rule
-				FROM '._DB_PREFIX_.'cart_rule_carrier crc
-				WHERE crc.id_cart_rule = '.(int)$this->id.'
-				AND crc.id_carrier = '.(int)$context->cart->id_carrier);
-				if ($id_cart_rule)
-					$reductionValue += $context->cart->getOrderShippingCost($context->cart->id_carrier, $useTax, $context->country);
+				foreach ((int)Db::getInstance()->executeS('
+					SELECT crc.id_cart_rule, crc.id_carrier
+					FROM '._DB_PREFIX_.'cart_rule_carrier crc
+					WHERE crc.id_cart_rule = '.(int)$this->id.'
+					AND crc.id_carrier = '.(int)$context->cart->id_carrier)
+					as $cart_rule
+				)
+					$reductionValue += $context->cart->getCarrierCost($cart_rule['id_carrier'], $useTax, $context->country);
 			}
 		}
 
@@ -492,7 +460,7 @@ class CartRuleCore extends ObjectModel
 			}
 		}
 
-		// Discount (¤)
+		// Discount (ï¿½)
 		if ($this->reduction_amount)
 		{
 			$reduction_amount = $this->reduction_amount;
@@ -500,11 +468,15 @@ class CartRuleCore extends ObjectModel
 			if ($this->reduction_currency != $context->currency->id)
 			{
 				$voucherCurrency = new Currency($this->reduction_currency);
+
 				// First we convert the voucher value to the default currency
-				$reduction_amount /= $voucherCurrency->conversion_rate;
+				if ($reduction_amount == 0 || $voucherCurrency->conversion_rate == 0)
+					$reduction_amount = 0;
+				else
+					$reduction_amount /= $voucherCurrency->conversion_rate;
+
 				// Then we convert the voucher value in the default currency into the cart currency
 				$reduction_amount *= $context->currency->conversion_rate;
-
 				$reduction_amount = Tools::ps_round($reduction_amount);
 			}
 
@@ -522,20 +494,30 @@ class CartRuleCore extends ObjectModel
 							$product_price_ti = $product['price_wt'];
 							$product_price_te = $product['price'];
 							$product_vat_amount = $product_price_ti - $product_price_te;
-							$product_vat_rate = $product_vat_amount / $product_price_te;
+
+							if ($product_vat_amount == 0 || $product_price_te == 0)
+								$product_vat_rate = 0;
+							else
+								$product_vat_rate = $product_vat_amount / $product_price_te;
+
 							if ($this->reduction_tax && !$useTax)
 								$reductionValue += $reduction_amount / (1 + $product_vat_rate);
 							elseif (!$this->reduction_tax && $useTax)
 								$reductionValue += $reduction_amount * (1 + $product_vat_rate);
 						}
 				}
-				// Discount (¤) on the whole order
+				// Discount (ï¿½) on the whole order
 				elseif ($this->reduction_product == 0)
 				{
 					$cart_amount_ti = $context->cart->getOrderTotal(true, Cart::ONLY_PRODUCTS);
 					$cart_amount_te = $context->cart->getOrderTotal(false, Cart::ONLY_PRODUCTS);
 					$cart_vat_amount = $cart_amount_ti - $cart_amount_te;
-					$cart_average_vat_rate = $cart_vat_amount / $cart_amount_te;
+
+					if ($cart_vat_amount == 0 || $cart_amount_te == 0)
+						$cart_average_vat_rate = 0;
+					else
+						$cart_average_vat_rate = $cart_vat_amount / $cart_amount_te;
+
 					if ($this->reduction_tax && !$useTax)
 						$reductionValue += $reduction_amount / (1 + $cart_average_vat_rate);
 					elseif (!$this->reduction_tax && $useTax)
@@ -599,8 +581,8 @@ class CartRuleCore extends ObjectModel
 		{
 			$array['selected'] = Db::getInstance()->ExecuteS('
 			SELECT t.*, tl.*, 1 as selected
-			FROM '._DB_PREFIX_.''.$type.' t
-			LEFT JOIN '._DB_PREFIX_.''.$type.'_lang tl ON t.id_'.$type.' = tl.id_'.$type.' AND tl.id_lang = '.(int)Context::getContext()->language->id.'
+			FROM `'._DB_PREFIX_.$type.'` t
+			LEFT JOIN `'._DB_PREFIX_.$type.'_lang` tl ON t.id_'.$type.' = tl.id_'.$type.' AND tl.id_lang = '.(int)Context::getContext()->language->id.'
 			WHERE 1
 			'.($active ? 'AND t.active = 1' : '').'
 			'.($type == 'cart_rule' ? 'AND t.id_cart_rule != '.(int)$this->id : '').'
@@ -614,9 +596,9 @@ class CartRuleCore extends ObjectModel
 			{
 				$result = Db::getInstance()->ExecuteS('
 				SELECT t.*, tl.*, IF(crt.id_'.$type.' IS NULL, 0, 1) as selected
-				FROM '._DB_PREFIX_.''.$type.' t
-				LEFT JOIN '._DB_PREFIX_.''.$type.'_lang tl ON t.id_'.$type.' = tl.id_'.$type.' AND tl.id_lang = '.(int)Context::getContext()->language->id.'
-				LEFT JOIN (SELECT id_'.$type.' FROM '._DB_PREFIX_.'cart_rule_'.$type.' WHERE id_cart_rule = '.(int)$this->id.') crt ON t.id_'.$type.' = crt.id_'.$type.'
+				FROM `'._DB_PREFIX_.$type.'` t
+				LEFT JOIN `'._DB_PREFIX_.$type.'_lang` tl ON t.id_'.$type.' = tl.id_'.$type.' AND tl.id_lang = '.(int)Context::getContext()->language->id.'
+				LEFT JOIN (SELECT id_'.$type.' FROM `'._DB_PREFIX_.'cart_rule_'.$type.'` WHERE id_cart_rule = '.(int)$this->id.') crt ON t.id_'.$type.' = crt.id_'.$type.'
 				'.($active ? 'WHERE t.active = 1' : '').'
 				ORDER BY name ASC',
 				false);
@@ -635,13 +617,11 @@ class CartRuleCore extends ObjectModel
 		$errors = array();
 		if (!$context)
 			$context = Context::getContext();
-		$result = $context->cart->getCartRules();
-		$cartRules = ObjectModel::hydrateCollection('CartRule', $result);
-		foreach ($cartRules as $cartRule)
+		foreach ($context->cart->getCartRules() as $cart_rule)
 		{
-			if ($error = $cartRule->checkValidity($context, true))
+			if ($error = $cart_rule['obj']->checkValidity($context, true))
 			{
-				$context->cart->removeCartRule($cartRule->id);
+				$context->cart->removeCartRule($cart_rule['obj']->id);
 				$context->cart->update();
 				$errors[] = $error;
 			}
@@ -710,9 +690,11 @@ class CartRuleCore extends ObjectModel
 
 	public static function getCartsRuleByCode($name, $id_lang)
 	{
-		return Db::getInstance()->ExecuteS('SELECT cr.*, crl.*
-													FROM '._DB_PREFIX_.'cart_rule cr
-													LEFT JOIN '._DB_PREFIX_.'cart_rule_lang crl ON (cr.id_cart_rule = crl.id_cart_rule AND crl.id_lang='.(int)$id_lang.')
-													WHERE name LIKE \'%'.pSQL($name).'%\'');
+		return Db::getInstance()->ExecuteS('
+			SELECT cr.*, crl.*
+			FROM '._DB_PREFIX_.'cart_rule cr
+			LEFT JOIN '._DB_PREFIX_.'cart_rule_lang crl ON (cr.id_cart_rule = crl.id_cart_rule AND crl.id_lang = '.(int)$id_lang.')
+			WHERE name LIKE \'%'.pSQL($name).'%\'
+		');
 	}
 }

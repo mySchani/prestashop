@@ -65,53 +65,25 @@ class SupplyOrderStateCore extends ObjectModel
 	 */
 	public $color;
 
-	protected $fieldsValidate = array(
-		'delivery_note' => 'isBool',
-		'editable' => 'isBool',
-		'receipt_state' => 'isBool',
-		'pending_receipt' => 'isBool',
-		'enclosed' => 'isBool',
-		'color' => 'isColor'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'supply_order_state',
+		'primary' => 'id_supply_order_state',
+		'multilang' => true,
+		'fields' => array(
+			'delivery_note' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'editable' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'receipt_state' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'pending_receipt' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'enclosed' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'color' => 				array('type' => self::TYPE_STRING, 'validate' => 'isColor'),
+
+			// Lang fields
+			'name' => 				array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 128),
+		),
 	);
-
-	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 128);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName');
-
-	/**
-	 * @var string Database table name
-	 */
-	protected $table = 'supply_order_state';
-
-	/**
-	 * @var string Database ID name
-	 */
-	protected $identifier = 'id_supply_order_state';
-
-	/**
-	 * @see ObjectModel::getFields()
-	 */
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['delivery_note'] = (bool)$this->delivery_note;
-		$fields['editable'] = (bool)$this->editable;
-		$fields['receipt_state'] = (bool)$this->receipt_state;
-		$fields['pending_receipt'] = (bool)$this->pending_receipt;
-		$fields['enclosed'] = (bool)$this->enclosed;
-		$fields['color'] = pSQL($this->color);
-
-		return $fields;
-	}
-
-	/**
-	 * @see ObjectModel::getTranslationsFieldsChild()
-	 */
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	/**
 	 * Gets the list of supply order states
@@ -127,8 +99,8 @@ class SupplyOrderStateCore extends ObjectModel
 
 		$query = new DbQuery();
 		$query->select('sl.name, s.id_supply_order_state');
-		$query->from('supply_order_state s');
-		$query->leftjoin('supply_order_state_lang sl ON (s.id_supply_order_state = sl.id_supply_order_state AND sl.id_lang='.(int)$id_lang.')');
+		$query->from('supply_order_state', 's');
+		$query->leftjoin('supply_order_state_lang', 'sl', 's.id_supply_order_state = sl.id_supply_order_state AND sl.id_lang='.(int)$id_lang);
 
 		if (!is_null($id_state_referrer))
 		{

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10205 $
+*  @version  Release: $Revision: 11383 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,18 +33,25 @@ class GroupShopCore extends ObjectModel
 	public $name;
 	public $active;
 	public $share_customer;
+	public $share_stock;
 	public $share_order;
 	public $deleted;
 
-	protected $fieldsSize = array('name' => 64);
- 	protected $fieldsValidate = array(
- 					'active' => 'isBool',
- 					'share_customer' => 'isBool',
- 					'share_order' => 'isBool',
- 					'name' => 'isGenericName',
- 				);
-	protected $table = 'group_shop';
-	protected $identifier = 'id_group_shop';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'group_shop',
+		'primary' => 'id_group_shop',
+		'fields' => array(
+			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 64),
+			'share_customer' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'share_order' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'share_stock' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'active' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'deleted' => 		array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+		),
+	);
 
 	private	static $assoTables = array(
 		'attribute_group' => array('type' => 'group_shop'),
@@ -57,25 +64,25 @@ class GroupShopCore extends ObjectModel
 		'tax_rules_group' => array('type' => 'group_shop'),
 	);
 
+	/**
+	 * @see ObjectModel::getFields()
+	 * @return array
+	 */
 	public function getFields()
 	{
-		$this->validateFields();
+		if (!$this->share_customer || !$this->share_stock)
+			$this->share_order = false;
 
-		$fields['name'] = pSQL($this->name);
-		$fields['share_customer'] = (int)$this->share_customer;
-		$fields['share_order'] = ($fields['share_customer']) ? (int)$this->share_order : false;
-		$fields['active'] = (int)$this->active;
-		$fields['deleted'] = (int)$this->deleted;
-		return $fields;
+		return parent::getFields();
 	}
 
 	public static function getGroupShops($active = true)
 	{
-		return Db::getInstance()->executeS('
-			SELECT *
-			FROM '._DB_PREFIX_.'group_shop
-			WHERE `deleted`= 0 AND `active`='.(int)$active
-		);
+		$groups = new Collection('GroupShop');
+		$groups->where('deleted', '=', false);
+		if ($active)
+			$groups->where('active', '=', true);
+		return $groups;
 	}
 
 	public function delete()

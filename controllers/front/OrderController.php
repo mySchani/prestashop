@@ -63,7 +63,7 @@ class OrderControllerCore extends ParentOrderController
 		}
 
 		if (!$this->context->customer->isLogged(true) && in_array($this->step, array(1, 2, 3)))
-			Tools::redirect('index.php?controller=authentication&back='.urlencode('order.php&step='.$this->step));
+			Tools::redirect('index.php?controller=authentication&back='.urlencode('order.php&step='.$this->step.'&multi-shipping='.(int)Tools::getValue('multi-shipping')).'&multi-shipping='.(int)Tools::getValue('multi-shipping'));
 
 		if (Tools::getValue('multi-shipping') == 1)
 			$this->context->smarty->assign('multi_shipping', true);
@@ -161,6 +161,7 @@ class OrderControllerCore extends ParentOrderController
 			'currencyFormat' => $this->context->currency->format,
 			'currencyBlank' => $this->context->currency->blank,
 		));
+		parent::initContent();
 	}
 
 	private function processAddressFormat()
@@ -185,6 +186,10 @@ class OrderControllerCore extends ParentOrderController
 
 		if ($this->step >= 2 && (!$this->context->cart->id_address_delivery || !$this->context->cart->id_address_invoice))
 			Tools::redirect('index.php?controller=order&step=1');
+		
+		if ($this->step > 2 && !$isVirtualCart && count($this->context->cart->getDeliveryOptionList()) == 0)
+			Tools::redirect('index.php?controller=order&step=2');
+		
 		$delivery = new Address((int)$this->context->cart->id_address_delivery);
 		$invoice = new Address((int)$this->context->cart->id_address_invoice);
 

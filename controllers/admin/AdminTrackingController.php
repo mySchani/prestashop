@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminTrackingController extends AdminController
+class AdminTrackingControllerCore extends AdminController
 {
 	public function postprocess()
 	{
@@ -92,7 +92,7 @@ class AdminTrackingController extends AdminController
 
 		$this->tpl_list_vars = array('sub_title' => $this->l('List of empty categories:'));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function getCustomListProductsAttributesNoStock()
@@ -125,12 +125,12 @@ class AdminTrackingController extends AdminController
 				SELECT DISTINCT(id_product)
 				FROM `'._DB_PREFIX_.'product_attribute`
 			)
-			AND stock.quantity <= 0
+			AND IFNULL(stock.quantity, 0) <= 0
 		)';
 
 		$this->tpl_list_vars = array('sub_title' => $this->l('List of products with attributes and without available quantities for sale:'));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function getCustomListProductsNoStock()
@@ -163,12 +163,12 @@ class AdminTrackingController extends AdminController
 				SELECT DISTINCT(id_product)
 				FROM `'._DB_PREFIX_.'product_attribute`
 			)
-			AND stock.quantity <= 0
+			AND IFNULL(stock.quantity, 0) <= 0
 		)';
 
 		$this->tpl_list_vars = array('sub_title' => $this->l('List of products without attributes and without available quantities for sale:'));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function getCustomListProductsDisabled()
@@ -195,7 +195,7 @@ class AdminTrackingController extends AdminController
 			'name' => array('title' => $this->l('Name'))
 		);
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function clearListOptions()

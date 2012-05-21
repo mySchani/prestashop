@@ -51,48 +51,47 @@ class DeliveryCore extends ObjectModel
 	/** @var float */
 	public $price;
 
-	protected $fieldsRequired = array (
-		'id_carrier',
-		'id_range_price',
-		'id_range_weight',
-		'id_zone',
-		'price'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'delivery',
+		'primary' => 'id_delivery',
+		'fields' => array(
+			'id_carrier' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_range_price' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_range_weight' =>array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_zone' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_shop' => 		array('type' => self::TYPE_INT),
+			'id_group_shop' => 	array('type' => self::TYPE_INT),
+			'price' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+		),
 	);
-
-	protected $fieldsValidate = array (
-		'id_carrier' => 'isUnsignedId',
-		'id_range_price' => 'isUnsignedId',
-		'id_range_weight' => 'isUnsignedId',
-		'id_zone' => 'isUnsignedId',
-		'price' => 'isPrice'
-	);
-
-	protected $table = 'delivery';
-	protected $identifier = 'id_delivery';
 
 	protected $webserviceParameters = array(
-			'objectsNodeName' => 'deliveries',
-			'fields' => array(
-				'id_carrier' => array('xlink_resource' => 'carriers'),
-				'id_range_price' => array('xlink_resource' => 'price_ranges'),
-				'id_range_weight' => array('xlink_resource' => 'weight_ranges'),
-				'id_zone' => array('xlink_resource' => 'zones'),
+		'objectsNodeName' => 'deliveries',
+		'fields' => array(
+			'id_carrier' => array('xlink_resource' => 'carriers'),
+			'id_range_price' => array('xlink_resource' => 'price_ranges'),
+			'id_range_weight' => array('xlink_resource' => 'weight_ranges'),
+			'id_zone' => array('xlink_resource' => 'zones'),
 		)
 	);
 
 	public function getFields()
 	{
-		$this->validateFields();
+		$fields = parent::getFields();
 
+		// @todo add null management in definitions
 		if ($this->id_shop)
 			$fields['id_shop'] = (int)$this->id_shop;
+		else
+			$fields['id_shop'] = null;
+
 		if ($this->id_group_shop)
 			$fields['id_group_shop'] = (int)$this->id_group_shop;
-		$fields['id_carrier'] = (int)$this->id_carrier;
-		$fields['id_range_price'] = (int)$this->id_range_price;
-		$fields['id_range_weight'] = (int)$this->id_range_weight;
-		$fields['id_zone'] = (int)$this->id_zone;
-		$fields['price'] = (float)$this->price;
+		else
+			$fields['id_group_shop'] = null;
 
 		return $fields;
 	}

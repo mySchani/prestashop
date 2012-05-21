@@ -42,27 +42,58 @@ class AdminStatesControllerCore extends AdminController
 		if (!Tools::getValue('realedit'))
 			$this->deleted = false;
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+		$this->bulk_actions = array('delete' => array(
+									'text' => $this->l('Delete selected'),
+									'confirm' => $this->l('Delete selected items?')),
+								'affectzone' => array(
+									'text' => $this->l('Affect a new zone'))
+								);
 
 		$this->fieldsDisplay = array(
-			'id_state' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-			'name' => array('title' => $this->l('Name'), 'width' => 140, 'filter_key' => 'a!name'),
-			'iso_code' => array('title' => $this->l('ISO code'), 'align' => 'center', 'width' => 50),
-			'zone' => array('title' => $this->l('Zone'), 'width' => 100, 'filter_key' => 'z!name')
+			'id_state' => array(
+				'title' => $this->l('ID'),
+				'align' => 'center',
+				'width' => 25
+			),
+			'name' => array(
+				'title' => $this->l('Name'),
+				'width' => 140,
+				'filter_key' => 'a!name'
+			),
+			'iso_code' => array(
+				'title' => $this->l('ISO code'),
+				'align' => 'center',
+				'width' => 50
+			),
+			'zone' => array(
+				'title' => $this->l('Zone'),
+				'width' => 100,
+				'filter_key' => 'z!name'
+			),
+			'active' => array(
+				'title' => $this->l('Enabled'),
+				'width' => 70,
+				'active' => 'status',
+				'filter_key' => 'a!active',
+				'align' => 'center',
+				'type' => 'bool',
+				'orderby' => false
+			)
 		);
 
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->_select = 'z.`name` AS zone';
 	 	$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'zone` z ON (z.`id_zone` = a.`id_zone`)';
 
-	 	return parent::initList();
+				$this->tpl_list_vars['zones'] = Zone::getZones();
+	 	return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -143,7 +174,7 @@ class AdminStatesControllerCore extends AdminController
 			)
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()

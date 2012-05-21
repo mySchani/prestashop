@@ -33,6 +33,10 @@ class AdminPreferencesControllerCore extends AdminController
 		$this->context = Context::getContext();
 		$this->className = 'Configuration';
 		$this->table = 'configuration';
+		
+		$max_upload = (int)ini_get('upload_max_filesize');
+		$max_post = (int)ini_get('post_max_size');
+		$upload_mb = min($max_upload, $max_post);
 
 		// Prevent classes which extend AdminPreferences to load useless data
 		if (get_class($this) == 'AdminPreferencesController')
@@ -164,6 +168,20 @@ class AdminPreferencesControllerCore extends AdminController
 					'type' => 'select',
 					'list' => $order_process_type,
 					'identifier' => 'value'
+				),
+				'PS_ALLOW_MULTISHIPPING' => array(
+					'title' => $this->l('Allow multi-shipping'),
+					'desc' => $this->l('Allow the customer to ship his order to multiple addresses. This option will transform the customer cart in one or more orders.'),
+					'validation' => 'isBool',
+					'cast' => 'intval',
+					'type' => 'bool'
+				),
+				'PS_SHIP_WHEN_AVAILABLE' => array(
+					'title' => $this->l('Allow shipping when available'),
+					'desc' => $this->l('Allow the customer to split his order. One with the products "in stock", and an other with the other products. This option will transform the customer cart in two orders.'),
+					'validation' => 'isBool',
+					'cast' => 'intval',
+					'type' => 'bool'
 				),
 				'PS_REGISTRATION_PROCESS_TYPE' => array(
 					'title' => $this->l('Registration process type'),
@@ -298,9 +316,27 @@ class AdminPreferencesControllerCore extends AdminController
 					'validation' => 'isBool',
 					'cast' => 'intval',
 					'type' => 'bool'
-				)
+				),
+				'PS_LIMIT_UPLOAD_FILE_VALUE' => array(
+					'title' => $this->l('Limit upload file value'),
+					'desc' => $this->l('Define the limit upload for a downloadable product, this value have to be inferior or egal to your server\'s maximum upload file ').sprintf('(%s MB).',$upload_mb), 
+					'validation' => 'isInt', 
+					'cast' => 'intval', 
+					'type' => 'text', 
+					'suffix' => $this->l('Megabits'),
+					'default' => '1'
+				),
+				'PS_LIMIT_UPLOAD_IMAGE_VALUE' => array(
+					'title' => $this->l('Limit upload image value'), 
+					'desc' => $this->l('Define the limit upload for an image, this value have to be inferior or egal to your server\'s maximum upload file ').sprintf('(%s MB).',$upload_mb), 
+					'validation' => 'isInt', 
+					'cast' => 'intval', 
+					'type' => 'text', 
+					'suffix' => $this->l('Megabits'),
+					'default' => '1'
+				),
 			);
-
+			
 			if (function_exists('date_default_timezone_set'))
 				$fields['PS_TIMEZONE'] = array(
 					'title' => $this->l('Time Zone:'),
@@ -324,7 +360,8 @@ class AdminPreferencesControllerCore extends AdminController
 					'title' =>	$this->l('General'),
 					'icon' =>	'tab-preferences',
 					'fields' =>	$fields,
-					'submit' => array('title' => $this->l('   Save   '), 'class' => 'button')
+					'submit' => array('title' => $this->l('   Save   '), 'class' => 'button'),
+					
 				),
 			);
 		}
@@ -334,6 +371,22 @@ class AdminPreferencesControllerCore extends AdminController
 
 	public function postProcess()
 	{
+		$upload_max_size = (int)str_replace('M', '', ini_get('upload_max_filesize'));
+		$post_max_size = (int)str_replace('M', '', ini_get('post_max_size'));
+		$max_size = $upload_max_size < $post_max_size ? $upload_max_size : $post_max_size;
+
+		if (Tools::getValue('PS_LIMIT_UPLOAD_FILE_VALUE') > $max_size or Tools::getValue('PS_LIMIT_UPLOAD_IMAGE_VALUE') > $max_size)
+		{
+			$this->_errors[] = Tools::displayError('The limit choosen is superior to the server\'s maximum upload file You need to improve the limit of your server.');
+			return;
+		}
+		
+		if (Tools::getIsset('PS_LIMIT_UPLOAD_FILE_VALUE') && !Tools::getValue('PS_LIMIT_UPLOAD_FILE_VALUE'))
+			$_POST['PS_LIMIT_UPLOAD_FILE_VALUE'] = 1;
+			
+		if (Tools::getIsset('PS_LIMIT_UPLOAD_IMAGE_VALUE') && !Tools::getValue('PS_LIMIT_UPLOAD_IMAGE_VALUE'))
+			$_POST['PS_LIMIT_UPLOAD_IMAGE_VALUE'] = 1;
+		
 		Tools::clearCache($this->context->smarty);
 		parent::postProcess();
 	}

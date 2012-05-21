@@ -49,7 +49,7 @@ INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VAL
 	('BLOCKADVERT_LINK', 0, NOW(), NOW()),
 	('BLOCKSTORE_IMG', 'store.jpg', NOW(), NOW());
 
-INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeatured', 1),(2, 'gsitemap', 1),(3, 'cheque', 1),(4, 'moneybookers', 1),(5, 'editorial', 1),
+INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeatured', 1),(2, 'gsitemap', 1),(3, 'cheque', 1),(4, 'moneybookers', 1),(5, 'homeslider', 1),
 (6, 'bankwire', 1),(7, 'blockadvertising', 1),(8, 'blockbestsellers', 1),(9, 'blockcart', 1),(10, 'blockcategories', 1),(11, 'blockcurrencies', 1),(12, 'blockcms', 1),
 (13, 'blocklanguages', 1),(14, 'blockmanufacturer', 1),(15, 'blockmyaccount', 1),(16, 'blocknewproducts', 1),(17, 'blockpaymentlogo', 1),(18, 'blockpermanentlinks', 1),
 (19, 'blocksearch', 1),(20, 'blockspecials', 1),(21, 'blocktags', 1),(22, 'blockuserinfo', 1),(24, 'blockviewed', 1),(25, 'statsdata', 1),
@@ -57,22 +57,188 @@ INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeat
 (34, 'graphvisifire', 1),(35, 'graphxmlswfcharts', 1),(36, 'graphgooglechart', 1),(37, 'graphartichow', 1),(39, 'gridhtml', 1),(40, 'statsbestcustomers', 1),
 (41, 'statsorigin', 1),(42, 'pagesnotfound', 1),(43, 'sekeywords', 1),(44, 'statsproduct', 1),(45, 'statsbestproducts', 1),(46, 'statsbestcategories', 1),
 (47, 'statsbestvouchers', 1),(48, 'statsbestsuppliers', 1),(49, 'statscarrier', 1),(50, 'statsnewsletter', 1),(51, 'statssearch', 1),(52, 'statscheckup', 1),(53, 'statsstock', 1),
-(54, 'blockstore', 1),(55, 'statsforecast', 1);
+(54, 'blockstore', 1),(55, 'statsforecast', 1),
+/* new themes : modules to add */
+(56, 'blocktopmenu', 1),
+(57, 'blocksharefb', 1),
+(58, 'blocksocial', 1),
+(59, 'blockcontactinfos', 1),
+(60, 'blockcontact', 1),
+(61, 'blockmyaccountfooter', 1),
+(62, 'blockreinsurance', 1),
+(63, 'blockcustomerprivacy', 1),
+(64, 'favoriteproducts', 1),
+
+(65, 'blocknewsletter', 1),
+(66, 'blocksupplier', 1),
+(67, 'feeder', 1);
 
 INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 1, `id_module`, 1, 1 FROM `PREFIX_module`);
 
 INSERT INTO `PREFIX_module_shop` (`id_module`, `id_shop`) (SELECT `id_module`, 1 FROM `PREFIX_module`);
 
-INSERT INTO `PREFIX_hook` (`name`, `title`, `description`, `position`) VALUES
-	('myAccountBlock', 'My account block', 'Display extra informations inside the "my account" block', 1);
 
-INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES (3, 1, 1),(6, 1, 2),(4, 1, 3),(4, 4, 3),(8, 2, 1),(3, 4, 1),(6, 4, 2),(9, 6, 1),(16, 6, 2),(8, 6, 3),
-(20, 6, 4),(12, 6, 5),(54, 6, 6),(15, 7, 1),(21, 7, 2),(10, 7, 3),(24, 7, 4),(14, 7, 5),(12, 7, 6),(7, 7, 7),(17, 7, 8),(5, 8, 1),(1, 8, 2),(11, 14, 1),(13, 14, 2),(18, 14, 3),
-(19, 14, 4),(22, 14, 5),(8, 19, 1),(12, 21, 1),(25, 11, 1),(25, 21, 2),(26, 32, 1),(27, 32, 2),(28, 32, 3),(30, 32, 4),(31, 32, 5),(32, 32, 6),(33, 32, 7),(34, 33, 1),
-(35, 33, 2),(36, 33, 3),(37, 33, 4),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
-(47, 32, 14),(48, 32, 16),(49, 32, 17),(55, 32, 22),(50, 32, 18),(51, 32, 19),(51, 45, 1),(25, 25, 1),(41, 20, 2),(52, 32, 20),(53, 32, 21),(17, 9, 2),(18, 9, 3),(24, 9, 4),(9, 9, 5),
-(15, 9, 6),(5, 9, 7),(8, 9, 8),(10, 9, 9),(20, 9, 10),(11, 9, 11),(16, 9, 12),(22, 9, 13),(13, 9, 14),(14, 9, 15),(12, 9, 16),(7, 9, 17),(21, 9, 18),(10, 60, 1),(10, 61, 1),(10, 62, 1),
-(54, 9, 19),(10,66,1),(19,9,20);
+/*
+ * rightcolumn=6, leftcolumn=7, home=8, header=9, top=14,
+ */
+
+
+INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES
+/* homefeatured */
+(1, 8, 2),
+(1, 9, 23),
+/* cheque */
+(3, 1, 1),
+(3, 4, 1),
+/* moneybooker */
+(4, 1, 3),
+(4, 4, 3),
+/* homeslider */
+(5, 8, 1),
+(5, 9, 7),
+/* bankwire */
+(6, 1, 2),
+(6, 4, 2),
+/* blockadvertising */
+(7, 7, 7),
+(7, 9, 17),
+
+
+/* blockcart */
+(9, 9, 5),
+(9, 14, 7),
+
+/* blockcategories */
+(10, 7, 3),
+(10, 9, 9),
+(10, 21, 2),
+(10, 60, 1),
+(10, 61, 1),
+(10, 62, 1),
+(10, 66, 1),
+/* blockcurrencies */
+(11, 9, 11),
+(11, 14, 2),
+
+/* blockcms */
+(12, 6, 5),
+(12, 7, 6),
+(12, 9, 16),
+(12, 21, 4),
+/* blocklanguages */
+(13, 9, 14),
+(13, 14, 1),
+/* blockmanufacturer */
+(14, 7, 5),
+(14, 9, 15),
+/* blockmyaccount */
+(15, 9, 6),
+(15, 21, 3),
+/* blocknewproducts */
+(16, 6, 2),
+(16, 9, 12),
+/* blockpaymentlogo */
+(17, 7, 8),
+(17, 9, 2),
+/* blockpermanentlinks */
+(18, 9, 3),
+(18, 14, 3),
+/* blocksearch */
+(19, 9 ,20),
+(19, 14, 4),
+/* blockspecials */
+(20, 6, 4),
+(20, 9, 10),
+/* blocktags */
+(21, 7, 2),
+(21, 9, 18),
+/* blockuserinfo */
+(22, 9, 13),
+(22, 14, 5),
+/* blockviewed */
+(24, 7, 4),
+(24, 9, 4),
+/* statsdata */
+(25, 11, 1),
+(25, 21, 7),
+(25, 25, 1),
+/* stats (bo) */
+(26, 32, 1),
+(27, 32, 2),
+(28, 32, 3),
+(30, 32, 4),
+(31, 32, 5),
+(32, 32, 6),
+(33, 32, 7),
+/* graphs engine */
+(34, 33, 1),
+(35, 33, 2),
+(36, 33, 3),
+(37, 33, 4),
+/* gridhtml (bo) */
+(39, 37, 1),
+/* statsbestcustomer  (bo)*/
+(40, 32, 8),
+/* statsorigin */
+(41, 20, 2),
+(41, 32, 9),
+/* pagesnotfound */
+(42, 14, 8),
+(42, 32, 10),
+/* sekeywords */
+(43, 14, 7),
+(43, 32, 11),
+/* statsproduct */
+(44, 32, 12),
+(45, 32, 13),
+(46, 32, 15),
+(47, 32, 14),
+(48, 32, 16),
+(49, 32, 17),
+(50, 32, 18),
+(51, 32, 19),
+/* statsearch */
+(51, 45, 1),
+/* statscheckup (bo) */
+(52, 32, 20),
+/* statstock(bo) */
+(53, 32, 21),
+/* blockstore */
+(54, 6, 6),
+(54, 9, 19),
+/* statsforecast */
+(55, 32, 22),
+/* blocktopmenu */
+(56, 9, 22),
+(56, 14, 6),
+/* blocksharefb */
+(57, 21, 7),
+(57, 40, 1),
+/* blocksocial */
+(58, 9, 5),
+(58, 21, 5),
+/* blockcontactinfos */
+(59, 9, 21),
+(59, 21, 6),
+/* blockcontact */
+(60, 6, 7),
+(60, 9, 24),
+/* blockreinsurance */
+(62, 21, 1),
+/* favoriteproducts */
+(64, 9, 22),
+(64, 26, 1),
+(64, 40, 2),
+(64, 96, 1),
+/* blocknewsletter */
+(65, 9, 24),
+(65, 6, 8),
+/* blocksupplier */
+(66, 7, 5),
+(66, 9, 25),
+
+/* feeder */
+(67, 9, 26);
 
 CREATE TABLE `PREFIX_pagenotfound` (
   `id_pagenotfound` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -106,7 +272,6 @@ CREATE TABLE `PREFIX_sekeyword` (
 
 CREATE TABLE `PREFIX_cms_block` (
 	`id_cms_block` int(10) unsigned NOT NULL auto_increment,
-	`id_shop` INT(11) UNSIGNED NOT NULL DEFAULT '1',
 	`id_cms_category` int(10) unsigned NOT NULL,
 	`name` varchar(40) NOT NULL,
 	`location` tinyint(1) unsigned NOT NULL,
@@ -130,29 +295,11 @@ CREATE TABLE `PREFIX_cms_block_lang` (
 	PRIMARY KEY (`id_cms_block`, `id_lang`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
-CREATE TABLE `PREFIX_editorial` (
-	`id_editorial` int(10) unsigned NOT NULL auto_increment,
-	`body_home_logo_link` varchar(255) NOT NULL,
-	PRIMARY KEY (`id_editorial`)
+CREATE TABLE `PREFIX_cms_block_shop` (
+	`id_cms_block` int(10) unsigned NOT NULL auto_increment,
+	`id_shop` int(10) unsigned NOT NULL,
+	PRIMARY KEY (`id_cms_block`, `id_shop`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-CREATE TABLE `PREFIX_editorial_lang` (
-	`id_editorial` int(10) unsigned NOT NULL,
-	`id_lang` int(10) unsigned NOT NULL,
-	`body_title` varchar(255) NOT NULL,
-	`body_subheading` varchar(255) NOT NULL,
-	`body_paragraph` text NOT NULL,
-	`body_logo_subheading` varchar(255) NOT NULL,
-	PRIMARY KEY (`id_editorial`, `id_lang`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-INSERT INTO `PREFIX_editorial` (`id_editorial`, `body_home_logo_link`) VALUES (1, 'http://www.prestashop.com');
-INSERT INTO `PREFIX_editorial_lang` (`id_editorial`, `id_lang`, `body_title`, `body_subheading`, `body_paragraph`, `body_logo_subheading`) VALUES
-(1, 1, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 2, 'Lorem ipsum dolor sit amet', 'Excepteur sint occaecat cupidatat non proident', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Lorem ipsum presta shop amet'),
-(1, 3, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 4, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 5, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident');
 
 INSERT INTO `PREFIX_range_price` (`id_range_price`, `id_carrier`, `delimiter1`, `delimiter2`) VALUES (1, 2, 0, 10000);
 INSERT INTO `PREFIX_range_weight` (`id_range_weight`, `id_carrier`, `delimiter1`, `delimiter2`) VALUES (1, 2, 0, 10000);
@@ -187,8 +334,6 @@ INSERT INTO `PREFIX_order_detail_tax` (`id_order_detail`, `id_tax`, `unit_amount
 (1, 1, '76.860000', '76.860000'),
 (2, 1, '24.420000', '24.420000');
 
-INSERT INTO `PREFIX_order_payment` (`id_order`, `id_currency`, `amount`, `payment_method`, `date_add`) VALUES (1, 1, '626.37', 'Chèque', NOW());
-
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'Apple Computer, Inc', NOW(), NOW(), 1);
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES(2, 'Shure Incorporated', NOW(), NOW(), 1);
 
@@ -206,8 +351,8 @@ INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_custom
 INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_customer`, `id_manufacturer`, `id_supplier`, `alias`, `company`, `lastname`, `firstname`, `address1`, `address2`, `postcode`, `city`, `phone`, `date_add`, `date_upd`, `active`, `deleted`)
 	VALUES (2, 8, 0, 1, 0, 0, 'Mon adresse', 'My Company', 'DOE', 'John', '16, Main street', '2nd floor', '75000', 'Paris ', '0102030405', NOW(), NOW(), 1, 0);
 
-INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'AppleStore', NOW(), NOW(), 1);
-INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (2, 'Shure Online Store', NOW(), NOW(), 1);
+INSERT INTO `PREFIX_supplier` (`id_supplier`, `id_address`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 1, 'AppleStore', NOW(), NOW(), 1);
+INSERT INTO `PREFIX_supplier` (`id_supplier`, `id_address`, `name`, `date_add`, `date_upd`, `active`) VALUES (2, 2, 'Shure Online Store', NOW(), NOW(), 1);
 
 INSERT INTO `PREFIX_supplier_group_shop` (`id_supplier`, `id_group_shop`) (SELECT `id_supplier`, 1 FROM `PREFIX_supplier`);
 
@@ -227,11 +372,41 @@ INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufa
 (8, 1, 0, 0, 1, 3, 0, 1, '0', 0.00, 0, 25.041806, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
 (9, 1, 2, 2, 1, 3, 0, 1, '0', 0.00, 0, 124.581940, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00');
 
-INSERT INTO `PREFIX_product_supplier` (`id_product_supplier`, `id_product`, `id_product_attribute`, `id_supplier`, `product_supplier_reference`) VALUES
-(1, 1, 0, 1, ''),
-(2, 2, 0, 1, ''),
-(3, 6, 0, 1, ''),
-(4, 7, 0, 1, '');
+INSERT INTO `PREFIX_product_supplier` (`id_product_supplier`, `id_product`, `id_product_attribute`, `id_supplier`, `product_supplier_reference`, `product_supplier_price_te`, `id_currency`) VALUES
+(1, 1, 0, 1, '', '0.000000', 0),
+(2, 1, 25, 1, '', '0.000000', 0),
+(3, 1, 26, 1, '', '0.000000', 0),
+(4, 1, 27, 1, '', '0.000000', 0),
+(5, 1, 28, 1, '', '0.000000', 0),
+(6, 1, 29, 1, '', '0.000000', 0),
+(7, 1, 30, 1, '', '0.000000', 0),
+(8, 1, 31, 1, '', '0.000000', 0),
+(9, 1, 32, 1, '', '0.000000', 0),
+(10, 1, 33, 1, '', '0.000000', 0),
+(11, 1, 34, 1, '', '0.000000', 0),
+(12, 1, 35, 1, '', '0.000000', 0),
+(13, 1, 36, 1, '', '0.000000', 0),
+(14, 1, 39, 1, '', '0.000000', 0),
+(15, 1, 40, 1, '', '0.000000', 0),
+(16, 1, 41, 1, '', '0.000000', 0),
+(17, 1, 42, 1, '', '0.000000', 0),
+(18, 5, 0, 1, '', '0.000000', 0),
+(19, 5, 12, 1, '', '0.000000', 0),
+(20, 5, 13, 1, '', '0.000000', 0),
+(21, 5, 14, 1, '', '0.000000', 0),
+(22, 5, 15, 1, '', '0.000000', 0),
+(23, 8, 0, 1, '', '0.000000', 0),
+(24, 2, 0, 1, '', '0.000000', 0),
+(25, 2, 7, 1, '', '0.000000', 0),
+(26, 2, 8, 1, '', '0.000000', 0),
+(27, 2, 9, 1, '', '0.000000', 0),
+(28, 2, 10, 1, '', '0.000000', 0),
+(30, 6, 0, 1, '', '0.000000', 0),
+(31, 7, 0, 1, '', '0.000000', 0),
+(32, 7, 19, 1, '', '0.000000', 0),
+(33, 7, 22, 1, '', '0.000000', 0),
+(34, 7, 23, 1, '', '0.000000', 0),
+(35, 9, 0, 2, '', '0.000000', 0);
 
 INSERT INTO `PREFIX_product_shop` (`id_product`, `id_shop`) (SELECT `id_product`, 1 FROM `PREFIX_product`);
 
@@ -272,8 +447,8 @@ INSERT INTO `PREFIX_product_lang` (`id_product`, `id_lang`, `description`, `desc
 (8, 5, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'custodia-portafoglio-in-pelle-belkin-per-ipod-nano-nero-cioccolato', '', '', '', 'Custodia portafoglio in pelle Belkin per iPod nano - Nero/Cioccolato', '', NULL),
 (9, 5, '<div class="product-overview-full">L\'ascolto con la tecnologia dei Micro-Auricolari ad Alta Definizione permette l\'ascolto ideale del tuo iPod o iPhone. E\' quanto ti offre il design leggero, ergonomico ed elegante degli auricolari SE210. Ti garantiscono un rendimento audio ad alto livello di stereo portatili e fissi, per un livello di precisione mai raggiunto prima.  Inoltre, la forma flessibile ti peremtte di scegliere la posizione migliore per indossarli. <br /> <br /> <strong>Caratteristiche</strong> <br /> \r\n<ul>\r\n<li>Design di isolamento del suono </li>\r\n<li> Micro-speaker ad alta definizione con driver singolo ad armatura bilanciata </li>\r\n<li> Cavo staccabile e regolabile in modo da poterlo allungare o accorciare in base alle tue attività </li>\r\n<li> Connettore compatibile con porte auricolari sia su iPod che iPhone </li>\r\n</ul>\r\n<strong>Specifiche tecniche </strong><br /> \r\n<ul>\r\n<li>Tipo speaker: MicroSpeaker ad alta definizione</li>\r\n<li> Gamma di frequenza: 25Hz-18.5kHz </li>\r\n<li> Impedenza (1kHz): 26 Ohms </li>\r\n<li> Sensibilità (1mW): 114 dB SPL/mW </li>\r\n<li> Lunghezza cavo (con prolunga): 18.0 in./45,0 cm (54.0 in./137,1 cm) </li>\r\n</ul>\r\n<strong>Nella confezione</strong><br /> \r\n<ul>\r\n<li>Auricolari Shure SE210 </li>\r\n<li> Cavo prolunga (36.0 in./91,4 cm) </li>\r\n<li> Tre paia di imbuti in spugna (small, medium, large) </li>\r\n<li> Tre paia di imbuti morbidi (small, medium, large) </li>\r\n<li> Un paio di imbuti a tripla aletta </li>\r\n<li> Custodia da viaggio </li>\r\n</ul>\r\nGaranzia<br /> Due anni limitata <br />(Per informazioni, visitare <br />www.shure.com/PersonalAudio/CustomerSupport/ProductReturnsAndWarranty/index.htm.) <br /><br /> Mfr. Parte N.: SE210-A-EFS <br /><br />Nota: I prodotti venduti tramite questo sito web e che non hanno il marchio Apple ricevono assistenza esclusivamente dai loro produttori con i termini e le condizioni contenute nella confezione del prodotto.  La Garanzia Limitata di Apple non si applica ai prodotti che non appartengono al marchio Apple, anche se imballati o venduti con i prodotti Apple . Contatta direttamente il produttore per supporto tecnico e servizio clienti.</div>', '<p>Basati sulla tecnologia all\'avanguardia, testati da musicisti professionisti, e messi a punto da ingegneri Shure, i leggeri ed eleganti SE210 offrono un suono nitido e privo di rumori di fondo.</p>', 'ecouteurs-a-isolation-sonore-shure-se210-blanc', '', '', '', 'auricolari-sound-isolating-shure-se210-per-ipod-e-iphone', '', NULL);
 
-INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_currency`, `id_country`, `id_group`, `id_product_attribute`, `price`, `from_quantity`, `reduction`, `reduction_type`, `from`, `to`) VALUES
-(1, 0, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_group_shop`, `id_currency`, `id_country`, `id_group`, `id_product_attribute`, `price`, `from_quantity`, `reduction`, `reduction_type`, `from`, `to`) VALUES
+(1, 0, 0, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft`, `nright`, `active`, `date_add`, `date_upd`, `position`) VALUES
 (2, 1, 1, 2, 3, 1, NOW(), NOW(), 0),(3, 1, 1, 3, 4, 1, NOW(), NOW(), 1),(4, 1, 1, 4, 5, 1, NOW(), NOW(), 2);
@@ -484,10 +659,9 @@ Cordialmente,');
 INSERT INTO `PREFIX_cms_block` (`id_cms_block`, `id_cms_category`, `name`, `location`, `position`) VALUES(1, 1, '', 0, 0);
 INSERT INTO `PREFIX_cms_block_page` (`id_cms_block_page`, `id_cms_block`, `id_cms`, `is_category`) VALUES(1, 1, 1, 0), (2, 1, 2, 0), (3, 1, 3, 0), (4, 1, 4, 0), (5, 1, 5, 0);
 INSERT INTO `PREFIX_cms_block_lang` (`id_cms_block`, `id_lang`, `name`) VALUES (1, 1, 'Information'),(1, 2, 'Informations'),(1, 3, 'Informaciónes'),(1, 4, 'Information'),(1, 5, 'Informazioni');
-
+INSERT INTO `PREFIX_cms_block_shop` (`id_cms_block`, `id_shop`) VALUES(1, 1);
 /* Currency/Country module */
 INSERT INTO `PREFIX_module_currency` (`id_module`, `id_currency`) VALUES (3, 1),(3, 2),(3, 3),(4, 1),(4, 2),(4, 3),(6, 1),(6, 2),(6, 3);
-INSERT INTO `PREFIX_module_group` (`id_module`, `id_group`) VALUES (3, 2),(4, 2),(6, 2),(3, 3),(4, 3),(6, 3);
 
 INSERT INTO `PREFIX_module_country` (`id_module`, `id_country`) VALUES (3, 1),(3, 2),(3, 3),(3, 4),(3, 5),(3, 6),(3, 7),(3, 8),
 (3, 9),(3, 10),(3, 11),(3, 12),(3, 13),(3, 14),(3, 15),(3, 16),(3, 17),(3, 18),(3, 19),(3, 20),(3, 21),(3, 22),(3, 23),(3, 24),
@@ -969,6 +1143,7 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (3, 104, 1, 1, 1, 1),
 (3, 105, 0, 0, 0, 0),
 (3, 106, 0, 0, 0, 0),
+(3, 108, 1, 1, 1, 1),
 (4, 1, 1, 1, 1, 1),
 (4, 2, 0, 0, 0, 0),
 (4, 3, 0, 0, 0, 0),
@@ -1066,6 +1241,7 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (4, 104, 1, 1, 1, 1),
 (4, 105, 1, 1, 1, 1),
 (4, 106, 1, 1, 1, 1),
+(4, 108, 0, 0, 0, 0),
 (5, 1, 1, 1, 1, 1),
 (5, 2, 1, 1, 1, 1),
 (5, 3, 1, 1, 1, 1),
@@ -1162,7 +1338,8 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (5, 103, 1, 1, 1, 1),
 (5, 104, 1, 1, 1, 1),
 (5, 105, 0, 0, 0, 0),
-(5, 106, 0, 0, 0, 0);
+(5, 106, 0, 0, 0, 0),
+(5, 108, 0, 0, 0, 0);
 
 INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 2, id_module, 0, 1 FROM PREFIX_module);
 INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 3, id_module, 0, 1 FROM PREFIX_module);
@@ -1185,196 +1362,387 @@ INSERT INTO `PREFIX_store` (`id_store`, `id_country`, `id_state`, `name`, `addre
 
 INSERT INTO `PREFIX_store_shop` (`id_store`, `id_shop`) (SELECT `id_store`, 1 FROM `PREFIX_store`);
 
-INSERT INTO `PREFIX_group_module_restriction` (`id_group`, `id_module`, `authorized`) VALUES
-("1", "1", "1"),
-("1", "2", "1"),
-("1", "3", "1"),
-("1", "4", "1"),
-("1", "5", "1"),
-("1", "6", "1"),
-("1", "7", "1"),
-("1", "8", "1"),
-("1", "9", "1"),
-("1", "10", "1"),
-("1", "11", "1"),
-("1", "12", "1"),
-("1", "13", "1"),
-("1", "14", "1"),
-("1", "15", "1"),
-("1", "16", "1"),
-("1", "17", "1"),
-("1", "18", "1"),
-("1", "19", "1"),
-("1", "20", "1"),
-("1", "21", "1"),
-("1", "22", "1"),
-("1", "24", "1"),
-("1", "25", "1"),
-("1", "26", "1"),
-("1", "27", "1"),
-("1", "28", "1"),
-("1", "30", "1"),
-("1", "31", "1"),
-("1", "32", "1"),
-("1", "33", "1"),
-("1", "34", "1"),
-("1", "35", "1"),
-("1", "36", "1"),
-("1", "37", "1"),
-("1", "39", "1"),
-("1", "40", "1"),
-("1", "41", "1"),
-("1", "42", "1"),
-("1", "43", "1"),
-("1", "44", "1"),
-("1", "45", "1"),
-("1", "46", "1"),
-("1", "47", "1"),
-("1", "48", "1"),
-("1", "49", "1"),
-("1", "50", "1"),
-("1", "51", "1"),
-("1", "52", "1"),
-("1", "53", "1"),
-("1", "54", "1"),
-("1", "55", "1"),
-("2", "1", "1"),
-("2", "2", "1"),
-("2", "3", "1"),
-("2", "4", "1"),
-("2", "5", "1"),
-("2", "6", "1"),
-("2", "7", "1"),
-("2", "8", "1"),
-("2", "9", "1"),
-("2", "10", "1"),
-("2", "11", "1"),
-("2", "12", "1"),
-("2", "13", "1"),
-("2", "14", "1"),
-("2", "15", "1"),
-("2", "16", "1"),
-("2", "17", "1"),
-("2", "18", "1"),
-("2", "19", "1"),
-("2", "20", "1"),
-("2", "21", "1"),
-("2", "22", "1"),
-("2", "24", "1"),
-("2", "25", "1"),
-("2", "26", "1"),
-("2", "27", "1"),
-("2", "28", "1"),
-("2", "30", "1"),
-("2", "31", "1"),
-("2", "32", "1"),
-("2", "33", "1"),
-("2", "34", "1"),
-("2", "35", "1"),
-("2", "36", "1"),
-("2", "37", "1"),
-("2", "39", "1"),
-("2", "40", "1"),
-("2", "41", "1"),
-("2", "42", "1"),
-("2", "43", "1"),
-("2", "44", "1"),
-("2", "45", "1"),
-("2", "46", "1"),
-("2", "47", "1"),
-("2", "48", "1"),
-("2", "49", "1"),
-("2", "50", "1"),
-("2", "51", "1"),
-("2", "52", "1"),
-("2", "53", "1"),
-("2", "54", "1"),
-("2", "55", "1"),
-("3", "1", "1"),
-("3", "2", "1"),
-("3", "3", "1"),
-("3", "4", "1"),
-("3", "5", "1"),
-("3", "6", "1"),
-("3", "7", "1"),
-("3", "8", "1"),
-("3", "9", "1"),
-("3", "10", "1"),
-("3", "11", "1"),
-("3", "12", "1"),
-("3", "13", "1"),
-("3", "14", "1"),
-("3", "15", "1"),
-("3", "16", "1"),
-("3", "17", "1"),
-("3", "18", "1"),
-("3", "19", "1"),
-("3", "20", "1"),
-("3", "21", "1"),
-("3", "22", "1"),
-("3", "24", "1"),
-("3", "25", "1"),
-("3", "26", "1"),
-("3", "27", "1"),
-("3", "28", "1"),
-("3", "30", "1"),
-("3", "31", "1"),
-("3", "32", "1"),
-("3", "33", "1"),
-("3", "34", "1"),
-("3", "35", "1"),
-("3", "36", "1"),
-("3", "37", "1"),
-("3", "39", "1"),
-("3", "40", "1"),
-("3", "41", "1"),
-("3", "42", "1"),
-("3", "43", "1"),
-("3", "44", "1"),
-("3", "45", "1"),
-("3", "46", "1"),
-("3", "47", "1"),
-("3", "48", "1"),
-("3", "49", "1"),
-("3", "50", "1"),
-("3", "51", "1"),
-("3", "52", "1"),
-("3", "53", "1"),
-("3", "54", "1"),
-("3", "55", "1");
+INSERT INTO `PREFIX_module_group` (`id_group`, `id_module`) VALUES
+("1", "1"),
+("1", "2"),
+("1", "5"),
+("1", "7"),
+("1", "8"),
+("1", "9"),
+("1", "10"),
+("1", "11"),
+("1", "12"),
+("1", "13"),
+("1", "14"),
+("1", "15"),
+("1", "16"),
+("1", "17"),
+("1", "18"),
+("1", "19"),
+("1", "20"),
+("1", "21"),
+("1", "22"),
+("1", "24"),
+("1", "25"),
+("1", "26"),
+("1", "27"),
+("1", "28"),
+("1", "30"),
+("1", "31"),
+("1", "32"),
+("1", "33"),
+("1", "34"),
+("1", "35"),
+("1", "36"),
+("1", "37"),
+("1", "39"),
+("1", "40"),
+("1", "41"),
+("1", "42"),
+("1", "43"),
+("1", "44"),
+("1", "45"),
+("1", "46"),
+("1", "47"),
+("1", "48"),
+("1", "49"),
+("1", "50"),
+("1", "51"),
+("1", "52"),
+("1", "53"),
+("1", "54"),
+("1", "55"),
+("1", "56"),
+("2", "1"),
+("2", "2"),
+("2", "3"),
+("2", "4"),
+("2", "5"),
+("2", "6"),
+("2", "7"),
+("2", "8"),
+("2", "9"),
+("2", "10"),
+("2", "11"),
+("2", "12"),
+("2", "13"),
+("2", "14"),
+("2", "15"),
+("2", "16"),
+("2", "17"),
+("2", "18"),
+("2", "19"),
+("2", "20"),
+("2", "21"),
+("2", "22"),
+("2", "24"),
+("2", "25"),
+("2", "26"),
+("2", "27"),
+("2", "28"),
+("2", "30"),
+("2", "31"),
+("2", "32"),
+("2", "33"),
+("2", "34"),
+("2", "35"),
+("2", "36"),
+("2", "37"),
+("2", "39"),
+("2", "40"),
+("2", "41"),
+("2", "42"),
+("2", "43"),
+("2", "44"),
+("2", "45"),
+("2", "46"),
+("2", "47"),
+("2", "48"),
+("2", "49"),
+("2", "50"),
+("2", "51"),
+("2", "52"),
+("2", "53"),
+("2", "54"),
+("2", "55"),
+("2", "56"),
+("3", "1"),
+("3", "2"),
+("3", "3"),
+("3", "4"),
+("3", "5"),
+("3", "6"),
+("3", "7"),
+("3", "8"),
+("3", "9"),
+("3", "10"),
+("3", "11"),
+("3", "12"),
+("3", "13"),
+("3", "14"),
+("3", "15"),
+("3", "16"),
+("3", "17"),
+("3", "18"),
+("3", "19"),
+("3", "20"),
+("3", "21"),
+("3", "22"),
+("3", "24"),
+("3", "25"),
+("3", "26"),
+("3", "27"),
+("3", "28"),
+("3", "30"),
+("3", "31"),
+("3", "32"),
+("3", "33"),
+("3", "34"),
+("3", "35"),
+("3", "36"),
+("3", "37"),
+("3", "39"),
+("3", "40"),
+("3", "41"),
+("3", "42"),
+("3", "43"),
+("3", "44"),
+("3", "45"),
+("3", "46"),
+("3", "47"),
+("3", "48"),
+("3", "49"),
+("3", "50"),
+("3", "51"),
+("3", "52"),
+("3", "53"),
+("3", "54"),
+("3", "55"),
+("3", "56");
 
-INSERT INTO `PREFIX_stock_available` (`id_stock_available`, `id_product`, `id_product_attribute`, `id_shop`, `quantity`, `depends_on_stock`, `out_of_stock`) VALUES
-(1, 2, 7, 1, 10, 0, 2),
-(2, 2, 8, 1, 20, 0, 2),
-(3, 2, 9, 1, 30, 0, 2),
-(4, 2, 10, 1, 40, 0, 2),
-(5, 5, 12, 1, 100, 0, 2),
-(6, 5, 13, 1, 99, 0, 2),
-(7, 5, 14, 1, 50, 0, 2),
-(8, 5, 15, 1, 25, 0, 2),
-(9, 7, 19, 1, 50, 0, 2),
-(10, 7, 22, 1, 60, 0, 2),
-(11, 7, 23, 1, 70, 0, 2),
-(12, 1, 25, 1, 50, 0, 2),
-(13, 1, 26, 1, 50, 0, 2),
-(14, 1, 27, 1, 50, 0, 2),
-(15, 1, 28, 1, 50, 0, 2),
-(16, 1, 29, 1, 50, 0, 2),
-(17, 1, 30, 1, 50, 0, 2),
-(18, 1, 31, 1, 50, 0, 2),
-(19, 1, 32, 1, 50, 0, 2),
-(20, 1, 33, 1, 50, 0, 2),
-(21, 1, 34, 1, 50, 0, 2),
-(22, 1, 35, 1, 50, 0, 2),
-(23, 1, 36, 1, 50, 0, 2),
-(24, 1, 39, 1, 50, 0, 2),
-(25, 1, 40, 1, 50, 0, 2),
-(26, 1, 41, 1, 50, 0, 2),
-(27, 1, 42, 1, 50, 0, 2),
-(28, 6, 0, 1, 4, 0, 2),
-(29, 8, 0, 1, 8, 0, 2),
-(30, 9, 0, 1, 15, 0, 2);
+INSERT INTO `PREFIX_stock_available` (`id_stock_available`, `id_product`, `id_product_attribute`, `id_shop`, `id_group_shop`, `quantity`, `depends_on_stock`, `out_of_stock`) VALUES
+(1, 1, 25, 1, 0, 10, 0, 0),
+(2, 1, 0, 1, 0, 160, 0, 0),
+(3, 1, 26, 1, 0, 10, 0, 0),
+(4, 1, 27, 1, 0, 10, 0, 0),
+(5, 1, 28, 1, 0, 10, 0, 0),
+(6, 1, 29, 1, 0, 10, 0, 0),
+(7, 1, 30, 1, 0, 10, 0, 0),
+(8, 1, 31, 1, 0, 10, 0, 0),
+(9, 1, 32, 1, 0, 10, 0, 0),
+(10, 1, 33, 1, 0, 10, 0, 0),
+(11, 1, 34, 1, 0, 10, 0, 0),
+(12, 1, 35, 1, 0, 10, 0, 0),
+(13, 1, 36, 1, 0, 10, 0, 0),
+(14, 1, 39, 1, 0, 10, 0, 0),
+(15, 1, 40, 1, 0, 10, 0, 0),
+(16, 1, 41, 1, 0, 10, 0, 0),
+(17, 1, 42, 1, 0, 10, 0, 0),
+(18, 5, 12, 1, 0, 100, 0, 0),
+(19, 5, 0, 1, 0, 400, 0, 0),
+(20, 5, 13, 1, 0, 100, 0, 0),
+(21, 5, 14, 1, 0, 100, 0, 0),
+(22, 5, 15, 1, 0, 100, 0, 0),
+(23, 8, 0, 1, 0, 25, 0, 0),
+(24, 2, 7, 1, 0, 30, 0, 0),
+(25, 2, 0, 1, 0, 120, 0, 0),
+(26, 2, 8, 1, 0, 30, 0, 0),
+(27, 2, 9, 1, 0, 30, 0, 0),
+(28, 2, 10, 1, 0, 30, 0, 0),
+(29, 9, 0, 1, 0, 15, 0, 0),
+(30, 6, 0, 1, 0, 75, 0, 0),
+(31, 7, 19, 1, 0, 40, 0, 0),
+(32, 7, 0, 1, 0, 120, 0, 0),
+(33, 7, 22, 1, 0, 40, 0, 0),
+(34, 7, 23, 1, 0, 40, 0, 0);
 
-INSERT INTO `PREFIX_order_carrier` (`id_order`, `id_carrier`, `date_add`) VALUES
-(1, 2, NOW());
+INSERT INTO `PREFIX_order_carrier` (`id_order_carrier`, `id_order`, `id_carrier`, `date_add`) VALUES
+(1, 1, 2, NOW());
 
+
+/* new theme, need to be checked */
+
+REPLACE INTO `PREFIX_configuration` (id_group_shop, id_shop, name, value, `date_add`, `date_upd`) VALUES
+	(NULL, NULL, 'PS_CONDITIONS','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCTS_PER_PAGE','10', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCTS_ORDER_WAY','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCTS_ORDER_BY','4', NOW(), NOW()),
+	(NULL, NULL, 'PS_DISPLAY_QTIES','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_NB_DAYS_NEW_PRODUCT','20', NOW(), NOW()),
+	(NULL, NULL, 'PS_BLOCK_CART_AJAX','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCT_PICTURE_MAX_SIZE','131072', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCT_PICTURE_WIDTH','64', NOW(), NOW()),
+	(NULL, NULL, 'PS_PRODUCT_PICTURE_HEIGHT','64', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_MINWORDLEN','3', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_PNAME','6', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_REF','10', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_SHORTDESC','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_DESC','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_CNAME','3', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_MNAME','3', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_TAG','4', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_ATTRIBUTE','2', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_WEIGHT_FEATURE','2', NOW(), NOW()),
+	(NULL, NULL, 'PS_SEARCH_AJAX','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_DISPLAY_JQZOOM','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_BLOCK_BESTSELLERS_DISPLAY','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_BLOCK_NEWPRODUCTS_DISPLAY','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_BLOCK_SPECIALS_DISPLAY','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_TAX_DISPLAY','0', NOW(), NOW()),
+	(NULL, NULL, 'PS_STORES_DISPLAY_CMS','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_STORES_DISPLAY_FOOTER','1', NOW(), NOW()),
+	(NULL, NULL, 'SHOP_LOGO_WIDTH','224', NOW(), NOW()),
+	(NULL, NULL, 'SHOP_LOGO_HEIGHT','73', NOW(), NOW()),
+	(NULL, NULL, 'PS_DISPLAY_SUPPLIERS','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_LEGACY_IMAGES','1', NOW(), NOW()),
+	(NULL, NULL, 'PS_IMAGE_QUALITY','jpg', NOW(), NOW()),
+	(NULL, NULL, 'PS_PNG_QUALITY','7', NOW(), NOW()),
+	(NULL, NULL, 'PS_JPEG_QUALITY','90', NOW(), NOW()),
+	(NULL, NULL, 'PRODUCTS_VIEWED_NBR','2', NOW(), NOW()),
+	(NULL, NULL, 'BLOCK_CATEG_DHTML','1', NOW(), NOW()),
+	(NULL, NULL, 'BLOCK_CATEG_MAX_DEPTH','3', NOW(), NOW()),
+	(NULL, NULL, 'MANUFACTURER_DISPLAY_FORM','1', NOW(), NOW()),
+	(NULL, NULL, 'MANUFACTURER_DISPLAY_TEXT','1', NOW(), NOW()),
+	(NULL, NULL, 'MANUFACTURER_DISPLAY_TEXT_NB','5', NOW(), NOW()),
+	(NULL, NULL, 'NEW_PRODUCTS_NBR','5', NOW(), NOW()),
+	(NULL, NULL, 'BLOCKTAGS_NBR','10', NOW(), NOW()),
+	(NULL, NULL, 'FOOTER_CMS','0_3|0_4', NOW(), NOW()),
+	(NULL, NULL, 'FOOTER_BLOCK_ACTIVATION','0_3|0_4', NOW(), NOW()),
+	(NULL, NULL, 'FOOTER_POWEREDBY','1', NOW(), NOW()),
+	(NULL, NULL, 'BLOCKADVERT_LINK','0', NOW(), NOW()),
+	(NULL, NULL, 'BLOCKSTORE_IMG','store.jpg', NOW(), NOW()),
+	(NULL, NULL, 'BLOCKADVERT_IMG_EXT','jpg', NOW(), NOW()),
+	(NULL, NULL, 'MOD_BLOCKTOPMENU_ITEMS','CAT2,CAT3,CAT4', NOW(), NOW()),
+	(NULL, NULL, 'MOD_BLOCKTOPMENU_SEARCH','', NOW(), NOW()),
+	(NULL, NULL, 'blocksocial_facebook','http://www.facebook.com/prestashop', NOW(), NOW()),
+	(NULL, NULL, 'blocksocial_twitter','http://www.twitter.com/prestashop', NOW(), NOW()),
+	(NULL, NULL, 'blocksocial_rss','RSS', NOW(), NOW()),
+	(NULL, NULL, 'blockcontactinfos_company','Prestashop', NOW(), NOW()),
+	(NULL, NULL, 'blockcontactinfos_address','41, boulevard des capucines, 75002 Paris, France', NOW(), NOW()),
+	(NULL, NULL, 'blockcontactinfos_phone','+33 (0)1.40.18.30.04', NOW(), NOW()),
+	(NULL, NULL, 'blockcontactinfos_email','pub@prestashop.com', NOW(), NOW()),
+	(NULL, NULL, 'blockcontact_telnumber','+33 (0)1.40.18.30.04', NOW(), NOW()),
+	(NULL, NULL, 'blockcontact_email','pub@prestashop.com', NOW(), NOW()),
+	(NULL, NULL, 'SUPPLIER_DISPLAY_TEXT','1', NOW(), NOW()),
+	(NULL, NULL, 'SUPPLIER_DISPLAY_TEXT_NB','5', NOW(), NOW()),
+	(NULL, NULL, 'SUPPLIER_DISPLAY_FORM','1', NOW(), NOW()),
+	(NULL, NULL, 'BLOCK_CATEG_NBR_COLUMN_FOOTER','1', NOW(), NOW()),
+	(NULL, NULL, 'UPGRADER_BACKUPDB_FILENAME','', NOW(), NOW()),
+	(NULL, NULL, 'UPGRADER_BACKUPFILES_FILENAME','', NOW(), NOW()),
+	(NULL, NULL, 'blockreinsurance_nbblocks','5', NOW(), NOW());
+
+
+CREATE TABLE IF NOT EXISTS `PREFIX_reinsurance` (
+	`id_reinsurance` INT UNSIGNED NOT NULL,
+	`filename` VARCHAR(100) NOT NULL,
+	PRIMARY KEY (`id_reinsurance`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_reinsurance_lang` (
+	`id_reinsurance` INT UNSIGNED NOT NULL,
+	`id_lang` INT UNSIGNED NOT NULL,
+	`text` VARCHAR(300) NOT NULL,
+	PRIMARY KEY (`id_reinsurance`, `id_lang`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+CREATE TABLE `PREFIX_favorite_product` (
+	`id_favorite_product` int(10) unsigned NOT NULL auto_increment,
+	`id_product` int(10) unsigned NOT NULL,
+	`id_customer` int(10) unsigned NOT NULL,
+	`id_shop` int(10) unsigned NOT NULL,
+	`date_add` datetime NOT NULL,
+  `date_upd` datetime NOT NULL,
+	PRIMARY KEY (`id_favorite_product`))
+ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_newsletter` (
+	`id` int(6) NOT NULL AUTO_INCREMENT,
+	`id_shop` INTEGER UNSIGNED NOT NULL DEFAULT 1,
+	`id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT 1,
+	`email` varchar(255) NOT NULL,
+	`newsletter_date_add` DATETIME NULL,
+	`ip_registration_newsletter` varchar(15) NOT NULL,
+	`http_referer` VARCHAR(255) NULL,
+	`active` TINYINT(1) NOT NULL DEFAULT 0,
+	PRIMARY KEY(`id`)
+) ENGINE=ENGINE_TYPE default CHARSET=utf8;
+
+			CREATE TABLE IF NOT EXISTS `PREFIX_homeslider` (
+				`id_homeslider_slides` int(10) unsigned NOT NULL AUTO_INCREMENT,
+				`id_shop` int(10) unsigned NOT NULL,
+				PRIMARY KEY (`id_homeslider_slides`, `id_shop`)
+			) ENGINE=ENGINE_TYPE DEFAULT CHARSET=UTF8;
+
+			CREATE TABLE IF NOT EXISTS `PREFIX_homeslider_slides` (
+			  `id_homeslider_slides` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			  `position` int(10) unsigned NOT NULL DEFAULT '0',
+			  `active` tinyint(1) unsigned NOT NULL DEFAULT '0',
+			  PRIMARY KEY (`id_homeslider_slides`)
+			) ENGINE=ENGINE_TYPE DEFAULT CHARSET=UTF8;
+
+			CREATE TABLE IF NOT EXISTS `PREFIX_homeslider_slides_lang` (
+			  `id_homeslider_slides` int(10) unsigned NOT NULL,
+			  `id_lang` int(10) unsigned NOT NULL,
+			  `title` varchar(255) NOT NULL,
+			  `description` text NOT NULL,
+			  `legend` varchar(255) NOT NULL,
+			  `url` varchar(255) NOT NULL,
+			  `image` varchar(255) NOT NULL,
+			  PRIMARY KEY (`id_homeslider_slides`,`id_lang`)
+			) ENGINE=ENGINE_TYPE DEFAULT CHARSET=UTF8;
+
+INSERT INTO `PREFIX_configuration` (name, value)
+VALUES
+("HOMESLIDER_WIDTH", "535"),
+("HOMESLIDER_HEIGHT", "300"),
+("HOMESLIDER_SPEED", "1300"),
+("HOMESLIDER_PAUSE", "7700");
+
+INSERT INTO `PREFIX_homeslider` (id_homeslider_slides, id_shop) VALUES (1, 1),(2, 1), (3, 1), (4, 1), (5, 1);
+
+INSERT INTO `PREFIX_homeslider_slides` (id_homeslider_slides, position, active)
+VALUES (1, 1, 1), (2, 2, 1), (3, 3, 1), (4, 4, 1), (5, 5, 1);
+
+INSERT INTO `PREFIX_homeslider_slides_lang` (id_homeslider_slides, id_lang, title, description, legend, url, image) VALUES
+(1, 1, "Sample 1", "This is a sample picture", "sample-1", "http://www.prestashop.com", "sample-1.jpg"),
+(2, 1, "Sample 2", "This is a sample picture", "sample-2", "http://www.prestashop.com", "sample-2.jpg"),
+(3, 1, "Sample 3", "This is a sample picture", "sample-3", "http://www.prestashop.com", "sample-3.jpg"),
+(4, 1, "Sample 4", "This is a sample picture", "sample-4", "http://www.prestashop.com", "sample-4.jpg"),
+(5, 1, "Sample 5", "This is a sample picture", "sample-5", "http://www.prestashop.com", "sample-5.jpg"),
+(1, 2, "Sample 1", "This is a sample picture", "sample-1", "http://www.prestashop.com", "sample-1.jpg"),
+(2, 2, "Sample 2", "This is a sample picture", "sample-2", "http://www.prestashop.com", "sample-2.jpg"),
+(3, 2, "Sample 3", "This is a sample picture", "sample-3", "http://www.prestashop.com", "sample-3.jpg"),
+(4, 2, "Sample 4", "This is a sample picture", "sample-4", "http://www.prestashop.com", "sample-4.jpg"),
+(5, 2, "Sample 5", "This is a sample picture", "sample-5", "http://www.prestashop.com", "sample-5.jpg"),
+(1, 3, "Sample 1", "This is a sample picture", "sample-1", "http://www.prestashop.com", "sample-1.jpg"),
+(2, 3, "Sample 2", "This is a sample picture", "sample-2", "http://www.prestashop.com", "sample-2.jpg"),
+(3, 3, "Sample 3", "This is a sample picture", "sample-3", "http://www.prestashop.com", "sample-3.jpg"),
+(4, 3, "Sample 4", "This is a sample picture", "sample-4", "http://www.prestashop.com", "sample-4.jpg"),
+(5, 3, "Sample 5", "This is a sample picture", "sample-5", "http://www.prestashop.com", "sample-5.jpg"),
+(1, 4, "Sample 1", "This is a sample picture", "sample-1", "http://www.prestashop.com", "sample-1.jpg"),
+(2, 4, "Sample 2", "This is a sample picture", "sample-2", "http://www.prestashop.com", "sample-2.jpg"),
+(3, 4, "Sample 3", "This is a sample picture", "sample-3", "http://www.prestashop.com", "sample-3.jpg"),
+(4, 4, "Sample 4", "This is a sample picture", "sample-4", "http://www.prestashop.com", "sample-4.jpg"),
+(5, 4, "Sample 5", "This is a sample picture", "sample-5", "http://www.prestashop.com", "sample-5.jpg"),
+(1, 5, "Sample 1", "This is a sample picture", "sample-1", "http://www.prestashop.com", "sample-1.jpg"),
+(2, 5, "Sample 2", "This is a sample picture", "sample-2", "http://www.prestashop.com", "sample-2.jpg"),
+(3, 5, "Sample 3", "This is a sample picture", "sample-3", "http://www.prestashop.com", "sample-3.jpg"),
+(4, 5, "Sample 4", "This is a sample picture", "sample-4", "http://www.prestashop.com", "sample-4.jpg"),
+(5, 5, "Sample 5", "This is a sample picture", "sample-5", "http://www.prestashop.com", "sample-5.jpg");
+
+
+CREATE TABLE IF NOT EXISTS `PREFIX_linksmenutop` (
+	`id_link` INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+	`id_shop` INT UNSIGNED NOT NULL,
+	`new_window` TINYINT( 1 ) NOT NULL,
+	`link` VARCHAR( 128 ) NOT NULL,
+	INDEX (`id_shop`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `PREFIX_linksmenutop_lang` (
+	`id_link` INT NOT NULL,
+	`id_lang` INT NOT NULL,
+	`id_shop` INT NOT NULL,
+	`label` VARCHAR( 128 ) NOT NULL ,
+	INDEX ( `id_link` , `id_lang`, `id_shop`)
+) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;

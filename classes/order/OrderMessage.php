@@ -36,16 +36,22 @@ class OrderMessageCore extends ObjectModel
 	/** @var string Object creation date */
 	public $date_add;
 
-	protected $fieldsRequired = array();
-	protected $fieldsValidate = array();
-	protected $fieldsSize = array();
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_message',
+		'primary' => 'id_order_message',
+		'multilang' => true,
+		'fields' => array(
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 
-	protected $fieldsRequiredLang = array('name', 'message');
-	protected $fieldsSizeLang = array('name' => 128, 'message' => 1200);
-	protected $fieldsValidateLang = array('name' => 'isGenericName', 'message' => 'isMessage');
+			// Lang fields
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 128),
+			'message' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isMessage', 'required' => true, 'size' => 1200),
+		),
+	);
 
-	protected $table = 'order_message';
-	protected $identifier = 'id_order_message';
 
 	protected $webserviceParameters = array(
 			'fields' => array(
@@ -53,18 +59,6 @@ class OrderMessageCore extends ObjectModel
 			'date_add' => array('sqlId' => 'date_add')
 		)
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		return array('date_add' => pSQL($this->date_add));
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name', 'message'));
-	}
 
 	public static function getOrderMessages($id_lang)
 	{

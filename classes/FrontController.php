@@ -49,6 +49,9 @@ class FrontControllerCore extends Controller
 	protected $restrictedCountry = false;
 	protected $maintenance = false;
 
+	public $display_column_left = true;
+	public $display_column_right = true;
+
 	public static $initialized = false;
 
 	protected static $currentCustomerGroups;
@@ -85,6 +88,8 @@ class FrontControllerCore extends Controller
 		if (self::$initialized)
 			return;
 		self::$initialized = true;
+
+		parent::init();
 
 		// For compatibility with globals, DEPRECATED as of version 1.5
 		$css_files = $this->css_files;
@@ -231,9 +236,11 @@ class FrontControllerCore extends Controller
 		$page_name = Dispatcher::getInstance()->getController();
 		$page_name = (preg_match('/^[0-9]/', $page_name)) ? 'page_'.$page_name : $page_name;
 
-		// Arf we in a module ?
+		// Are we in a module ?
 		if (preg_match('#^'.preg_quote($this->context->shop->getPhysicalURI(), '#').'modules/([a-zA-Z0-9_-]+?)/(.*)$#', $_SERVER['REQUEST_URI'], $m))
 			$page_name = 'module-'.$m[1].'-'.str_replace(array('.php', '/'), array('', '-'), $m[2]);
+		if (Tools::getValue('controller') == 'module' && Tools::getValue('module') != '')
+			$page_name = 'module-paypal-payment-submit';
 
 		$this->context->smarty->assign(Tools::getMetaTags($this->context->language->id, $page_name));
 		$this->context->smarty->assign('request_uri', Tools::safeOutput(urldecode($_SERVER['REQUEST_URI'])));
@@ -241,11 +248,6 @@ class FrontControllerCore extends Controller
 		/* Breadcrumb */
 		$navigationPipe = (Configuration::get('PS_NAVIGATION_PIPE') ? Configuration::get('PS_NAVIGATION_PIPE') : '>');
 		$this->context->smarty->assign('navigationPipe', $navigationPipe);
-
-		if (!defined('_PS_BASE_URL_'))
-			define('_PS_BASE_URL_', Tools::getShopDomain(true));
-		if (!defined('_PS_BASE_URL_SSL_'))
-			define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
 
 		// Automatically redirect to the canonical URL if needed
 		if (isset($this->php_self) && !empty($this->php_self) && !Tools::getValue('ajax'))
@@ -287,7 +289,8 @@ class FrontControllerCore extends Controller
 			'display_tax_label' => (bool)$display_tax_label,
 			'vat_management' => (int)Configuration::get('VATNUMBER_MANAGEMENT'),
 			'opc' => (bool)Configuration::get('PS_ORDER_PROCESS_TYPE'),
-			'PS_CATALOG_MODE' => (bool)Configuration::get('PS_CATALOG_MODE'),
+			'PS_CATALOG_MODE' => (bool)Configuration::get('PS_CATALOG_MODE') OR !(bool)Group::getCurrent()->show_prices,
+			'b2b_enable' => (bool)Configuration::get('PS_B2B_ENABLE')
 		));
 
 		// Deprecated
@@ -343,6 +346,9 @@ class FrontControllerCore extends Controller
 		$this->iso = $iso;
 		$this->setMedia();
 
+		// Customer wasn't defined at all
+		$customer = new StdClass();
+
 		if($this->context->cookie->id_country)
 			$customer->geoloc_id_country = (int)$this->context->cookie->id_country;
 		if($this->context->cookie->id_state)
@@ -377,6 +383,59 @@ class FrontControllerCore extends Controller
 	public function initContent()
 	{
 		$this->process();
+
+		$this->context->smarty->assign(array(
+			'HOOK_HEADER' => Hook::exec('displayHeader'),
+			'HOOK_TOP' => Hook::exec('displayTop'),
+			'HOOK_LEFT_COLUMN' => ($this->display_column_left ? Hook::exec('displayLeftColumn') : ''),
+			'HOOK_RIGHT_COLUMN' => ($this->display_column_right ? Hook::exec('displayRightColumn', array('cart' => $this->context->cart)) : ''),
+		));
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function displayHeader($display = true)
+	{
+		// This method will be removed in 1.6
+		Tools::displayAsDeprecated();
+		$this->initHeader();
+ 		$hook_header = Hook::exec('displayHeader');
+		if ((Configuration::get('PS_CSS_THEME_CACHE') OR Configuration::get('PS_JS_THEME_CACHE')) AND is_writable(_PS_THEME_DIR_.'cache'))
+		{
+			// CSS compressor management
+			if (Configuration::get('PS_CSS_THEME_CACHE'))
+				$this->css_files = Media::cccCSS($this->css_files);
+			//JS compressor management
+			if (Configuration::get('PS_JS_THEME_CACHE'))
+				$this->js_files = Media::cccJs($this->js_files);
+		}
+
+ 		$this->context->smarty->assign('css_files', $this->css_files);
+		$this->context->smarty->assign('js_files', array_unique($this->js_files));
+
+		$this->context->smarty->assign(array(
+			'HOOK_HEADER' => $hook_header,
+			'HOOK_TOP' => Hook::exec('displayTop'),
+		));
+
+		$this->display_header = $display;
+		$this->context->smarty->display(_PS_THEME_DIR_.'header.tpl');
+
+	}
+
+	/**
+	 * @deprecated
+	 */
+	public function displayFooter($display = true)
+	{
+		// This method will be removed in 1.6
+		Tools::displayAsDeprecated();
+		$this->context->smarty->assign(array(
+			'HOOK_RIGHT_COLUMN' => Hook::exec('displayRightColumn', array('cart' => $this->context->cart)),
+			'HOOK_FOOTER' => Hook::exec('footer'),
+		));
+		$this->context->smarty->display(_PS_THEME_DIR_.'footer.tpl');
 	}
 
 	public function initCursedPage()
@@ -396,23 +455,61 @@ class FrontControllerCore extends Controller
 	public function display()
 	{
 		Tools::safePostVars();
-		$this->context->smarty->assign('errors', $this->errors);
 
-		if ($this->display_header)
-			$this->context->smarty->display(_PS_THEME_DIR_.'header.tpl');
-
-		if ($this->template)
-			$this->context->smarty->display($this->template);
-
-		if ($this->display_footer)
-			$this->context->smarty->display(_PS_THEME_DIR_.'footer.tpl');
-
-		// live edit
-		if (Tools::isSubmit('live_edit') AND $ad = Tools::getValue('ad') AND (Tools::getValue('liveToken') == sha1(Tools::getValue('ad')._COOKIE_KEY_)))
+		// assign css_files and js_files at the very last time
+		if ((Configuration::get('PS_CSS_THEME_CACHE') OR Configuration::get('PS_JS_THEME_CACHE')) AND is_writable(_PS_THEME_DIR_.'cache'))
 		{
-			$this->context->smarty->assign(array('ad' => $ad, 'live_edit' => true));
-			$this->context->smarty->display(_PS_ALL_THEMES_DIR_.'live_edit.tpl');
+			// CSS compressor management
+			if (Configuration::get('PS_CSS_THEME_CACHE'))
+				$this->css_files = Media::cccCSS($this->css_files);
+			//JS compressor management
+			if (Configuration::get('PS_JS_THEME_CACHE'))
+				$this->js_files = Media::cccJs($this->js_files);
 		}
+
+ 		$this->context->smarty->assign('css_files', $this->css_files);
+		$this->context->smarty->assign('js_files', array_unique($this->js_files));
+		$this->context->smarty->assign(array(
+			'errors' => $this->errors,
+			'display_header' => $this->display_header,
+			'display_footer' => $this->display_footer,
+		));
+
+		if (Tools::isSubmit('live_edit'))
+		{
+			$this->context->smarty->assign('live_edit', $this->getLiveEditFooter());
+		}
+		
+		// handle 1.4 theme (with layout.tpl missing)
+		if (file_exists(_PS_THEME_DIR_.'layout.tpl'))
+		{
+			if ($this->template)
+				$this->context->smarty->assign('template', $this->context->smarty->fetch($this->template));
+			$this->context->smarty->display(_PS_THEME_DIR_.'layout.tpl');
+		}
+		else
+		{
+			// BEGIN - 1.4 retrocompatibility - will be removed in 1.6
+			Tools::displayAsDeprecated('layout.tpl is missing in your theme directory');
+			if ($this->display_header)
+				$this->context->smarty->display(_PS_THEME_DIR_.'header.tpl');
+
+			if ($this->template)
+				$this->context->smarty->display($this->template);
+		
+			if ($this->display_footer)
+				$this->context->smarty->display(_PS_THEME_DIR_.'footer.tpl');
+
+			// live edit
+			if (Tools::isSubmit('live_edit') AND $ad = Tools::getValue('ad') AND (Tools::getValue('liveToken') == sha1(Tools::getValue('ad')._COOKIE_KEY_)))
+			{
+				$this->context->smarty->assign(array('ad' => $ad, 'live_edit' => true));
+				$this->context->smarty->display(_PS_ALL_THEMES_DIR_.'live_edit.tpl');
+			}
+			// END - 1.4 retrocompatibility - will be removed in 1.6
+		}
+
+		return true;
 	}
 
 	/* Display a maintenance page if shop is closed */
@@ -552,31 +649,33 @@ class FrontControllerCore extends Controller
 			'priceDisplayPrecision' => _PS_PRICE_DISPLAY_PRECISION_,
 			'content_only' => (int)Tools::getValue('content_only')
 		));
-		$this->context->smarty->assign(array(
-			'HOOK_HEADER' => Hook::exec('header'),
-			'HOOK_TOP' => Hook::exec('top'),
-			'HOOK_LEFT_COLUMN' => Hook::exec('leftColumn')
-		));
-
-		if ((Configuration::get('PS_CSS_THEME_CACHE') OR Configuration::get('PS_JS_THEME_CACHE')) AND is_writable(_PS_THEME_DIR_.'cache'))
-		{
-			// CSS compressor management
-			if (Configuration::get('PS_CSS_THEME_CACHE'))
-				$this->css_files = Media::cccCSS($this->css_files);
-			//JS compressor management
-			if (Configuration::get('PS_JS_THEME_CACHE'))
-				$this->js_files = Media::cccJs($this->js_files);
-		}
-		$this->context->smarty->assign('css_files', $this->css_files);
-		$this->context->smarty->assign('js_files', array_unique($this->js_files));
 	}
 
 	public function initFooter()
 	{
 		$this->context->smarty->assign(array(
-			'HOOK_RIGHT_COLUMN' => Hook::exec('rightColumn', array('cart' => $this->context->cart)),
 			'HOOK_FOOTER' => Hook::exec('footer'),
 		));
+
+	}
+
+	public function getLiveEditFooter(){
+		if (Tools::isSubmit('live_edit') 
+			&& ($ad = Tools::getValue('ad'))
+			&& (Tools::getValue('liveToken') == sha1(Tools::getValue('ad')._COOKIE_KEY_))
+		)
+		{
+			$data = $this->context->smarty->createData();
+			$data->assign(array(
+				'ad' => $ad, 
+				'live_edit' => true,
+				'hook_list' => $this->hook_list,
+				'id_shop' => $this->context->shop->getId(true)
+			));
+			return $this->context->smarty->createTemplate(_PS_ALL_THEMES_DIR_.'live_edit.tpl', $data)->fetch();
+		}
+		else 
+			return '';
 	}
 
 	public function productSort()

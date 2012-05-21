@@ -36,14 +36,24 @@ class AttributeGroupCore extends ObjectModel
 	/** @var string Public Name */
 	public $public_name;
 
-	protected $fieldsRequired = array();
-	protected $fieldsValidate = array('is_color_group' => 'isBool');
- 	protected $fieldsRequiredLang = array('name', 'public_name');
- 	protected $fieldsSizeLang = array('name' => 64, 'public_name' => 64);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName', 'public_name' => 'isGenericName', 'position' => 'isInt');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'attribute_group',
+		'primary' => 'id_attribute_group',
+		'multilang' => true,
+		'fields' => array(
+			'is_color_group' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'group_type' => 	array('type' => self::TYPE_STRING),
+			'position' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt'),
 
-	protected $table = 'attribute_group';
-	protected $identifier = 'id_attribute_group';
+			// Lang fields
+			'name' => 			array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+			'public_name' => 	array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 64),
+		),
+	);
+
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'product_options',
@@ -58,17 +68,6 @@ class AttributeGroupCore extends ObjectModel
 			),
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['is_color_group'] = (int)$this->is_color_group;
-		$fields['group_type'] = pSQL($this->group_type);
-		$fields['position'] = (int)$this->position;
-
-		return $fields;
-	}
 
 	public function add($autodate = true, $nullValues = false)
 	{
@@ -85,17 +84,6 @@ class AttributeGroupCore extends ObjectModel
 		$return = parent::update($nullValues);
 		Hook::exec('afterSaveAttributeGroup', array('id_attribute_group' => $this->id));
 		return $return;
-	}
-
-	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name', 'public_name'));
 	}
 
 	public static function cleanDeadCombinations()

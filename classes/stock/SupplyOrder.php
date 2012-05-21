@@ -115,73 +115,42 @@ class SupplyOrderCore extends ObjectModel
 	 */
 	public $discount_value_te = 0;
 
-	protected $fieldsRequired = array(
-		'id_supplier',
-		'supplier_name',
-		'id_lang',
-		'id_warehouse',
-		'id_supply_order_state',
-		'id_currency',
-		'id_ref_currency',
-		'reference',
-		'discount_rate',
-		'date_delivery_expected'
-	);
-
-	protected $fieldsValidate = array(
-		'id_supplier' => 'isUnsignedId',
-		'supplier_name' => 'isCatalogName',
-		'id_lang' => 'isUnsignedId',
-		'id_warehouse' => 'isUnsignedId',
-		'id_supply_order_state' => 'isUnsignedId',
-		'id_currency' => 'isUnsignedId',
-		'id_ref_currency' => 'isUnsignedId',
-		'reference' => 'isGenericName',
-		'date_add' => 'isDate',
-		'date_upd' => 'isDate',
-		'date_delivery_expected' => 'isDate',
-		'total_te' => 'isPrice',
-		'total_with_discount_te' => 'isPrice',
-		'total_ti' => 'isPrice',
-		'total_tax' => 'isPrice',
-		'discount_rate' => 'isFloat',
-		'discount_value_te' => 'isPrice'
-	);
+	/**
+	 * @var int Tells if this order is a template
+	 */
+	public $is_template = 0;
 
 	/**
-	 * @var string Database table name
+	 * @var array Contains object definition
+	 * @see ObjectModel::definition
 	 */
-	protected $table = 'supply_order';
-
 	/**
-	 * @var string Database ID name
+	 * @see ObjectModel::$definition
 	 */
-	protected $identifier = 'id_supply_order';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_supplier'] = (int)$this->id_supplier;
-		$fields['supplier_name'] = pSQL($this->supplier_name);
-		$fields['id_lang'] = (int)$this->id_lang;
-		$fields['id_warehouse'] = (int)$this->id_warehouse;
-		$fields['id_supply_order_state'] = (int)$this->id_supply_order_state;
-		$fields['id_currency'] = (int)$this->id_currency;
-		$fields['id_ref_currency'] = (int)$this->id_ref_currency;
-		$fields['reference'] = pSQL($this->reference);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['date_delivery_expected'] = pSQL($this->date_delivery_expected);
-		$fields['total_te'] = (float)$this->total_te;
-		$fields['total_with_discount_te'] = (float)$this->total_with_discount_te;
-		$fields['total_ti'] = (float)$this->total_ti;
-		$fields['total_tax'] = (float)$this->total_tax;
-		$fields['discount_rate'] = (float)$this->discount_rate;
-		$fields['discount_value_te'] = (float)$this->discount_value_te;
-
-		return $fields;
-	}
+	public static $definition = array(
+		'table' => 'supply_order',
+		'primary' => 'id_supply_order',
+		'fields' => array(
+			'id_supplier' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'supplier_name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isCatalogName', 'required' => true),
+			'id_lang' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_warehouse' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_supply_order_state' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_currency' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_ref_currency' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'reference' => 				array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
+			'date_delivery_expected' => array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
+			'total_te' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'total_with_discount_te' => array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'total_ti' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'total_tax' =>				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'discount_rate' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'discount_value_te' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'is_template' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	/**
 	 * @see ObjectModel::update()
@@ -192,7 +161,7 @@ class SupplyOrderCore extends ObjectModel
 
 		$res = parent::update($null_values);
 
-		if ($res)
+		if ($res && !$this->is_template)
 			$this->addHistory();
 
 		return $res;
@@ -207,7 +176,7 @@ class SupplyOrderCore extends ObjectModel
 
 		$res = parent::add($autodate, $null_values);
 
-		if ($res)
+		if ($res && !$this->is_template)
 			$this->addHistory();
 
 		return $res;
@@ -270,15 +239,15 @@ class SupplyOrderCore extends ObjectModel
 			p.reference as reference,
 			p.ean13 as ean13');
 
-		$query->from('supply_order_detail s');
+		$query->from('supply_order_detail', 's');
 
-		$query->innerjoin('product_lang pl ON (pl.id_product = s.id_product AND pl.id_lang = '.$id_lang.')');
+		$query->innerjoin('product_lang', 'pl', 'pl.id_product = s.id_product AND pl.id_lang = '.$id_lang);
 
-		$query->leftjoin('product p ON p.id_product = s.id_product');
-		$query->leftjoin('product_attribute_combination pac ON (pac.id_product_attribute = s.id_product_attribute)');
-		$query->leftjoin('attribute atr ON (atr.id_attribute = pac.id_attribute)');
-		$query->leftjoin('attribute_lang al ON (al.id_attribute = atr.id_attribute AND al.id_lang = '.$id_lang.')');
-		$query->leftjoin('attribute_group_lang agl ON (agl.id_attribute_group = atr.id_attribute_group AND agl.id_lang = '.$id_lang.')');
+		$query->leftjoin('product', 'p', 'p.id_product = s.id_product');
+		$query->leftjoin('product_attribute_combination', 'pac', 'pac.id_product_attribute = s.id_product_attribute');
+		$query->leftjoin('attribute', 'atr', 'atr.id_attribute = pac.id_attribute');
+		$query->leftjoin('attribute_lang', 'al', 'al.id_attribute = atr.id_attribute AND al.id_lang = '.$id_lang);
+		$query->leftjoin('attribute_group_lang', 'agl', 'agl.id_attribute_group = atr.id_attribute_group AND agl.id_lang = '.$id_lang);
 
 		$query->where('s.id_supply_order = '.(int)$this->id);
 
@@ -290,22 +259,13 @@ class SupplyOrderCore extends ObjectModel
 	/**
 	 * Retrieves the product entries collection for the current order
 	 *
-	 * @return array
+	 * @return Collection
 	 */
-	public function getEntriesCollection($id_lang = null)
+	public function getEntriesCollection()
 	{
-		if ($id_lang == null)
-			$id_lang = Context::getContext()->language->id;
-
-		// build query
-		$query = new DbQuery();
-		$query->select('s.*');
-		$query->from('supply_order_detail s');
-		$query->where('s.id_supply_order = '.(int)$this->id);
-
-		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
-
-		return ObjectModel::hydrateCollection('SupplyOrderDetail', $results);
+		$details = new Collection('SupplyOrderDetail');
+		$details->where('id_supply_order', '=', $this->id);
+		return $details;
 	}
 
 
@@ -318,7 +278,7 @@ class SupplyOrderCore extends ObjectModel
 	{
 		$query = new DbQuery();
 		$query->select('COUNT(*)');
-		$query->from('supply_order_detail s');
+		$query->from('supply_order_detail', 's');
 		$query->where('s.id_supply_order = '.(int)$this->id);
 
 		return (Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query) > 0);
@@ -334,7 +294,7 @@ class SupplyOrderCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('s.editable');
-		$query->from('supply_order_state s');
+		$query->from('supply_order_state', 's');
 		$query->where('s.id_supply_order_state = '.(int)$this->id_supply_order_state);
 
 		return (Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query) == 1);
@@ -350,7 +310,7 @@ class SupplyOrderCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('s.delivery_note');
-		$query->from('supply_order_state s');
+		$query->from('supply_order_state', 's');
 		$query->where('s.id_supply_order_state = '.(int)$this->id_supply_order_state);
 
 		return (Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query) == 1);
@@ -366,7 +326,7 @@ class SupplyOrderCore extends ObjectModel
 		// build query
 		$query = new DbQuery();
 		$query->select('s.receipt_state');
-		$query->from('supply_order_state s');
+		$query->from('supply_order_state', 's');
 		$query->where('s.id_supply_order_state = '.(int)$this->id_supply_order_state);
 
 		return (Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query) == 1);
@@ -412,10 +372,32 @@ class SupplyOrderCore extends ObjectModel
 
 		$query = new DbQuery();
 		$query->select('COUNT(so.id_supply_order) as supply_orders');
-		$query->from('supply_order so');
-		$query->leftJoin('supply_order_state sos ON (so.id_supply_order_state = sos.id_supply_order_state)');
+		$query->from('supply_order', 'so');
+		$query->leftJoin('supply_order_state', 'sos', 'so.id_supply_order_state = sos.id_supply_order_state');
 		$query->where('sos.enclosed != 1');
 		$query->where('so.id_warehouse = '.(int)$id_warehouse);
+
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
+		return ($res > 0);
+	}
+
+	/**
+	 * For a given $id_supplier, tells if it has pending supply orders
+	 *
+	 * @param int $id_supplier
+	 * @return bool
+	 */
+	public static function supplierHasPendingOrders($id_supplier)
+	{
+		if (!$id_supplier)
+			return false;
+
+		$query = new DbQuery();
+		$query->select('COUNT(so.id_supply_order) as supply_orders');
+		$query->from('supply_order', 'so');
+		$query->leftJoin('supply_order_state', 'sos', 'so.id_supply_order_state = sos.id_supply_order_state');
+		$query->where('sos.enclosed != 1');
+		$query->where('so.id_supplier = '.(int)$id_supplier);
 
 		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 		return ($res > 0);

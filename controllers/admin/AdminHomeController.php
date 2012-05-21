@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10368 $
+*  @version  Release: $Revision: 11457 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -162,7 +162,7 @@ class AdminHomeControllerCore extends AdminController
 	protected function warnDomainName()
 	{
 		if ($_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN') AND $_SERVER['HTTP_HOST'] != Configuration::get('PS_SHOP_DOMAIN_SSL'))
-			$this->displayWarning($this->l('Your are currently connected with the following domain name:').' <span style="color: #CC0000;">'.$_SERVER['HTTP_HOST'].'</span><br />'.
+			$this->displayWarning($this->l('You are currently connected with the following domain name:').' <span style="color: #CC0000;">'.$_SERVER['HTTP_HOST'].'</span><br />'.
 			$this->l('This one is different from the main shop domain name set in "Preferences > SEO & URLs":').' <span style="color: #CC0000;">'.Configuration::get('PS_SHOP_DOMAIN').'</span><br />
 			<a href="index.php?tab=AdminMeta&token='.Tools::getAdminTokenLite('AdminMeta').'#SEO%20%26%20URLs">'.
 			$this->l('Click here if you want to modify the main shop domain name').'</a>');
@@ -171,13 +171,13 @@ class AdminHomeControllerCore extends AdminController
 	private function getQuickLinks()
 	{
 		$quick_links['first'] = array(
-			'href' => $this->context->link->getAdminLink('AdminCatalog').'&amp;addcategory',
+			'href' => $this->context->link->getAdminLink('AdminCategories').'&amp;addcategory',
 			'title' => $this->l('New category'),
 			'description' => $this->l('Create a new category and organize your products.'),
 		);
 
 		$quick_links['second'] = array(
-			'href' => $this->context->link->getAdminLink('AdminCatalog').'&amp;addproduct',
+			'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;addproduct',
 			'title' => $this->l('New product'),
 			'description' => $this->l('Fill up your catalog with new articles and attributes.'),
 		);
@@ -416,7 +416,7 @@ class AdminHomeControllerCore extends AdminController
 		$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 2)));
 
 		// SCREENCAST
-		if (@fsockopen('www.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
+		if (@fsockopen('screencasts.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
 			$result['screencast'] = 'OK';
 		else
 			$result['screencast'] = 'NOK';
@@ -425,7 +425,7 @@ class AdminHomeControllerCore extends AdminController
 		$result['partner_preactivation'] = $this->getBlockPartners();
 
 		// PREACTIVATION PAYPAL WARNING
-		$content = @file_get_contents('https://www.prestashop.com/partner/preactivation/preactivation-warnings.php?version=1.0&partner=paypal&iso_country='.Tools::strtolower(Context::getContext()->country->iso_code).'&iso_lang='.Tools::strtolower(Context::getContext()->language->iso_code).'&id_lang='.(int)Context::getContext().'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+		$content = @file_get_contents('https://api.prestashop.com/partner/preactivation/preactivation-warnings.php?version=1.0&partner=paypal&iso_country='.Tools::strtolower(Context::getContext()->country->iso_code).'&iso_lang='.Tools::strtolower(Context::getContext()->language->iso_code).'&id_lang='.(int)Context::getContext().'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
 		$content = explode('|', $content);
 		if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 			Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', $content[1]);
@@ -436,14 +436,14 @@ class AdminHomeControllerCore extends AdminController
 		$result['discover_prestashop'] = $this->getBlockDiscover();
 
 
-			if (@fsockopen('www.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
-				$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://www.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
+			if (@fsockopen('api.prestashop.com', 80, $errno, $errst, AdminHomeController::TIPS_TIMEOUT))
+				$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://api.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
 			else
 				$result['discover_prestashop'] .= '';
 
 		// SHOW PAYPAL TIPS
 			$content = '';
-			$content = @file_get_contents($protocol.'://www.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
+			$content = @file_get_contents($protocol.'://api.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 			$content = explode('|', $content);
 			if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 				$result['discover_prestashop'] .= $content[1];
@@ -467,8 +467,18 @@ class AdminHomeControllerCore extends AdminController
 
 	public function getBlockPartners()
 	{
+		// @TODO : Check the following fields because they weren't set...
+		$protocol = Tools::getShopProtocol();
+		$isoCountry = Context::getContext()->country->iso_code;
+		$isoUser = '';
+
 		$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => AdminHomeController::TIPS_TIMEOUT)));
-		$content = @file_get_contents($protocol.'://www.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+		$content = @file_get_contents(
+			'http://api.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).
+			'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).
+			'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).
+			'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+
 		if (!$content)
 			$return = ''; // NOK
 		else
@@ -504,7 +514,7 @@ class AdminHomeControllerCore extends AdminController
 		$isoUser = Context::getContext()->language->iso_code;
 		$isoCountry = Context::getContext()->country->iso_code;
 
-		$content = @file_get_contents($protocol.'://www.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
+		$content = @file_get_contents($protocol.'://api.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 		if (!$content)
 			return ''; // NOK
 		else

@@ -31,37 +31,27 @@ class FeatureCore extends ObjectModel
 	public $name;
 	public $position;
 
-	protected $fieldsRequiredLang = array('name');
-	protected $fieldsSizeLang = array('name' => 128);
-	protected $fieldsValidateLang = array(
-		'name' => 'isGenericName',
-		'position' => 'isInt'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'feature',
+		'primary' => 'id_feature',
+		'multilang' => true,
+		'fields' => array(
+			'position' => 	array('type' => self::TYPE_INT, 'validate' => 'isInt'),
+
+			// Lang fields
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 128),
+		),
 	);
 
-	protected $table = 'feature';
-	protected $identifier = 'id_feature';
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'product_features',
 		'objectNodeName' => 'product_feature',
 		'fields' => array(),
 	);
-
-	public function getFields()
-	{
-		return array('id_feature' => null, 'position' => (int)$this->position);
-	}
-
-	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	/**
 	 * Get a feature data for a given id_feature and id_lang
@@ -160,20 +150,24 @@ class FeatureCore extends ObjectModel
 	 	$this->clearCache();
 
 	 	$result = 1;
-	 	$fields = $this->getTranslationsFieldsChild();
+	 	$fields = $this->getFieldsLang();
 		foreach ($fields as $field)
 		{
 			foreach (array_keys($field) as $key)
 			 	if (!Validate::isTableOrIdentifier($key))
 	 				die(Tools::displayError());
 
-	 		$sql = 'SELECT `id_lang` FROM `'.pSQL(_DB_PREFIX_.$this->table).'_lang`
-	 				WHERE `'.pSQL($this->identifier).'` = '.(int)$this->id.'
+	 		$sql = 'SELECT `id_lang` FROM `'.pSQL(_DB_PREFIX_.$this->def['table']).'_lang`
+	 				WHERE `'.$this->def['primary'].'` = '.(int)$this->id.'
 	 					AND `id_lang` = '.(int)$field['id_lang'];
 			$mode = Db::getInstance()->getRow($sql);
-			$result &= (!$mode) ? Db::getInstance()->AutoExecute(_DB_PREFIX_.$this->table.'_lang', $field, 'INSERT') :
-			Db::getInstance()->AutoExecute(_DB_PREFIX_.$this->table.'_lang', $field, 'UPDATE', '`'.
-			pSQL($this->identifier).'` = '.(int)$this->id.' AND `id_lang` = '.(int)$field['id_lang']);
+			$result &= (!$mode) ? Db::getInstance()->AutoExecute(_DB_PREFIX_.$this->def['table'].'_lang', $field, 'INSERT') :
+			Db::getInstance()->AutoExecute(
+				_DB_PREFIX_.$this->def['table'].'_lang',
+				$field,
+				'UPDATE',
+				'`'.$this->def['primary'].'` = '.(int)$this->id.' AND `id_lang` = '.(int)$field['id_lang']
+			);
 		}
 		Hook::exec('afterSaveFeature', array('id_feature' => $this->id));
 		return $result;

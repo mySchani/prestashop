@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7389 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,19 +28,9 @@
 function deactivate_custom_modules()
 {
 	$db = Db::getInstance();
-	$modulesDirOnDisk = array();
-	$modules = scandir(_PS_MODULE_DIR_);
-	foreach ($modules AS $name)
-	{
-		if (is_dir(_PS_MODULE_DIR_.$name) && Tools::file_exists_cache(_PS_MODULE_DIR_.$name.'/'.$name.'.php'))
-		{
-			if (!preg_match('/^[a-zA-Z0-9_-]+$/', $name))
-				die(Tools::displayError().' (Module '.$name.')');
-			$modulesDirOnDisk[] = $name;
-		}
-	}
+	$modulesDirOnDisk = Module::getModulesDirOnDisk();
 
-	$module_list_xml = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'modules_list.xml';
+	$module_list_xml = _PS_ROOT_DIR_.DIRECTORY_SEPARATOR.'config'.DIRECTORY_SEPARATOR.'xml'.DIRECTORY_SEPARATOR.'modules_list.xml';
 	$nativeModules = simplexml_load_file($module_list_xml);
 	$nativeModules = $nativeModules->modules;
 	foreach ($nativeModules as $nativeModulesType)
@@ -51,7 +41,7 @@ function deactivate_custom_modules()
 				$arrNativeModules[] = '"'.pSQL($module['name']).'"';
 		}
 
-	$arrNonNative = $db->ExecuteS('
+	$arrNonNative = $db->executeS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'module` m
 		WHERE name NOT IN ('.implode(',',$arrNativeModules).') ');
@@ -67,7 +57,7 @@ function deactivate_custom_modules()
 	foreach ($uninstallMe as $k=>$v)
 		$uninstallMe[$k] = '"'.pSQL($v).'"';
 
-	return Db::getInstance()->Execute('
+	return Db::getInstance()->execute('
 	UPDATE `'._DB_PREFIX_.'module`
 	SET `active`= 0
 	WHERE `name` IN ('.implode(',',$uninstallMe).')');

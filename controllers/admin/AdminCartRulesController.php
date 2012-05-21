@@ -166,14 +166,14 @@ class AdminCartRulesControllerCore extends AdminController
 		{
 			case 'attributes':
 				$attributes = array('selected' => array(), 'unselected' => array());
-				$result = Db::getInstance()->ExecuteS('
+				$results = Db::getInstance()->ExecuteS('
 				SELECT CONCAT(agl.name, " - ", al.name) as name, a.id_attribute as id
 				FROM '._DB_PREFIX_.'attribute_group_lang agl
 				LEFT JOIN '._DB_PREFIX_.'attribute a ON a.id_attribute_group = agl.id_attribute_group
 				LEFT JOIN '._DB_PREFIX_.'attribute_lang al ON (a.id_attribute = al.id_attribute AND al.id_lang = '.(int)Context::getContext()->language->id.')
 				WHERE agl.id_lang = '.(int)Context::getContext()->language->id.'
-				ORDER BY agl.name, al.name', false);
-				while ($row = Db::getInstance()->nextRow($result))
+				ORDER BY agl.name, al.name');
+				foreach ($results as $row)
 					$attributes[in_array($row['id'], $selected) ? 'selected' : 'unselected'][] = $row;
 				Context::getContext()->smarty->assign('product_rule_itemlist', $attributes);
 				$choose_content = Context::getContext()->smarty->fetch('cart_rules/product_rule_itemlist.tpl');
@@ -182,12 +182,12 @@ class AdminCartRulesControllerCore extends AdminController
 			case 'products':
 				// Todo: Consider optimization
 				$products = array('selected' => array(), 'unselected' => array());
-				$result = Db::getInstance()->ExecuteS('
+				$results = Db::getInstance()->ExecuteS('
 				SELECT name, id_product as id
 				FROM '._DB_PREFIX_.'product_lang pl
 				WHERE id_lang = '.(int)Context::getContext()->language->id.'
-				ORDER BY name', false);
-				while ($row = Db::getInstance()->nextRow($result))
+				ORDER BY name');
+				foreach ($results as $row)
 					$products[in_array($row['id'], $selected) ? 'selected' : 'unselected'][] = $row;
 				Context::getContext()->smarty->assign('product_rule_itemlist', $products);
 				$choose_content = Context::getContext()->smarty->fetch('cart_rules/product_rule_itemlist.tpl');
@@ -196,12 +196,12 @@ class AdminCartRulesControllerCore extends AdminController
 			case 'categories':
 				// Todo: Consider optimization
 				$categories = array('selected' => array(), 'unselected' => array());
-				$result = Db::getInstance()->ExecuteS('
+				$results = Db::getInstance()->ExecuteS('
 				SELECT name, id_category as id
 				FROM '._DB_PREFIX_.'category_lang pl
 				WHERE id_lang = '.(int)Context::getContext()->language->id.'
-				ORDER BY name', false);
-				while ($row = Db::getInstance()->nextRow($result))
+				ORDER BY name');
+				foreach ($results as $row)
 					$categories[in_array($row['id'], $selected) ? 'selected' : 'unselected'][] = $row;
 				Context::getContext()->smarty->assign('product_rule_itemlist', $categories);
 				$choose_content = Context::getContext()->smarty->fetch('cart_rules/product_rule_itemlist.tpl');
@@ -268,15 +268,15 @@ class AdminCartRulesControllerCore extends AdminController
 		return $productRulesArray;
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$back = Tools::safeOutput(Tools::getValue('back', ''));
 		if (empty($back))
 			$back = self::$currentIndex.'&token='.$this->token;
 
-		$this->toolbar_btn['cancel'] = array(
-			'href' => $back,
-			'desc' => $this->l('Cancel')
+		$this->toolbar_btn['save-and-stay'] = array(
+			'href' => '#',
+			'desc' => $this->l('Save and Stay')
 		);
 
 		// Todo: change for "Media" version
@@ -312,6 +312,7 @@ class AdminCartRulesControllerCore extends AdminController
 			array(
 				'show_toolbar' => true,
 				'toolbar_btn' => $this->toolbar_btn,
+				'toolbar_fix' => $this->toolbar_fix,
 				'title' => $this->l('Payment : Cart Rules '),
 				'languages' => Language::getLanguages(),
 				'defaultDateFrom' => date('Y-m-d H:00:00'),
@@ -339,7 +340,7 @@ class AdminCartRulesControllerCore extends AdminController
 		$this->content .= Context::getContext()->smarty->fetch('cart_rules/form.tpl');
 
 		$this->addJqueryUI('ui.datepicker');
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function displayAjaxSearchCartRuleVouchers()

@@ -38,7 +38,7 @@ define('MAX_COLUMNS', 6);
 /** correct Mac error on eof */
 @ini_set('auto_detect_line_endings', '1');
 
-class AdminImportController extends AdminController
+class AdminImportControllerCore extends AdminController
 {
 	public static $column_mask;
 
@@ -46,7 +46,7 @@ class AdminImportController extends AdminController
 
 	public $available_fields = array();
 
-	public static $required_fields = array('name');
+	public $required_fields = array('name');
 
 	public static $default_values = array();
 
@@ -89,7 +89,7 @@ class AdminImportController extends AdminController
 		switch ((int)Tools::getValue('entity'))
 		{
 			case $this->entities[$this->l('Combinations')]:
-				self::$required_fields = array(
+				$this->required_fields = array(
 					'id_product',
 					'group',
 					'attribute'
@@ -241,7 +241,7 @@ class AdminImportController extends AdminController
 
 			case $this->entities[$this->l('Customers')]:
 				//Overwrite required_fields AS only email is required whereas other entities
-				self::$required_fields = array('email', 'passwd', 'lastname', 'firstname');
+				$this->required_fields = array('email', 'passwd', 'lastname', 'firstname');
 
 				$this->available_fields = array(
 					'no' => array('label' => $this->l('Ignore this column')),
@@ -269,7 +269,7 @@ class AdminImportController extends AdminController
 
 			case $this->entities[$this->l('Addresses')]:
 				//Overwrite required_fields
-				self::$required_fields = array(
+				$this->required_fields = array(
 					'lastname',
 					'firstname',
 					'address1',
@@ -343,7 +343,7 @@ class AdminImportController extends AdminController
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		if (!is_writable(_PS_ADMIN_DIR_.'/import/'))
 			$this->displayWarning($this->l('directory import on admin directory must be writable (CHMOD 755 / 777)'));
@@ -380,10 +380,10 @@ class AdminImportController extends AdminController
 			'available_fields' => $this->getAvailableFields()
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		$this->addJS(_PS_JS_DIR_.'adminImport.js');
 
@@ -393,7 +393,7 @@ class AdminImportController extends AdminController
 		$nb_table = ceil($nb_column / MAX_COLUMNS);
 
 		$res = array();
-		foreach (self::$required_fields as $elem)
+		foreach ($this->required_fields as $elem)
 			$res[] = '\''.$elem.'\'';
 
 		$data = array();
@@ -421,7 +421,7 @@ class AdminImportController extends AdminController
 			'data' => $data
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function initToolbar()
@@ -500,9 +500,9 @@ class AdminImportController extends AdminController
 		// toolbar (save, cancel, new, ..)
 		$this->initToolbar();
 		if ($this->display == 'import')
-			$this->content .= $this->initView();
+			$this->content .= $this->renderView();
 		else
-			$this->content .= $this->initForm();
+			$this->content .= $this->renderForm();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
@@ -700,7 +700,10 @@ class AdminImportController extends AdminController
 			imageResize($tmpfile, $path.'.jpg');
 			$images_types = ImageType::getImagesTypes($entity);
 			foreach ($images_types as $k => $image_type)
-				imageResize($tmpfile, $path.'-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']);
+			{
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
+				imageResize($tmpfile, $path.'-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']);
+			}
 			if (in_array($image_type['id_image_type'], $watermark_types))
 				Hook::exec('watermark', array('id_image' => $id_image, 'id_product' => $id_entity));
 		}
@@ -801,9 +804,10 @@ class AdminImportController extends AdminController
 				$category->doNotRegenerateNTree = true;
 
 				// If id category AND id category already in base, trying to update
-				if ($category->id && $category->categoryExists($category->id))
+				if ($category->id && $category->categoryExists($category->id) && $category->id != 1)
 					$res = $category->update();
-
+				if ($category->id == 1)
+					$this->_errors[] = Tools::displayError('Root category cannot be modify');
 				// If no id_category or update failed
 				if (!$res)
 					$res = $category->add();
@@ -1130,7 +1134,6 @@ class AdminImportController extends AdminController
 							$image->id_product = (int)$product->id;
 							$image->position = Image::getHighestPosition($product->id) + 1;
 							$image->cover = (!$key && !$product_has_images) ? true : false;
-							$image->legend = self::createMultiLangField($product->name[$default_language_id]);
 							if (($field_error = $image->validateFields(UNFRIENDLY_ERROR, true)) === true &&
 								($lang_field_error = $image->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $image->add())
 							{
@@ -1139,7 +1142,7 @@ class AdminImportController extends AdminController
 							}
 							else
 							{
-								$this->warnings[] = $image->legend[$default_language_id].(isset($image->id_product) ? ' ('.$image->id_product.')' : '').
+								$this->warnings[] = (isset($image->id_product) ? ' ('.$image->id_product.')' : '').
 									' '.Tools::displayError('Cannot be saved');
 								$this->_errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '').
 									Db::getInstance()->getMsgError();
@@ -1208,7 +1211,6 @@ class AdminImportController extends AdminController
 				$image->id_product = (int)$product->id;
 				$image->position = Image::getHighestPosition($product->id) + 1;
 				$image->cover = (!$product_has_images) ? true : false;
-				$image->legend = self::createMultiLangField($product->name);
 
 				if (($field_error = $image->validateFields(UNFRIENDLY_ERROR, true)) === true &&
 					($lang_field_error = $image->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $image->add())
@@ -1220,7 +1222,7 @@ class AdminImportController extends AdminController
 				}
 				else
 				{
-					$this->warnings[] = $image->legend[$default_language_id].(isset($image->id_product) ? ' ('.$image->id_product.')' : '').
+					$this->warnings[] = (isset($image->id_product) ? ' ('.$image->id_product.')' : '').
 						' '.Tools::displayError('Cannot be saved');
 					$this->_errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '').mysql_error();
 				}

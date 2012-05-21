@@ -33,221 +33,32 @@ class AdminStockMvtControllerCore extends AdminController
 	public function __construct()
 	{
 		$this->context = Context::getContext();
-	 	$this->table = 'stock_mvt_reason';
-	 	$this->className = 'StockMvtReason';
-		$this->lang = true;
-
-		$this->fieldsDisplay = array(
-			'id_stock_mvt_reason' => array(
-				'title' => $this->l('ID'),
-				'align' => 'center',
-				'width' => 40,
-				'search' => false,
-			),
-			'sign' => array(
-				'title' => $this->l('Sign'),
-				'width' => 100,
-				'align' => 'center',
-				'type' => 'select',
-				'filter_key' => 'a!sign',
-				'list' => array(
-					'1' => $this->l('Increment'),
-					'-1' => $this->l('Decrement'),
-				),
-				'icon' => array(
-					-1 => 'remove_stock.png',
-					1 => 'add_stock.png'
-				),
-				'orderby' => false
-			),
-			'name' => array(
-				'title' => $this->l('Name'),
-				'filter_key' => 'b!name',
-				'width' => 500
-			),
-		);
-
-		$reasons_inc = StockMvtReason::getStockMvtReasonsWithFilter($this->context->language->id,
-																	array(Configuration::get('PS_STOCK_MVT_TRANSFER_TO')), 1);
-		$reasons_dec = StockMvtReason::getStockMvtReasonsWithFilter($this->context->language->id,
-																	array(Configuration::get('PS_STOCK_MVT_TRANSFER_FROM')), -1);
-
-		$this->options = array(
-			'general' => array(
-				'title' =>	$this->l('Options'),
-				'fields' =>	array(
-					'PS_STOCK_MVT_INC_REASON_DEFAULT' => array(
-						'title' => $this->l('Default reason when incrementing stock:'),
-						'cast' => 'intval',
-						'type' => 'select',
-						'list' => $reasons_inc,
-						'identifier' => 'id_stock_mvt_reason',
-						'visibility' => Shop::CONTEXT_ALL
-					),
-					'PS_STOCK_MVT_DEC_REASON_DEFAULT' => array(
-						'title' => $this->l('Default reason when decrementing stock:'),
-						'cast' => 'intval',
-						'type' => 'select',
-						'list' => $reasons_dec,
-						'identifier' => 'id_stock_mvt_reason',
-						'visibility' => Shop::CONTEXT_ALL
-					),
-					'PS_STOCK_CUSTOMER_ORDER_REASON' => array(
-						'title' => $this->l('Default reason when decrementing stock when a customer order is shipped:'),
-						'cast' => 'intval',
-						'type' => 'select',
-						'list' => $reasons_dec,
-						'identifier' => 'id_stock_mvt_reason',
-						'visibility' => Shop::CONTEXT_ALL
-					),
-					'PS_STOCK_MVT_SUPPLY_ORDER' => array(
-						'title' => $this->l('Default reason when incrementing stock when a supply order is received:'),
-						'cast' => 'intval',
-						'type' => 'select',
-						'list' => $reasons_inc,
-						'identifier' => 'id_stock_mvt_reason',
-						'visibility' => Shop::CONTEXT_ALL
-					),
-				),
-				'submit' => array(),
-			)
-		);
-
-		$this->tpl_list_vars['list_warehouses'] = array();
-
-		parent::__construct();
-	}
-
-	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
-	 */
-	public function initForm()
-	{
-		$this->toolbar_title = $this->l('Stock : Add Stock movement reason');
-
-		$this->fields_form = array(
-			'legend' => array(
-				'title' => $this->l('Stock Movement Reason'),
-				'image' => '../img/admin/edit.gif'
-			),
-			'input' => array(
-				array(
-					'type' => 'text',
-					'lang' => true,
-					'label' => $this->l('Name:'),
-					'name' => 'name',
-					'size' => 50,
-					'required' => true
-				),
-				array(
-					'type' => 'select',
-					'label' => $this->l('Action:'),
-					'name' => 'sign',
-					'required' => true,
-					'options' => array(
-						'query' => array(
-							array(
-								'id' => '1',
-								'name' => $this->l('Increase stock')
-							),
-							array(
-								'id' => '-1',
-								'name' => $this->l('Decrease stock')
-							),
-						),
-						'id' => 'id',
-						'name' => 'name'
-					),
-					'desc' => $this->l('Select the corresponding action : increments or decrements stock.')
-				),
-			),
-			'submit' => array(
-				'title' => $this->l('   Save   '),
-				'class' => 'button'
-			)
-		);
-
-		return parent::initForm();
-	}
-
-	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
-	 */
-	public function initList()
-	{
-		$this->displayInformation($this->l('This interface allows you to display the stock movements for a selected warehouse.').'<br />');
-		$this->displayInformation($this->l('Also, it allows you to add and edit your own stock movement reasons.'));
-
-		// access
-		if (!($this->tabAccess['add'] === '1'))
-			unset($this->toolbar_btn['new']);
-
-		//no link on list rows
-		$this->list_no_link = true;
-
-		/*
-		 * Manage default list
-		 */
-		$this->addRowAction('edit');
-		$this->addRowAction('delete');
-		$this->addRowActionSkipList('edit', array(1, 2, 3, 4, 5, 6, 7, 8));
-		$this->addRowActionSkipList('delete', array(1, 2, 3, 4, 5, 6, 7, 8));
-
-		$this->toolbar_title = $this->l('Stock : Stock movements reasons');
-		$first_list = parent::initList();
-
-		/*
-		 * Manage second list
-		 */
-		$warehouses = Warehouse::getWarehouses(true);
-		array_unshift($warehouses, array('id_warehouse' => -1, 'name' => $this->l('All Warehouses')));
-		$this->tpl_list_vars['list_warehouses'] = $warehouses;
-		$this->tpl_list_vars['current_warehouse'] = $this->getCurrentWarehouseId();
-
-		// reset actions, toolbar and query vars
-		$this->actions = array();
-		$this->toolbar_btn = array();
-		$this->toolbar_title = $this->l('Stock : Stock movements');
-		unset($this->_select, $this->_join, $this->_group, $this->_filterHaving, $this->_filter);
-
-		// override table, land, className and identifier for the current controller
-		$this->deleted = false;
 	 	$this->table = 'stock_mvt';
 	 	$this->className = 'StockMvt';
 	 	$this->identifier = 'id_stock_mvt';
 	 	$this->lang = false;
 
-	 	// test if a filter is applied for this list
-		if (Tools::isSubmit('submitFilter'.$this->table) || $this->context->cookie->{'submitFilter'.$this->table} !== false)
-			$this->filter = true;
+		$this->list_no_link = true;
+		$this->displayInformation($this->l('This interface allows you to display the stock movements for a selected warehouse.').'<br />');
 
-		// test if a filter reset request is required for this list
-		if (isset($_POST['submitReset'.$this->table]))
-			$this->action = 'reset_filters';
-		else
-			$this->action = '';
-
-		// redifine fields display
 		$this->fieldsDisplay = array(
 			'product_reference' => array(
-				'title' => $this->l('Product Reference'),
+				'title' => $this->l('Reference'),
 				'width' => 100,
 				'havingFilter' => true
 			),
 			'product_ean13' => array(
-				'title' => $this->l('Product EAN 13'),
+				'title' => $this->l('EAN 13'),
 				'width' => 75,
 				'havingFilter' => true
 			),
 			'product_upc' => array(
-				'title' => $this->l('Product UPC'),
+				'title' => $this->l('UPC'),
 				'width' => 75,
 				'havingFilter' => true
 			),
 			'product_name' => array(
-				'title' => $this->l('Product Name'),
+				'title' => $this->l('Name'),
 				'havingFilter' => true
 			),
 			'sign' => array(
@@ -279,7 +90,7 @@ class AdminStockMvtControllerCore extends AdminController
 				'filter_key' => 'a!price_te'
 			),
 			'reason' => array(
-				'title' => $this->l('Reason'),
+				'title' => $this->l('Label'),
 				'width' => 100,
 				'havingFilter' => true
 			),
@@ -297,7 +108,19 @@ class AdminStockMvtControllerCore extends AdminController
 			),
 		);
 
-		// make new query
+		parent::__construct();
+	}
+
+	/**
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
+	 */
+	public function renderList()
+	{
+		// removes toolbar btn
+		$this->toolbar_btn = array();
+
+		// overrides select
 		$this->_select = '
 			CONCAT(pl.name, \' \', GROUP_CONCAT(IFNULL(al.name, \'\'), \'\')) product_name,
 			CONCAT(a.employee_lastname, \' \', a.employee_firstname) AS employee,
@@ -307,6 +130,7 @@ class AdminStockMvtControllerCore extends AdminController
 			stock.upc AS product_upc,
 			w.id_currency AS id_currency';
 
+		// overrides join
 		$this->_join = 'INNER JOIN '._DB_PREFIX_.'stock stock ON a.id_stock = stock.id_stock
 							LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 								stock.id_product = pl.id_product
@@ -322,29 +146,41 @@ class AdminStockMvtControllerCore extends AdminController
 								al.id_attribute = pac.id_attribute
 								AND al.id_lang = '.(int)$this->context->language->id.'
 							)';
+		// overrides group
 		$this->_group = 'GROUP BY a.id_stock_mvt';
 
+		// overrides where depending on the warehouse
 		$id_warehouse = $this->getCurrentWarehouseId();
 		if ($id_warehouse > 0)
 			$this->_where = ' AND w.id_warehouse = '.$id_warehouse;
 
-		// call postProcess() for take care about actions and filters
-		$this->postProcess();
+		// sets the current warehouse
+		$this->tpl_list_vars['current_warehouse'] = $this->getCurrentWarehouseId();
 
-		// generate the second list
-		$second_list = parent::initList();
+		// sets the list of warehouses
+		$warehouses = Warehouse::getWarehouses(true);
+		array_unshift($warehouses, array('id_warehouse' => -1, 'name' => $this->l('All Warehouses')));
+		$this->tpl_list_vars['list_warehouses'] = $warehouses;
 
-		// reset all query vars
-		unset($this->_select, $this->_join, $this->_group, $this->_filterHaving, $this->_filter);
+		// sets toolbar
+		$this->initToolbar();
 
-		// reset default table and className for options list management
-		$this->table = 'stock_mvt_reason';
-	 	$this->className = 'StockMvtReason';
+		// renders list
+		$list = parent::renderList();
 
-		// return the two lists
-		return $second_list.$first_list;
+		// if export requested
+		if (Tools::isSubmit('csv'))
+		{
+			if (count($this->_list) > 0)
+			{
+				$this->renderCSV();
+				die;
+			}
+			else
+				$this->displayWarning($this->l('There is nothing to export as CSV.'));
+		}
 
-
+		return $list;
 	}
 
 	/**
@@ -367,24 +203,14 @@ class AdminStockMvtControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::postProcess() override
-	 * @see AdminController::postProcess()
-	 */
-	public function postProcess()
-	{
-		//when deleting a movement reason, enable deleted flag for parent postProcess and no remove the corresponding row from the database
-		if (Tools::isSubmit('delete'.$this->table))
-			$this->deleted = true;
-
-		return parent::postProcess();
-	}
-
-	/**
 	 * AdminController::getList() override
 	 * @see AdminController::getList()
 	 */
 	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
 	{
+		if (Tools::isSubmit('csv'))
+			$limit = false;
+
 		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
 
 		//If there is a field product_name in the list, check if this field is null and display standard message
@@ -402,4 +228,59 @@ class AdminStockMvtControllerCore extends AdminController
 				}
 			}
 	}
+
+	/**
+	 * @see AdminController::initToolbar();
+	 */
+	public function initToolbar()
+	{
+		if (Tools::isSubmit('id_warehouse') && (int)Tools::getValue('id_warehouse') != -1)
+		{
+			$this->toolbar_btn['export-stock-mvt-csv'] = array(
+				'short' => 'Export this list as CSV',
+				'href' => $this->context->link->getAdminLink('AdminStockMvt').'&amp;csv&amp;id_warehouse='.(int)$this->getCurrentWarehouseId(),
+				'desc' => $this->l('Export (CSV)'),
+			);
+		}
+		parent::initToolbar();
+		unset($this->toolbar_btn['new']);
+	}
+
+	/**
+	 * Exports CSV
+	 */
+	public function renderCSV()
+	{
+		if (!$this->_list)
+			return;
+
+		// header
+		if (Tools::getValue('id_warehouse') != -1)
+			$filename = $this->l('stock_mvt').'_'.Warehouse::getWarehouseNameById((int)Tools::getValue('id_warehouse')).'.csv';
+		else
+			$filename = $this->l('stock_mvt').'.csv';
+		header('Content-type: text/csv');
+		header('Cache-Control: no-store, no-cache');
+        header('Content-disposition: attachment; filename="'.$filename);
+
+		// puts keys
+		$keys = array('id_order', 'id_supply_order', 'emloyee_firstname', 'employee_lastname', 'physical_quantity',
+					  'date_add', 'sign', 'price_te', 'product_name', 'label', 'product_reference', 'product_ean13', 'product_upc');
+		echo sprintf("%s\n", implode(';', $keys));
+
+
+		// puts rows
+		foreach ($this->_list as $row)
+		{
+			$row_csv = array($row['id_order'], $row['id_supply_order'], $row['employee_firstname'],
+							 $row['employee_lastname'], $row['physical_quantity'], $row['date_add'],
+							 $row['sign'], $row['price_te'], $row['product_name'],
+							 $row['reason'], $row['product_reference'], $row['product_ean13'], $row['product_upc']
+			);
+
+			// puts one row
+			echo sprintf("%s\n", implode(';', array_map(array('CSVCore', 'wrap'), $row_csv)));
+		}
+	}
+
 }

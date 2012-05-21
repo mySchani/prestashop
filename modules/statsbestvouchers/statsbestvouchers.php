@@ -102,10 +102,10 @@ class StatsBestVouchers extends ModuleGrid
 				$this->csvExport($engineParams);
 
 		$this->_html = '
-		<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
+		<div class="blocStats"><h2 class="icon-'.$this->name.'"><span></span>'.$this->displayName.'</h2>
 			'.$this->engine($engineParams).'
-			<br /><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a>
-		</fieldset>';
+			<br /><a class="button export-csv" href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><span>'.$this->l('CSV Export').'</span></a>
+		</div>';
 		return $this->_html;
 	}
 

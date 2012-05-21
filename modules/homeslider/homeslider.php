@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10593 $
+*  @version  Release: $Revision: 11725 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -54,26 +54,61 @@ class HomeSlider extends Module
 		$this->description = $this->l('Adds an image slider to your homepage.');
 	}
 
+	/**
+	 * @see Module::install()
+	 */
 	public function install()
 	{
 		/* Adds Module */
-		if (parent::install() && $this->registerHook('home') && $this->registerHook('backOfficeTop') && $this->registerHook('header'))
+		if (parent::install() && $this->registerHook('displayHome') && $this->registerHook('displayHeader'))
 		{
 			/* Sets up configuration */
-			$res = Configuration::updateValue('HOMESLIDER_WIDTH', '550');
+			$res = Configuration::updateValue('HOMESLIDER_WIDTH', '535');
 			$res &= Configuration::updateValue('HOMESLIDER_HEIGHT', '300');
 			$res &= Configuration::updateValue('HOMESLIDER_SPEED', '1300');
 			$res &= Configuration::updateValue('HOMESLIDER_PAUSE', '7700');
 			/* Creates tables */
-			return ($res && $this->createTables());
+			$res &= $this->createTables();
+
+			/* Adds samples */
+			if ($res)
+				$this->installSamples();
+
+			return $res;
 		}
 		return false;
 	}
 
+	/**
+	 * Adds samples
+	 */
+	private function installSamples()
+	{
+		$languages = Language::getLanguages(false);
+		for ($i = 1; $i <= 5; ++$i)
+		{
+			$slide = new HomeSlide();
+			$slide->position = $i;
+			$slide->active = 1;
+			foreach ($languages as $language)
+			{
+				$slide->title[$language['id_lang']] = 'Sample '.$i;
+				$slide->description[$language['id_lang']] = 'This is a sample picture';
+				$slide->legend[$language['id_lang']] = 'sample-'.$i;
+				$slide->url[$language['id_lang']] = 'http://www.prestashop.com';
+				$slide->image[$language['id_lang']] = 'sample-'.$i.'.jpg';
+			}
+			$slide->add();
+		}
+	}
+
+	/**
+	 * @see Module::uninstall()
+	 */
 	public function uninstall()
 	{
 		/* Deletes Module */
-		if (parent::uninstall() && $this->unregisterHook('home') && $this->unregisterHook('backOfficeTop') && $this->unregisterHook('header'))
+		if (parent::uninstall() && $this->unregisterHook('home') && $this->unregisterHook('header'))
 		{
 			/* Deletes tables */
 			$res = $this->deleteTables();
@@ -87,44 +122,50 @@ class HomeSlider extends Module
 		return false;
 	}
 
+	/**
+	 * Creates tables
+	 */
 	protected function createTables()
 	{
 		/* Slides */
-		$res = Db::getInstance()->execute('
+		$res = (bool)Db::getInstance()->execute('
 			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'homeslider` (
-				`id_slide` int(10) unsigned NOT NULL AUTO_INCREMENT,
+				`id_homeslider_slides` int(10) unsigned NOT NULL AUTO_INCREMENT,
 				`id_shop` int(10) unsigned NOT NULL,
-				PRIMARY KEY (`id_slide`, `id_shop`)
+				PRIMARY KEY (`id_homeslider_slides`, `id_shop`)
 			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=UTF8;
 		');
 
 		/* Slides configuration */
 		$res &= Db::getInstance()->execute('
 			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'homeslider_slides` (
-			  `id_slide` int(10) unsigned NOT NULL AUTO_INCREMENT,
+			  `id_homeslider_slides` int(10) unsigned NOT NULL AUTO_INCREMENT,
 			  `position` int(10) unsigned NOT NULL DEFAULT \'0\',
 			  `active` tinyint(1) unsigned NOT NULL DEFAULT \'0\',
-			  PRIMARY KEY (`id_slide`)
+			  PRIMARY KEY (`id_homeslider_slides`)
 			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=UTF8;
 		');
 
 		/* Slides lang configuration */
 		$res &= Db::getInstance()->execute('
 			CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'homeslider_slides_lang` (
-			  `id_slide` int(10) unsigned NOT NULL,
+			  `id_homeslider_slides` int(10) unsigned NOT NULL,
 			  `id_lang` int(10) unsigned NOT NULL,
 			  `title` varchar(255) NOT NULL,
 			  `description` text NOT NULL,
 			  `legend` varchar(255) NOT NULL,
 			  `url` varchar(255) NOT NULL,
 			  `image` varchar(255) NOT NULL,
-			  PRIMARY KEY (`id_slide`,`id_lang`)
+			  PRIMARY KEY (`id_homeslider_slides`,`id_lang`)
 			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=UTF8;
 		');
 
 		return $res;
 	}
 
+	/**
+	 * deletes tables
+	 */
 	protected function deleteTables()
 	{
 		$slides = $this->getSlides();
@@ -134,12 +175,13 @@ class HomeSlider extends Module
 			$to_del->delete();
 		}
 		return Db::getInstance()->execute('
-			DROP TABLE `'._DB_PREFIX_.'homeslider`, `'._DB_PREFIX_.'homeslider_slides`, `'._DB_PREFIX_.'homeslider_slides_lang`;
+			DROP TABLE IF EXISTS `'._DB_PREFIX_.'homeslider`, `'._DB_PREFIX_.'homeslider_slides`, `'._DB_PREFIX_.'homeslider_slides_lang`;
 		');
 	}
 
 	public function getContent()
 	{
+		$this->_html .= $this->headerHTML();
 		$this->_html .= '<h2>'.$this->displayName.'.</h2>';
 
 		/* Validate & process */
@@ -251,13 +293,13 @@ class HomeSlider extends Module
 			$slide = new HomeSlide((int)Tools::getValue('id_slide'));
 		/* Checks if directory is writable */
 		if (!is_writable('.'))
-			$this->displayWarning($this->l('modules/'.$this->name.' must be writable (CHMOD 755 / 777)'));
+			$this->displayWarning(sprintf($this->l('modules %s must be writable (CHMOD 755 / 777)'), $this->name));
 
 		/* Gets languages and sets which div requires translations */
 		$defaultLanguage = (int)Configuration::get('PS_LANG_DEFAULT');
 		$languages = Language::getLanguages(false);
 		$divLangName = 'image¤title¤url¤legend¤description';
-		$this->_html = '<script type="text/javascript">id_language = Number('.$defaultLanguage.');</script>';
+		$this->_html .= '<script type="text/javascript">id_language = Number('.$defaultLanguage.');</script>';
 
 		/* Form */
 		$this->_html .= '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="POST" enctype="multipart/form-data">';
@@ -465,7 +507,7 @@ class HomeSlider extends Module
 			$res &= Configuration::updateValue('HOMESLIDER_PAUSE', (int)Tools::getValue('HOMESLIDER_PAUSE'));
 			if (!$res)
 				$errors .= $this->displayError($this->l('Configuration could not be updated'));
-			$this->_html = $this->displayConfirmation($this->l('Configuration updated'));
+			$this->_html .= $this->displayConfirmation($this->l('Configuration updated'));
 		} /* Process Slide status */
 		else if (Tools::isSubmit('changeStatus') && Tools::isSubmit('id_slide'))
 		{
@@ -475,7 +517,7 @@ class HomeSlider extends Module
 			else
 				$slide->active = 0;
 			$res = $slide->update();
-			$this->_html = ($res ? $this->displayConfirmation($this->l('Configuration updated')) : $this->displayErro($this->l('Configuration could not be updated')));
+			$this->_html .= ($res ? $this->displayConfirmation($this->l('Configuration updated')) : $this->displayErro($this->l('Configuration could not be updated')));
 		}
 		/* Processes Slide */
 		else if (Tools::isSubmit('submitSlide'))
@@ -486,7 +528,7 @@ class HomeSlider extends Module
 				$slide = new HomeSlide((int)Tools::getValue('id_slide'));
 				if (!Validate::isLoadedObject($slide))
 				{
-					$this->_html = $this->displayError($this->l('Invalid id_slide'));
+					$this->_html .= $this->displayError($this->l('Invalid id_slide'));
 					return;
 				}
 			}
@@ -510,20 +552,24 @@ class HomeSlider extends Module
 				if (Tools::getValue('description_'.$language['id_lang']) != '')
 					$slide->description[$language['id_lang']] = pSQL(Tools::getValue('description_'.$language['id_lang']));
 				/* Uploads image and sets slide */
+				$type = strtolower(substr(strrchr($_FILES['image_'.$language['id_lang']]['name'], '.'), 1));
 				if (isset($_FILES['image_'.$language['id_lang']]) &&
 					isset($_FILES['image_'.$language['id_lang']]['tmp_name']) &&
-					!empty($_FILES['image_'.$language['id_lang']]['tmp_name']))
+					!empty($_FILES['image_'.$language['id_lang']]['tmp_name']) &&
+					in_array(strtolower(substr(strrchr($_FILES['image_'.$language['id_lang']]['type'], '/'), 1)), array('jpg', 'gif', 'jpeg', 'png')) &&
+					in_array($type, array('jpg', 'gif', 'jpeg', 'png')))
 				{
 					$temp_name = tempnam(_PS_TMP_IMG_DIR_, 'PS');
+					$salt = sha1(microtime());
 					if ($error = checkImage($_FILES['image_'.$language['id_lang']]))
 						$errors .= $error;
 					else if (!$temp_name || !move_uploaded_file($_FILES['image_'.$language['id_lang']]['tmp_name'], $temp_name))
 						return false;
-					else if (!imageResize($temp_name, dirname(__FILE__).'/images/'.Tools::encrypt($_FILES['image_'.$language['id_lang']]['name']).'.jpg'))
+					else if (!imageResize($temp_name, dirname(__FILE__).'/images/'.Tools::encrypt($_FILES['image_'.$language['id_lang']]['name'].$salt).$type))
 						$errors .= $this->displayError($this->l('An error occurred during the image upload.'));
 					if (isset($temp_name))
 						unlink($temp_name);
-					$slide->image[$language['id_lang']] = pSQL(Tools::encrypt($_FILES['image_'.($language['id_lang'])]['name']).'.jpg');
+					$slide->image[$language['id_lang']] = pSQL(Tools::encrypt($_FILES['image_'.($language['id_lang'])]['name'].$salt).$type);
 				}
 				if (Tools::getValue('image_old_'.$language['id_lang']) != '')
 					$slide->image[$language['id_lang']] = pSQL(Tools::getValue('image_old_'.$language['id_lang']));
@@ -544,7 +590,8 @@ class HomeSlider extends Module
 			$res = $slide->delete();
 			if (!$res)
 				$this->_html .= $this->displayError('Could not delete');
-			$this->_html = $this->displayConfirmation($this->l('Slide deleted'));
+			else
+				$this->_html .= $this->displayConfirmation($this->l('Slide deleted'));
 		}
 
 		/* Display errors if needed */
@@ -579,17 +626,18 @@ class HomeSlider extends Module
 	{
 		if (!$this->getSlides(true))
 			return;
-		$this->context->controller->addJqueryUI('ui.sortable');
+
 		$this->context->controller->addJS($this->_path.'js/jquery.bxSlider.min.js');
 		$this->context->controller->addCSS($this->_path.'bx_styles.css');
 		$this->context->controller->addJS($this->_path.'js/homeslider.js');
 	}
 
-	public function hookBackOfficeTop()
+	public function headerHTML()
 	{
 		if (Tools::getValue('controller') != 'AdminModules' && Tools::getValue('configure') != $this->name)
 			return;
 
+		$this->context->controller->addJqueryUI('ui.sortable');
 		/* Style & js for fieldset 'slides configuration' */
 		$html = '
 		<style>
@@ -631,7 +679,7 @@ class HomeSlider extends Module
 		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 				SELECT MAX(hss.`position`) AS `next_position`
 				FROM `'._DB_PREFIX_.'homeslider_slides` hss, `'._DB_PREFIX_.'homeslider` hs
-				WHERE hss.`id_slide` = hs.`id_slide` AND hs.`id_shop` = '.(int)$this->context->shop->getId()
+				WHERE hss.`id_homeslider_slides` = hs.`id_homeslider_slides` AND hs.`id_shop` = '.(int)$this->context->shop->getId()
 		);
 
 		return (++$row['next_position']);
@@ -644,20 +692,20 @@ class HomeSlider extends Module
 		$id_lang = $this->context->language->id;
 
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT hs.`id_slide`,
+			SELECT hs.`id_homeslider_slides` as id_slide,
 					   hssl.`image`,
 					   hss.`position`,
 					   hss.`active`,
 					   hssl.`title`,
 					   hssl.`url`,
-					   hssl.`legend`
+					   hssl.`legend`,
+					   hssl.`description`
 			FROM '._DB_PREFIX_.'homeslider hs
-			LEFT JOIN '._DB_PREFIX_.'homeslider_slides hss ON (hs.id_slide = hss.id_slide)
-			LEFT JOIN '._DB_PREFIX_.'homeslider_slides_lang hssl ON (hssl.id_slide = hs.id_slide)
-			WHERE id_shop = '.(int)$id_shop.' OR id_shop = 0
+			LEFT JOIN '._DB_PREFIX_.'homeslider_slides hss ON (hs.id_homeslider_slides = hss.id_homeslider_slides)
+			LEFT JOIN '._DB_PREFIX_.'homeslider_slides_lang hssl ON (hss.id_homeslider_slides = hssl.id_homeslider_slides)
+			WHERE (id_shop = '.(int)$id_shop.' OR id_shop = 1)
 			AND hssl.id_lang = '.(int)$id_lang.
 			($active ? ' AND hss.`active` = 1' : ' ').'
-			GROUP BY hs.id_slide
 			ORDER BY hss.position');
 	}
 
@@ -674,9 +722,9 @@ class HomeSlider extends Module
 
 	public function slideExists($id_slide)
 	{
-		$req = 'SELECT hs.`id_slide`
+		$req = 'SELECT hs.`id_homeslider_slides` as id_slide
 				FROM `'._DB_PREFIX_.'homeslider` hs
-				WHERE hs.`id_slide` = '.(int)$id_slide;
+				WHERE hs.`id_homeslider_slides` = '.(int)$id_slide;
 		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($req);
 		return ($row);
 	}

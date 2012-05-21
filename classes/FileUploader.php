@@ -25,32 +25,99 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+class FileUploaderCore
+{
+
+	private $allowedExtensions = array();
+	private $sizeLimit = 10485760;
+	private $file;
+
+	function __construct(array $allowedExtensions = array(), $sizeLimit = 10485760)
+	{
+		$allowedExtensions = array_map("strtolower", $allowedExtensions);
+
+		$this->allowedExtensions = $allowedExtensions;
+		$this->sizeLimit = $sizeLimit;
+
+		if (isset($_GET['qqfile']))
+			$this->file = new qqUploadedFileXhr();
+		else
+			$this->file = false;
+	}
+
+
+	private function toBytes($str)
+	{
+		$val = trim($str);
+		$last = strtolower($str[strlen($str)-1]);
+		switch($last) {
+			case 'g': $val *= 1024;
+			case 'm': $val *= 1024;
+			case 'k': $val *= 1024;
+		}
+		return $val;
+	}
+
+	/**
+	 * Returns array('success'=>true) or array('error'=>'error message')
+	 */
+	function handleUpload()
+	{
+		if (!$this->file){
+			return array('error' => Tools::displayError('No files were uploaded.'));
+		}
+
+		$size = $this->file->getSize();
+
+		if ($size == 0) {
+			return array('error' => Tools::displayError('File is empty'));
+		}
+
+		if ($size > $this->sizeLimit) {
+			return array('error' => Tools::displayError('File is too large'));
+		}
+
+		$pathinfo = pathinfo($this->file->getName());
+		$filename = $pathinfo['filename'];
+		$these = implode(', ', $this->allowedExtensions);
+		if (!isset($pathinfo['extension']))
+			return array('error' => Tools::displayError('File has an invalid extension, it should be one of '). $these . '.');
+		$ext = $pathinfo['extension'];
+		if($this->allowedExtensions && !in_array(strtolower($ext), $this->allowedExtensions))
+			return array('error' => Tools::displayError('File has an invalid extension, it should be one of '). $these . '.');
+
+
+		return $this->file->save();
+
+	}
+}
+
 /**
  * Handle file uploads via XMLHttpRequest
  */
-class qqUploadedFileXhr 
+class qqUploadedFileXhr
 {
 	/**
 	* Save the file to the specified path
 	* @return boolean TRUE on success
 	*/
-	function upload($path) 
-	{    
+	function upload($path)
+	{
 		$input = fopen("php://input", "r");
 		$temp = tmpfile();
 		$realSize = stream_copy_to_stream($input, $temp);
 		fclose($input);
-		if ($realSize != $this->getSize())           
+		if ($realSize != $this->getSize())
 			return false;
-		$target = fopen($path, "w");        
+		$target = fopen($path, "w");
 		fseek($temp, 0, SEEK_SET);
 		stream_copy_to_stream($temp, $target);
 		fclose($target);
-		
+
 		return true;
 	}
-	
-	function save() 
+
+	function save()
 	{
 		$product = new Product($_GET['id_product']);
 		if (!Validate::isLoadedObject($product))
@@ -67,12 +134,12 @@ class qqUploadedFileXhr
 			if (!$image->add())
 				return array('error' => Tools::displayError('Error while creating additional image'));
 			else
-			{	
+			{
 				return $this->copyImage($product->id, $image->id);
 			}
 		}
 	}
-	
+
 	public function copyImage($id_product, $id_image, $method = 'auto')
 	{
 		$image = new Image($id_image);
@@ -87,97 +154,32 @@ class qqUploadedFileXhr
 		{
 			$imagesTypes = ImageType::getImagesTypes('products');
 			foreach ($imagesTypes AS $k => $imageType)
-				if (!imageResize($tmpName, $new_path.'-'.stripslashes($imageType['name']).'.'.$image->image_format, $imageType['width'], $imageType['height'], $image->image_format))
+			{
+				$theme = (Shop::isFeatureActive() ? '-'.$imageType['id_theme'] : '');
+				if (!imageResize($tmpName, $new_path.'-'.stripslashes($imageType['name']).$theme.'.'.$image->image_format, $imageType['width'], $imageType['height'], $image->image_format))
 					return array('error' => Tools::displayError('An error occurred while copying image:').' '.stripslashes($imageType['name']));
+			}
 		}
 		unlink($tmpName);
 		Hook::exec('watermark', array('id_image' => $id_image, 'id_product' => $id_product));
 		$lang = Context::getContext()->employee->id_lang;
-		
-		foreach (Language::getLanguages(false) as $l)
-			$image->legend[$l['id_lang']] = $id_image." ".$p->name[$l['id_lang']]." ".$p->reference;
+
 		if (!$image->update())
 			return array('error' => Tools::displayError('Error while updating status'));
-		$img = array('id_image' => $image->id, 'legend' => $image->legend[$lang], 'position' => $image->position, 'cover' => $image->cover);
+		$img = array('id_image' => $image->id, 'position' => $image->position, 'cover' => $image->cover);
 		return array("success" => $img);
 	}
-	
-	function getName() 
+
+	function getName()
 	{
 		return $_GET['qqfile'];
 	}
-	function getSize() 
+
+	function getSize()
 	{
 		if (isset($_SERVER["CONTENT_LENGTH"]))
-			return (int)$_SERVER["CONTENT_LENGTH"];            
-		else 
-			throw new Exception('Getting content length is not supported.');     
-	}   
-}
-
-class FileUploaderCore
-{
-
-    private $allowedExtensions = array();
-    private $sizeLimit = 10485760;
-    private $file;
-
-    function __construct(array $allowedExtensions = array(), $sizeLimit = 10485760)
-    {        
-        $allowedExtensions = array_map("strtolower", $allowedExtensions);
-            
-        $this->allowedExtensions = $allowedExtensions;        
-        $this->sizeLimit = $sizeLimit; 
-
-        if (isset($_GET['qqfile'])) 
-            $this->file = new qqUploadedFileXhr();
-        else 
-            $this->file = false; 
-    }
-    
-    
-    private function toBytes($str)
-    {
-        $val = trim($str);
-        $last = strtolower($str[strlen($str)-1]);
-        switch($last) {
-            case 'g': $val *= 1024;
-            case 'm': $val *= 1024;
-            case 'k': $val *= 1024;        
-        }
-        return $val;
-    }
-    
-    /**
-     * Returns array('success'=>true) or array('error'=>'error message')
-     */
-    function handleUpload()
-    {
-        if (!$this->file){
-            return array('error' => Tools::displayError('No files were uploaded.'));
-        }
-        
-        $size = $this->file->getSize();
-        
-        if ($size == 0) {
-            return array('error' => Tools::displayError('File is empty'));
-        }
-        
-        if ($size > $this->sizeLimit) {
-            return array('error' => Tools::displayError('File is too large'));
-        }
-        
-        $pathinfo = pathinfo($this->file->getName());
-        $filename = $pathinfo['filename'];
-        $these = implode(', ', $this->allowedExtensions);
-        if (!isset($pathinfo['extension']))
-			return array('error' => Tools::displayError('File has an invalid extension, it should be one of '). $these . '.');
-		$ext = $pathinfo['extension'];
-        if($this->allowedExtensions && !in_array(strtolower($ext), $this->allowedExtensions))
-            return array('error' => Tools::displayError('File has an invalid extension, it should be one of '). $these . '.');
-        
-        
-       return $this->file->save();
-		
-    }    
+			return (int)$_SERVER["CONTENT_LENGTH"];
+		else
+			throw new Exception('Getting content length is not supported.');
+	}
 }

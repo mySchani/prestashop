@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10609 $
+*  @version  Release: $Revision: 10869 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,12 +27,11 @@
 {literal}
 $('document').ready(function(){
 	$('#send_friend_button').fancybox({
-		'hideOnContentClick': false,
-		'onClosed': function(){
-		},
+		'hideOnContentClick': false
 	});
 
 	$('#sendEmail').click(function(){
+		//console.log('aaa');
 		var datas = [];
 		$('#fancybox-content').find('input').each(function(index){
 			var o = {}
@@ -41,10 +40,10 @@ $('document').ready(function(){
 			if (o.value != '')
 				datas.push(o);
 		});
-	
-		if (datas.length == 3)
+	//console.log(datas.length);
+	//console.log(datas);
+		if (datas.length >= 3)
 		{
-			
 			$.ajax({
 				{/literal}url: "{$module_dir}sendtoafriend_ajax.php",{literal}
 				post: "POST",
@@ -58,8 +57,7 @@ $('document').ready(function(){
 		else
 		{
 			$('#send_friend_form_error').show();
-			var error_text = {/literal}{l s='You did not fill required fields' mod=sendtoafriend}{literal}
-			$('#send_friend_form_error').text(error_text);
+			$('#send_friend_form_error').text('{/literal}{l s="You did not fill required fields" mod=sendtoafriend}{literal}');
 		}
 	});
 });
@@ -73,10 +71,10 @@ $('document').ready(function(){
 	<div id="send_friend_form">
 			<h2 class="title">{l s='Send to a friend' mod='sendtoafriend'}</h2>
 			<div class="product clearfix">
-				<img src="{$link->getImageLink($product->link_rewrite, $stf_product_cover, 'home')}" height="{$homeSize.height}" width="{$homeSize.width}" alt="{$product->name|escape:html:'UTF-8'}" />
+				<img src="{$link->getImageLink($stf_product->link_rewrite, $stf_product_cover, 'home')}" height="{$homeSize.height}" width="{$homeSize.width}" alt="{$stf_product->name|escape:html:'UTF-8'}" />
 				<div class="product_desc">
-					<p class="product_name"><strong>{$product->name}</strong></p>
-					{$product->description_short}
+					<p class="product_name"><strong>{$stf_product->name}</strong></p>
+					{$stf_product->description_short}
 				</div>
 			</div>
 			

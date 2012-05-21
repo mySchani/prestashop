@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 10686 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -237,7 +237,7 @@ class InstallControllerHttpConfigure extends InstallControllerHttp
 
 		// Load partners XML file from prestashop.com
 		$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 3)));
-		$content = @file_get_contents('http://www.prestashop.com/partner/preactivation/partners.php?version=1.1', false, $stream_context);
+		$content = @file_get_contents('http://api.prestashop.com/partner/preactivation/partners.php?version=1.1', false, $stream_context);
 		if (!$xml = @simplexml_load_string($content))
 			$this->ajaxJsonAnswer(false, $this->l('Cannot load partners from PrestaShop website'));
 
@@ -305,7 +305,7 @@ class InstallControllerHttpConfigure extends InstallControllerHttp
 	{
 		// Load partners fields XML file from prestashop.com
 		$stream_context = @stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)));
-		$content = @file_get_contents('http://www.prestashop.com/partner/preactivation/fields.php?version=1.1&partner='.$partner_id.'&country_iso_code='.$iso, false, $stream_context);
+		$content = @file_get_contents('http://api.prestashop.com/partner/preactivation/fields.php?version=1.1&partner='.$partner_id.'&country_iso_code='.$iso, false, $stream_context);
 		if (!$xml = @simplexml_load_string($content))
 			$this->ajaxJsonAnswer(false, $this->l('Cannot load partners fields from PrestaShop website'));
 

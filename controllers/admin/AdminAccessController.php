@@ -25,8 +25,11 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminAccessController extends AdminController
+class AdminAccessControllerCore extends AdminController
 {
+	/* Black list of id_tab that do not have access */
+	public $accesses_black_list = array(107);
+
 	public function __construct()
 	{
 	 	$this->table = 'access';
@@ -38,16 +41,23 @@ class AdminAccessController extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		$current_profile = (int)$this->getCurrentProfileId();
 		$profiles = Profile::getProfiles($this->context->language->id);
+		$tabs = Tab::getTabs($this->context->language->id);
 		$accesses = array();
 		foreach ($profiles as $profile)
 			$accesses[$profile['id_profile']] = Profile::getProfileAccesses($profile['id_profile']);
+
+		// Deleted id_tab that do not have access
+		foreach ($tabs as $key => $tab)
+			foreach ($this->accesses_black_list as $id_tab)
+				if ($tab['id_tab'] == (int)$id_tab)
+					unset($tabs[$key]);
 
 		$modules = array();
 		foreach ($profiles as $profile)
@@ -64,7 +74,7 @@ class AdminAccessController extends AdminController
 		$this->tpl_form_vars = array(
 			'profiles' => $profiles,
 			'accesses' => $accesses,
-			'tabs' => Tab::getTabs($this->context->language->id),
+			'tabs' => $tabs,
 			'current_profile' => (int)$current_profile,
 			'admin_profile' => (int)_PS_ADMIN_PROFILE_,
 			'access_edit' => $this->tabAccess['edit'],
@@ -73,7 +83,7 @@ class AdminAccessController extends AdminController
 			'link' => $this->context->link
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	/**
@@ -91,19 +101,19 @@ class AdminAccessController extends AdminController
 		if (!$this->loadObject(true))
 			return;
 
-		$this->content .= $this->initForm();
+		$this->content .= $this->renderForm();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
 			'url_post' => self::$currentIndex.'&token='.$this->token,
 		));
 	}
-	
+
 	public function ajaxProcessUpdateAccess()
 	{
 		if ($this->tabAccess['edit'] != '1')
 			throw new PrestashopException(Tools::displayError('You do not have permission to edit here.'));
-			
+
 		if (Tools::isSubmit('submitAddAccess'))
 		{
 			$perm = Tools::getValue('perm');
@@ -151,13 +161,13 @@ class AdminAccessController extends AdminController
 			die($res);
 		}
 	}
-	
+
 	public function ajaxProcessUpdateModuleAccess()
 	{
 		if ($this->tabAccess['edit'] != '1')
 			throw new PrestashopException(Tools::displayError('You do not have permission to edit here.'));
 			/* Update Access Modules */
-	
+
 		if (Tools::isSubmit('changeModuleAccess'))
 		{
 			$perm = Tools::getValue('perm');

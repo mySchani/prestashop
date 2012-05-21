@@ -142,93 +142,37 @@ class SupplyOrderDetailCore extends ObjectModel
 	 */
 	public $price_with_order_discount_te = 0;
 
-	protected $fieldsRequired = array(
-		'id_supply_order',
-		'id_product',
-		'id_product_attribute',
-		'name',
-		'id_currency',
-		'exchange_rate',
-		'unit_price_te',
-		'quantity_expected',
-		'price_te',
-		'discount_rate',
-		'discount_value_te',
-		'price_with_discount_te',
-		'tax_rate',
-		'tax_value',
-		'price_ti',
-		'tax_value_with_order_discount',
-		'price_with_order_discount_te'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'supply_order_detail',
+		'primary' => 'id_supply_order_detail',
+		'fields' => array(
+			'id_supply_order' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product_attribute' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'reference' => 						array('type' => self::TYPE_STRING, 'validate' => 'isReference'),
+			'supplier_reference' => 			array('type' => self::TYPE_STRING, 'validate' => 'isReference'),
+			'name' => 							array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true),
+			'ean13' => 							array('type' => self::TYPE_STRING, 'validate' => 'isEan13'),
+			'upc' => 							array('type' => self::TYPE_STRING, 'validate' => 'isUpc'),
+			'id_currency' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'exchange_rate' => 					array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'unit_price_te' => 					array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'quantity_expected' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'quantity_received' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'price_te' => 						array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'discount_rate' => 					array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'discount_value_te' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'price_with_discount_te' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'tax_rate' => 						array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'tax_value' => 						array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'price_ti' => 						array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'tax_value_with_order_discount' => 	array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'price_with_order_discount_te' => 	array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+		),
 	);
-
-	protected $fieldsValidate = array(
-		'id_supply_order' => 'isUnsignedId',
-		'id_product' => 'isUnsignedId',
-		'id_product_attribute' => 'isUnsignedId',
-		'reference' => 'isReference',
-		'supplier_reference' => 'isReference',
-		'name' => 'isGenericName',
-		'ean13' => 'isEan13',
-		'upc' => 'isUpc',
-		'id_currency' => 'isUnsignedId',
-		'exchange_rate' => 'isFloat',
-		'unit_price_te' => 'isPrice',
-		'quantity_expected' => 'isUnsignedInt',
-		'quantity_received' => 'isUnsignedInt',
-		'price_te' => 'isPrice',
-		'discount_rate' => 'isFloat',
-		'discount_value_te' => 'isPrice',
-		'price_with_discount_te' => 'isPrice',
-		'tax_rate' => 'isFloat',
-		'tax_value' => 'isPrice',
-		'price_ti' => 'isPrice',
-		'tax_value_with_order_discount' => 'isFloat',
-		'price_with_order_discount_te' => 'isPrice',
-	);
-
-	/**
-	 * @var string Database table name
-	 */
-	protected $table = 'supply_order_detail';
-
-	/**
-	 * @var string Database ID name
-	 */
-	protected $identifier = 'id_supply_order_detail';
-
-	/**
-	 * @see ObjectModel::getFields()
-	 */
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_supply_order'] = (int)$this->id_supply_order;
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_product_attribute'] = (int)$this->id_product_attribute;
-		$fields['reference'] = pSQL($this->reference);
-		$fields['supplier_reference'] = pSQL($this->supplier_reference);
-		$fields['name'] = pSQL($this->name);
-		$fields['ean13'] = pSQL($this->ean13);
-		$fields['upc'] = pSQL($this->upc);
-		$fields['id_currency'] = (int)$this->id_currency;
-		$fields['exchange_rate'] = (float)$this->exchange_rate;
-		$fields['unit_price_te'] = (float)$this->unit_price_te;
-		$fields['quantity_expected'] = (int)$this->quantity_expected;
-		$fields['quantity_received'] = (int)$this->quantity_received;
-		$fields['price_te'] = (float)$this->price_te;
-		$fields['discount_rate'] = (float)$this->discount_rate;
-		$fields['discount_value_te'] = (float)$this->discount_value_te;
-		$fields['price_with_discount_te'] = (float)$this->price_with_discount_te;
-		$fields['tax_rate'] = (float)$this->tax_rate;
-		$fields['tax_value'] = (float)$this->tax_value;
-		$fields['price_ti'] = (float)$this->price_ti;
-		$fields['tax_value_with_order_discount'] = (float)$this->tax_value_with_order_discount;
-		$fields['price_with_order_discount_te'] = (float)$this->price_with_order_discount_te;
-
-		return $fields;
-	}
 
 	/**
 	 * @see ObjectModel::update()

@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10377 $
+*  @version  Release: $Revision: 11235 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -59,7 +59,7 @@ abstract class ControllerCore
 	 * @var string check if footer will be displayed
 	 */
 	protected $display_footer;
-	
+
 	/**
 	 * @var string check if only content will be displayed
 	 */
@@ -73,6 +73,9 @@ abstract class ControllerCore
 	protected $status = '';
 
 	protected $redirect_after = null;
+	
+	/** hook_list is used with liveEdit */
+	public $hook_list = array();
 	/**
 	 * check that the controller is available for the current user/visitor
 	 */
@@ -81,7 +84,13 @@ abstract class ControllerCore
 	/**
 	 * Initialize the page
 	 */
-	abstract public function init();
+	public function init()
+	{
+		if (!defined('_PS_BASE_URL_'))
+			define('_PS_BASE_URL_', Tools::getShopDomain(true));
+		if (!defined('_PS_BASE_URL_SSL_'))
+			define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
+	}
 
 	/**
 	 * Do the page treatment : post process, ajax process, etc.
@@ -137,6 +146,9 @@ abstract class ControllerCore
 
 		if ($this->checkAccess())
 		{
+			if (!$this->content_only && ($this->display_header || (isset($this->className) && $this->className)))
+				$this->setMedia();
+			
 			// postProcess handles ajaxProcess
 			$this->postProcess();
 
@@ -144,11 +156,8 @@ abstract class ControllerCore
 				$this->redirect();
 
 			if (!$this->content_only && ($this->display_header || (isset($this->className) && $this->className)))
-			{
-				$this->setMedia();
 				$this->initHeader();
-			}
-	
+
 			$this->initContent();
 
 			if (!$this->content_only && ($this->display_footer || (isset($this->className) && $this->className)))
@@ -200,7 +209,7 @@ abstract class ControllerCore
 	abstract public function initContent();
 
 	/**
-	 * Assign smarty variables when access is forbidden 
+	 * Assign smarty variables when access is forbidden
 	 */
 	abstract public function initCursedPage();
 

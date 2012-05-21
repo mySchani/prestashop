@@ -27,18 +27,24 @@
 	<script type="text/javascript">
 		var inputName = '{$categories.input_name}';
 		var use_radio = {if $categories.use_radio}1{else}0{/if};
-		var selectedCat = '{$categories.selected_cat}';
+		var selectedCat = '{implode value=$categories.selected_cat}';
 		var selectedLabel = '{$categories.trads.selected}';
 		var home = '{$categories.trads.Home}';
 		var use_radio = {if $categories.use_radio}1{else}0{/if};
+		$(document).ready(function(){
+			buildTreeView();
+		});
 	</script>
 
-	<div style="background-color:#F4E6C9; width:99%;padding:5px 0 5px 5px;">
-		<a href="#" id="collapse_all" >{$categories.trads['Collapse All']}</a>
-		 - <a href="#" id="expand_all" >{$categories.trads['Expand All']}</a>
+	<div class="category-filter">
+		<span><a href="#" id="collapse_all" >{$categories.trads['Collapse All']}</a>
+		 |</span>
+		 <span><a href="#" id="expand_all" >{$categories.trads['Expand All']}</a>
 		{if !$categories.use_radio}
-		 - <a href="#" id="check_all" >{$categories.trads['Check All']}</a>
-		 - <a href="#" id="uncheck_all" >{$categories.trads['Uncheck All']}</a>
+		 |</span>
+		 <span></span><a href="#" id="check_all" >{$categories.trads['Check All']}</a>
+		 |</span>
+		 <span></span><a href="#" id="uncheck_all" >{$categories.trads['Uncheck All']}</a></span>
 		 {/if}
 		{if $categories.use_search}
 			<span style="margin-left:20px">
@@ -75,7 +81,7 @@
 						value="1"
 						{if $home_is_selected}checked{/if}
 						onclick="clickOnCategoryBox($(this));" />
-				{$categories.trads.Home}
+					{$categories.trads.Home}
 			</span>
 			<ul>
 				<li><span class="placeholder">&nbsp;</span></li>

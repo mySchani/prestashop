@@ -57,29 +57,24 @@ class OrderSlipCore extends ObjectModel
 	/** @var string Object last modification date */
 	public 		$date_upd;
 
-	protected $tables = array ('order_slip');
-
-	protected	$fieldsRequired = array ('id_customer', 'id_order', 'conversion_rate');
-	protected	$fieldsValidate = array('id_customer' => 'isUnsignedId', 'id_order' => 'isUnsignedId', 'conversion_rate' => 'isFloat');
-
-	protected 	$table = 'order_slip';
-	protected 	$identifier = 'id_order_slip';
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_customer'] = (int)($this->id_customer);
-		$fields['id_order'] = (int)($this->id_order);
-		$fields['conversion_rate'] = (float)($this->conversion_rate);
-		$fields['amount'] = (int)($this->amount);
-		$fields['shipping_cost'] = (int)($this->shipping_cost);
-		$fields['shipping_cost_amount'] = (float)($this->shipping_cost_amount);
-		$fields['partial'] = (int)($this->partial);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_slip',
+		'primary' => 'id_order_slip',
+		'fields' => array(
+			'id_customer' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_order' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'conversion_rate' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat', 'required' => true),
+			'amount' => 				array('type' => self::TYPE_INT),
+			'shipping_cost' => 			array('type' => self::TYPE_INT),
+			'shipping_cost_amount' =>	array('type' => self::TYPE_FLOAT),
+			'partial' =>				array('type' => self::TYPE_INT),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	public function addSlipDetail($orderDetailList, $productQtyList)
 	{
@@ -211,8 +206,29 @@ class OrderSlipCore extends ObjectModel
 
 	public function addPartialSlipDetail($order_detail_list)
 	{
-		foreach ($order_detail_list as $id_order_detail => $amount)
-			Db::getInstance()->AutoExecute(_DB_PREFIX_.'order_slip_detail', array('id_order_slip' => (int)($this->id), 'id_order_detail' => (int)($id_order_detail), 'product_quantity' => 0, 'amount' => (float)($amount)), 'INSERT');
+		foreach ($order_detail_list as $id_order_detail => $tab)
+		{
+			$tab['amount_tax_excl'] = $tab['amount_tax_incl'] = $tab['amount'];
+			$id_tax = (int)Db::getInstance()->getValue('SELECT `id_tax` FROM `'._DB_PREFIX_.'order_detail_tax` WHERE `id_order_detail` = '.(int)$id_order_detail);
+			if ($id_tax > 0)
+			{
+				$rate = (float)Db::getInstance()->getValue('SELECT `rate` FROM `'._DB_PREFIX_.'tax` WHERE `id_tax` = '.(int)$id_tax);
+				if ($rate > 0)
+				{
+					$rate = 1 + ($rate / 100);
+					$tab['amount_tax_excl'] = $tab['amount_tax_excl'] / $rate;
+				}
+			}
+			
+			$insertOrderSlip = array(
+				'id_order_slip' => (int)($this->id),
+				'id_order_detail' => (int)($id_order_detail),
+				'product_quantity' => (int)($tab['quantity']),
+				'amount_tax_excl' => (float)($tab['amount_tax_excl']),
+				'amount_tax_incl' => (float)($tab['amount_tax_incl']),
+			);
+			Db::getInstance()->autoExecute(_DB_PREFIX_.'order_slip_detail', $insertOrderSlip, 'INSERT');
+		}
 	}
 
 }

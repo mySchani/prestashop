@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9565 $
+*  @version  Release: $Revision: 10019 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,74 +30,87 @@
  */
 class AdminSupplyOrdersControllerCore extends AdminController
 {
+
+	/*
+	 * @var array List of warehouses
+	 */
+	private $warehouses;
+
 	public function __construct()
 	{
 		$this->context = Context::getContext();
-	 	$this->table = 'supply_order_state';
-	 	$this->className = 'SupplyOrderState';
-		$this->lang = true;
+	 	$this->table = 'supply_order';
+	 	$this->className = 'SupplyOrder';
+	 	$this->identifier = 'id_supply_order';
+	 	$this->lang = false;
+	 	$this->is_template_list = false;
+
+		$this->addRowAction('updatereceipt');
+		$this->addRowAction('changestate');
+		$this->addRowAction('edit');
+		$this->addRowAction('view');
+		$this->addRowAction('details');
+		$this->list_no_link = true;
 
 		$this->fieldsDisplay = array(
-			'name' => array(
-				'title' => $this->l('Name'),
+			'reference' => array(
+				'title' => $this->l('Reference'),
+				'width' => 130,
+				'havingFilter' => true
+			),
+			'supplier' => array(
+				'title' => $this->l('Supplier'),
+				'width' => 130,
+				'filter_key' => 's!name'
+			),
+			'warehouse' => array(
+				'title' => $this->l('Warehouse'),
+				'width' => 130,
+				'filter_key' => 'w!name'
+			),
+			'state' => array(
+				'title' => $this->l('Status'),
+				'width' => 200,
+				'filter_key' => 'stl!name',
 				'color' => 'color',
 			),
-			'editable' => array(
-				'title' => $this->l('Editable?'),
-				'align' => 'center',
-				'icon' => array(
-					'1' => 'enabled.gif',
-					'0' => 'disabled.gif'
-				),
-				'type' => 'bool',
-				'width' => 170,
-				'orderby' => false
+			'date_add' => array(
+				'title' => $this->l('Creation'),
+				'width' => 150,
+				'align' => 'right',
+				'type' => 'date',
+				'havingFilter' => true,
+				'filter_key' => 'a!date_add'
 			),
-			'delivery_note' => array(
-				'title' => $this->l('Delivery note available?'),
-				'align' => 'center',
-				'icon' => array(
-					'1' => 'enabled.gif',
-					'0' => 'disabled.gif'
-				),
-				'type' => 'bool',
-				'width' => 170,
-				'orderby' => false
+			'date_upd' => array(
+				'title' => $this->l('Last modification'),
+				'width' => 150,
+				'align' => 'right',
+				'type' => 'date',
+				'havingFilter' => true,
+				'filter_key' => 'a!date_upd'
 			),
-			'pending_receipt' => array(
-				'title' => $this->l('Is a pending receipt state?'),
-				'align' => 'center',
-				'icon' => array(
-					'1' => 'enabled.gif',
-					'0' => 'disabled.gif'
-				),
-				'type' => 'bool',
-				'width' => 170,
-				'orderby' => false
+			'date_delivery_expected' => array(
+				'title' => $this->l('Delivery (expected)'),
+				'width' => 150,
+				'align' => 'right',
+				'type' => 'date',
+				'havingFilter' => true,
+				'filter_key' => 'a!date_delivery_expected'
 			),
-			'receipt_state' => array(
-				'title' => $this->l('Is a delivery state?'),
-				'align' => 'center',
-				'icon' => array(
-					'1' => 'enabled.gif',
-					'0' => 'disabled.gif'
-				),
-				'type' => 'bool',
-				'width' => 170,
-				'orderby' => false
-			),
-			'enclosed' => array(
-				'title' => $this->l('Is an enclosed order state?'),
-				'align' => 'center',
-				'icon' => array(
-					'1' => 'enabled.gif',
-					'0' => 'disabled.gif'
-				),
-				'type' => 'bool',
-				'width' => 170,
-				'orderby' => false
+			'id_export' => array(
+				'title' => $this->l('Export'),
+				'width' => 80,
+				'callback' => 'printExportIcons',
+				'orderby' => false,
+				'search' => false
 			),
 		);
+
+		// gets the list of warehouses available
+		$this->warehouses = Warehouse::getWarehouses(true);
+		// gets the final list of warehouses
+		array_unshift($this->warehouses, array('id_warehouse' => -1, 'name' => $this->l('All Warehouses')));
 
 		parent::__construct();
 	}
@@ -120,7 +133,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		 	$this->identifier = 'id_supply_order';
 		 	$this->lang = false;
 
-			$this->action = 'new';
+		 	$this->action = 'new';
 			$this->display = 'add';
 
 			if (Tools::isSubmit('updatesupply_order'))
@@ -141,175 +154,11 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
-		if (Tools::isSubmit('addsupply_order_state') ||
-			Tools::isSubmit('updatesupply_order_state') ||
-			Tools::isSubmit('submitAddsupply_order_state') ||
-			Tools::isSubmit('submitUpdatesupply_order_state'))
-		{
-			$this->fields_form = array(
-				'legend' => array(
-					'title' => $this->l('Supply Order State'),
-					'image' => '../img/admin/edit.gif'
-				),
-				'input' => array(
-					array(
-						'type' => 'text',
-						'lang' => true,
-						'label' => $this->l('Name:'),
-						'name' => 'name',
-						'size' => 50,
-						'required' => true
-					),
-					array(
-						'type' => 'color',
-						'label' => $this->l('Back office color:'),
-						'name' => 'color',
-						'size' => 20,
-						'desc' => $this->l('Back office background will be displayed in this color. HTML colors only (e.g.,').' "lightblue", "#CC6600")'
-					),
-					array(
-						'type' => 'radio',
-						'label' => $this->l('Is the order editable in this state?:'),
-						'name' => 'editable',
-						'required' => true,
-						'class' => 't',
-						'is_bool' => true,
-						'values' => array(
-							array(
-								'id' => 'active_on',
-								'value' => 1,
-								'label' => $this->l('Yes')
-							),
-							array(
-								'id' => 'active_off',
-								'value' => 0,
-								'label' => $this->l('No')
-							)
-						),
-						'desc' => $this->l('You have to define if it is possible to edit the order in this state.
-										An editable order is an order not valid to send to the supplier.')
-					),
-					array(
-						'type' => 'radio',
-						'label' => $this->l('Is the delivery note function is available in this state?:'),
-						'name' => 'delivery_note',
-						'required' => true,
-						'class' => 't',
-						'is_bool' => true,
-						'values' => array(
-							array(
-								'id' => 'active_on',
-								'value' => 1,
-								'label' => $this->l('Yes')
-							),
-							array(
-								'id' => 'active_off',
-								'value' => 0,
-								'label' => $this->l('No')
-							)
-						),
-						'desc' => $this->l('You have to define if it is possible to generate the delivery note of the order in this state.
-										The order has to be valid to use this function.')
-					),
-					array(
-						'type' => 'radio',
-						'label' => $this->l('This state corresponds to a delivery state ?:'),
-						'name' => 'receipt_state',
-						'required' => true,
-						'class' => 't',
-						'is_bool' => true,
-						'values' => array(
-							array(
-								'id' => 'active_on',
-								'value' => 1,
-								'label' => $this->l('Yes')
-							),
-							array(
-								'id' => 'active_off',
-								'value' => 0,
-								'label' => $this->l('No')
-							)
-						),
-						'desc' => $this->l('You have to define if this state correspond to a product receipt on this order (partial or complete).
-										This permit to know if the concerned products have to be added in stock.')
-					),
-					array(
-						'type' => 'radio',
-						'label' => $this->l('This state corresponds to a product pending receipt ?:'),
-						'name' => 'pending_receipt',
-						'required' => true,
-						'class' => 't',
-						'is_bool' => true,
-						'values' => array(
-							array(
-								'id' => 'active_on',
-								'value' => 1,
-								'label' => $this->l('Yes')
-							),
-							array(
-								'id' => 'active_off',
-								'value' => 0,
-								'label' => $this->l('No')
-							)
-						),
-						'desc' => $this->l('You have to define if some products are pending receipt in this state.')
-					),
-				),
-				'submit' => array(
-					'title' => $this->l('   Save   '),
-					'class' => 'button'
-				)
-			);
-
-			if (Tools::isSubmit('addsupply_order_state'))
-				$this->toolbar_title = $this->l('Stock : Add Supply order state');
-			else
-			{
-				$this->toolbar_title = $this->l('Stock : Update Supply order state');
-
-				$id_supply_order_state = Tools::getValue('id_supply_order_state', 0);
-
-				// only some fields are editable for initial states
-				if (in_array($id_supply_order_state, array(1, 2, 3, 4, 5, 6)))
-				{
-					$this->fields_form = array(
-						'legend' => array(
-							'title' => $this->l('Supply Order State'),
-							'image' => '../img/admin/edit.gif'
-						),
-						'input' => array(
-							array(
-								'type' => 'text',
-								'lang' => true,
-								'label' => $this->l('Name:'),
-								'name' => 'name',
-								'size' => 50,
-								'required' => true
-							),
-							array(
-								'type' => 'color',
-								'label' => $this->l('Back office color:'),
-								'name' => 'color',
-								'size' => 20,
-								'desc' => $this->l('Back office background will be displayed in this color. HTML colors only (e.g.,').' "lightblue", "#CC6600")'
-							),
-						),
-						'submit' => array(
-							'title' => $this->l('   Save   '),
-							'class' => 'button'
-						)
-					);
-				}
-			}
-
-			return parent::initForm();
-		}
-
 		if (Tools::isSubmit('addsupply_order') ||
 			Tools::isSubmit('updatesupply_order') ||
 			Tools::isSubmit('submitAddsupply_order') ||
@@ -321,6 +170,9 @@ class AdminSupplyOrdersControllerCore extends AdminController
 
 			if (Tools::isSubmit('updatesupply_order') || Tools::isSubmit('submitUpdatesupply_order'))
 				$this->toolbar_title = $this->l('Stock : Manage supply order');
+
+			if (Tools::isSubmit('mod') && Tools::getValue('mod') === 'template' || $this->object->is_template)
+				$this->toolbar_title .= ' '.$this->l('template');
 
 			$this->addJqueryUI('ui.datepicker');
 
@@ -360,7 +212,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 							'id' => 'id_supplier',
 							'name' => 'name'
 						),
-						'desc' => $this->l('Select the supplier you are buying product from'),
+						'desc' => $this->l('Select the supplier you are buying product from.'),
 						'hint' => $this->l('Be careful ! When changing this field, all products already added to the order will be removed.')
 					),
 					array(
@@ -385,7 +237,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 							'id' => 'id_currency',
 							'name' => 'name'
 						),
-						'desc' => $this->l('The currency of the order'),
+						'desc' => $this->l('The currency of the order.'),
 						'hint' => $this->l('Be careful ! When changing this field, all products already added to the order will be removed.')
 					),
 					array(
@@ -398,7 +250,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 							'id' => 'id_lang',
 							'name' => 'name'
 						),
-						'desc' => $this->l('The language of the order')
+						'desc' => $this->l('The language of the order.')
 					),
 					array(
 						'type' => 'date',
@@ -406,7 +258,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						'name' => 'date_delivery_expected',
 						'size' => 20,
 						'required' => true,
-						'desc' => $this->l('This is the expected delivery date for this order'),
+						'desc' => $this->l('This is the expected delivery date for this order.'),
 					),
 					array(
 						'type' => 'text',
@@ -416,16 +268,35 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						'required' => true,
 						'desc' => $this->l('This is the global discount rate in percents for the order.'),
 					),
+					array(
+						'type' => 'text',
+						'label' => $this->l('Automatically load products:'),
+						'name' => 'load_products',
+						'size' => 7,
+						'required' => false,
+						'hint' => 'This will reset the order',
+						'desc' => $this->l('If specified, each product which quantity is less or equal to this value will be loaded.'),
+					),
 				),
 				'submit' => array(
 					'title' => $this->l('   Save order   '),
 				)
 			);
 
+			if (Tools::isSubmit('mod') && Tools::getValue('mod') === 'template' ||
+				$this->object->is_template)
+			{
+
+				$this->fields_form['input'][] = array(
+					'type' => 'hidden',
+					'name' => 'is_template'
+				);
+			}
+
 			//specific discount display
 			$this->object->discount_rate = Tools::ps_round($this->object->discount_rate, 4);
 
-			return parent::initForm();
+			return parent::renderForm();
 		}
 
 	}
@@ -436,6 +307,35 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	 */
 	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
 	{
+		if (Tools::isSubmit('csv_orders') || Tools::isSubmit('csv_orders_details') || Tools::isSubmit('csv_order_details'))
+			$limit = false;
+
+		// defines button specific for non-template supply orders
+		if (!$this->is_template_list)
+		{
+			// adds export csv buttons
+			$this->toolbar_btn['export-csv-orders'] = array(
+				'short' => 'Export Orders',
+				'href' => $this->context->link->getAdminLink('AdminSupplyOrders').'&amp;csv_orders&id_warehouse='.$this->getCurrentWarehouse(),
+				'desc' => $this->l('Export Orders (CSV)'),
+			);
+
+			$this->toolbar_btn['export-csv-details'] = array(
+				'short' => 'Export Orders Details',
+				'href' => $this->context->link->getAdminLink('AdminSupplyOrders').'&amp;csv_orders_details&id_warehouse='.$this->getCurrentWarehouse(),
+				'desc' => $this->l('Export Orders Details (CSV)'),
+			);
+
+			unset($this->toolbar_btn['new']);
+			if ($this->tabAccess['add'] === '1')
+			{
+				$this->toolbar_btn['new'] = array(
+					'href' => self::$currentIndex.'&amp;add'.$this->table.'&amp;token='.$this->token,
+					'desc' => $this->l('Add new')
+				);
+			}
+		}
+
 		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
 
 		// actions filters on supply orders list
@@ -457,120 +357,20 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		$this->displayInformation($this->l('This interface allows you to manage supply orders.').'<br />');
-		$this->displayInformation($this->l('Also, it allows you to add and edit your own supply order states.'));
+		$this->displayInformation($this->l('Also, you can create templates that you can later use to generate actual orders.').'<br />');
 
-		// access
-		if (!($this->tabAccess['add'] === '1'))
-			unset($this->toolbar_btn['new']);
+		// assigns warehouses
+		$this->tpl_list_vars['warehouses'] = $this->warehouses;
+		$this->tpl_list_vars['current_warehouse'] = $this->getCurrentWarehouse();
+		$this->tpl_list_vars['filter_status'] = $this->getFilterStatus();
 
-		//no link on list rows
-		$this->list_no_link = true;
-
-		/*
-		 * Manage default list
-		 */
-		$this->addRowAction('edit');
-		$this->addRowAction('delete');
-		$this->addRowActionSkipList('delete', array(1, 2, 3, 4, 5, 6));
-
-		$this->toolbar_title = $this->l('Stock : Suppliers Orders States');
-		$first_list = parent::initList();
-
-		/*
-		 * Manage second list
-		 */
-		// reset actions, toolbar and query vars
-		$this->actions = array();
-		$this->list_skip_actions = array();
-		$this->toolbar_btn = array();
-		$this->toolbar_title = '';
-		unset($this->_select, $this->_join, $this->_group, $this->_filterHaving, $this->_filter);
-
-		// override table, land, className and identifier for the current controller
-	 	$this->table = 'supply_order';
-	 	$this->className = 'SupplyOrder';
-	 	$this->identifier = 'id_supply_order';
-	 	$this->lang = false;
-
-		$this->addRowAction('updatereceipt');
-		$this->addRowAction('changestate');
-		$this->addRowAction('edit');
-		$this->addRowAction('view');
-		$this->addRowAction('details');
-
-	 	// test if a filter is applied for this list
-		if (Tools::isSubmit('submitFilter'.$this->table) || $this->context->cookie->{'submitFilter'.$this->table} !== false)
-			$this->filter = true;
-
-		// test if a filter reset request is required for this list
-		if (isset($_POST['submitReset'.$this->table]))
-			$this->action = 'reset_filters';
-		else
-			$this->action = '';
-
-		// redifine fields display
-		$this->fieldsDisplay = array(
-			'reference' => array(
-				'title' => $this->l('Order Reference'),
-				'width' => 100,
-				'havingFilter' => true
-			),
-			'supplier' => array(
-				'title' => $this->l('Supplier'),
-				'width' => 100,
-				'filter_key' => 's!name'
-			),
-			'warehouse' => array(
-				'title' => $this->l('Warehouse'),
-				'width' => 100,
-				'filter_key' => 'w!name'
-			),
-			'state' => array(
-				'title' => $this->l('State'),
-				'width' => 200,
-				'filter_key' => 'stl!name',
-				'color' => 'color',
-			),
-			'date_add' => array(
-				'title' => $this->l('Creation date'),
-				'width' => 150,
-				'align' => 'right',
-				'type' => 'date',
-				'havingFilter' => true,
-				'filter_key' => 'a!date_add'
-			),
-			'date_upd' => array(
-				'title' => $this->l('Last modification date'),
-				'width' => 150,
-				'align' => 'right',
-				'type' => 'date',
-				'havingFilter' => true,
-				'filter_key' => 'a!date_upd'
-			),
-			'date_delivery_expected' => array(
-				'title' => $this->l('Delivery date'),
-				'width' => 150,
-				'align' => 'right',
-				'type' => 'date',
-				'havingFilter' => true,
-				'filter_key' => 'a!date_delivery_expected'
-			),
-			'id_pdf' => array(
-				'title' => $this->l('PDF'),
-				'width' => 50,
-				'callback' => 'printPDFIcons',
-				'orderby' => false,
-				'search' => false
-			),
-		);
-
-		// make new query
+		// overrides query
 		$this->_select = '
 			s.name AS supplier,
 			w.name AS warehouse,
@@ -581,7 +381,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			st.receipt_state,
 			st.pending_receipt,
 			st.color AS color,
-			a.id_supply_order as id_pdf';
+			a.id_supply_order as id_export';
 
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'supply_order_state_lang` stl ON
 						(
@@ -592,17 +392,64 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						LEFT JOIN `'._DB_PREFIX_.'supplier` s ON a.id_supplier = s.id_supplier
 						LEFT JOIN `'._DB_PREFIX_.'warehouse` w ON (w.id_warehouse = a.id_warehouse)';
 
-		// init the toolbar according to the current list
+		$this->_where = ' AND a.is_template = 0';
+
+		if ($this->getCurrentWarehouse() != -1)
+			$this->_where .= ' AND a.id_warehouse = '.$this->getCurrentWarehouse();
+		if ($this->getFilterStatus() != 0)
+			$this->_where .= ' AND st.enclosed != 1';
+		$first_list = parent::renderList();
+
+		if (Tools::isSubmit('csv_orders') || Tools::isSubmit('csv_orders_details') || Tools::isSubmit('csv_order_details'))
+		{
+			if (count($this->_list) > 0)
+			{
+				$this->renderCSV();
+				die;
+			}
+			else
+				$this->displayWarning($this->l('There is nothing to export as CSV.'));
+		}
+
+		// second list : templates
+		$second_list = null;
+		$this->is_template_list = true;
+		unset($this->tpl_list_vars['warehouses']);
+		unset($this->tpl_list_vars['current_warehouse']);
+		unset($this->tpl_list_vars['filter_status']);
+
+		// unsets actions
+		$this->actions = array();
+		unset($this->toolbar_btn['export-csv-orders']);
+		unset($this->toolbar_btn['export-csv-details']);
+		// adds actions
+		$this->addRowAction('delete');
+		$this->addRowAction('view');
+		$this->addRowAction('edit');
+		$this->addRowAction('createsupplyorder');
+		// unsets some fields
+		unset($this->fieldsDisplay['state'],
+			  $this->fieldsDisplay['date_upd'],
+			  $this->fieldsDisplay['id_pdf'],
+			  $this->fieldsDisplay['date_delivery_expected']);
+		// adds filter, to gets only templates
+		unset($this->_where);
+		$this->_where = ' AND a.is_template = 1';
+		if ($this->getCurrentWarehouse() != -1)
+			$this->_where .= ' AND a.id_warehouse = '.$this->getCurrentWarehouse();
+
+		// re-defines toolbar & buttons
+		$this->toolbar_title = $this->l('Stock : Supply orders templates');
 		$this->initToolbar();
+		unset($this->toolbar_btn['new']);
+		$this->toolbar_btn['new'] = array(
+			'href' => self::$currentIndex.'&amp;add'.$this->table.'&mod=template&amp;token='.$this->token,
+			'desc' => $this->l('Add new template')
+		);
+		// inits list
+		$second_list = parent::renderList();
 
-		// generate the second list
-		$second_list = parent::initList();
-
-		// reset all query vars
-		unset($this->_select, $this->_join, $this->_group, $this->_filterHaving, $this->_filter);
-
-		// return the two lists
-		return $second_list.$first_list;
+		return $first_list.$second_list;
 	}
 
 	/**
@@ -639,7 +486,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		// defines the fields of the form to display
 		$this->fields_form[]['form'] = array(
 			'legend' => array(
-				'title' => $this->l('Supply Order State'),
+				'title' => $this->l('Supply Order Status'),
 				'image' => '../img/admin/cms.gif'
 			),
 			'input' => array(
@@ -649,7 +496,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				),
 				array(
 					'type' => 'select',
-					'label' => $this->l('New state of the order:'),
+					'label' => $this->l('New status of the order:'),
 					'name' => 'id_supply_order_state',
 					'required' => true,
 					'options' => array(
@@ -657,7 +504,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						'id' => 'id_supply_order_state',
 						'name' => 'name'
 					),
-					'desc' => $this->l('Choose the new state of your order')
+					'desc' => $this->l('Choose the new status of your order')
 				),
 			),
 			'submit' => array(
@@ -880,6 +727,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		// renders list
 		$helper = new HelperList();
 		$this->setHelperDisplay($helper);
+		$helper->actions = array('details');
 		$helper->override_folder = 'supply_orders_receipt_history/';
 
 		$helper->currentIndex = self::$currentIndex.$action;
@@ -1031,7 +879,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						$errors = $entry->validateController();
 
 						//get the product name displayed in the backoffice according to the employee language
-						$entry->name_displayed = Tools::getValue('input_name_'.$id, '');
+						$entry->name_displayed = Tools::getValue('input_name_displayed_'.$id, '');
 
 						// if there is a problem, handle error for the current product
 						if (count($errors) > 0)
@@ -1056,7 +904,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 								$error_str .= '<li>'.$this->l('field ').$e.'</li>';
 							$error_str .= '</ul>';
 
-							$this->_errors[] = Tools::displayError($this->l('Please verify informations of the product: ').$entry->name.' '.$error_str);
+							$this->_errors[] = Tools::displayError($this->l('Please verify the informations of the product: ').$entry->name.' '.$error_str);
 						}
 						else
 							$entry->save();
@@ -1072,6 +920,8 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	 */
 	public function postProcess()
 	{
+		$this->is_editing_order = false;
+
 		// Checks access
 		if (Tools::isSubmit('submitAddsupply_order') && !($this->tabAccess['add'] === '1'))
 			$this->_errors[] = Tools::displayError($this->l('You do not have the required permission to add a supply order.'));
@@ -1081,6 +931,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 		if (Tools::isSubmit('submitAddsupply_order') || Tools::isSubmit('submitAddsupply_orderAndStay'))
 		{
 			$this->action = 'save';
+			$this->is_editing_order = true;
 
 			// get supplier ID
 			$id_supplier = (int)Tools::getValue('id_supplier', 0);
@@ -1103,6 +954,11 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			if ($delivery_expected <= (new DateTime('yesterday')))
 				$this->_errors[] = Tools::displayError($this->l('The date you specified cannot be in the past.'));
 
+			// gets threshold
+			$quantity_threshold = null;
+			if (Tools::getValue('load_products') && Validate::isInt(Tools::getValue('load_products')))
+				$quantity_threshold = (int)Tools::getValue('load_products');
+
 			if (!count($this->_errors))
 			{
 				// specify initial state
@@ -1116,6 +972,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 
 				//specific discount check
 				$_POST['discount_rate'] = (float)str_replace(array(' ', ','), array('', '.'), Tools::getValue('discount_rate', 0));
+
 			}
 
 			// manage each associated product
@@ -1128,12 +985,12 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			&& Tools::isSubmit('id_supply_order_state'))
 		{
 			if ($this->tabAccess['edit'] != '1')
-				$this->_errors[] = Tools::displayError($this->l('You do not have permissions to change order state.'));
+				$this->_errors[] = Tools::displayError($this->l('You do not have permissions to change order status.'));
 
 			// get state ID
 			$id_state = (int)Tools::getValue('id_supply_order_state', 0);
 			if ($id_state <= 0)
-				$this->_errors[] = Tools::displayError($this->l('The selected supply order state is not valid.'));
+				$this->_errors[] = Tools::displayError($this->l('The selected supply order status is not valid.'));
 
 			// get supply order ID
 			$id_supply_order = (int)Tools::getValue('id_supply_order', 0);
@@ -1162,7 +1019,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 							// special case of validate state - check if there are products in the order and the required state is not an enclosed state
 							if ($supply_order->isEditable() && !$supply_order->hasEntries() && !$new_state->enclosed)
 								$this->_errors[] = Tools::displayError(
-									$this->l('It is not possible to change the state of this order because of no product are present in it')
+									$this->l('It is not possible to change the status of this order because you did not order any products')
 								);
 
 							if (!count($this->_errors))
@@ -1201,10 +1058,101 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			}
 		}
 
+		// updates receipt
 		if (Tools::isSubmit('submitBulkUpdatesupply_order_detail') && Tools::isSubmit('id_supply_order'))
 			$this->postProcessUpdateReceipt();
 
-		parent::postProcess();
+		// use template to create a supply order
+		if (Tools::isSubmit('create_supply_order') && Tools::isSubmit('id_supply_order'))
+			$this->postProcessCopyFromTemplate();
+
+		if ((!count($this->_errors) && $this->is_editing_order) || !$this->is_editing_order)
+			parent::postProcess();
+
+		// if the threshold is defined and we are saving the order
+		if (Tools::isSubmit('submitAddsupply_order') && $quantity_threshold != null)
+			$this->loadProducts($quantity_threshold);
+	}
+
+	/**
+	 * Exports CSV
+	 */
+	protected function renderCSV()
+	{
+		// exports orders
+		if (Tools::isSubmit('csv_orders'))
+		{
+			$ids = array();
+			foreach ($this->_list as $entry)
+				$ids[] = $entry['id_supply_order'];
+
+			if (count($ids) <= 0)
+				return;
+
+			$id_lang = Context::getContext()->language->id;
+			$orders = new Collection('SupplyOrder', $id_lang);
+			$orders->where('is_template', '=', false);
+			$orders->where('id_supply_order', 'in', $ids);
+			$id_warehouse = $this->getCurrentWarehouse();
+			if ($id_warehouse != -1)
+				$orders->where('id_warehouse', '=', $id_warehouse);
+			$orders->getAll();
+			$csv = new CSV($orders, $this->l('supply_orders'));
+    		$csv->export();
+		}
+		// exports details for all orders
+		else if (Tools::isSubmit('csv_orders_details'))
+		{
+			// header
+			header('Content-type: text/csv');
+			header('Cache-Control: no-store, no-cache');
+        	header('Content-disposition: attachment; filename="'.$this->l('supply_orders_details').'.csv"');
+
+        	// echoes details
+			$ids = array();
+			foreach ($this->_list as $entry)
+				$ids[] = $entry['id_supply_order'];
+
+			if (count($ids) <= 0)
+				return;
+
+			// for each supply order
+			$keys = array('id_product', 'id_product_attribute', 'reference', 'supplier_reference', 'ean13', 'upc', 'name',
+						  'unit_price_te', 'quantity_expected', 'quantity_received', 'price_te', 'discount_rate', 'discount_value_te',
+						  'price_with_discount_te', 'tax_rate', 'tax_value', 'price_ti', 'tax_value_with_order_discount',
+						  'price_with_order_discount_te', 'id_supply_order');
+			echo sprintf("%s\n", implode(';', array_map(array('CSVCore', 'wrap'), $keys)));
+
+			foreach ($ids as $id)
+			{
+				$query = new DbQuery();
+				$query->select(implode(', sod.', $keys));
+				$query->from('supply_order_detail', 'sod');
+				$query->leftJoin('supply_order', 'so', 'so.id_supply_order = sod.id_supply_order');
+				$id_warehouse = $this->getCurrentWarehouse();
+				if ($id_warehouse != -1)
+					$query->where('so.id_warehouse = '.(int)$id_warehouse);
+				$query->where('sod.id_supply_order = '.(int)$id);
+				$query->orderBy('sod.id_supply_order_detail DESC');
+				$resource = Db::getInstance()->query($query);
+				// gets details
+				while ($row = Db::getInstance()->nextRow($resource))
+       				 echo sprintf("%s\n", implode(';', array_map(array('CSVCore', 'wrap'), $row)));
+			}
+
+		}
+		// exports details for the given order
+		else if (Tools::isSubmit('csv_order_details') && Tools::getValue('id_supply_order'))
+		{
+			$supply_order = new SupplyOrder((int)Tools::getValue('id_supply_order'));
+			if (Validate::isLoadedObject($supply_order))
+			{
+				$details = $supply_order->getEntriesCollection();
+				$details->getAll();
+    			$csv = new CSV($details, $this->l('supply_order').'_'.$supply_order->reference.'_details');
+    			$csv->export();
+			}
+		}
 	}
 
 	/**
@@ -1275,6 +1223,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 						return;
 					}
 
+					$price = $supply_order_detail->unit_price_te;
 					// converts the unit price to the warehouse currency if needed
 					if ($supply_order->id_currency != $warehouse->id_currency)
 					{
@@ -1283,9 +1232,9 @@ class AdminSupplyOrdersControllerCore extends AdminController
 
 						// then, converts the newly calculated price from the default currency to the needed currency
 						$price = Tools::ps_round(Tools::convertPrice($price_converted_to_default_currency,
-																								  $warehouse->id_currency,
-																								  true),
-																			  6);
+																	 $warehouse->id_currency,
+																	 true),
+												 6);
 					}
 
 					$manager = StockManagerFactory::getManager();
@@ -1360,6 +1309,31 @@ class AdminSupplyOrdersControllerCore extends AdminController
         return $this->context->smarty->fetch(_PS_ADMIN_DIR_.'/themes/template/helper/list/list_action_supply_order_change_state.tpl');
     }
 
+    /**
+	 * Display state action link
+	 * @param string $token the token to add to the link
+	 * @param int $id the identifier to add to the link
+	 * @return string
+	 */
+    public function displayCreateSupplyOrderLink($token = null, $id)
+    {
+        if (!array_key_exists('CreateSupplyOrder', self::$cache_lang))
+            self::$cache_lang['CreateSupplyOrder'] = $this->l('Use this template to create a supply order');
+
+        if (!array_key_exists('CreateSupplyOrderConfirm', self::$cache_lang))
+            self::$cache_lang['CreateSupplyOrderConfirm'] = $this->l('Are you sure you want to use this template?');
+
+        $this->context->smarty->assign(array(
+            'href' => self::$currentIndex.
+            	'&'.$this->identifier.'='.$id.
+            	'&create_supply_order&token='.($token != null ? $token : $this->token),
+        	'confirm' => self::$cache_lang['CreateSupplyOrderConfirm'],
+            'action' => self::$cache_lang['CreateSupplyOrder'],
+        ));
+
+        return $this->context->smarty->fetch(_PS_ADMIN_DIR_.'/themes/template/helper/list/list_action_supply_order_create_from_template.tpl');
+    }
+
 	/**
 	 * method call when ajax request is made with the details row action
 	 * @see AdminController::postProcess()
@@ -1397,7 +1371,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 					'havingFilter' => true
 				),
 				'history_state_name' => array(
-					'title' => $this->l('State'),
+					'title' => $this->l('Status'),
 					'width' => 100,
 					'align' => 'left',
 					'color' => 'color',
@@ -1525,14 +1499,14 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			IFNULL(CONCAT(pl.name, \' : \', GROUP_CONCAT(DISTINCT agl.name, \' - \', al.name SEPARATOR \', \')), pl.name) as name
 		');
 
-		$query->from('product p');
+		$query->from('product', 'p');
 
-		$query->innerJoin('product_lang pl ON (pl.id_product = p.id_product AND pl.id_lang = '.$id_lang.')');
-		$query->leftJoin('product_attribute pa ON (pa.id_product = p.id_product)');
-		$query->leftJoin('product_attribute_combination pac ON (pac.id_product_attribute = pa.id_product_attribute)');
-		$query->leftJoin('attribute atr ON (atr.id_attribute = pac.id_attribute)');
-		$query->leftJoin('attribute_lang al ON (al.id_attribute = atr.id_attribute AND al.id_lang = '.$id_lang.')');
-		$query->leftJoin('attribute_group_lang agl ON (agl.id_attribute_group = atr.id_attribute_group AND agl.id_lang = '.$id_lang.')');
+		$query->innerJoin('product_lang', 'pl', 'pl.id_product = p.id_product AND pl.id_lang = '.$id_lang);
+		$query->leftJoin('product_attribute', 'pa', 'pa.id_product = p.id_product');
+		$query->leftJoin('product_attribute_combination', 'pac', 'pac.id_product_attribute = pa.id_product_attribute');
+		$query->leftJoin('attribute', 'atr', 'atr.id_attribute = pac.id_attribute');
+		$query->leftJoin('attribute_lang', 'al', 'al.id_attribute = atr.id_attribute AND al.id_lang = '.$id_lang);
+		$query->leftJoin('attribute_group_lang', 'agl', 'agl.id_attribute_group = atr.id_attribute_group AND agl.id_lang = '.$id_lang);
 
 		$query->where('pl.name LIKE \'%'.$pattern.'%\' OR p.reference LIKE \'%'.$pattern.'%\'');
 		$query->where('p.id_product NOT IN (SELECT pd.id_product FROM `'._DB_PREFIX_.'product_download` pd WHERE (pd.id_product = p.id_product))');
@@ -1552,12 +1526,10 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	}
 
 	/**
-	 * @see AdminController::initView()
+	 * @see AdminController::renderView()
 	 */
-	public function initView()
+	public function renderView()
 	{
-		$this->displayInformation($this->l('This interface allows you to display detailed informations on your order.').'<br />');
-
 		$this->show_toolbar = true;
 		$this->toolbar_fix = false;
 		$this->table = 'supply_order_detail';
@@ -1576,6 +1548,11 @@ class AdminSupplyOrdersControllerCore extends AdminController
 
 		if (Validate::isLoadedObject($supply_order))
 		{
+			if (!$supply_order->is_template)
+				$this->displayInformation($this->l('This interface allows you to display detailed informations on your order.').'<br />');
+			else
+				$this->displayInformation($this->l('This interface allows you to display detailed informations on your template of order.').'<br />');
+
 			$lang_id = (int)$supply_order->id_lang;
 
 			// just in case..
@@ -1594,8 +1571,10 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			$warehouse = new Warehouse($supply_order->id_warehouse);
 
 			// sets toolbar title with order reference
-			$this->toolbar_title = sprintf($this->l('Details on supply order #%s'), $supply_order->reference);
-
+			if (!$supply_order->is_template)
+				$this->toolbar_title = sprintf($this->l('Details on supply order #%s'), $supply_order->reference);
+			else
+				$this->toolbar_title = sprintf($this->l('Details on supply order template #%s'), $supply_order->reference);
 			// re-defines fieldsDisplay
 			$this->fieldsDisplay = array(
 				'supplier_reference' => array(
@@ -1735,6 +1714,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 			// renders list
 			$helper = new HelperList();
 			$this->setHelperDisplay($helper);
+			$helper->actions = array();
 			$helper->show_toolbar = false;
 
 			$content = $helper->generateList($this->_list, $this->fieldsDisplay);
@@ -1745,9 +1725,9 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				'supply_order_warehouse' => (Validate::isLoadedObject($warehouse) ? $warehouse->name : ''),
 				'supply_order_reference' => $supply_order->reference,
 				'supply_order_supplier_name' => $supply_order->supplier_name,
-				'supply_order_creation_date' => Tools::displayDate($supply_order->date_add, $lang_id, true),
-				'supply_order_last_update' => Tools::displayDate($supply_order->date_upd, $lang_id, true),
-				'supply_order_expected' => Tools::displayDate($supply_order->date_delivery_expected, $lang_id, true),
+				'supply_order_creation_date' => Tools::displayDate($supply_order->date_add, $lang_id, false),
+				'supply_order_last_update' => Tools::displayDate($supply_order->date_upd, $lang_id, false),
+				'supply_order_expected' => Tools::displayDate($supply_order->date_delivery_expected, $lang_id, false),
 				'supply_order_discount_rate' => Tools::ps_round($supply_order->discount_rate, 2),
 				'supply_order_total_te' => Tools::displayPrice($supply_order->total_te, $currency),
 				'supply_order_discount_value_te' => Tools::displayPrice($supply_order->discount_value_te, $currency),
@@ -1755,10 +1735,11 @@ class AdminSupplyOrdersControllerCore extends AdminController
 				'supply_order_total_tax' => Tools::displayPrice($supply_order->total_tax, $currency),
 				'supply_order_total_ti' => Tools::displayPrice($supply_order->total_ti, $currency),
 				'supply_order_currency' => $currency,
+				'is_template' => $supply_order->is_template,
 			);
 		}
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	/**
@@ -1767,7 +1748,7 @@ class AdminSupplyOrdersControllerCore extends AdminController
 	 * @param string $tr
 	 * @return string $content
 	 */
-	public function printPDFIcons($id_supply_order, $tr)
+	public function printExportIcons($id_supply_order, $tr)
 	{
 		$supply_order = new SupplyOrder((int)$id_supply_order);
 
@@ -1780,10 +1761,18 @@ class AdminSupplyOrdersControllerCore extends AdminController
 
 		$content = '<span style="width:20px; margin-right:5px;">';
 		if ($supply_order_state->editable == false)
-			$content .= '<a href="pdf.php?id_supply_order='.(int)$supply_order->id.'"><img src="../img/admin/pdf.gif" alt="invoice" /></a>';
+			$content .= '<a href="pdf.php?id_supply_order='.(int)$supply_order->id.'" title="Export as PDF"><img src="../img/admin/pdf.gif" alt="invoice" /></a>';
 		else
 			$content .= '-';
 		$content .= '</span>';
+
+		$content .= '<span style="width:20px">';
+		if ($supply_order_state->enclosed == true && $supply_order_state->receipt_state == true)
+			$content .= '<a href="'.$this->context->link->getAdminLink('AdminSupplyOrders').'&amp;id_supply_order='.(int)$supply_order->id.'&csv_order_details" title="Export as CSV"><img src="../img/admin/excel_file.png" alt="" /></a>';
+		else
+			$content .= '-';
+		$content .= '</span>';
+
 
 		return $content;
 	}
@@ -1824,9 +1813,186 @@ class AdminSupplyOrdersControllerCore extends AdminController
 					'href' => '#',
 					'desc' => $this->l('Save and stay')
 				);
-
 			default:
 				parent::initToolbar();
 		}
+	}
+
+	/**
+	 * Overrides AdminController::afterAdd()
+	 * @see AdminController::afterAdd()
+	 * @param ObjectModel $object
+	 * @return bool
+	 */
+	public function afterAdd($object)
+	{
+		$this->object = $object;
+		return true;
+	}
+
+	/**
+	 * Loads products which quantity (hysical quantity) is equal or less than $threshold
+	 * @param int $threshold
+	 */
+	protected function loadProducts($threshold)
+	{
+		// if there is already an order
+		if (Tools::getValue('id_supply_order'))
+			$supply_order = new SupplyOrder((int)Tools::getValue('id_supply_order'));
+		else // else, we just created a new order
+			$supply_order = $this->object;
+
+		// if order is not valid, return;
+		if (!Validate::isLoadedObject($supply_order))
+			return;
+
+		// resets products if needed
+		if (Tools::getValue('id_supply_order'))
+			$supply_order->resetProducts();
+
+		// gets products
+		$query = new DbQuery();
+		$query->select('ps.id_product,
+					    ps.id_product_attribute,
+					    ps.product_supplier_reference as supplier_reference,
+					    ps.product_supplier_price_te as unit_price_te,
+					    ps.id_currency,
+					    IFNULL(pa.reference, IFNULL(p.reference, \'\')) as reference,
+						IFNULL(pa.ean13, IFNULL(p.ean13, \'\')) as ean13,
+						IFNULL(pa.upc, IFNULL(p.upc, \'\')) as upc');
+		$query->from('product_supplier', 'ps');
+		$query->leftJoin('stock', 's', '
+			s.id_product = ps.id_product
+			AND s.id_product_attribute = ps.id_product_attribute
+		');
+		$query->innerJoin('warehouse_product_location', 'wpl', '
+			wpl.id_product = ps.id_product
+			AND wpl.id_product_attribute = ps.id_product_attribute
+			AND wpl.id_warehouse = '.(int)$supply_order->id_warehouse.'
+		');
+		$query->leftJoin('product', 'p', 'p.id_product = ps.id_product');
+		$query->leftJoin('product_attribute', 'pa', '
+			pa.id_product_attribute = ps.id_product_attribute
+			AND p.id_product = ps.id_product
+		');
+		$query->where('ps.id_supplier = '.(int)$supply_order->id_supplier);
+
+		// gets items
+		$items = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
+		// loads order currency
+		$order_currency = new Currency($supply_order->id_ref_currency);
+		if (!Validate::isLoadedObject($order_currency))
+			return;
+
+		$manager = StockManagerFactory::getManager();
+		foreach ($items as $item)
+		{
+			if ($manager->getProductRealQuantities($item['id_product'], $item['id_product_attribute'], $supply_order->id_warehouse, true) <= $threshold)
+			{
+				// sets supply_order_detail
+				$supply_order_detail = new SupplyOrderDetail();
+				$supply_order_detail->id_supply_order = $supply_order->id;
+				$supply_order_detail->id_currency = $order_currency->id;
+				$supply_order_detail->id_product = $item['id_product'];
+				$supply_order_detail->id_product_attribute = $item['id_product_attribute'];
+				$supply_order_detail->reference = $item['reference'];
+				$supply_order_detail->supplier_reference = $item['supplier_reference'];
+				$supply_order_detail->name = Product::getProductName($item['id_product'], $item['id_product_attribute'], $supply_order->id_lang);
+				$supply_order_detail->ean13 = $item['ean13'];
+				$supply_order_detail->upc = $item['upc'];
+				$supply_order_detail->quantity_expected = (int)$threshold;
+				$supply_order_detail->exchange_rate = $order_currency->conversion_rate;
+
+				$product_currency = new Currency($item['id_currency']);
+				if (Validate::isLoadedObject($product_currency))
+					$supply_order_detail->unit_price_te = Tools::convertPriceFull($item['unit_price_te'], $order_currency, $product_currency);
+				else
+					$supply_order_detail->unit_price_te = 0;
+
+				$supply_order_detail->save();
+			}
+		}
+	}
+
+	/**
+	 * Overrides AdminController::beforeAdd()
+	 * @see AdminController::beforeAdd()
+	 * @param ObjectModel $object
+	 */
+	public function beforeAdd($object)
+	{
+		if (Tools::isSubmit('is_template'))
+			$object->is_template = 1;
+
+		return true;
+	}
+
+	/**
+	 * Helper function for AdminSupplyOrdersController::postProcess()
+	 * @see AdminSupplyOrdersController::postProcess()
+	 */
+	protected function postProcessCopyFromTemplate()
+	{
+		// gets SupplyOrder and checks if it is valid
+		$id_supply_order = (int)Tools::getValue('id_supply_order');
+		$supply_order = new SupplyOrder($id_supply_order);
+		if (!Validate::isLoadedObject($supply_order))
+			$this->_errors[] = Tools::displayError($this->l('Could not copy this template.'));
+
+		// gets SupplyOrderDetail
+		$entries = $supply_order->getEntriesCollection($supply_order->id_lang);
+
+		// updates SupplyOrder so that it is not a template anymore
+		$supply_order->is_template = 0;
+		$supply_order->id = (int)0;
+		$supply_order->save();
+
+		// copies SupplyOrderDetail
+		foreach ($entries as $entry)
+		{
+			$entry->id_supply_order = $supply_order->id;
+			$entry->id = (int)0;
+			$entry->save();
+		}
+
+		// redirect when done
+		$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
+		$redirect = self::$currentIndex.'&token='.$token;
+		$this->redirect_after = $redirect.'&conf=19';
+	}
+
+	/**
+	 * Gets the current warehouse used
+	 *
+	 * @return int id_warehouse
+	 */
+	private function getCurrentWarehouse()
+	{
+		static $warehouse = 0;
+
+		if ($warehouse == 0)
+		{
+			$warehouse = -1; // all warehouses
+			if ((int)Tools::getValue('id_warehouse'))
+				$warehouse = (int)Tools::getValue('id_warehouse');
+		}
+		return $warehouse;
+	}
+
+	/**
+	 * Gets the current filter used
+	 *
+	 * @return int status
+	 */
+	private function getFilterStatus()
+	{
+		static $status = 0;
+
+		$status = 0;
+		if (Tools::getValue('filter_status') === 'on')
+			$status = 1;
+
+		return $status;
 	}
 }

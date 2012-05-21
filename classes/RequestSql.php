@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -30,12 +30,17 @@ class RequestSqlCore extends ObjectModel
 	public $name;
 	public $sql;
 
-	protected $fieldsRequired = array('name', 'sql');
-	protected $fieldsSize = array('name' => 200 , 'sql' => 400);
-	protected $fieldsValidate = array('name' => 'isString', 'sql' => 'isString');
-
-	protected $table = 'request_sql';
-	protected $identifier = 'id_request_sql';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'request_sql',
+		'primary' => 'id_request_sql',
+		'fields' => array(
+			'name' => 	array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 200),
+			'sql' => 	array('type' => self::TYPE_STRING, 'validate' => 'isString', 'required' => true, 'size' => 400),
+		),
+	);
 
 	public $tested = array('required' => array ('SELECT', 'FROM'),
 							'option' => array('WHERE', 'ORDER', 'LIMIT', 'HAVING', 'GROUP', 'UNION'),
@@ -56,14 +61,6 @@ class RequestSqlCore extends ObjectModel
 								'secure_key' => '*******************');
 
 	public $error_sql = array();
-
-	public function getFields()
-	{
-		parent::validateFields();
-		$fields['name'] = pSQL($this->name);
-		$fields['sql'] = pSQL($this->sql);
-		return $fields;
-	}
 
 	public static function getRequestSql()
 	{
@@ -138,14 +135,13 @@ class RequestSqlCore extends ObjectModel
 			if (!$this->checkedLimit($tab['LIMIT']))
 				return false;
 		}
-
 		if (empty($this->_errors))
 			if (!Db::getInstance()->executeS($sql))
 				return false;
 		return true;
 	}
 
-	public function showTables()
+	public function getTables()
 	{
 		$results = Db::getInstance()->executeS('SHOW TABLES');
 		foreach ($results as $result)
@@ -154,6 +150,11 @@ class RequestSqlCore extends ObjectModel
 			$tables[] = $result[$key[0]];
 		}
 		return $tables;
+	}
+
+	public function getAttributesByTable($table)
+	{
+		return Db::getInstance()->executeS(sprintf('DESCRIBE `%s`', $table));
 	}
 
 	public function cutJoin($attrs, $from)
@@ -223,7 +224,7 @@ class RequestSqlCore extends ObjectModel
 	{
 		if (is_array($table) && (count($table) == 1))
 			$table = $table[0];
-		$attributs = Db::getInstance()->executeS(sprintf('DESCRIBE `%s`', $table));
+		$attributs = $this->getAttributesByTable($table);
 		foreach ($attributs as $attribut)
 			if ($attribut['Field'] == trim($attr))
 				return true;
@@ -258,7 +259,7 @@ class RequestSqlCore extends ObjectModel
 		for ($i = 0; $i < $nb; $i++)
 		{
 			$table = $from[$i];
-			if (!in_array(str_replace('`', '', $table['table']), $this->showTables()))
+			if (!in_array(str_replace('`', '', $table['table']), $this->getTables()))
 			{
 				$this->error_sql['checkedFrom']['table'] = $table['table'];
 				return false;

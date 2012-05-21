@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10055 $
+*  @version  Release: $Revision: 11390 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -45,39 +45,36 @@ class StockMvtReasonCore extends ObjectModel
 	/** @var boolean True if the movement reason has been deleted (staying in database as deleted) */
 	public $deleted = 0;
 
-	protected $table = 'stock_mvt_reason';
-	protected $identifier = 'id_stock_mvt_reason';
- 	protected $fieldsRequiredLang = array('name');
- 	protected $fieldsSizeLang = array('name' => 255);
- 	protected $fieldsValidateLang = array('name' => 'isGenericName');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'stock_mvt_reason',
+		'primary' => 'id_stock_mvt_reason',
+		'multilang' => true,
+		'fields' => array(
+			'sign' => 		array('type' => self::TYPE_INT),
+			'deleted' => 	array('type' => self::TYPE_BOOL),
+			'date_add' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'name' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 255),
+		),
+	);
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'stock_movement_reasons',
 		'objectNodeName' => 'stock_movement_reason',
+		'fields' => array(
+			'sign' => array(),
+		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['sign'] = (int)$this->sign;
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['deleted'] = (int)$this->deleted;
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('name'));
-	}
 
 	public static function getStockMvtReasons($id_lang, $sign = null)
 	{
 		$query = new DbQuery();
 		$query->select('smrl.name, smr.id_stock_mvt_reason, smr.sign');
-		$query->from('stock_mvt_reason smr');
-		$query->leftjoin('stock_mvt_reason_lang smrl ON (smr.id_stock_mvt_reason = smrl.id_stock_mvt_reason AND smrl.id_lang='.(int)$id_lang.')');
+		$query->from('stock_mvt_reason', 'smr');
+		$query->leftjoin('stock_mvt_reason_lang', 'smrl', 'smr.id_stock_mvt_reason = smrl.id_stock_mvt_reason AND smrl.id_lang='.(int)$id_lang);
 		$query->where('smr.deleted = 0');
 
 		if ($sign != null)
@@ -98,8 +95,8 @@ class StockMvtReasonCore extends ObjectModel
 	{
 		$query = new DbQuery();
 		$query->select('smrl.name, smr.id_stock_mvt_reason, smr.sign');
-		$query->from('stock_mvt_reason smr');
-		$query->leftjoin('stock_mvt_reason_lang smrl ON (smr.id_stock_mvt_reason = smrl.id_stock_mvt_reason AND smrl.id_lang='.(int)$id_lang.')');
+		$query->from('stock_mvt_reason', 'smr');
+		$query->leftjoin('stock_mvt_reason_lang', 'smrl', 'smr.id_stock_mvt_reason = smrl.id_stock_mvt_reason AND smrl.id_lang='.(int)$id_lang);
 		$query->where('smr.deleted = 0');
 
 		if ($sign != null)
@@ -124,7 +121,7 @@ class StockMvtReasonCore extends ObjectModel
 	{
 		$query = new DbQuery();
 		$query->select('smr.id_stock_mvt_reason');
-		$query->from('stock_mvt_reason smr');
+		$query->from('stock_mvt_reason', 'smr');
 		$query->where('smr.id_stock_mvt_reason = '.(int)$id_stock_mvt_reason);
 		$query->where('smr.deleted = 0');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);

@@ -57,7 +57,7 @@ class AdminReturnControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -134,9 +134,11 @@ class AdminReturnControllerCore extends AdminController
 			}
 		}
 
-		/* Classic products */
+		// Classic products
 		$products = OrderReturn::getOrdersReturnProducts($this->object->id, $order);
 
+		// Prepare customer explanation for display
+		$this->object->question = nl2br($this->object->question);
 
 		$this->tpl_form_vars = array(
 			'customer' => new Customer($this->object->id_customer),
@@ -151,7 +153,7 @@ class AdminReturnControllerCore extends AdminController
 			'quantityDisplayed' => $quantityDisplayed,
 			'id_order_return' => $this->object->id,
 		);
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initToolbar()

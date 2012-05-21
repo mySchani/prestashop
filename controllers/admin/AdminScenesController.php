@@ -74,10 +74,11 @@ class AdminScenesControllerCore extends AdminController
 			$images_types = ImageType::getImagesTypes('scenes');
 			foreach ($images_types as $k => $image_type)
 			{
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				if ($image_type['name'] == 'large_scene' && isset($_FILES['image']))
 					imageResize(
 						$_FILES['image']['tmp_name'],
-						_PS_SCENE_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).'.jpg',
+						_PS_SCENE_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 						(int)$image_type['width'],
 						(int)$image_type['height']
 					);
@@ -89,7 +90,7 @@ class AdminScenesControllerCore extends AdminController
 						$tmp_name = $_FILES['image']['tmp_name'];
 					imageResize(
 						$tmp_name,
-						_PS_SCENE_THUMB_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).'.jpg',
+						_PS_SCENE_THUMB_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
 						(int)$image_type['width'],
 						(int)$image_type['height']
 					);
@@ -99,7 +100,7 @@ class AdminScenesControllerCore extends AdminController
 		return true;
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->initFieldsForm();
 		$content = '';
@@ -113,7 +114,7 @@ class AdminScenesControllerCore extends AdminController
 		$products = $obj->getProducts(true, $this->context->language->id, false, $this->context);
 		$this->tpl_form_vars['products'] = $obj->getProducts(true, $this->context->language->id, false, $this->context);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initFieldsForm()
@@ -134,16 +135,23 @@ class AdminScenesControllerCore extends AdminController
 				'title' => $this->l('Image Maps'),
 				'image' => '../img/admin/photo.gif',
 				),
-			'description' => $this->l('When a customer hovers over the image with the mouse, a pop-up appears displaying a brief description of the product. 
-				The customer can then click to open the product\'s full product page. To achieve this, please define the \'mapping zone\' 
-				that, when hovered over, will display the pop-up. Left-click with your mouse to draw the four-sided mapping zone, then release. 
-				Then, begin typing the name of the associated product. A list of products appears. Click the appropriate product, then click OK. 
-				Repeat these steps for each mapping zone you wish to create. When you have finished mapping zones, click Save Image Map.'),
 			'submit' => array(
 				'title' => $this->l('   Save   '),
 				'class' => 'button'
 			),
 			'input' => array(
+				array(
+					'type' => 'description',
+					'name' => 'description',
+					'label' => $this->l('How to map products in the image:'),
+					'text' => $this->l('When a customer hovers over the image with the mouse, a pop-up appears displaying a brief description of the product.').
+						$this->l('The customer can then click to open the product\'s full product page. ').
+						$this->l('To achieve this, please define the \'mapping zone\' that, when hovered over, will display the pop-up. ').
+						$this->l('Left-click with your mouse to draw the four-sided mapping zone, then release.').
+						$this->l('Then, begin typing the name of the associated product. A list of products appears. ').
+						$this->l('Click the appropriate product, then click OK. Repeat these steps for each mapping zone you wish to create. ').
+						$this->l('When you have finished mapping zones, click Save Image Map.')
+				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Image map name:'),
@@ -153,7 +161,7 @@ class AdminScenesControllerCore extends AdminController
 					'required' => true,
 					'hint' => $this->l('Invalid characters:').' <>;=#{}'
 				),
-					array(
+				array(
 					'type' => 'radio',
 					'label' => $this->l('Status:'),
 					'name' => 'active',
@@ -178,13 +186,13 @@ class AdminScenesControllerCore extends AdminController
 		$this->fields_form = $fields_form;
 
 		$image_to_map_desc = '';
-		$image_to_map_desc = $this->l('Format:').' JPG, GIF, PNG. '.$this->l('File size:').' '
+		$image_to_map_desc .= $this->l('Format:').' JPG, GIF, PNG. '.$this->l('File size:').' '
 				.(Tools::getMaxUploadSize() / 1024).''.$this->l('KB max.').' '
 				.$this->l('If larger than the image size setting, the image will be reduced to ')
 				.' '.$large_scene_image_type['width'].'x'.$large_scene_image_type['height'].'px '
 				.$this->l('(width x height). If smaller than the image-size setting, a white background will be added in order to achieve the 
-					correct image size.').'.<br />'.$this->l('Note: To change image dimensions, please change the \'large_scene\' image type settings 
-					to the desired size (in Back Office > Preferences > Images).');
+					correct image size.').'.<br />'.
+				$this->l('Note: To change image dimensions, please change the \'large_scene\' image type settings to the desired size (in Back Office > Preferences > Images).');
 		if ($obj->id && file_exists(_PS_SCENE_IMG_DIR_.$obj->id.'-large_scene.jpg'))
 		{
 			$this->addJqueryPlugin('autocomplete');
@@ -213,8 +221,7 @@ class AdminScenesControllerCore extends AdminController
 				.$this->l('Filesize:').' '.(Tools::getMaxUploadSize() / 1024).''.$this->l('Kb max.').' '
 				.$this->l('Automatically resized to')
 				.' '.$thumb_scene_image_type['width'].'x'.$thumb_scene_image_type['height'].'px '.$this->l('(width x height)').'.<br />'
-				.$this->l('Note: To change image dimensions, please change the \'thumb_scene\' image type settings to the desired size 
-					(in Back Office > Preferences > Images).');
+				.$this->l('Note: To change image dimensions, please change the \'thumb_scene\' image type settings to the desired size (in Back Office > Preferences > Images).');
 
 			$input_img_alt = array(
 				'type' => 'file',

@@ -105,7 +105,7 @@ class ProductControllerCore extends FrontController
 	{
 		if (!$this->errors)
 		{
-			// Assign to the tempate the id of the virtuale product. "0" if the product is not downloadable.
+			// Assign to the template the id of the virtual product. "0" if the product is not downloadable.
 			$this->context->smarty->assign('virtual', ProductDownload::getIdFromIdProduct((int)$this->product->id));
 
 			// If the product is not active, it's the admin preview mode
@@ -199,6 +199,7 @@ class ProductControllerCore extends FrontController
 		$this->context->smarty->assign('errors', $this->errors);
 
 		$this->setTemplate(_PS_THEME_DIR_.'product.tpl');
+		parent::initContent();
 	}
 
 	/**
@@ -440,7 +441,7 @@ class ProductControllerCore extends FrontController
 
 	public function transformDescriptionWithImg($desc)
 	{
-		$reg = '/{img-([0-9]+)-(left|right)-([a-z]+)}/';
+		$reg = '/\[img-([0-9]+)-(left|right)-([a-z]+)\]/';
 		while (preg_match($reg, $desc, $matches))
 		{
 			$link_lmg = $this->context->link->getImageLink($this->product->link_rewrite, $this->product->id.'-'.$matches[1], $matches[3]);

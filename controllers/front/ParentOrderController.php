@@ -216,9 +216,25 @@ class ParentOrderControllerCore extends FrontController
 		}
 		else
 			$id_zone = Country::getIdZone((int)Configuration::get('PS_COUNTRY_DEFAULT'));
-
-		if (Tools::getIsset('delivery_option') && $this->validateDeliveryOption(Tools::getValue('delivery_option')))
-			$this->context->cart->setDeliveryOption(Tools::getValue('delivery_option'));
+		
+		if (Tools::getIsset('delivery_option'))
+		{
+			if ($this->validateDeliveryOption(Tools::getValue('delivery_option')))
+				$this->context->cart->setDeliveryOption(Tools::getValue('delivery_option'));
+		}
+		elseif (Tools::getIsset('id_carrier'))
+		{
+			// For retrocompatibility reason, try to transform carrier to an delivery option list
+			$delivery_option_list = $this->context->cart->getDeliveryOptionList();
+			if (count($delivery_option_list) == 1)
+			{
+				$delivery_option = reset($delivery_option_list);
+				$key = Cart::desintifier(Tools::getValue('id_carrier'));
+				foreach ($delivery_option_list as $id_address => $options)
+					if (isset($options[$key]))
+						$this->context->cart->setDeliveryOption(array($id_address => $key));
+			}
+		}
 
 		Hook::exec('processCarrier', array('cart' => $this->context->cart));
 
@@ -309,7 +325,7 @@ class ParentOrderControllerCore extends FrontController
 			Tools::redirect('');
 		}
 		else if (!Customer::getAddressesTotalById($this->context->customer->id))
-			Tools::redirect('index.php?controller=address&back=order.php&step=1');
+			Tools::redirect('index.php?controller=address&back=order.php&step=1&multi-shipping='.(int)Tools::getValue('multi-shipping'));
 		$customer = $this->context->customer;
 		if (Validate::isLoadedObject($customer))
 		{
@@ -377,18 +393,23 @@ class ParentOrderControllerCore extends FrontController
 	{
 		$address = new Address($this->context->cart->id_address_delivery);
 		$id_zone = Address::getZoneById($address->id);
-		$carriers = Carrier::getCarriersForOrder($id_zone, $this->context->customer->getGroups());
+		$carriers = $this->context->cart->simulateCarriersOutput();
+		$checked = $this->context->cart->simulateCarrierSelectedOutput();
+		$delivery_option_list = $this->context->cart->getDeliveryOptionList();
 		
 		$this->context->smarty->assign(array(
 			'address_collection' => $this->context->cart->getAddressCollection(),
-			'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
+			'delivery_option_list' => $delivery_option_list,
+			'carriers' => $carriers,
+			'checked' => $checked,
 			'delivery_option' => $this->context->cart->getDeliveryOption()
 		));
 		$this->context->smarty->assign(array(
 			'HOOK_EXTRACARRIER' => Hook::exec('extraCarrier', array('address' => $address)),
 			'HOOK_BEFORECARRIER' => Hook::exec('beforeCarrier', array(
 				'carriers' => $carriers,
-				'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
+				'checked' => $checked,
+				'delivery_option_list' => $delivery_option_list,
 				'delivery_option' => $this->context->cart->getDeliveryOption()
 			))
 		));
@@ -417,6 +438,11 @@ class ParentOrderControllerCore extends FrontController
 			'conditions' => (int)(Configuration::get('PS_CONDITIONS')),
 			'link_conditions' => $this->link_conditions,
 			'recyclable' => (int)($this->context->cart->recyclable),
+			'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
+			'carriers' => $this->context->cart->simulateCarriersOutput(),
+			'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
+			'address_collection' => $this->context->cart->getAddressCollection(),
+			'delivery_option' => $this->context->cart->getDeliveryOption(),
 			'gift_wrapping_price' => (float)(Configuration::get('PS_GIFT_WRAPPING_PRICE')),
 			'total_wrapping_cost' => Tools::convertPrice($wrapping_fees_tax_inc, $this->context->currency),
 			'total_wrapping_tax_exc_cost' => Tools::convertPrice($wrapping_fees, $this->context->currency)));

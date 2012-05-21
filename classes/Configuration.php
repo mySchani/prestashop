@@ -44,12 +44,22 @@ class ConfigurationCore extends ObjectModel
 	/** @var string Object last modification date */
 	public 		$date_upd;
 
-	protected	$fieldsRequired = array('name');
-	protected	$fieldsSize = array('name' => 32);
-	protected	$fieldsValidate = array('name' => 'isConfigName', 'id_group_shop' => 'isUnsignedId', 'id_shop' => 'isUnsignedId');
-
-	protected	$table = 'configuration';
-	protected 	$identifier = 'id_configuration';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'configuration',
+		'primary' => 'id_configuration',
+		'multilang' => true,
+		'fields' => array(
+			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isConfigName', 'required' => true, 'size' => 32),
+			'id_group_shop' => 	array('type' => self::TYPE_NOTHING, 'validate' => 'isUnsignedId'),
+			'id_shop' => 		array('type' => self::TYPE_NOTHING, 'validate' => 'isUnsignedId'),
+			'value' => 			array('type' => self::TYPE_STRING),
+			'date_add' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
 	/** @var array Configuration cache */
 	protected static $_CONF;
@@ -63,29 +73,15 @@ class ConfigurationCore extends ObjectModel
 		)
 	);
 
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['name'] = pSQL($this->name);
-		$fields['id_group_shop'] = $this->id_group_shop;
-		$fields['id_shop'] = $this->id_shop;
-		$fields['value'] = pSQL($this->value);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		return $fields;
-	}
-
 	/**
-	  * Check then return multilingual fields for database interaction
-	  *
+	  * @see ObjectModel::getFieldsLang()
 	  * @return array Multilingual fields
 	  */
-	public function getTranslationsFieldsChild()
+	public function getFieldsLang()
 	{
 		if (!is_array($this->value))
 			return true;
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('value'));
+		return $this->getFieldsLang();
 	}
 
 	/**
@@ -361,7 +357,7 @@ class ConfigurationCore extends ObjectModel
 			return false;
 
 		$sql = 'DELETE FROM `'._DB_PREFIX_.'configuration_lang`
-				WHERE `id_configuration` = (
+				WHERE `id_configuration` IN (
 					SELECT `id_configuration`
 					FROM `'._DB_PREFIX_.'configuration`
 					WHERE `name` = \''.pSQL($key).'\'
@@ -491,11 +487,11 @@ class ConfigurationCore extends ObjectModel
 	public function getWebserviceObjectList($sql_join, $sql_filter, $sql_sort, $sql_limit)
 	{
 		$query = '
-		SELECT DISTINCT main.`'.$this->identifier.'` FROM `'._DB_PREFIX_.$this->table.'` main
+		SELECT DISTINCT main.`'.$this->def['primary'].'` FROM `'._DB_PREFIX_.$this->def['table'].'` main
 		'.$sql_join.'
 		WHERE id_configuration NOT IN
 		(	SELECT id_configuration
-			FROM '._DB_PREFIX_.$this->table.'_lang
+			FROM '._DB_PREFIX_.$this->def['table'].'_lang
 		) '.$sql_filter.'
 		'.($sql_sort != '' ? $sql_sort : '').'
 		'.($sql_limit != '' ? $sql_limit : '').'

@@ -36,47 +36,29 @@ class FeatureValueCore extends ObjectModel
 	/** @var boolean Custom */
 	public $custom = 0;
 
- 	protected $fieldsRequired = array('id_feature');
-	protected $fieldsValidate = array(
-		'id_feature' => 'isUnsignedId',
-		'custom' => 'isBool'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'feature_value',
+		'primary' => 'id_feature_value',
+		'multilang' => true,
+		'fields' => array(
+			'id_feature' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'custom' => 	array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+
+			// Lang fields
+			'value' => 		array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 255),
+		),
 	);
 
- 	protected $fieldsRequiredLang = array('value');
- 	protected $fieldsSizeLang = array('value' => 255);
- 	protected $fieldsValidateLang = array('value' => 'isGenericName');
-
-	protected $table = 'feature_value';
-	protected $identifier = 'id_feature_value';
-
-	protected	$webserviceParameters = array(
+	protected $webserviceParameters = array(
 		'objectsNodeName' => 'product_feature_values',
 		'objectNodeName' => 'product_feature_value',
 		'fields' => array(
 			'id_feature' => array('xlink_resource'=> 'product_features'),
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_feature'] = (int)$this->id_feature;
-		$fields['custom'] = (int)$this->custom;
-
-		return $fields;
-	}
-
-	/**
-	* Check then return multilingual fields for database interaction
-	*
-	* @return array Multilingual fields
-	*/
-	public function getTranslationsFieldsChild()
-	{
-		$this->validateFieldsLang();
-		return $this->getTranslationsFields(array('value'));
-	}
 
 	/**
 	 * Get all values for a given feature
@@ -102,7 +84,7 @@ class FeatureValueCore extends ObjectModel
 	 * @return array Array with feature's values
 	 * @static
 	 */
-	public static function getFeatureValuesWithLang($id_lang, $id_feature)
+	public static function getFeatureValuesWithLang($id_lang, $id_feature, $custom = false)
 	{
 		return Db::getInstance()->executeS('
 			SELECT *
@@ -110,7 +92,7 @@ class FeatureValueCore extends ObjectModel
 			LEFT JOIN `'._DB_PREFIX_.'feature_value_lang` vl
 				ON (v.`id_feature_value` = vl.`id_feature_value` AND vl.`id_lang` = '.(int)$id_lang.')
 			WHERE v.`id_feature` = '.(int)$id_feature.'
-				AND (v.`custom` IS NULL OR v.`custom` = 0)
+				'.(!$custom ? 'AND (v.`custom` IS NULL OR v.`custom` = 0)' : '').'
 			ORDER BY vl.`value` ASC
 		');
 	}

@@ -20,11 +20,14 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10184 $
+*  @version  Release: $Revision: 11390 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * @since 1.5.0 It now defines stock movements when the advanced stock management system is available
+ */
 class StockMvtCore extends ObjectModel
 {
 	public $id;
@@ -83,7 +86,7 @@ class StockMvtCore extends ObjectModel
 	 * @since 1.5.0
 	 * @var int Used when the movement is due to a supplier order
 	 */
-	public $id_supplier_order = null;
+	public $id_supply_order = null;
 
 	/**
 	 * @since 1.5.0
@@ -122,34 +125,29 @@ class StockMvtCore extends ObjectModel
 	 */
 	public $quantity;
 
-	protected $table = 'stock_mvt';
-	protected $identifier = 'id_stock_mvt';
-
- 	protected $fieldsRequired = array(
- 		'date_add',
- 		'id_employee',
- 		'id_stock',
- 		'physical_quantity',
- 		'id_stock_mvt_reason',
- 		'sign',
- 		'price_te'
- 	);
-
- 	protected $fieldsValidate = array(
- 		'date_add' => 'isDate',
- 		'id_employee' => 'isUnsignedId',
- 		'employee_firstname' => 'isName',
- 		'employee_lastname' => 'isName',
- 		'id_stock' => 'isUnsignedId',
- 		'physical_quantity' => 'isUnsignedInt',
- 	 	'id_stock_mvt_reason' => 'isUnsignedId',
- 		'id_order' => 'isUnsignedId',
- 		'sign' => 'isInt',
- 		'last_wa' => 'isPrice',
- 		'current_wa' => 'isPrice',
- 		'price_te' => 'isPrice',
- 		'referer' => 'isUnsignedId'
- 	);
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'stock_mvt',
+		'primary' => 'id_stock_mvt',
+		'fields' => array(
+			'id_employee' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'employee_firstname' => array('type' => self::TYPE_STRING, 'validate' => 'isName'),
+			'employee_lastname' => 	array('type' => self::TYPE_STRING, 'validate' => 'isName'),
+			'id_stock' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'physical_quantity' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'id_stock_mvt_reason' =>array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_order' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'id_supply_order' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'sign' => 				array('type' => self::TYPE_INT, 'validate' => 'isInt', 'required' => true),
+			'last_wa' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'current_wa' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice'),
+			'price_te' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'referer' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'required' => true),
+		),
+	);
 
 	protected $webserviceParameters = array(
 		'objectsNodeName' => 'stock_movements',
@@ -158,28 +156,10 @@ class StockMvtCore extends ObjectModel
 			'id_employee' => array('xlink_resource'=> 'employees'),
 			'id_stock' => array('xlink_resource'=> 'stock'),
 			'id_stock_mvt_reason' => array('xlink_resource'=> 'stock_movement_reasons'),
-			'id_order' => array('xlink_resource'=> 'orders')
+			'id_order' => array('xlink_resource'=> 'orders'),
+			'id_supply_order' => array('xlink_resource'=> 'supply_order'),
 		),
 	);
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['id_employee'] = (int)$this->id_employee;
-		$fields['employee_lastname'] = pSQL($this->employee_lastname);
-		$fields['employee_firstname'] = pSQL(Tools::ucfirst($this->employee_firstname));
-		$fields['id_stock'] = (int)$this->id_stock;
-		$fields['physical_quantity'] = (int)$this->physical_quantity;
-		$fields['id_stock_mvt_reason'] = (int)$this->id_stock_mvt_reason;
-		$fields['id_order'] = (int)$this->id_order;
-		$fields['sign'] = (int)$this->sign;
-		$fields['last_wa'] = (float)Tools::ps_round($this->last_wa, 6);
-		$fields['current_wa'] = (float)Tools::ps_round($this->current_wa, 6);
-		$fields['price_te'] = (float)Tools::ps_round($this->price_te, 6);
-		$fields['referer'] = (int)$this->referer;
-		return $fields;
-	}
 
 	/**
 	 * @deprecated since 1.5.0
@@ -190,4 +170,45 @@ class StockMvtCore extends ObjectModel
 	{
 		Tools::displayAsDeprecated();
 	}
+
+	/**
+	 * Gets the negative (decrements the stock) stock mvts that correspond to the given order, for :
+	 * the given product, in the given quantity.
+	 *
+	 * @since 1.5.0
+	 * @param int $id_order
+	 * @param int $id_product
+	 * @param int $id_product_attribute
+	 * @param int $quantity
+	 * @param int $id_warehouse Optional
+	 * @return Array mvts
+	 */
+	public static function getNegativeStockMvts($id_order, $id_product, $id_product_attribute, $quantity, $id_warehouse = null)
+	{
+		$mvts = array();
+		$quantity_total = 0;
+
+		$query = new DbQuery();
+		$query->select('sm.*, s.id_warehouse');
+		$query->from('stock_mvt', 'sm');
+		$query->innerJoin('stock', 's', 's.id_stock = sm.id_stock');
+		$query->where('sm.sign = -1');
+		$query->where('sm.id_order = '.(int)$id_order);
+		$query->where('s.id_product = '.(int)$id_product.' AND s.id_product_attribute = '.(int)$id_product_attribute);
+		if (!is_null($id_warehouse))
+			$query->where('s.id_warehouse = '.(int)$id_warehouse);
+		$query->orderBy('date_add DESC');
+
+		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->query($query);
+		while ($row = Db::getInstance(_PS_USE_SQL_SLAVE_)->nextRow($res))
+		{
+			if ($quantity_total >= $quantity)
+				break;
+			$quantity_total += (int)$row['physical_quantity'];
+			$mvts[] = $row;
+		}
+
+		return $mvts;
+	}
+
 }

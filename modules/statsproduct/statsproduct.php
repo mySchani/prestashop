@@ -99,15 +99,16 @@ class StatsProduct extends ModuleGraph
 
 	private function getProducts($id_lang)
 	{
-		$sql = 'SELECT p.`id_product`, p.reference, pl.`name`, IFNULL(
-					(SELECT SUM(pa.quantity) FROM '._DB_PREFIX_.'product_attribute pa WHERE pa.id_product = p.id_product), p.quantity) as quantity
+		$sql = 'SELECT p.`id_product`, p.reference, pl.`name`, IFNULL(stock.quantity, 0) as quantity
 				FROM `'._DB_PREFIX_.'product` p
+				'.Product::sqlStock('p', 0).'
 				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.`id_product` = pl.`id_product`'.$this->context->shop->addSqlRestrictionOnLang('pl').'
 				'.$this->context->shop->addSqlAssociation('product', 'p').'
 				'.(Tools::getValue('id_category') ? 'LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON p.`id_product` = cp.`id_product`' : '').'
 				WHERE pl.`id_lang` = '.(int)$id_lang.'
 					'.(Tools::getValue('id_category') ? 'AND cp.id_category = '.(int)Tools::getValue('id_category') : '').'
 				ORDER BY pl.`name`';
+
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 	}
 
@@ -155,7 +156,7 @@ class StatsProduct extends ModuleGraph
 			if (!Tools::getValue('exportType'))
 				$this->csvExport(array('layers' => 2, 'type' => 'line', 'option' => '42'));
 
-		$this->html = '<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>';
+		$this->html = '<div class="blocStats"><h2 class="icon-'.$this->name.'"><span></span>'.$this->displayName.'</h2>';
 		if ($id_product = (int)Tools::getValue('id_product'))
 		{
 			if (Tools::getValue('export'))
@@ -174,14 +175,14 @@ class StatsProduct extends ModuleGraph
 			<p>'.$this->l('Conversion rate:').' '.number_format($totalViewed ? $totalBought / $totalViewed : 0, 2).'</p>
 			<center>'.$this->engine(array('layers' => 2, 'type' => 'line', 'option' => '1-'.$id_product)).'</center>
 			<br />
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
+			<p><a class="button export-csv" href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=1"><span>'.$this->l('CSV Export').'</span></a></p>';
 			if ($hasAttribute = $product->hasAttributes() && $totalBought)
 				$this->html .= '<h3 class="space">'.$this->l('Attribute sales distribution').'</h3><center>'.$this->engine(array('type' => 'pie', 'option' => '3-'.$id_product)).'</center><br />
 			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=2"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br />';
 			if ($totalBought)
 			{
 				$sales = $this->getSales($id_product, $this->context->language->id);
-				$this->html .= '<br class="clear" />
+				$this->html .= '
 				<h3>'.$this->l('Sales').'</h3>
 				<div style="overflow-y: scroll; height: '.min(400, (count($sales) + 1) * 32).'px;">
 				<table class="table" border="0" cellspacing="0" cellspacing="0">
@@ -239,9 +240,9 @@ class StatsProduct extends ModuleGraph
 		{
 			$categories = Category::getCategories((int)$this->context->language->id, true, false);
 			$this->html .= '
-			<label>'.$this->l('Choose a category').'</label>
 			<div class="margin-form">
 				<form action="" method="post" id="categoriesForm">
+				<label>'.$this->l('Choose a category').'</label>
 					<select name="id_category" onchange="$(\'#categoriesForm\').submit();">
 						<option value="0">'.$this->l('All').'</option>';
 			foreach ($categories as $category)
@@ -250,17 +251,15 @@ class StatsProduct extends ModuleGraph
 					</select>
 				</form>
 			</div>
-			<div class="clear space"></div>
-			'.$this->l('Click on a product to access its statistics.').'
-			<div class="clear space"></div>
+						'.$this->l('Click on a product to access its statistics.').'
 			<h2>'.$this->l('Products available').'</h2>
-			<div style="overflow-y: scroll; height: 600px;">
+			<div>
 			<table class="table" border="0" cellspacing="0" cellspacing="0">
 			<thead>
 				<tr>
 					<th>'.$this->l('Ref.').'</th>
 					<th>'.$this->l('Name').'</th>
-					<th>'.$this->l('Stock').'</th>
+					<th>'.$this->l('Available quantity for sale').'</th>
 				</tr>
 			</thead><tbody>';
 
@@ -275,22 +274,22 @@ class StatsProduct extends ModuleGraph
 				</tr>';
 
 			$this->html .= '</tbody></table><br /></div><br />
-				<a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a><br />';
+				<a class="button export-csv" href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><span>'.$this->l('CSV Export').'</span></a><br />';
 		}
 
-		$this->html .= '</fieldset><br />
-		<fieldset><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
+		$this->html .= '</div><br />
+		<div class="blocStats"><h2 class="icon-guide"><span></span>'.$this->l('Guide').'</h2>
 		<h2>'.$this->l('Number of purchases compared to number of viewings').'</h2>
 			<p>
 				'.$this->l('After choosing a category and selecting a product, informational graphs will appear. Then, you will be able to analyze them.').'
 				<ul>
 					<li class="bullet">'.$this->l('If you notice that a product is successful and often purchased, but viewed infrequently, you should put it more prominently on your webshop front-office.').'</li>
-					<li class="bullet">'.$this->l('On the other hand, if a product has many viewings but is not often purchased, 
+					<li class="bullet">'.$this->l('On the other hand, if a product has many viewings but is not often purchased,
 						we advise you to check or modify this product\'s information, description and photography again.').'
 					</li>
 				</ul>
 			</p>
-		</fieldset>';
+		</div>';
 		return $this->html;
 	}
 

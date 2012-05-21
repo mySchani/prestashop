@@ -27,18 +27,28 @@
 
 class AdminProductsControllerCore extends AdminController
 {
-	protected $max_file_size = 20000000;
+	protected $max_file_size = NULL;
+
 	/** @var integer Max image size for upload
 	 * As of 1.5 it is recommended to not set a limit to max image size
 	 **/
-	protected $max_image_size;
+	protected $max_image_size = NULL;
 
 	private $_category;
+	/**
+	 * @var string name of the tab to display
+	 */
+	protected $tab_display;
 
 	protected $available_tabs = array(
 		'Informations',
-		'Images',
+		'Pack',
+		'VirtualProduct',
 		'Prices',
+		'Seo',
+		'Associations',
+		'Images',
+		'Shipping',
 		'Combinations',
 		'Features',
 		'Customization',
@@ -51,18 +61,23 @@ class AdminProductsControllerCore extends AdminController
 
 	protected $available_tabs_lang = array ();
 
-	protected $tabs_toolbar_save_buttons = array(
+	protected $tabs_preloaded = array(
 		'Informations' => true,
+		'Prices' => true,
+		'Seo' => true,
+		'Associations' => true,
 		'Images' => false,
-		'Prices' => false,
-		'Combinations' => false,
-		'Features' => true,
+		'Shipping' => true,
+		'Combinations' => true,
+		'Features' => false,
 		'Customization' => false,
-		'Attachments' => true,
-		'Quantities' => false,
-		'Suppliers' => true,
-		'Warehouses' => true,
-		'Accounting' => true
+		'Attachments' => false,
+		'Quantities' => true,
+		'Suppliers' => false,
+		'Warehouses' => false,
+		'Accounting' => false,
+		'Pack' => true,
+		'VirtualProduct' => true,
 	);
 
 	public function __construct()
@@ -70,37 +85,95 @@ class AdminProductsControllerCore extends AdminController
 		$this->table = 'product';
 		$this->className = 'Product';
 		$this->lang = true;
-		$this->addRowAction('edit');
-		$this->addRowAction('duplicate');
-		$this->addRowAction('delete');
 		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->imageType = 'jpg';
 		$this->context = Context::getContext();
 		$this->_defaultOrderBy = 'position';
+		$this->max_file_size = (Configuration::get('PS_LIMIT_UPLOAD_IMAGE_VALUE') * 1000000);
+		$this->max_image_size = (Configuration::get('PS_LIMIT_UPLOAD_FILE_VALUE') * 1000000);
+
+		$categoriesArray = array();
+		$categories = Category::getSimpleCategories($this->context->language->id);
+
+		foreach ($categories AS $categorie)
+			$categoriesArray[$categorie['id_category']] = $categorie['name'];
 
 		$this->fieldsDisplay = array(
-			'id_product' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 20),
-			'image' => array('title' => $this->l('Photo'), 'align' => 'center', 'image' => 'p',
-				'width' => 70, 'orderby' => false, 'filter' => false, 'search' => false),
-			'name' => array('title' => $this->l('Name'), 'filter_key' => 'b!name'),
-			'reference' => array('title' => $this->l('Reference'), 'align' => 'center', 'width' => 80),
-			'name_category' => array('title' => $this->l('Category'), 'width' => 100, 'filter_key' => 'cl!name'),
-			'price' => array('title' => $this->l('Base price'), 'width' => 70,
-				'type' => 'price', 'align' => 'right', 'filter_key' => 'a!price'),
-			'price_final' => array('title' => $this->l('Final price'), 'width' => 70,
-				'type' => 'price', 'align' => 'right', 'havingFilter' => true, 'orderby' => false),
-			'active' => array('title' => $this->l('Displayed'), 'width' => 70, 'active' => 'status',
-				'filter_key' => 'a!active', 'align' => 'center', 'type' => 'bool', 'orderby' => false),
-			'position' => array('title' => $this->l('Position'), 'width' => 70,'filter_key' => 'cp!position',
-				'align' => 'center', 'position' => 'position'),
+			'id_product' => array(
+				'title' => $this->l('ID'),
+				'align' => 'center',
+				'width' => 20
+			),
+			'image' => array(
+				'title' => $this->l('Photo'),
+				'align' => 'center',
+				'image' => 'p',
+				'width' => 70,
+				'orderby' => false,
+				'filter' => false,
+				'search' => false
+			),
+			'name' => array(
+				'title' => $this->l('Name'),
+				'filter_key' => 'b!name'
+			),
+			'reference' => array(
+				'title' => $this->l('Reference'),
+				'align' => 'center',
+				'width' => 80
+			),
+			'name_category' => array(
+				'title' => $this->l('Category'),
+				'width' => 230,
+				'type' => 'select',
+				'list' => $categoriesArray,
+				'filter_key' => 'cl!name',
+				'filter_type' => 'int'
+			),
+			'price' => array(
+				'title' => $this->l('Base price'),
+				'width' => 70,
+				'type' => 'price',
+				'align' => 'right',
+				'filter_key' => 'a!price'
+			),
+			'price_final' => array(
+				'title' => $this->l('Final price'),
+				'width' => 70,
+				'type' => 'price',
+				'align' => 'right',
+				'havingFilter' => true,
+				'orderby' => false
+			),
+			'active' => array(
+				'title' => $this->l('Displayed'),
+				'width' => 70,
+				'active' => 'status',
+				'filter_key' => 'a!active',
+				'align' => 'center',
+				'type' => 'bool',
+				'orderby' => false
+			),
+			'position' => array(
+				'title' => $this->l('Position'),
+				'width' => 70,
+				'filter_key' => 'cp!position',
+				'align' => 'center',
+				'position' => 'position'
+			)
 		);
 
 		// @since 1.5 : translations for tabs
 		$this->available_tabs_lang = array (
 			'Informations' => $this->l('Informations'),
-			'Images' => $this->l('Images'),
+			'Pack' => $this->l('Pack'),
+			'VirtualProduct' => $this->l('Virtual Product'),
 			'Prices' => $this->l('Prices'),
+			'Seo' => $this->l('SEO'),
+			'Images' => $this->l('Images'),
+			'Associations' => $this->l('Associations'),
+			'Shipping' => $this->l('Shipping'),
 			'Combinations' => $this->l('Combinations'),
 			'Features' => $this->l('Features'),
 			'Customization' => $this->l('Customization'),
@@ -112,10 +185,17 @@ class AdminProductsControllerCore extends AdminController
 		);
 
 		/* Join categories table */
-		if ($id_category = Tools::getvalue('id_category'))
+
+		if ($id_category = (int)Tools::getValue('productFilter_cl!name'))
+		{
+			$this->_category = new Category($id_category);
+			$_POST['productFilter_cl!name'] = $this->_category->name[$this->context->language->id];
+		}
+		else if ($id_category = Tools::getvalue('id_category'))
 			$this->_category = new Category($id_category);
 		else
 			$this->_category = new Category();
+
 
 		$this->_join = '
 			LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (a.`id_category_default` = cl.`id_category` AND b.`id_lang` = cl.`id_lang`)
@@ -123,10 +203,10 @@ class AdminProductsControllerCore extends AdminController
 			LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = a.`id_product`)
 			LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (a.`id_tax_rules_group` = tr.`id_tax_rules_group`
 				AND tr.`id_country` = '.(int)$this->context->country->id.' AND tr.`id_state` = 0)
-	   		LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)';
+			LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)';
 
 		// if no category selected, display all products
-		if (Validate::isLoadedObject($this->_category))
+		if (Validate::isLoadedObject($this->_category) && empty($this->_filter))
 			$this->_filter = 'AND cp.`id_category` = '.(int)$this->_category->id;
 
 		$this->_select = 'cl.name `name_category`, cp.`position`, i.`id_image`, (a.`price` * ((100 + (t.`rate`))/100)) AS price_final';
@@ -170,7 +250,8 @@ class AdminProductsControllerCore extends AdminController
 		$_POST['height'] = empty($_POST['height']) ? '0' : str_replace(',', '.', $_POST['height']);
 		$_POST['depth'] = empty($_POST['depth']) ? '0' : str_replace(',', '.', $_POST['depth']);
 		$_POST['weight'] = empty($_POST['weight']) ? '0' : str_replace(',', '.', $_POST['weight']);
-		if ($_POST['unit_price'] != null)
+
+		if (Tools::getIsset('unit_price') != null)
 			$object->unit_price = str_replace(',', '.', $_POST['unit_price']);
 		if (array_key_exists('ecotax', $_POST) && $_POST['ecotax'] != null)
 			$object->ecotax = str_replace(',', '.', $_POST['ecotax']);
@@ -214,20 +295,732 @@ class AdminProductsControllerCore extends AdminController
 		}
 	}
 
-	public function deleteVirtualProduct()
+	public function processDeleteVirtualProduct($token)
 	{
 		if (!($id_product_download = ProductDownload::getIdFromIdAttribute((int)Tools::getValue('id_product'), 0)))
 			return false;
-		$productDownload = new ProductDownload((int)($id_product_download));
-		return $productDownload->deleteFile((int)($id_product_download));
+		$product_download = new ProductDownload((int)$id_product_download);
+		return $product_download->deleteFile((int)$id_product_download);
 	}
 
-	public function deleteVirtualProductAttribute()
+	public function processDeleteVirtualProductAttribute($token)
 	{
-		if (!($id_product_download = ProductDownload::getIdFromIdAttribute((int)Tools::getValue('id_product'), (int) Tools::getValue('id_product_attribute'))))
+		if (!($id_product_download = ProductDownload::getIdFromIdAttribute((int)Tools::getValue('id_product'), (int)Tools::getValue('id_product_attribute'))))
 			return false;
-		$productDownload = new ProductDownload((int)($id_product_download));
-		return $productDownload->deleteFile((int)($id_product_download));
+		$product_download = new ProductDownload((int)$id_product_download);
+		return $product_download->deleteFile((int)$id_product_download);
+	}
+
+	/**
+	 * Upload new attachment
+	 *
+	 * @param $token
+	 * @return void
+	 */
+	public function processAddAttachments($token)
+	{
+		$languages = Language::getLanguages(false);
+		$is_attachment_name_valid = false;
+		foreach ($languages as $language)
+		{
+			$attachment_name_lang = Tools::getValue('attachment_name_'.(int)($language['id_lang']));
+			if (strlen($attachment_name_lang ) > 0)
+				$is_attachment_name_valid = true;
+
+			if (!Validate::isGenericName(Tools::getValue('attachment_name_'.(int)($language['id_lang']))))
+				$this->_errors[] = Tools::displayError('Invalid Name');
+			else if (Tools::strlen(Tools::getValue('attachment_name_'.(int)($language['id_lang']))) > 32)
+				$this->_errors[] = Tools::displayError('Name is too long.').' '.'(32 '.Tools::displayError('chars max').')';
+			if (!Validate::isCleanHtml(Tools::getValue('attachment_description_'.(int)($language['id_lang']))))
+				$this->_errors[] = Tools::displayError('Invalid description');
+		}
+		if (!$is_attachment_name_valid)
+			$this->_errors[] = Tools::displayError('Attachment Name Required');
+
+		if (empty($this->_errors))
+		{
+			if (isset($_FILES['attachment_file']) && is_uploaded_file($_FILES['attachment_file']['tmp_name']))
+			{
+				if ($_FILES['attachment_file']['size'] > (Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024 * 1024))
+					$this->_errors[] = $this->l('File too large, maximum size allowed:').' '.(Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024).' '.$this->l('kb').'. '.$this->l('File size you\'re trying to upload is:').number_format(($_FILES['attachment_file']['size']/1024), 2, '.', '').$this->l('kb');
+				else
+				{
+					do $uniqid = sha1(microtime());
+					while (file_exists(_PS_DOWNLOAD_DIR_.$uniqid));
+					if (!copy($_FILES['attachment_file']['tmp_name'], _PS_DOWNLOAD_DIR_.$uniqid))
+						$this->_errors[] = $this->l('File copy failed');
+					@unlink($_FILES['attachment_file']['tmp_name']);
+				}
+			}
+			else if ((int)$_FILES['attachment_file']['error'] === 1)
+			{
+				$max_upload = (int)ini_get('upload_max_filesize');
+				$max_post = (int)ini_get('post_max_size');
+				$upload_mb = min($max_upload, $max_post);
+				$this->_errors[] = $this->l('the File').' <b>'.$_FILES['attachment_file']['name'].'</b> '.$this->l('exceeds the size allowed by the server, this limit is set to').' <b>'.$upload_mb.$this->l('Mb').'</b>';
+			}
+			else
+				$this->_errors[] = Tools::displayError('File is missing');
+
+			if (empty($this->_errors) && isset($uniqid))
+			{
+				$attachment = new Attachment();
+				foreach ($languages as $language)
+				{
+					if (isset($_POST['attachment_name_'.(int)$language['id_lang']]))
+						$attachment->name[(int)$language['id_lang']] = pSQL($_POST['attachment_name_'.(int)$language['id_lang']]);
+					if (isset($_POST['attachment_description_'.(int)$language['id_lang']]))
+						$attachment->description[(int)$language['id_lang']] = pSQL($_POST['attachment_description_'.(int)$language['id_lang']]);
+				}
+				$attachment->file = $uniqid;
+				$attachment->mime = $_FILES['attachment_file']['type'];
+				$attachment->file_name = pSQL($_FILES['attachment_file']['name']);
+				if (empty($attachment->mime) || Tools::strlen($attachment->mime) > 128)
+					$this->_errors[] = Tools::displayError('Invalid file extension');
+				if (!Validate::isGenericName($attachment->file_name))
+					$this->_errors[] = Tools::displayError('Invalid file name');
+				if (Tools::strlen($attachment->file_name) > 128)
+					$this->_errors[] = Tools::displayError('File name too long');
+				if (!count($this->_errors))
+				{
+					$attachment->add();
+					$this->confirmations[] = $this->l('Attachment successfully added');
+				}
+				else
+					$this->_errors[] = Tools::displayError('Invalid file');
+			}
+		}
+	}
+
+	/**
+	 * Attach an existing attachment to the product
+	 *
+	 * @param $token
+	 * @return void
+	 */
+	public function processAttachments($token)
+	{
+		if ($this->action == 'attachments')
+			if ($id = (int)Tools::getValue($this->identifier))
+			{
+				$attachments = trim(Tools::getValue('arrayAttachments'), ',');
+				$attachments = explode(',', $attachments);
+				if (Attachment::attachToProduct($id, $attachments))
+					$this->redirect_after = self::$currentIndex.'&id_product='.(int)$id.(isset($_POST['id_category']) ? '&id_category='.(int)$_POST['id_category'] : '').'&conf=4&add'.$this->table.'&action=Attachments&token='.($token ? $token : $this->token);
+			}
+	}
+
+	public function processDuplicate($token)
+	{
+		if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
+		{
+			$id_product_old = $product->id;
+			unset($product->id);
+			unset($product->id_product);
+			$product->indexed = 0;
+			$product->active = 0;
+			if ($product->add()
+			&& Category::duplicateProductCategories($id_product_old, $product->id)
+			&& ($combination_images = Product::duplicateAttributes($id_product_old, $product->id)) !== false
+			&& GroupReduction::duplicateReduction($id_product_old, $product->id)
+			&& Product::duplicateAccessories($id_product_old, $product->id)
+			&& Product::duplicateFeatures($id_product_old, $product->id)
+			&& Product::duplicateSpecificPrices($id_product_old, $product->id)
+			&& Pack::duplicate($id_product_old, $product->id)
+			&& Product::duplicateCustomizationFields($id_product_old, $product->id)
+			&& Product::duplicateTags($id_product_old, $product->id)
+			&& Product::duplicateDownload($id_product_old, $product->id)
+			&& $product->duplicateShops($id_product_old))
+			{
+				if ($product->hasAttributes())
+					Product::updateDefaultAttribute($product->id);
+
+				if (!Tools::getValue('noimage') && !Image::duplicateProductImages($id_product_old, $product->id, $combination_images))
+					$this->_errors[] = Tools::displayError('An error occurred while copying images.');
+				else
+				{
+					Hook::exec('addProduct', array('product' => $product));
+					Search::indexation(false, $product->id);
+					$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=19&token='.($token ? $token : $this->token);
+				}
+			}
+			else
+				$this->_errors[] = Tools::displayError('An error occurred while creating object.');
+		}
+	}
+
+	public function processDelete($token)
+	{
+		if (Validate::isLoadedObject($object = $this->loadObject()) && isset($this->fieldImageSettings))
+		{
+			// check if request at least one object with noZeroObject
+			if (isset($object->noZeroObject) && count($taxes = call_user_func(array($this->className, $object->noZeroObject))) <= 1)
+				$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
+			else
+			{
+				$id_category = Tools::getValue('id_category');
+				$category_url = empty($id_category) ? '' : '&id_category='.$id_category;
+
+				if ($this->deleted)
+				{
+					$object->deleteImages();
+					$object->deleted = 1;
+					if ($object->update())
+						$this->redirect_after = self::$currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url;
+				}
+				else if ($object->delete())
+					$this->redirect_after = self::$currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url;
+				$this->_errors[] = Tools::displayError('An error occurred during deletion.');
+			}
+		}
+		else
+			$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+	}
+
+	public function processImage($token)
+	{
+		$id_image = Tools::getValue('id_image');
+		$image = new Image($id_image);
+		if (Validate::isLoadedObject($image))
+		{
+			/* Update product image/legend */
+			// @todo : move in processEditProductImage
+			if (isset($_GET['editImage']))
+			{
+				if ($image->cover)
+					$_POST['cover'] = 1;
+
+				$_POST['id_image'] = $image->id;
+			}
+
+			/* Choose product cover image */
+			else if (isset($_GET['coverImage']))
+			{
+				Image::deleteCover($image->id_product);
+				$image->cover = 1;
+				if (!$image->update())
+					$this->_errors[] = Tools::displayError('Cannot change the product cover');
+				else
+				{
+					$productId = (int)(Tools::getValue('id_product'));
+					@unlink(_PS_TMP_IMG_DIR_.'/product_'.$productId.'.jpg');
+					@unlink(_PS_TMP_IMG_DIR_.'/product_mini_'.$productId.'.jpg');
+					$this->redirect_after = self::$currentIndex.'&id_product='.$image->id_product.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&action=Images&addproduct'.'&token='.($token ? $token : $this->token);
+				}
+			}
+
+			/* Choose product image position */
+			else if (isset($_GET['imgPosition']) && isset($_GET['imgDirection']))
+			{
+				$image->updatePosition(Tools::getValue('imgDirection'), Tools::getValue('imgPosition'));
+				$this->redirect_after = self::$currentIndex.'&id_product='.$image->id_product.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&action=Images&token='.($token ? $token : $this->token);
+			}
+		}
+		else
+			$this->_errors[] = Tools::displayError('Could not find image.');
+	}
+
+	public function processBulkDelete($token)
+	{
+		if (is_array($this->boxes) && !empty($this->boxes))
+		{
+			$object = new $this->className();
+
+			if (isset($object->noZeroObject) &&
+				// Check if all object will be deleted
+				(count(call_user_func(array($this->className, $object->noZeroObject))) <= 1 || count($_POST[$this->table.'Box']) == count(call_user_func(array($this->className, $object->noZeroObject)))))
+				$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
+			else
+			{
+				$result = true;
+				if ($this->deleted)
+				{
+					foreach (Tools::getValue($this->table.'Box') as $id)
+					{
+						$toDelete = new $this->className($id);
+						$toDelete->deleted = 1;
+						$result = $result && $toDelete->update();
+					}
+				}
+				else
+					$result = $object->deleteSelection(Tools::getValue($this->table.'Box'));
+
+				if ($result)
+				{
+					$id_category = Tools::getValue('id_category');
+					$category_url = empty($id_category) ? '' : '&id_category='.$id_category;
+
+					$this->redirect_after = self::$currentIndex.'&conf=2&token='.$token.$category_url;
+				}
+				$this->_errors[] = Tools::displayError('An error occurred while deleting selection.');
+			}
+		}
+		else
+			$this->_errors[] = Tools::displayError('You must select at least one element to delete.');
+	}
+
+	public function processProductAttribute($token)
+	{
+		if (!Combination::isFeatureActive())
+			return;
+
+		$is_virtual = (int)Tools::getValue('is_virtual');
+
+		if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
+		{
+			if (!isset($_POST['attribute_price']) || $_POST['attribute_price'] == null)
+				$this->_errors[] = Tools::displayError('Attribute price required.');
+			if (!isset($_POST['attribute_combinaison_list']) || !count($_POST['attribute_combinaison_list']))
+				$this->_errors[] = Tools::displayError('You must add at least one attribute.');
+
+			if (!count($this->_errors))
+			{
+				if (!isset($_POST['attribute_wholesale_price'])) $_POST['attribute_wholesale_price'] = 0;
+				if (!isset($_POST['attribute_price_impact'])) $_POST['attribute_price_impact'] = 0;
+				if (!isset($_POST['attribute_weight_impact'])) $_POST['attribute_weight_impact'] = 0;
+				if (!isset($_POST['attribute_ecotax'])) $_POST['attribute_ecotax'] = 0;
+				if (Tools::getValue('attribute_default'))
+					$product->deleteDefaultAttributes();
+				// Change existing one
+				if ($id_product_attribute = (int)Tools::getValue('id_product_attribute'))
+				{
+					if ($this->tabAccess['edit'] === '1')
+					{
+						if ($product->productAttributeExists($_POST['attribute_combinaison_list'], $id_product_attribute))
+							$this->_errors[] = Tools::displayError('This attribute already exists.');
+						else
+						{
+							if (Validate::isDateFormat(Tools::getValue('available_date_attribute')))
+							{
+								$product->updateAttribute($id_product_attribute,
+									Tools::getValue('attribute_wholesale_price'),
+									Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
+									Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
+									Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
+									Tools::getValue('attribute_ecotax'),
+									Tools::getValue('id_image_attr'),
+									Tools::getValue('attribute_reference'),
+									Tools::getValue('attribute_ean13'),
+									Tools::getValue('attribute_default'),
+									Tools::getValue('attribute_location'),
+									Tools::getValue('attribute_upc'),
+									Tools::getValue('minimal_quantity'),
+									Tools::getValue('available_date_attribute'));
+
+								if ($id_reason = (int)Tools::getValue('id_mvt_reason') && (int)Tools::getValue('attribute_mvt_quantity') > 0 && $id_reason > 0)
+								{
+									if (!$product->addStockMvt(Tools::getValue('attribute_mvt_quantity'), $id_reason, $id_product_attribute, null, $this->context->employee->id))
+										$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
+								}
+								Hook::exec('updateProductAttribute', array('id_product_attribute' => (int)$id_product_attribute));
+								$this->updateDownloadProduct($product, 1, $id_product_attribute);
+							}
+							else
+								$this->_errors[] = Tools::displayError('Invalid date format.');
+						}
+					}
+					else
+						$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+				}
+				// Add new
+				else
+				{
+					if ($this->tabAccess['add'] === '1')
+					{
+						if ($product->productAttributeExists($_POST['attribute_combinaison_list']))
+							$this->_errors[] = Tools::displayError('This combination already exists.');
+						else
+							$id_product_attribute = $product->addCombinationEntity(
+								Tools::getValue('attribute_wholesale_price'),
+								Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
+								Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
+								Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
+								Tools::getValue('attribute_ecotax'),
+								Tools::getValue('id_image_attr'),
+								Tools::getValue('attribute_reference'),
+								null,
+								Tools::getValue('attribute_ean13'),
+								Tools::getValue('attribute_default'),
+								Tools::getValue('attribute_location'),
+								Tools::getValue('attribute_upc')
+							);
+						$this->updateDownloadProduct($product, 0, $id_product_attribute);
+					}
+					else
+						$this->_errors[] = Tools::displayError('You do not have permission to').'<hr>'.Tools::displayError('Edit here.');
+				}
+				if (!count($this->_errors))
+				{
+					$product->addAttributeCombinaison($id_product_attribute, Tools::getValue('attribute_combinaison_list'));
+					$product->checkDefaultAttributes();
+				}
+				if (!count($this->_errors))
+				{
+					if (!$product->cache_default_attribute)
+						Product::updateDefaultAttribute($product->id);
+
+					if (!empty($is_virtual))
+						Product::updateIsVirtual($product->id);
+
+					$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&conf=4&action=Combinations&token='.($token ? $token : $this->token);
+				}
+			}
+		}
+	}
+
+	public function processFeatures($token)
+	{
+		if (!Feature::isFeatureActive())
+			return;
+
+		if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
+		{
+			// delete all objects
+			$product->deleteFeatures();
+
+			// add new objects
+			$languages = Language::getLanguages(false);
+			foreach ($_POST as $key => $val)
+			{
+				if (preg_match('/^feature_([0-9]+)_value/i', $key, $match))
+				{
+					if ($val)
+						$product->addFeaturesToDB($match[1], $val);
+					else
+					{
+						if ($default_value = $this->checkFeatures($languages, $match[1]))
+						{
+							$id_value = $product->addFeaturesToDB($match[1], 0, 1);
+							foreach ($languages as $language)
+							{
+								if ($cust = Tools::getValue('custom_'.$match[1].'_'.(int)$language['id_lang']))
+									$product->addFeaturesCustomToDB($id_value, (int)$language['id_lang'], $cust);
+								else
+									$product->addFeaturesCustomToDB($id_value, (int)$language['id_lang'], $default_value);
+							}
+						}
+						else
+							$id_value = $product->addFeaturesToDB($match[1], 0, 1);
+					}
+				}
+			}
+			if (!count($this->_errors))
+				$this->redirect_after = self::$currentIndex.'&id_product='.(int)$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&action=Features&conf=4&token='.($token ? $token : $this->token);
+		}
+		else
+			$this->_errors[] = Tools::displayError('Product must be created before adding features.');
+	}
+
+	public function processPricesModification($token)
+	{
+		$id_specific_prices = Tools::getValue('spm_id_specific_price');
+		$id_shops = Tools::getValue('spm_id_shop');
+		$id_currencies = Tools::getValue('spm_id_currency');
+		$id_countries = Tools::getValue('spm_id_country');
+		$id_groups = Tools::getValue('spm_id_group');
+		$id_customers = Tools::getValue('spm_id_customer');
+		$prices = Tools::getValue('spm_price');
+		$from_quantities = Tools::getValue('spm_from_quantity');
+		$reductions = Tools::getValue('spm_reduction');
+		$reduction_types = Tools::getValue('spm_reduction_type');
+		$froms = Tools::getValue('spm_from');
+		$tos = Tools::getValue('spm_to');
+
+		foreach ($id_specific_prices as $key => $id_specific_price)
+			if ($this->_validateSpecificPrice($id_shops[$key], $id_currencies[$key], $id_countries[$key], $id_groups[$key], $id_customers[$key], $prices[$key], $from_quantities[$key], $reductions[$key], $reduction_types[$key], $froms[$key], $tos[$key]))
+			{
+				$specific_price = new SpecificPrice((int)($id_specific_price));
+				$specific_price->id_shop = (int)$id_shops[$key];
+				$specific_price->id_currency = (int)($id_currencies[$key]);
+				$specific_price->id_country = (int)($id_countries[$key]);
+				$specific_price->id_group = (int)($id_groups[$key]);
+				$specific_price->id_customer = (int)$id_customers[$key];
+				$specific_price->price = (float)($prices[$key]);
+				$specific_price->from_quantity = (int)($from_quantities[$key]);
+				$specific_price->reduction = (float)($reduction_types[$key] == 'percentage' ? ($reductions[$key] / 100) : $reductions[$key]);
+				$specific_price->reduction_type = !$reductions[$key] ? 'amount' : $reduction_types[$key];
+				$specific_price->from = !$froms[$key] ? '0000-00-00 00:00:00' : $froms[$key];
+				$specific_price->to = !$tos[$key] ? '0000-00-00 00:00:00' : $tos[$key];
+				if (!$specific_price->update())
+					$this->_errors = Tools::displayError('An error occurred while updating the specific price.');
+			}
+		if (!count($this->_errors))
+			$this->redirect_after = self::$currentIndex.'&id_product='.(int)(Tools::getValue('id_product')).'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&update'.$this->table.'&action=Prices&token='.($token ? $token : $this->token);
+
+	}
+
+	public function processPriceAddition($token)
+	{
+		$id_product = (int)(Tools::getValue('id_product'));
+		$id_shop = Tools::getValue('sp_id_shop');
+		$id_currency = Tools::getValue('sp_id_currency');
+		$id_country = Tools::getValue('sp_id_country');
+		$id_group = Tools::getValue('sp_id_group');
+		$id_customer = Tools::getValue('sp_id_customer');
+		$price = Tools::getValue('sp_price');
+		$from_quantity = Tools::getValue('sp_from_quantity');
+		$reduction = (float)(Tools::getValue('sp_reduction'));
+		$reduction_type = !$reduction ? 'amount' : Tools::getValue('sp_reduction_type');
+		$from = Tools::getValue('sp_from');
+		$to = Tools::getValue('sp_to');
+		if ($this->_validateSpecificPrice($id_shop, $id_currency, $id_country, $id_group, $id_customer, $price, $from_quantity, $reduction, $reduction_type, $from, $to))
+		{
+			$specificPrice = new SpecificPrice();
+			$specificPrice->id_product = $id_product;
+			$specificPrice->id_product_attribute = (int)Tools::getValue('id_product_attribute');
+			$specificPrice->id_shop = (int)$id_shop;
+			$specificPrice->id_currency = (int)($id_currency);
+			$specificPrice->id_country = (int)($id_country);
+			$specificPrice->id_group = (int)($id_group);
+			$specificPrice->id_customer = (int)$id_customer;
+			$specificPrice->price = (float)($price);
+			$specificPrice->from_quantity = (int)($from_quantity);
+			$specificPrice->reduction = (float)($reduction_type == 'percentage' ? $reduction / 100 : $reduction);
+			$specificPrice->reduction_type = $reduction_type;
+			$specificPrice->from = !$from ? '0000-00-00 00:00:00' : $from;
+			$specificPrice->to = !$to ? '0000-00-00 00:00:00' : $to;
+			if (!$specificPrice->add())
+				$this->_errors = Tools::displayError('An error occurred while updating the specific price.');
+			else
+				$this->redirect_after = self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$id_product.'&add'.$this->table.'&action=Prices&conf=3&token='.($token ? $token : $this->token);
+		}
+	}
+
+	public function processDeleteSpecificPrice($token)
+	{
+		if (!($obj = $this->loadObject()))
+			return;
+		$id_specific_price = Tools::getValue('id_specific_price');
+		if (!$id_specific_price || !Validate::isUnsignedId($id_specific_price))
+			$this->_errors[] = Tools::displayError('Invalid specific price ID');
+		else
+		{
+			$specificPrice = new SpecificPrice((int)($id_specific_price));
+			if (!$specificPrice->delete())
+				$this->_errors[] = Tools::displayError('An error occurred while deleting the specific price');
+			else
+				$this->confirmations[] = $this->l('Specific price successfully deleted');
+		}
+	}
+
+	public function processSpecificPricePriorities($token)
+	{
+		if (!($obj = $this->loadObject()))
+			return;
+		if (!$priorities = Tools::getValue('specificPricePriority'))
+			$this->_errors[] = Tools::displayError('Please specify priorities');
+		else if (Tools::isSubmit('specificPricePriorityToAll'))
+		{
+			if (!SpecificPrice::setPriorities($priorities))
+				$this->_errors[] = Tools::displayError('An error occurred while updating priorities.');
+			else
+				$this->confirmations[] = $this->l('Price rule successfully updated');
+		}
+		else if (!SpecificPrice::setSpecificPriority((int)($obj->id), $priorities))
+			$this->_errors[] = Tools::displayError('An error occurred while setting priorities.');
+		else
+			$this->confirmations[] = $this->l('Price priorities successfully updated');
+	}
+
+	public function processCustomizationConfiguration($token)
+	{
+		if (Validate::isLoadedObject($product = new Product(Tools::getValue('id_product'))))
+		{
+			if (!$product->createLabels((int)($_POST['uploadable_files']) - (int)($product->uploadable_files), (int)($_POST['text_fields']) - (int)($product->text_fields)))
+				$this->_errors[] = Tools::displayError('An error occurred while creating customization fields.');
+			if (!count($this->_errors) && !$product->updateLabels())
+				$this->_errors[] = Tools::displayError('An error occurred while updating customization.');
+			$product->uploadable_files = (int)($_POST['uploadable_files']);
+			$product->text_fields = (int)($_POST['text_fields']);
+			$product->customizable = ((int)($_POST['uploadable_files']) > 0 || (int)($_POST['text_fields']) > 0) ? 1 : 0;
+			if (!count($this->_errors) && !$product->update())
+				$this->_errors[] = Tools::displayError('An error occurred while updating customization configuration.');
+			if (!count($this->_errors))
+				$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&action=Customization&token='.($token ? $token : $this->token);
+		}
+		else
+			$this->_errors[] = Tools::displayError('Product must be created before adding customization possibilities.');
+	}
+
+	public function processProductCustomization($token)
+	{
+		if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
+		{
+			foreach ($_POST as $field => $value)
+				if (strncmp($field, 'label_', 6) == 0 && !Validate::isLabel($value))
+					$this->_errors[] = Tools::displayError('Label fields are invalid');
+			if (!count($this->_errors) && !$product->updateLabels())
+				$this->_errors[] = Tools::displayError('An error occurred while updating customization.');
+			if (!count($this->_errors))
+				$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&action=Customization&add'.$this->table.'&token='.($token ? $token : $this->token);
+		}
+		else
+			$this->_errors[] = Tools::displayError('Product must be created before adding customization possibilities.');
+	}
+
+	/**
+	 * Overrides parent for custom redirect link
+	 * @param $token
+	 */
+	public function processPosition($token)
+	{
+		if (!Validate::isLoadedObject($object = $this->loadObject()))
+		{
+			$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').
+				' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+		}
+		else if (!$object->updatePosition((int)Tools::getValue('way'), (int)Tools::getValue('position')))
+			$this->_errors[] = Tools::displayError('Failed to update the position.');
+		else
+			$this->redirect_after = self::$currentIndex.'&'.$this->table.'Orderby=position&'.$this->table.'Orderway=asc&action=Customization&conf=5'.(($id_category = (!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1')) ? ('&id_category='.$id_category) : '').'&token='.Tools::getAdminTokenLite('AdminProducts');
+	}
+
+	public function initProcess()
+	{
+		// Delete a product in the download folder
+		if (Tools::getValue('deleteVirtualProduct'))
+		{
+			if ($this->tabAccess['delete'] === '1')
+				$this->action = 'deleteVirtualProduct';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+		}
+		else if (Tools::getValue('deleteVirtualProductAttribute'))/* Delete a product in the download folder */
+		{
+			if ($this->tabAccess['delete'] === '1')
+				$this->action = 'deleteVirtualProductAttribute';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+		}
+		// Update attachments
+		else if (Tools::isSubmit('submitAddAttachments'))
+		{
+			if ($this->tabAccess['add'] === '1')
+			{
+				$this->action = 'addAttachments';
+				$this->tab_display = 'attachments';
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+		}
+		else if (Tools::isSubmit('submitAttachments'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+			{
+				$this->action = 'attachments';
+				$this->tab_display = 'attachments';
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		// Product duplication
+		else if (isset($_GET['duplicate'.$this->table]))
+		{
+			if ($this->tabAccess['add'] === '1')
+				$this->action = 'duplicate';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+		}
+		// Product images management
+		else if (Tools::getValue('id_image') && Tools::getValue('ajax'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'image';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		// Product attributes management
+		else if (Tools::isSubmit('submitProductAttribute'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'productAttribute';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		// Product features management
+		else if (Tools::isSubmit('submitFeatures') || Tools::isSubmit('submitFeaturesAndStay'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'features';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		// Product specific prices management
+		else if (Tools::isSubmit('submitPricesModification'))
+		{
+			if ($this->tabAccess['add'] === '1')
+				$this->action = 'pricesModification';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+		}
+		else if (Tools::isSubmit('submitPriceAddition'))
+		{
+			if ($this->tabAccess['add'] === '1')
+				$this->action = 'priceAddition';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+		}
+		else if (Tools::isSubmit('deleteSpecificPrice'))
+		{
+			if ($this->tabAccess['delete'] === '1')
+				$this->action = 'deleteSpecificPrice';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
+		}
+		else if (Tools::isSubmit('submitSpecificPricePriorities'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+			{
+				$this->action = 'specificPricePriorities';
+				$this->tab_display = 'prices';
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		// Customization management
+		else if (Tools::isSubmit('submitCustomizationConfiguration'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'customizationConfiguration';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		else if (Tools::isSubmit('submitProductCustomization'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'productCustomization';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+
+		if (!$this->action)
+			parent::initProcess();
+
+		// Set tab to display
+		if ($this->action)
+		{
+			if (in_array($this->action, $this->available_tabs))
+			$this->tab_display = $this->action;
+			elseif ($this->action == 'new' || $this->action == 'save')
+			$this->tab_display = 'Informations';
+		}
+
+		// Set type of display (edit-add-list)
+		if (Tools::getValue('id_product')
+			|| ((Tools::isSubmit('submitAddproduct')
+				|| Tools::isSubmit('submitAddproductAndPreview')
+				|| Tools::isSubmit('submitAddproductAndStay')
+				|| Tools::isSubmit('submitSpecificPricePriorities')
+				|| Tools::isSubmit('submitPriceAddition')
+				|| Tools::isSubmit('submitPricesModification'))
+			&& count($this->_errors))
+			|| Tools::isSubmit('updateproduct')
+			|| Tools::isSubmit('addproduct'))
+			$this->display = 'edit';
+		elseif ($this->action == 'new')
+			$this->display = 'add';
+		else
+			$this->display = 'list';
 	}
 
 	/**
@@ -238,721 +1031,8 @@ class AdminProductsControllerCore extends AdminController
 	 */
 	public function postProcess($token = null)
 	{
-		/* Add a new product */
-		if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay') ||  Tools::isSubmit('submitAddProductAndPreview'))
-		{
-			$id_product = Tools::getValue('id_product');
-			if (($id_product && $this->tabAccess['edit'] === '1')
-				|| ($this->tabAccess['add'] == 1 && (Tools::isSubmit('submitAddproduct') ||  Tools::isSubmit('submitAddproductAndStay') ) && !$id_product)
-			)
-				$this->submitAddproduct($token);
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
-		/* Delete a product in the download folder */
-		else if (Tools::getValue('deleteVirtualProduct'))
-		{
-			if ($this->tabAccess['delete'] === '1')
-				$this->deleteVirtualProduct();
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-		else
-		/* Delete a product in the download folder */
-		if (Tools::getValue('deleteVirtualProductAttribute'))
-		{
-			if ($this->tabAccess['delete'] === '1')
-				$this->deleteVirtualProductAttribute();
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-
-		/* Update attachments */
-		else if (Tools::isSubmit('submitAddAttachments'))
-		{
-			if ($this->tabAccess['add'] === '1')
-			{
-				$languages = Language::getLanguages(false);
-				$is_attachment_name_valid = false;
-				foreach ($languages as $language)
-				{
-					$attachment_name_lang = Tools::getValue('attachment_name_'.(int)($language['id_lang']));
-					if (strlen($attachment_name_lang ) > 0)
-						$is_attachment_name_valid = true;
-
-					if (!Validate::isGenericName(Tools::getValue('attachment_name_'.(int)($language['id_lang']))))
-						$this->_errors[] = Tools::displayError('Invalid Name');
-					else if (Tools::strlen(Tools::getValue('attachment_name_'.(int)($language['id_lang']))) > 32)
-						$this->_errors[] = Tools::displayError('Name is too long');
-					if (!Validate::isCleanHtml(Tools::getValue('attachment_description_'.(int)($language['id_lang']))))
-						$this->_errors[] = Tools::displayError('Invalid description');
-				}
-				if (!$is_attachment_name_valid)
-					$this->_errors[] = Tools::displayError('Attachment Name Required');
-
-				if (empty($this->_errors))
-				{
-					if (isset($_FILES['attachment_file']) && is_uploaded_file($_FILES['attachment_file']['tmp_name']))
-					{
-						if ($_FILES['attachment_file']['size'] > (Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024 * 1024))
-							$this->_errors[] = $this->l('File too large, maximum size allowed:').' '.(Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024).' '.$this->l('kb').'. '.$this->l('File size you\'re trying to upload is:').number_format(($_FILES['attachment_file']['size']/1024), 2, '.', '').$this->l('kb');
-						else
-						{
-							do $uniqid = sha1(microtime());	while (file_exists(_PS_DOWNLOAD_DIR_.$uniqid));
-							if (!copy($_FILES['attachment_file']['tmp_name'], _PS_DOWNLOAD_DIR_.$uniqid))
-								$this->_errors[] = $this->l('File copy failed');
-							@unlink($_FILES['attachment_file']['tmp_name']);
-						}
-					}
-					else if ((int)$_FILES['attachment_file']['error'] === 1)
-					{
-						$max_upload = (int)(ini_get('upload_max_filesize'));
-						$max_post = (int)(ini_get('post_max_size'));
-						$upload_mb = min($max_upload, $max_post);
-						$this->_errors[] = $this->l('the File').' <b>'.$_FILES['attachment_file']['name'].'</b> '.$this->l('exceeds the size allowed by the server, this limit is set to').' <b>'.$upload_mb.$this->l('Mb').'</b>';
-					}
-
-					if (empty($this->_errors) && isset($uniqid))
-					{
-						$attachment = new Attachment();
-						foreach ($languages as $language)
-						{
-							if (isset($_POST['attachment_name_'.(int)($language['id_lang'])]))
-								$attachment->name[(int)($language['id_lang'])] = pSQL($_POST['attachment_name_'.(int)($language['id_lang'])]);
-							if (isset($_POST['attachment_description_'.(int)($language['id_lang'])]))
-								$attachment->description[(int)($language['id_lang'])] = pSQL($_POST['attachment_description_'.(int)($language['id_lang'])]);
-						}
-						$attachment->file = $uniqid;
-						$attachment->mime = $_FILES['attachment_file']['type'];
-						$attachment->file_name = pSQL($_FILES['attachment_file']['name']);
-						if (empty($attachment->mime) || Tools::strlen($attachment->mime) > 128)
-							$this->_errors[] = Tools::displayError('Invalid file extension');
-						if (!Validate::isGenericName($attachment->file_name))
-							$this->_errors[] = Tools::displayError('Invalid file name');
-						if (Tools::strlen($attachment->file_name) > 128)
-							$this->_errors[] = Tools::displayError('File name too long');
-						if (!sizeof($this->_errors))
-						{
-							$attachment->add();
-							$this->redirect_after = self::$currentIndex.'&id_product='.(int)(Tools::getValue($this->identifier)).'&id_category='.(int)(Tools::getValue('id_category')).'&addproduct&conf=4&tabs=6&token='.($token ? $token : $this->token);
-						}
-						else
-							$this->_errors[] = Tools::displayError('Invalid file');
-					}
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
-		else if (Tools::isSubmit('submitAttachments'))
-		{
-			if ($this->tabAccess['edit'] === '1')
-				if ($id = (int)(Tools::getValue($this->identifier)))
-					if (Attachment::attachToProduct($id, Tools::getValue('attachments')))
-						$this->redirect_after = self::$currentIndex.'&id_product='.(int)$id.(isset($_POST['id_category']) ? '&id_category='.(int)$_POST['id_category'] : '').'&conf=4&add'.$this->table.'&tabs=6&token='.($token ? $token : $this->token);
-		}
-
-		/* Product duplication */
-		else if (isset($_GET['duplicate'.$this->table]))
-		{
-			if ($this->tabAccess['add'] === '1')
-			{
-				if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-				{
-					$id_product_old = $product->id;
-					unset($product->id);
-					unset($product->id_product);
-					$product->indexed = 0;
-					$product->active = 0;
-					if ($product->add()
-					&& Category::duplicateProductCategories($id_product_old, $product->id)
-					&& ($combinationImages = Product::duplicateAttributes($id_product_old, $product->id)) !== false
-					&& GroupReduction::duplicateReduction($id_product_old, $product->id)
-					&& Product::duplicateAccessories($id_product_old, $product->id)
-					&& Product::duplicateFeatures($id_product_old, $product->id)
-					&& Product::duplicateSpecificPrices($id_product_old, $product->id)
-					&& Pack::duplicate($id_product_old, $product->id)
-					&& Product::duplicateCustomizationFields($id_product_old, $product->id)
-					&& Product::duplicateTags($id_product_old, $product->id)
-					&& Product::duplicateDownload($id_product_old, $product->id)
-					&& $product->duplicateShops($id_product_old))
-					{
-						if ($product->hasAttributes())
-							Product::updateDefaultAttribute($product->id);
-
-						if (!Tools::getValue('noimage') && !Image::duplicateProductImages($id_product_old, $product->id, $combinationImages))
-							$this->_errors[] = Tools::displayError('An error occurred while copying images.');
-						else
-						{
-							Hook::exec('addProduct', array('product' => $product));
-							Search::indexation(false, $product->id);
-							$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=19&token='.($token ? $token : $this->token);
-						}
-					}
-					else
-						$this->_errors[] = Tools::displayError('An error occurred while creating object.');
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
-		/* Change object statuts (active, inactive) */
-		else if (isset($_GET['status']) && Tools::getValue($this->identifier))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($object = $this->loadObject()))
-				{
-					// @todo : redirect to the previous page instead of always product list
-					if ($object->toggleStatus())
-						$this->redirect_after = self::$currentIndex.'&conf=5'.((($id_category = (!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1')) && Tools::getValue('id_product')) ? '&id_category='.$id_category : '').'&token='.($token ? $token : $this->token);
-					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating status.');
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		/* Delete object */
-		else if (isset($_GET['delete'.$this->table]))
-		{
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (Validate::isLoadedObject($object = $this->loadObject()) && isset($this->fieldImageSettings))
-				{
-					// check if request at least one object with noZeroObject
-					if (isset($object->noZeroObject) && sizeof($taxes = call_user_func(array($this->className, $object->noZeroObject))) <= 1)
-						$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
-					else
-					{
-						$id_category = Tools::getValue('id_category');
-						$category_url = empty($id_category) ? '' : '&id_category='.$id_category;
-
-						if ($this->deleted)
-						{
-							$object->deleteImages();
-							$object->deleted = 1;
-							if ($object->update())
-								$this->redirect_after = self::$currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url;
-						}
-						else if ($object->delete())
-							$this->redirect_after = self::$currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url;
-						$this->_errors[] = Tools::displayError('An error occurred during deletion.');
-					}
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-
-		/* Delete multiple objects */
-		else if (Tools::getValue('submitDel'.$this->table))
-		{
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (isset($_POST[$this->table.'Box']))
-				{
-					$object = new $this->className();
-
-					if (isset($object->noZeroObject) &&
-						// Check if all object will be deleted
-						(sizeof(call_user_func(array($this->className, $object->noZeroObject))) <= 1 || sizeof($_POST[$this->table.'Box']) == sizeof(call_user_func(array($this->className, $object->noZeroObject)))))
-						$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
-					else
-					{
-						$result = true;
-						if ($this->deleted)
-						{
-							foreach (Tools::getValue($this->table.'Box') as $id)
-							{
-								$toDelete = new $this->className($id);
-								$toDelete->deleted = 1;
-								$result = $result && $toDelete->update();
-							}
-						}
-						else
-							$result = $object->deleteSelection(Tools::getValue($this->table.'Box'));
-
-						if ($result)
-						{
-							$id_category = Tools::getValue('id_category');
-							$category_url = empty($id_category) ? '' : '&id_category='.$id_category;
-
-							$this->redirect_after = self::$currentIndex.'&conf=2&token='.$token.$category_url;
-						}
-						$this->_errors[] = Tools::displayError('An error occurred while deleting selection.');
-					}
-				}
-				else
-					$this->_errors[] = Tools::displayError('You must select at least one element to delete.');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-
-		/* Product images management */
-		else if (($id_image = (int)(Tools::getValue('id_image'))) && Validate::isUnsignedId($id_image) && Validate::isLoadedObject($image = new Image($id_image)))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				/* Update product image/legend */
-				// @todo : move in processEditProductImage
-				if (isset($_GET['editImage']))
-				{
-					if ($image->cover)
-						$_POST['cover'] = 1;
-					$languages = Language::getLanguages(false);
-					foreach ($languages as $language)
-						if (isset($image->legend[$language['id_lang']]))
-							$_POST['legend_'.$language['id_lang']] = $image->legend[$language['id_lang']];
-					$_POST['id_image'] = $image->id;
-				}
-
-				/* Choose product cover image */
-				else if (isset($_GET['coverImage']))
-				{
-					Image::deleteCover($image->id_product);
-					$image->cover = 1;
-					if (!$image->update())
-						$this->_errors[] = Tools::displayError('Cannot change the product cover');
-					else
-					{
-						$productId = (int)(Tools::getValue('id_product'));
-						@unlink(_PS_TMP_IMG_DIR_.'/product_'.$productId.'.jpg');
-						@unlink(_PS_TMP_IMG_DIR_.'/product_mini_'.$productId.'.jpg');
-						$this->redirect_after = self::$currentIndex.'&id_product='.$image->id_product.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&tabs=1'.'&token='.($token ? $token : $this->token);
-					}
-				}
-
-				/* Choose product image position */
-				else if (isset($_GET['imgPosition']) && isset($_GET['imgDirection']))
-				{
-					$image->updatePosition(Tools::getValue('imgDirection'), Tools::getValue('imgPosition'));
-					$this->redirect_after = self::$currentIndex.'&id_product='.$image->id_product.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&tabs=1&token='.($token ? $token : $this->token);
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-
-		/* Product attributes management */
-		else if (Tools::isSubmit('submitProductAttribute'))
-		{
-			if (!Combination::isFeatureActive())
-				return;
-
-			$is_virtual = (int)Tools::getValue('is_virtual');
-
-			if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-			{
-				if (!isset($_POST['attribute_price']) || $_POST['attribute_price'] == null)
-					$this->_errors[] = Tools::displayError('Attribute price required.');
-				if (!isset($_POST['attribute_combinaison_list']) || !sizeof($_POST['attribute_combinaison_list']))
-					$this->_errors[] = Tools::displayError('You must add at least one attribute.');
-
-				if (!sizeof($this->_errors))
-				{
-					if (!isset($_POST['attribute_wholesale_price'])) $_POST['attribute_wholesale_price'] = 0;
-					if (!isset($_POST['attribute_price_impact'])) $_POST['attribute_price_impact'] = 0;
-					if (!isset($_POST['attribute_weight_impact'])) $_POST['attribute_weight_impact'] = 0;
-					if (!isset($_POST['attribute_ecotax'])) $_POST['attribute_ecotax'] = 0;
-					if (Tools::getValue('attribute_default'))
-						$product->deleteDefaultAttributes();
-					// Change existing one
-					if ($id_product_attribute = (int)(Tools::getValue('id_product_attribute')))
-					{
-						if ($this->tabAccess['edit'] === '1')
-						{
-							if ($product->productAttributeExists($_POST['attribute_combinaison_list'], $id_product_attribute))
-								$this->_errors[] = Tools::displayError('This attribute already exists.');
-							else
-							{
-								if (Validate::isDateFormat(Tools::getValue('available_date')))
-								{
-									$product->updateAttribute($id_product_attribute,
-										Tools::getValue('attribute_wholesale_price'),
-										Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
-										Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
-										Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
-										Tools::getValue('attribute_ecotax'),
-										Tools::getValue('id_image_attr'),
-										Tools::getValue('attribute_reference'),
-										Tools::getValue('attribute_ean13'),
-										Tools::getValue('attribute_default'),
-										Tools::getValue('attribute_location'),
-										Tools::getValue('attribute_upc'),
-										Tools::getValue('minimal_quantity'),
-										Tools::getValue('available_date'));
-
-									if ($id_reason = (int)Tools::getValue('id_mvt_reason') && (int)Tools::getValue('attribute_mvt_quantity') > 0 && $id_reason > 0)
-									{
-										if (!$product->addStockMvt(Tools::getValue('attribute_mvt_quantity'), $id_reason, $id_product_attribute, null, $this->context->employee->id))
-											$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
-									}
-									Hook::exec('updateProductAttribute', array('id_product_attribute' => (int)$id_product_attribute));
-									$this->updateDownloadProduct($product, 1, $id_product_attribute);
-								}
-								else
-								{
-									$this->_errors[] = Tools::displayError('Invalid date format.');
-								}
-							}
-						}
-						else
-							$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-					}
-					// Add new
-					else
-					{
-						if ($this->tabAccess['add'] === '1')
-						{
-							if ($product->productAttributeExists($_POST['attribute_combinaison_list']))
-								$this->_errors[] = Tools::displayError('This combination already exists.');
-							else
-								$id_product_attribute = $product->addCombinationEntity(
-									Tools::getValue('attribute_wholesale_price'),
-									Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
-									Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
-									Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
-									Tools::getValue('attribute_ecotax'),
-									Tools::getValue('id_image_attr'),
-									Tools::getValue('attribute_reference'),
-									null,
-									Tools::getValue('attribute_ean13'),
-									Tools::getValue('attribute_default'),
-									Tools::getValue('attribute_location'),
-									Tools::getValue('attribute_upc')
-								);
-							$this->updateDownloadProduct($product, 0, $id_product_attribute);
-						}
-						else
-							$this->_errors[] = Tools::displayError('You do not have permission to').'<hr>'.Tools::displayError('Edit here.');
-					}
-					if (!sizeof($this->_errors))
-					{
-						$product->addAttributeCombinaison($id_product_attribute, Tools::getValue('attribute_combinaison_list'));
-						$product->checkDefaultAttributes();
-					}
-					if (!sizeof($this->_errors))
-					{
-						if (!$product->cache_default_attribute)
-							Product::updateDefaultAttribute($product->id);
-
-						if (!empty($is_virtual))
-							Product::updateIsVirtual($product->id);
-
-						$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&tabs=3&token='.($token ? $token : $this->token);
-					}
-				}
-			}
-		}
-		else if (Tools::isSubmit('deleteProductAttribute'))
-		{
-			if (!Combination::isFeatureActive())
-				return;
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (($id_product = (int)(Tools::getValue('id_product'))) && Validate::isUnsignedId($id_product) && Validate::isLoadedObject($product = new Product($id_product)))
-				{
-					$product->deleteAttributeCombinaison(Tools::getValue('id_product_attribute'));
-
-					$id_product_download = ProductDownload::getIdFromIdAttribute((int) $id_product, (int) Tools::getValue('id_product_attribute'));
-					if ($id_product_download)
-					{
-						$productDownload = new ProductDownload((int) $id_product_download);
-						$this->deleteDownloadProduct((int) $id_product_download);
-						$productDownload->deleteFile();
-					}
-					$product->checkDefaultAttributes();
-					$product->updateQuantityProductWithAttributeQuantity();
-					if (!$product->hasAttributes())
-					{
-						$product->cache_default_attribute = 0;
-						$product->update();
-					}
-					else
-						Product::updateDefaultAttribute($id_product);
-
-					$this->redirect_after = self::$currentIndex.'&add'.$this->table.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&tabs=3&id_product='.$product->id.'&token='.($token ? $token : $this->token);
-				}
-				else
-					$this->_errors[] = Tools::displayError('Cannot delete attribute');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-		else if (Tools::isSubmit('deleteAllProductAttributes'))
-		{
-			if (!Combination::isFeatureActive())
-				return;
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (($id_product = (int)(Tools::getValue('id_product'))) && Validate::isUnsignedId($id_product) && Validate::isLoadedObject($product = new Product($id_product)))
-				{
-					$product->deleteProductAttributes();
-					$product->updateQuantityProductWithAttributeQuantity();
-					if ($product->cache_default_attribute)
-					{
-						$product->cache_default_attribute = 0;
-						$product->update();
-					}
-					$this->redirect_after = self::$currentIndex.'&add'.$this->table.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&tabs=3&id_product='.$product->id.'&token='.($token ? $token : $this->token);
-				}
-				else
-					$this->_errors[] = Tools::displayError('Cannot delete attributes');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-		else if (Tools::isSubmit('defaultProductAttribute'))
-		{
-			if (!Combination::isFeatureActive())
-				return;
-			if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-			{
-				$product->deleteDefaultAttributes();
-				$product->setDefaultAttribute((int)(Tools::getValue('id_product_attribute')));
-				$this->redirect_after = self::$currentIndex.'&add'.$this->table.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&tabs=3&id_product='.$product->id.'&token='.($token ? $token : $this->token);
-			}
-			else
-				$this->_errors[] = Tools::displayError('Cannot make default attribute');
-		}
-
-		/* Product features management */
-		else if (Tools::isSubmit('submitFeatures') || Tools::isSubmit('submitFeaturesAndStay'))
-		{
-			if (!Feature::isFeatureActive())
-				return;
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-				{
-					// delete all objects
-					$product->deleteFeatures();
-
-					// add new objects
-					$languages = Language::getLanguages(false);
-					foreach ($_POST as $key => $val)
-					{
-						if (preg_match('/^feature_([0-9]+)_value/i', $key, $match))
-						{
-							if ($val)
-								$product->addFeaturesToDB($match[1], $val);
-							else
-							{
-								if ($default_value = $this->checkFeatures($languages, $match[1]))
-								{
-									$id_value = $product->addFeaturesToDB($match[1], 0, 1);
-									foreach ($languages as $language)
-									{
-										if ($cust = Tools::getValue('custom_'.$match[1].'_'.(int)$language['id_lang']))
-											$product->addFeaturesCustomToDB($id_value, (int)$language['id_lang'], $cust);
-										else
-											$product->addFeaturesCustomToDB($id_value, (int)$language['id_lang'], $default_value);
-									}
-								}
-								else
-									$id_value = $product->addFeaturesToDB($match[1], 0, 1);
-							}
-						}
-					}
-					if (!sizeof($this->_errors))
-						$this->redirect_after = self::$currentIndex.'&id_product='.(int)$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&action=Features&tabs=4&conf=4&token='.($token ? $token : $this->token);
-				}
-				else
-					$this->_errors[] = Tools::displayError('Product must be created before adding features.');
-			}
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		/* Product specific prices management */
-		else if (Tools::isSubmit('submitPricesModification'))
-		{
-			$_POST['tabs'] = 5;
-			if ($this->tabAccess['edit'] === '1')
-			{
-				$id_specific_prices = Tools::getValue('spm_id_specific_price');
-				$id_shops = Tools::getValue('spm_id_shop');
-				$id_currencies = Tools::getValue('spm_id_currency');
-				$id_countries = Tools::getValue('spm_id_country');
-				$id_groups = Tools::getValue('spm_id_group');
-				$prices = Tools::getValue('spm_price');
-				$from_quantities = Tools::getValue('spm_from_quantity');
-				$reductions = Tools::getValue('spm_reduction');
-				$reduction_types = Tools::getValue('spm_reduction_type');
-				$froms = Tools::getValue('spm_from');
-				$tos = Tools::getValue('spm_to');
-
-				foreach ($id_specific_prices as $key => $id_specific_price)
-					if ($this->_validateSpecificPrice($id_shops[$key], $id_currencies[$key], $id_countries[$key], $id_groups[$key], $prices[$key], $from_quantities[$key], $reductions[$key], $reduction_types[$key], $froms[$key], $tos[$key]))
-					{
-						$specificPrice = new SpecificPrice((int)($id_specific_price));
-						$specificPrice->id_shop = (int)$id_shops[$key];
-						$specificPrice->id_currency = (int)($id_currencies[$key]);
-						$specificPrice->id_country = (int)($id_countries[$key]);
-						$specificPrice->id_group = (int)($id_groups[$key]);
-						$specificPrice->price = (float)($prices[$key]);
-						$specificPrice->from_quantity = (int)($from_quantities[$key]);
-						$specificPrice->reduction = (float)($reduction_types[$key] == 'percentage' ? ($reductions[$key] / 100) : $reductions[$key]);
-						$specificPrice->reduction_type = !$reductions[$key] ? 'amount' : $reduction_types[$key];
-						$specificPrice->from = !$froms[$key] ? '0000-00-00 00:00:00' : $froms[$key];
-						$specificPrice->to = !$tos[$key] ? '0000-00-00 00:00:00' : $tos[$key];
-						if (!$specificPrice->update())
-							$this->_errors = Tools::displayError('An error occurred while updating the specific price.');
-					}
-				if (!sizeof($this->_errors))
-					$this->redirect_after = self::$currentIndex.'&id_product='.(int)(Tools::getValue('id_product')).'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&update'.$this->table.'&tabs=2&token='.($token ? $token : $this->token);
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
-		else if (Tools::isSubmit('submitPriceAddition'))
-		{
-			if ($this->tabAccess['add'] === '1')
-			{
-				$id_product = (int)(Tools::getValue('id_product'));
-				$id_shop = Tools::getValue('sp_id_shop');
-				$id_currency = Tools::getValue('sp_id_currency');
-				$id_country = Tools::getValue('sp_id_country');
-				$id_group = Tools::getValue('sp_id_group');
-				$price = Tools::getValue('sp_price');
-				$from_quantity = Tools::getValue('sp_from_quantity');
-				$reduction = (float)(Tools::getValue('sp_reduction'));
-				$reduction_type = !$reduction ? 'amount' : Tools::getValue('sp_reduction_type');
-				$from = Tools::getValue('sp_from');
-				$to = Tools::getValue('sp_to');
-				if ($this->_validateSpecificPrice($id_shop, $id_currency, $id_country, $id_group, $price, $from_quantity, $reduction, $reduction_type, $from, $to))
-				{
-					$specificPrice = new SpecificPrice();
-					$specificPrice->id_product = $id_product;
-					$specificPrice->id_product_attribute = (int)Tools::getValue('id_product_attribute');
-					$specificPrice->id_shop = (int)$id_shop;
-					$specificPrice->id_currency = (int)($id_currency);
-					$specificPrice->id_country = (int)($id_country);
-					$specificPrice->id_group = (int)($id_group);
-					$specificPrice->price = (float)($price);
-					$specificPrice->from_quantity = (int)($from_quantity);
-					$specificPrice->reduction = (float)($reduction_type == 'percentage' ? $reduction / 100 : $reduction);
-					$specificPrice->reduction_type = $reduction_type;
-					$specificPrice->from = !$from ? '0000-00-00 00:00:00' : $from;
-					$specificPrice->to = !$to ? '0000-00-00 00:00:00' : $to;
-					if (!$specificPrice->add())
-						$this->_errors = Tools::displayError('An error occurred while updating the specific price.');
-					else
-						$this->redirect_after = self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$id_product.'&add'.$this->table.'&tabs=2&conf=3&token='.($token ? $token : $this->token);
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
-		}
-		else if (Tools::isSubmit('deleteSpecificPrice'))
-		{
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (!($obj = $this->loadObject()))
-					return;
-				if (!$id_specific_price = Tools::getValue('id_specific_price') || !Validate::isUnsignedId($id_specific_price))
-					$this->_errors[] = Tools::displayError('Invalid specific price ID');
-				else
-				{
-					$specificPrice = new SpecificPrice((int)($id_specific_price));
-					if (!$specificPrice->delete())
-						$this->_errors[] = Tools::displayError('An error occurred while deleting the specific price');
-					else
-						$this->redirect_after = self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=1&token='.($token ? $token : $this->token);
-				}
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-		else if (Tools::isSubmit('submitSpecificPricePriorities'))
-		{
-			if (!($obj = $this->loadObject()))
-				return;
-			if (!$priorities = Tools::getValue('specificPricePriority'))
-				$this->_errors[] = Tools::displayError('Please specify priorities');
-			else if (Tools::isSubmit('specificPricePriorityToAll'))
-			{
-				if (!SpecificPrice::setPriorities($priorities))
-					$this->_errors[] = Tools::displayError('An error occurred while updating priorities.');
-				else
-					$this->redirect_after = self::$currentIndex.'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=4&token='.($token ? $token : $this->token);
-			}
-			else if (!SpecificPrice::setSpecificPriority((int)($obj->id), $priorities))
-				$this->_errors[] = Tools::displayError('An error occurred while setting priorities.');
-			else
-				$this->redirect_after = self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=4&token='.($token ? $token : $this->token);
-		}
-		/* Customization management */
-		else if (Tools::isSubmit('submitCustomizationConfiguration'))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-				{
-					if (!$product->createLabels((int)($_POST['uploadable_files']) - (int)($product->uploadable_files), (int)($_POST['text_fields']) - (int)($product->text_fields)))
-						$this->_errors[] = Tools::displayError('An error occurred while creating customization fields.');
-					if (!sizeof($this->_errors) && !$product->updateLabels())
-						$this->_errors[] = Tools::displayError('An error occurred while updating customization.');
-					$product->uploadable_files = (int)($_POST['uploadable_files']);
-					$product->text_fields = (int)($_POST['text_fields']);
-					$product->customizable = ((int)($_POST['uploadable_files']) > 0 || (int)($_POST['text_fields']) > 0) ? 1 : 0;
-					if (!sizeof($this->_errors) && !$product->update())
-						$this->_errors[] = Tools::displayError('An error occurred while updating customization configuration.');
-					if (!sizeof($this->_errors))
-						$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&tabs=5&token='.($token ? $token : $this->token);
-				}
-				else
-					$this->_errors[] = Tools::displayError('Product must be created before adding customization possibilities.');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		else if (Tools::isSubmit('submitProductCustomization'))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
-				{
-					foreach ($_POST as $field => $value)
-						if (strncmp($field, 'label_', 6) == 0 && !Validate::isLabel($value))
-							$this->_errors[] = Tools::displayError('Label fields are invalid');
-					if (!sizeof($this->_errors) && !$product->updateLabels())
-						$this->_errors[] = Tools::displayError('An error occurred while updating customization.');
-					if (!sizeof($this->_errors))
-						$this->redirect_after = self::$currentIndex.'&id_product='.$product->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&tabs=5&token='.($token ? $token : $this->token);
-				}
-				else
-					$this->_errors[] = Tools::displayError('Product must be created before adding customization possibilities.');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		else if (isset($_GET['position']))
-		{
-			if ($this->tabAccess['edit'] !== '1')
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-			else if (!Validate::isLoadedObject($object = $this->loadObject()))
-				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-			if (!$object->updatePosition((int)(Tools::getValue('way')), (int)(Tools::getValue('position'))))
-				$this->_errors[] = Tools::displayError('Failed to update the position.');
-			else
-				$this->redirect_after = self::$currentIndex.'&'.$this->table.'Orderby=position&'.$this->table.'Orderway=asc&conf=5'.(($id_category = (!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1')) ? ('&id_category='.$id_category) : '').'&token='.Tools::getAdminTokenLite('AdminProducts');
-		}
-		else if (Tools::isSubmit('submitAccounting') || Tools::isSubmit('submitAccountingAndStay'))
-			$this->postProcessFormAccounting();
-		//Manage suppliers
-		else if (Tools::isSubmit('submitSuppliers') || Tools::isSubmit('submitSuppliersAndStay'))
-			$this->postProcessFormSuppliers();
-		//Manage warehouses
-		else if (Tools::isSubmit('submitWarehouses') || Tools::isSubmit('submitWarehousesAndStay'))
-		{
-			$this->postProcessFormWarehouses();
-		}
-		parent::postProcess(true);
+		if (!$this->redirect_after)
+			parent::postProcess(true);
 	}
 
 	// @todo rename to processaddproductimage
@@ -980,6 +1060,110 @@ class AdminProductsControllerCore extends AdminController
 			die(Tools::jsonEncode($result));
 	}
 
+	public function ajaxProcessDeleteProductAttribute()
+	{
+		if (!Combination::isFeatureActive())
+			return;
+
+		if ($this->tabAccess['delete'] === '1')
+		{
+			$id_product = (int)Tools::getValue('id_product');
+			$id_product_attribute = (int)Tools::getValue('id_product_attribute');
+			if ($id_product && Validate::isUnsignedId($id_product) && Validate::isLoadedObject($product = new Product($id_product)))
+			{
+				$product->deleteAttributeCombinaison($id_product_attribute);
+
+				$id_product_download = (int)ProductDownload::getIdFromIdAttribute($id_product, $id_product_attribute);
+				if ($id_product_download)
+				{
+					$product_download = new ProductDownload($id_product_download);
+					$this->deleteDownloadProduct($id_product_download);
+					$product_download->deleteFile();
+				}
+				$product->checkDefaultAttributes();
+				if (!$product->hasAttributes())
+				{
+					$product->cache_default_attribute = 0;
+					$product->update();
+				}
+				else
+					Product::updateDefaultAttribute($id_product);
+
+				$json = array(
+					'status' => 'ok',
+					'message'=> $this->_conf[1]
+				);
+			}
+			else
+				$json = array(
+					'status' => 'error',
+					'message'=> $this->l('Cannot delete attribute')
+				);
+		}
+		else
+			$json = array(
+				'status' => 'error',
+				'message'=> $this->l('You do not have permission to delete here.')
+			);
+
+		die(Tools::jsonEncode($json));
+	}
+
+	public function ajaxProcessDefaultProductAttribute()
+	{
+		if ($this->tabAccess['edit'] === '1')
+		{
+			if (!Combination::isFeatureActive())
+				return;
+
+			if (Validate::isLoadedObject($product = new Product((int)Tools::getValue('id_product'))))
+			{
+				$product->deleteDefaultAttributes();
+				$product->setDefaultAttribute((int)Tools::getValue('id_product_attribute'));
+				$json = array(
+					'status' => 'ok',
+					'message'=> $this->_conf[4]
+				);
+			}
+			else
+				$json = array(
+					'status' => 'error',
+					'message'=> $this->l('Cannot make default attribute')
+				);
+
+			die(Tools::jsonEncode($json));
+		}
+	}
+
+	public function ajaxProcessEditProductAttribute()
+	{
+		if ($this->tabAccess['edit'] === '1')
+		{
+			$id_product = (int)Tools::getValue('id_product');
+			$id_product_attribute = (int)Tools::getValue('id_product_attribute');
+			if ($id_product && Validate::isUnsignedId($id_product) && Validate::isLoadedObject($product = new Product($id_product)))
+			{
+				$combinations = $product->getAttributeCombinaisonsById($id_product_attribute, $this->context->language->id);
+				$product_download = ProductDownload::getAttributeFromIdAttribute($id_product, $id_product_attribute);
+				foreach ($combinations as $key => $combinaison)
+				{
+					$combinations[$key]['attributes'][] = array($combinaison['group_name'], $combinaison['attribute_name'], $combinaison['id_attribute']);
+
+					// Added fields virtual product
+					$combinations[$key]['id_product_download'] = count($product_download) ? $product_download[0]['id_product_download'] : '';
+					$combinations[$key]['display_filename'] = count($product_download) ? $product_download[0]['display_filename'] : '';
+					$combinations[$key]['filename'] = count($product_download) ? $product_download[0]['filename'] : '';
+					$combinations[$key]['date_expiration'] = count($product_download) ? $product_download[0]['date_expiration'] : '0000-00-00';
+					$combinations[$key]['nb_days_accessible'] = count($product_download) ? $product_download[0]['nb_days_accessible'] : 0;
+					$combinations[$key]['nb_downloadable'] = count($product_download) ? $product_download[0]['nb_downloadable'] : 0;
+					$combinations[$key]['is_shareable'] = count($product_download) ? $product_download[0]['is_shareable'] : 0;
+				}
+
+				die(Tools::jsonEncode($combinations));
+			}
+		}
+	}
+
 	public function ajaxPreProcess()
 	{
 		$this->action = Tools::getValue('action');
@@ -989,16 +1173,35 @@ class AdminProductsControllerCore extends AdminController
 	{
 		$this->json = true;
 		if (($id_image = $_GET['id_image']) && ($id_shop = (int)$_GET['id_shop']))
-			if (Tools::getValue('active') == "true")
-				$res = Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'image_shop (`id_image`, `id_shop`) VALUES('.(int)$id_image.', '.(int)$id_shop.')');
+			if (Tools::getValue('active') == 'true')
+				$res = Db::getInstance()->execute(
+					'INSERT INTO '._DB_PREFIX_.'image_shop (`id_image`, `id_shop`)
+					VALUES('.(int)$id_image.', '.(int)$id_shop.')
+				');
 			else
-				$res= Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'image_shop WHERE `id_image`='.(int)$id_image.' && `id_shop`='.(int)$id_shop);
+				$res = Db::getInstance()->execute('
+					DELETE FROM '._DB_PREFIX_.'image_shop
+					WHERE `id_image`='.(int)$id_image.' && `id_shop`='.(int)$id_shop
+				);
 
 		if ($res)
 			$this->confirmations[] = $this->_conf[27];
 		else
 			$this->_errors[] = Tools::displayError('Error on picture shop association');
 		$this->status = 'ok';
+	}
+
+	/**
+	 * Search customers
+	 */
+	public function ajaxProcessSearchCustomers()
+	{
+		if ($customers = Customer::searchByName(pSQL(Tools::getValue('customer_search'))))
+			$to_return = array('customers' => $customers, 'found' => true);
+		else
+			$to_return = array('found' => false);
+
+		$this->content = Tools::jsonEncode($to_return);
 	}
 
 	public function ajaxProcessUpdateImagePosition()
@@ -1038,33 +1241,38 @@ class AdminProductsControllerCore extends AdminController
 
 	public function ajaxProcessDeleteProductImage()
 	{
+		$this->json = true;
+		$this->display = 'content';
+		$res = true;
 		/* Delete product image */
-		if (isset($_GET['deleteProductImage']) || $this->action == 'deleteProductImage')
+		$image = new Image((int)Tools::getValue('id_image'));
+		$this->content['id'] = $image->id;
+		$res &= $image->delete();
+		// if deleted image was the cover, change it to the first one
+		if (!Image::getCover($image->id_product))
 		{
-			$image = new Image((int)Tools::getValue('id_image'));
-			$image->delete();
-			if (!Image::getCover($image->id_product))
-			{
-				$first_img = Db::getInstance()->getRow('
-				SELECT `id_image` FROM `'._DB_PREFIX_.'image`
-				WHERE `id_product` = '.(int)($image->id_product));
-				Db::getInstance()->Execute('
-				UPDATE `'._DB_PREFIX_.'image`
-				SET `cover` = 1
-				WHERE `id_image` = '.(int)($first_img['id_image']));
-			}
-			@unlink(_PS_TMP_IMG_DIR_.'/product_'.$image->id_product.'.jpg');
-			@unlink(_PS_TMP_IMG_DIR_.'/product_mini_'.$image->id_product.'.jpg');
-			if (!$this->ajax)
-				$this->redirect_after = $currentIndex.'&id_product='.$image->id_product.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&add'.$this->table.'&tabs=1'.'&token='.($token ? $token : $this->token);
-		else
-			$this->content = '{"status":"ok"}';
+			$res &= Db::getInstance()->Execute('
+			UPDATE `'._DB_PREFIX_.'image`
+			SET `cover` = 1
+			WHERE `id_product` = '.(int)$image->id_product.' LIMIT 1');
 		}
+
+		if(file_exists(_PS_TMP_IMG_DIR_.'/product_'.$image->id_product.'.jpg'))
+			$res &= @unlink(_PS_TMP_IMG_DIR_.'/product_'.$image->id_product.'.jpg');
+		if(file_exists(_PS_TMP_IMG_DIR_.'/product_mini_'.$image->id_product.'.jpg'))
+			$res &= @unlink(_PS_TMP_IMG_DIR_.'/product_mini_'.$image->id_product.'.jpg');
+
+		if ($res)
+			$this->confirmations[] = $this->_conf[7];
+		else
+			$this->_errors[] = Tools::displayError('Error on deleting product image');
+
+		$this->status = 'ok';
 	}
 
-	protected function _validateSpecificPrice($id_shop, $id_currency, $id_country, $id_group, $price, $from_quantity, $reduction, $reduction_type, $from, $to)
+	protected function _validateSpecificPrice($id_shop, $id_currency, $id_country, $id_group, $id_customer, $price, $from_quantity, $reduction, $reduction_type, $from, $to)
 	{
-		if (!Validate::isUnsignedId($id_shop) || !Validate::isUnsignedId($id_currency) || !Validate::isUnsignedId($id_country) || !Validate::isUnsignedId($id_group))
+		if (!Validate::isUnsignedId($id_shop) || !Validate::isUnsignedId($id_currency) || !Validate::isUnsignedId($id_country) || !Validate::isUnsignedId($id_group) || !Validate::isUnsignedId($id_customer))
 			$this->_errors[] = Tools::displayError('Wrong ID\'s');
 		else if ((empty($price) && empty($reduction)) || (!empty($price) && !Validate::isPrice($price)) || (!empty($reduction) && !Validate::isPrice($reduction)))
 			$this->_errors[] = Tools::displayError('Invalid price/reduction amount');
@@ -1088,12 +1296,12 @@ class AdminProductsControllerCore extends AdminController
 		foreach ($languages as $language)
 			if ($val = Tools::getValue('custom_'.$feature_id.'_'.$language['id_lang']))
 			{
-				$currentLanguage = new Language($language['id_lang']);
+				$current_language = new Language($language['id_lang']);
 				if (Tools::strlen($val) > $rules['sizeLang']['value'])
-					$this->_errors[] = Tools::displayError('name for feature').' <b>'.$feature['name'].'</b> '.Tools::displayError('is too long in').' '.$currentLanguage->name;
+					$this->_errors[] = Tools::displayError('name for feature').' <b>'.$feature['name'].'</b> '.Tools::displayError('is too long in').' '.$current_language->name;
 				else if (!call_user_func(array('Validate', $rules['validateLang']['value']), $val))
-					$this->_errors[] = Tools::displayError('Valid name required for feature.').' <b>'.$feature['name'].'</b> '.Tools::displayError('in').' '.$currentLanguage->name;
-				if (sizeof($this->_errors))
+					$this->_errors[] = Tools::displayError('Valid name required for feature.').' <b>'.$feature['name'].'</b> '.Tools::displayError('in').' '.$current_language->name;
+				if (count($this->_errors))
 					return (0);
 				// Getting default language
 				if ($language['id_lang'] == Configuration::get('PS_LANG_DEFAULT'))
@@ -1110,7 +1318,7 @@ class AdminProductsControllerCore extends AdminController
 	public function addProductImage($product, $method = 'auto')
 	{
 		/* Updating an existing product image */
-		if ($id_image = ((int)(Tools::getValue('id_image'))))
+		if ($id_image = (int)Tools::getValue('id_image'))
 		{
 			$image = new Image($id_image);
 			if (!Validate::isLoadedObject($image))
@@ -1122,7 +1330,7 @@ class AdminProductsControllerCore extends AdminController
 				$image->cover = $cover;
 				$this->validateRules('Image');
 				$this->copyFromPost($image, 'image');
-				if (sizeof($this->_errors) || !$image->update())
+				if (count($this->_errors) || !$image->update())
 					$this->_errors[] = Tools::displayError('An error occurred while updating image.');
 				else if (isset($_FILES['image_product']['tmp_name']) && $_FILES['image_product']['tmp_name'] != null)
 					$this->copyImage($product->id, $image->id, $method);
@@ -1130,11 +1338,11 @@ class AdminProductsControllerCore extends AdminController
 		}
 		if (isset($image) && Validate::isLoadedObject($image) && !file_exists(_PS_PROD_IMG_DIR_.$image->getExistingImgPath().'.'.$image->image_format))
 			$image->delete();
-		if (sizeof($this->_errors))
+		if (count($this->_errors))
 			return false;
 		@unlink(_PS_TMP_IMG_DIR_.'/product_'.$product->id.'.jpg');
 		@unlink(_PS_TMP_IMG_DIR_.'/product_mini_'.$product->id.'.jpg');
-		return ((isset($id_image) && is_int($id_image) && $id_image) ? $id_image : true);
+		return ((isset($id_image) && is_int($id_image) && $id_image) ? $id_image : false);
 	}
 	/**
 	 * Copy a product image
@@ -1161,9 +1369,12 @@ class AdminProductsControllerCore extends AdminController
 			else if ($method == 'auto')
 			{
 				$imagesTypes = ImageType::getImagesTypes('products');
-				foreach ($imagesTypes as $k => $imageType)
-					if (!imageResize($tmpName, $new_path.'-'.stripslashes($imageType['name']).'.'.$image->image_format, $imageType['width'], $imageType['height'], $image->image_format))
-						$this->_errors[] = Tools::displayError('An error occurred while copying image:').' '.stripslashes($imageType['name']);
+				foreach ($imagesTypes as $k => $image_type)
+				{
+					$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
+					if (!imageResize($tmpName, $new_path.'-'.stripslashes($image_type['name']).$theme.'.'.$image->image_format, $image_type['width'], $image_type['height'], $image->image_format))
+						$this->_errors[] = Tools::displayError('An error occurred while copying image:').' '.stripslashes($image_type['name']);
+				}
 			}
 
 			@unlink($tmpName);
@@ -1171,14 +1382,166 @@ class AdminProductsControllerCore extends AdminController
 		}
 	}
 
+	public function processAdd($token)
+	{
+		$this->checkProduct();
+
+		if (!empty($this->_errors))
+			return false;
+
+		$object = new $this->className();
+		$this->_removeTaxFromEcotax();
+		$this->copyFromPost($object, $this->table);
+		if ($object->add())
+		{
+			$this->addCarriers();
+			$this->updateAssoShop((int)$object->id);
+			$this->updateAccessories($object);
+			if (!$this->updatePackItems($object))
+				$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
+			$this->updateDownloadProduct($object);
+
+			if (!count($this->_errors))
+			{
+				$languages = Language::getLanguages(false);
+				if (!$object->updateCategories($_POST['categoryBox']))
+					$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
+				else if (!$this->updateTags($languages, $object))
+					$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
+				else if ($id_image = $this->addProductImage($object))
+				{
+					Hook::exec('addProduct', array('product' => $object));
+					Search::indexation(false, $object->id);
+				}
+
+				// If the product is virtual, set out_of_stock = 1 (allow sales when out of stock)
+				if (Tools::getValue('type_product') == 2)
+					StockAvailable::setProductOutOfStock($object->id, 1);
+				else
+					StockAvailable::setProductOutOfStock($object->id, 2);
+
+				// Save and preview
+				if (Tools::isSubmit('submitAddProductAndPreview'))
+				{
+					$preview_url = ($this->context->link->getProductLink($this->getFieldValue($object, 'id'), $this->getFieldValue($object, 'link_rewrite', $this->context->language->id), Category::getLinkRewrite($this->getFieldValue($object, 'id_category_default'), $this->context->language->id)));
+					if (!$object->active)
+					{
+						$admin_dir = dirname($_SERVER['PHP_SELF']);
+						$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
+						$token = Tools::encrypt('PreviewProduct'.$object->id);
+						$preview_url .= '&adtoken='.$token.'&ad='.$admin_dir;
+					}
+
+					$this->redirect_after = $preview_url;
+				}
+
+				if (Tools::getValue('resizer') == 'man' && isset($id_image) && is_int($id_image) && $id_image)
+					$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&id_image='.$id_image.'&imageresize&toconf=3&submitAddAndStay='.(Tools::isSubmit('submitAdd'.$this->table.'AndStay') ? 'on' : 'off').'&token='.($token ? $token : $this->token);
+				// Save and stay on same form
+				if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
+					$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&conf=3&action='.Tools::getValue('key_tab').'&token='.($token ? $token : $this->token);
+				else
+					// Default behavior (save and back)
+					$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=3&token='.($token ? $token : $this->token);
+			}
+			else
+				$object->delete();
+		}
+		else
+			$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
+	}
+
+	public function processUpdate($token)
+	{
+		$this->checkProduct();
+
+		if (!empty($this->_errors))
+			return false;
+
+		$id = (int)Tools::getValue('id_'.$this->table);
+		$tagError = true;
+		/* Update an existing product */
+		if (isset($id) && !empty($id))
+		{
+			$object = new $this->className($id);
+			if (Validate::isLoadedObject($object))
+			{
+				$this->_removeTaxFromEcotax();
+				$this->copyFromPost($object, $this->table);
+				if ($object->update())
+				{
+					$this->addCarriers();
+					if ($id_reason = (int)Tools::getValue('id_mvt_reason') && Tools::getValue('mvt_quantity') > 0 && $id_reason > 0)
+					{
+						if (!$object->addStockMvt(Tools::getValue('mvt_quantity'), $id_reason, null, null, $this->context->employee->id))
+							$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
+					}
+					$this->updateAccessories($object);
+					$this->updateDownloadProduct($object, 1);
+					$this->updateAssoShop((int)$object->id);
+					$this->processAccounting($token);
+					$this->processSuppliers($token);
+					$this->processWarehouses($token);
+					$this->processFeatures($token);
+					$languages = Language::getLanguages(false);
+					if (!$this->updatePackItems($object))
+						$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
+					else if (!$object->updateCategories($_POST['categoryBox'], true))
+						$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
+					else if (!$this->updateTags($languages, $object))
+						$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
+					else //if (Tools::getValue('id_image') && $id_image = $this->addProductImage($object, Tools::getValue('resizer')))
+					{
+						//self::$currentIndex .= '&image_updated='.$id_image;
+						Hook::exec('updateProduct', array('product' => $object));
+						Search::indexation(false, $object->id);
+						//if (Tools::getValue('resizer') == 'man' && isset($id_image) && is_int($id_image) && $id_image)
+						//	$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&edit='.strval(Tools::getValue('productCreated')).'&id_image='.$id_image.'&imageresize&toconf=4&submitAddAndStay='.((Tools::isSubmit('submitAdd'.$this->table.'AndStay') || Tools::getValue('productCreated') == 'on') ? 'on' : 'off').'&token='.(($token ? $token : $this->token));
+
+						// Save and preview
+						if (Tools::isSubmit('submitAddProductAndPreview'))
+						{
+							$preview_url = $this->context->link->getProductLink($this->getFieldValue($object, 'id'), $this->getFieldValue($object, 'link_rewrite', $this->context->language->id), Category::getLinkRewrite($this->getFieldValue($object, 'id_category_default'), $this->context->language->id), null, null, Context::getContext()->shop->getID());
+							if (!$object->active)
+							{
+								$admin_dir = dirname($_SERVER['PHP_SELF']);
+								$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
+								$token = Tools::encrypt('PreviewProduct'.$object->id);
+								if (strpos($preview_url, '?') === false)
+									$preview_url .= '?';
+								else
+									$preview_url .= '&';
+								$preview_url .= 'adtoken='.$token.'&ad='.$admin_dir;
+							}
+							$this->redirect_after = $preview_url;
+						}
+						else
+						{
+							// Save and stay on same form
+							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
+								$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&conf=4&action='.Tools::getValue('key_tab').'&token='.($token ? $token : $this->token);
+							else
+							// Default behavior (save and back)
+							$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=4&token='.($token ? $token : $this->token);
+						}
+					}
+				}
+				else
+					$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b> ('.Db::getInstance()->getMsgError().')';
+			}
+			else
+				$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b> ('.Tools::displayError('Cannot load object').')';
+		}
+	}
+
 	/**
-	 * Add or update a product
+	 * Check that a saved product is valid
 	 */
-	public function submitAddProduct($token = null)
+	public function checkProduct()
 	{
 		$className = 'Product';
 		$rules = call_user_func(array($this->className, 'getValidationRules'), $this->className);
-		$defaultLanguage = new Language((int)(Configuration::get('PS_LANG_DEFAULT')));
+		$default_language = new Language((int)(Configuration::get('PS_LANG_DEFAULT')));
 		$languages = Language::getLanguages(false);
 
 		/* Check required fields */
@@ -1192,8 +1555,8 @@ class AdminProductsControllerCore extends AdminController
 
 		/* Check multilingual required fields */
 		foreach ($rules['requiredLang'] as $fieldLang)
-			if (!Tools::getValue($fieldLang.'_'.$defaultLanguage->id))
-				$this->_errors[] = $this->l('the field').' <b>'.call_user_func(array($className, 'displayFieldName'), $fieldLang, $className).'</b> '.$this->l('is required at least in').' '.$defaultLanguage->name;
+			if (!Tools::getValue($fieldLang.'_'.$default_language->id))
+				$this->_errors[] = $this->l('the field').' <b>'.call_user_func(array($className, 'displayFieldName'), $fieldLang, $className).'</b> '.$this->l('is required at least in').' '.$default_language->name;
 
 		/* Check fields sizes */
 		foreach ($rules['size'] as $field => $maxLength)
@@ -1236,7 +1599,7 @@ class AdminProductsControllerCore extends AdminController
 
 		/* Categories */
 		$productCats = '';
-		if (!Tools::isSubmit('categoryBox') || !sizeof(Tools::getValue('categoryBox')))
+		if (!Tools::isSubmit('categoryBox') || !count(Tools::getValue('categoryBox')))
 			$this->_errors[] = $this->l('product must be in at least one Category');
 
 		if (!is_array(Tools::getValue('categoryBox')) || !in_array(Tools::getValue('id_category_default'), Tools::getValue('categoryBox')))
@@ -1247,138 +1610,6 @@ class AdminProductsControllerCore extends AdminController
 			if ($value = Tools::getValue('tags_'.$language['id_lang']))
 				if (!Validate::isTagsList($value))
 					$this->_errors[] = $this->l('Tags list').' ('.$language['name'].') '.$this->l('is invalid');
-
-		if (!sizeof($this->_errors))
-		{
-			$id = (int)Tools::getValue('id_'.$this->table);
-			$tagError = true;
-
-			/* Update an existing product */
-			if (isset($id) && !empty($id))
-			{
-				$object = new $this->className($id);
-				if (Validate::isLoadedObject($object))
-				{
-					$this->_removeTaxFromEcotax();
-					$this->copyFromPost($object, $this->table);
-					if ($object->update())
-					{
-						$this->addCarriers();
-						if ($id_reason = (int)Tools::getValue('id_mvt_reason') && Tools::getValue('mvt_quantity') > 0 && $id_reason > 0)
-						{
-							if (!$object->addStockMvt(Tools::getValue('mvt_quantity'), $id_reason, null, null, $this->context->employee->id))
-								$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
-						}
-						$this->updateAccessories($object);
-						$this->updateDownloadProduct($object, 1);
-						$this->updateAssoShop((int)$object->id);
-
-						if (!$this->updatePackItems($object))
-							$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
-						else if (!$object->updateCategories($_POST['categoryBox'], true))
-							$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
-						else if (!$this->updateTags($languages, $object))
-							$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
-						else if (Tools::getValue('id_image') && $id_image = $this->addProductImage($object, Tools::getValue('resizer')))
-						{
-							self::$currentIndex .= '&image_updated='.$id_image;
-							Hook::exec('updateProduct', array('product' => $object));
-							Search::indexation(false, $object->id);
-							if (Tools::getValue('resizer') == 'man' && isset($id_image) && is_int($id_image) && $id_image)
-								$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&edit='.strval(Tools::getValue('productCreated')).'&id_image='.$id_image.'&imageresize&toconf=4&submitAddAndStay='.((Tools::isSubmit('submitAdd'.$this->table.'AndStay') || Tools::getValue('productCreated') == 'on') ? 'on' : 'off').'&token='.(($token ? $token : $this->token));
-
-							// Save and preview
-							if (Tools::isSubmit('submitAddProductAndPreview'))
-							{
-								$preview_url = $this->context->link->getProductLink($this->getFieldValue($object, 'id'), $this->getFieldValue($object, 'link_rewrite', $this->context->language->id), Category::getLinkRewrite($this->getFieldValue($object, 'id_category_default'), $this->context->language->id), null, null, Context::getContext()->shop->getID());
-								if (!$object->active)
-								{
-									$admin_dir = dirname($_SERVER['PHP_SELF']);
-									$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
-									$token = Tools::encrypt('PreviewProduct'.$object->id);
-									if (strpos($preview_url, '?') === false)
-										$preview_url .= '?';
-									else
-										$preview_url .= '&';
-									$preview_url .= 'adtoken='.$token.'&ad='.$admin_dir;
-								}
-								$this->redirect_after = $preview_url;
-							}
-							else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') || ($id_image && $id_image !== true)) // Save and stay on same form
-							{// Save and stay on same form
-							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
-								$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&conf=4&tabs='.(int)(Tools::getValue('tabs')).'&token='.($token ? $token : $this->token);
-
-							// Default behavior (save and back)
-							$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=4&token='.($token ? $token : $this->token);
-							}
-						}
-					}
-					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b> ('.Db::getInstance()->getMsgError().')';
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b> ('.Tools::displayError('Cannot load object').')';
-			}
-
-			/* Add a new product */
-			else
-			{
-				$object = new $this->className();
-				$this->_removeTaxFromEcotax();
-				$this->copyFromPost($object, $this->table);
-				if ($object->add())
-				{
-					$this->addCarriers();
-					$this->updateAssoShop((int)$object->id);
-					$this->updateAccessories($object);
-					if (!$this->updatePackItems($object))
-						$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
-					$this->updateDownloadProduct($object);
-					if (!sizeof($this->_errors))
-					{
-						if (!$object->updateCategories($_POST['categoryBox']))
-							$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
-						else if (!$this->updateTags($languages, $object))
-							$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
-						else if ($id_image = $this->addProductImage($object))
-						{
-							Hook::exec('addProduct', array('product' => $object));
-							Search::indexation(false, $object->id);
-
-							// Save and preview
-							if (Tools::isSubmit('submitAddProductAndPreview'))
-							{
-								$preview_url = ($this->context->link->getProductLink($this->getFieldValue($object, 'id'), $this->getFieldValue($object, 'link_rewrite', $this->context->language->id), Category::getLinkRewrite($this->getFieldValue($object, 'id_category_default'), $this->context->language->id)));
-								if (!$object->active)
-								{
-									$admin_dir = dirname($_SERVER['PHP_SELF']);
-									$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
-									$token = Tools::encrypt('PreviewProduct'.$object->id);
-									$preview_url .= '&adtoken='.$token.'&ad='.$admin_dir;
-								}
-
-								$this->redirect_after = $preview_url;
-							}
-
-							if (Tools::getValue('resizer') == 'man' && isset($id_image) && is_int($id_image) && $id_image)
-								$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&id_image='.$id_image.'&imageresize&toconf=3&submitAddAndStay='.(Tools::isSubmit('submitAdd'.$this->table.'AndStay') ? 'on' : 'off').'&token='.($token ? $token : $this->token);
-							// Save and stay on same form
-							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
-								$this->redirect_after = self::$currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&conf=3&tabs='.(int)(Tools::getValue('tabs')).'&token='.($token ? $token : $this->token);
-							else
-								// Default behavior (save and back)
-								$this->redirect_after = self::$currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=3&token='.($token ? $token : $this->token);
-						}
-					}
-					else
-						$object->delete();
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
-			}
-		}
-
 	}
 
 	private function _removeTaxFromEcotax()
@@ -1463,18 +1694,11 @@ class AdminProductsControllerCore extends AdminController
 				}
 			}
 
-			// The oos behavior MUST be "Deny orders" for virtual products
-			if (Tools::getValue('out_of_stock') != 0)
-			{
-				$this->_errors[] = $this->l('The "when out of stock" behavior selection must be "deny order" for virtual products');
-				return false;
-			}
-
 			// Trick's
 			if ($edit == 1)
 			{
-				$id_product_download_attribute = ProductDownload::getIdFromIdAttribute((int) $product->id, $id_product_attribute);
-				$id_product_download = ($id_product_download_attribute) ? (int) $id_product_download_attribute : (int) Tools::getValue('virtual_product_id');
+				$id_product_download_attribute = ProductDownload::getIdFromIdAttribute((int)$product->id, $id_product_attribute);
+				$id_product_download = ($id_product_download_attribute) ? (int)$id_product_download_attribute : (int)Tools::getValue('virtual_product_id');
 			} else
 				$id_product_download = Tools::getValue('virtual_product_id');
 
@@ -1515,16 +1739,16 @@ class AdminProductsControllerCore extends AdminController
 				$filename = ProductDownload::getNewFilename();
 
 			$download = new ProductDownload($id_product_download);
-			$download->id_product = (int) $product->id;
-			$download->id_product_attribute = (int) $id_product_attribute;
+			$download->id_product = (int)$product->id;
+			$download->id_product_attribute = (int)$id_product_attribute;
 			$download->display_filename = $virtual_product_name;
 			$download->filename = $filename;
 			$download->date_add = date('Y-m-d H:i:s');
 			$download->date_expiration = $virtual_product_expiration_date ? $virtual_product_expiration_date.' 23:59:59' : '';
-			$download->nb_days_accessible = (int) $virtual_product_nb_days;
-			$download->nb_downloadable = (int) $virtual_product_nb_downloable;
+			$download->nb_days_accessible = (int)$virtual_product_nb_days;
+			$download->nb_downloadable = (int)$virtual_product_nb_downloable;
 			$download->active = 1;
-			$download->is_shareable = (int) $is_shareable;
+			$download->is_shareable = (int)$is_shareable;
 
 			if ($download->save())
 				return true;
@@ -1534,18 +1758,18 @@ class AdminProductsControllerCore extends AdminController
 			/* unactive download product if checkbox not checked */
 			if ($edit == 1)
 			{
-				$id_product_download_attribute = ProductDownload::getIdFromIdAttribute((int) $product->id, $id_product_attribute);
-				$id_product_download = ($id_product_download_attribute) ? (int) $id_product_download_attribute : (int) Tools::getValue('virtual_product_id');
+				$id_product_download_attribute = ProductDownload::getIdFromIdAttribute((int)$product->id, $id_product_attribute);
+				$id_product_download = ($id_product_download_attribute) ? (int)$id_product_download_attribute : (int)Tools::getValue('virtual_product_id');
 			}
 			else
 				$id_product_download = ProductDownload::getIdFromIdProduct($product->id);
 
 			if (!empty($id_product_download))
 			{
-				$productDownload = new ProductDownload($id_product_download);
-				$productDownload->date_expiration = date('Y-m-d H:i:s', time()-1);
-				$productDownload->active = 0;
-				return $productDownload->save();
+				$product_download = new ProductDownload($id_product_download);
+				$product_download->date_expiration = date('Y-m-d H:i:s', time()-1);
+				$product_download->active = 0;
+				return $product_download->save();
 			}
 		}
 		return false;
@@ -1555,10 +1779,10 @@ class AdminProductsControllerCore extends AdminController
 	{
 		if (!empty($id_product_attribute))
 		{
-			$productDownload = new ProductDownload($id_product_attribute);
-			$productDownload->date_expiration = date('Y-m-d H:i:s', time()-1);
-			$productDownload->active = 0;
-			return $productDownload->save();
+			$product_download = new ProductDownload($id_product_attribute);
+			$product_download->date_expiration = date('Y-m-d H:i:s', time()-1);
+			$product_download->active = 0;
+			return $product_download->save();
 		}
 		return false;
 	}
@@ -1574,7 +1798,7 @@ class AdminProductsControllerCore extends AdminController
 		if ($accessories = Tools::getValue('inputAccessories'))
 		{
 			$accessories_id = array_unique(explode('-', $accessories));
-			if (sizeof($accessories_id))
+			if (count($accessories_id))
 			{
 				array_pop($accessories_id);
 				$product->changeAccessories($accessories_id);
@@ -1600,7 +1824,7 @@ class AdminProductsControllerCore extends AdminController
 		/* Assign tags to this product */
 		foreach ($languages as $language)
 			if ($value = Tools::getValue('tags_'.$language['id_lang']))
-				$tagError &= Tag::addTags($language['id_lang'], (int)($product->id), $value);
+				$tagError &= Tag::addTags($language['id_lang'], (int)$product->id, $value);
 		return $tagError;
 	}
 
@@ -1608,61 +1832,57 @@ class AdminProductsControllerCore extends AdminController
 	{
 		// this is made to "save and stay" feature
 		$this->tpl_form_vars['show_product_tab_content'] = Tools::getValue('action');
-		if (Tools::getValue('id_product') || ((Tools::isSubmit('submitAddproduct') OR Tools::isSubmit('submitAddproductAndPreview') OR Tools::isSubmit('submitAddproductAndStay') OR Tools::isSubmit('submitSpecificPricePriorities') OR Tools::isSubmit('submitPriceAddition') OR Tools::isSubmit('submitPricesModification')) AND sizeof($this->_errors)) OR Tools::isSubmit('updateproduct') OR Tools::isSubmit('addproduct'))
-		{
-			$this->fields_form = array();
-			if (empty($this->action))
-				$this->action = 'Informations';
 
-			if(method_exists($this, 'initForm'.$this->action))
-				$this->tpl_form = 'products/'.strtolower($this->action).'.tpl';
+		if ($this->display == 'edit' || $this->display == 'add')
+		{
+			$this->addJS(_PS_JS_DIR_.'admin-products.js');
+			$this->fields_form = array();
+			if (empty($this->tab_display))
+				$this->tab_display = 'Informations';
+
+			if(method_exists($this, 'initForm'.$this->tab_display))
+				$this->tpl_form = 'products/'.strtolower($this->tab_display).'.tpl';
 
 			if ($this->ajax)
-			{
-				$this->display = 'edit';
 				$this->content_only = true;
-			}
 			else
 			{
 				$product_tabs = array();
-				// action defines which tab to display first
-				$action = $this->action;
-				if (empty($action) || !method_exists($this, 'initForm'.$action))
-					$action = 'Informations';
-				if (Tools::getValue('id_product'))
-				{
-					// i is used as product_tab id
-					$i = 0;
-					$advanced_stock_management_active = Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT');
+				// tab_display defines which tab to display first
+				if (empty($this->tab_display) || !method_exists($this, 'initForm'.$this->tab_display))
+					$this->tab_display = 'Informations';
 
-					foreach ($this->available_tabs as $product_tab)
-					{
-						if ($advanced_stock_management_active == 1 || ($advanced_stock_management_active == 0 && ($product_tab != 'Warehouses')))
-						{
-							$product_tabs[$product_tab] = array(
-								'id' => ++$i.'-'.$product_tab,
-								'selected' => (strtolower($product_tab) == strtolower($action)),
-								'name' => $this->available_tabs_lang[$product_tab],
-								'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.Tools::getValue('id_product').'&amp;action='.$product_tab,
-							);
-						}
-					}
-					$this->tpl_form_vars['newproduct'] = 0;
+				// i is used as product_tab id
+				$i = 0;
+				$advanced_stock_management_active = Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT');
+				$stock_management_active = Configuration::get('PS_STOCK_MANAGEMENT');
+
+				foreach ($this->available_tabs as $product_tab)
+				{
+					// if it's the quantities tab and stock management is disabled, continue
+					if ($stock_management_active == 0 && $product_tab == 'Quantities')
+						continue;
+
+					// if it's the warehouses tab and advanced stock management is disabled, continue
+					if ($advanced_stock_management_active == 0 && $product_tab == 'Warehouses')
+						continue;
+
+					$product_tabs[$product_tab] = array(
+						'id' => ++$i.'-'.$product_tab,
+						'selected' => (strtolower($product_tab) == strtolower($this->tab_display)),
+						'name' => $this->available_tabs_lang[$product_tab],
+						'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.Tools::getValue('id_product').'&amp;action='.$product_tab,
+					);
 				}
-				else
-					$this->tpl_form_vars['newproduct'] = 1;
 
 				$this->tpl_form_vars['product_tabs'] = $product_tabs;
-				$this->tpl_form_vars['tabs_toolbar_save_buttons'] = $this->tabs_toolbar_save_buttons;
 			}
 
-
-			$languages = Language::getLanguages(false);
-			$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
+			/*$languages = Language::getLanguages(false);
+			$default_language = (int)Configuration::get('PS_LANG_DEFAULT');*/
 		}
 		else
 		{
-			$this->display = 'list';
 			if ($id_category = (int)Tools::getValue('id_category'))
 				self::$currentIndex .= '&id_category='.$id_category;
 			$this->getList($this->context->language->id, !$this->context->cookie->__get($this->table.'Orderby') ? 'position' : null, !$this->context->cookie->__get($this->table.'Orderway') ? 'ASC' : null, 0, null, $this->context->shop->getID(true));
@@ -1690,9 +1910,8 @@ class AdminProductsControllerCore extends AdminController
 				$root_categ->dashes = str_repeat('&nbsp;-&nbsp;',$root_categ->level_depth);
 				$category_tree[] = $root_categ;
 
-				foreach ($children as $k => $categ)
+				foreach ($children as $categ)
 				{
-					$categ = new Category($categ['id_category'],$this->context->language->id);
 					$categ->selected = $this->_category->id_category == $categ->id;
 					$categ->dashes = str_repeat('&nbsp;-&nbsp;',$categ->level_depth);
 					$category_tree[] = $categ;
@@ -1708,11 +1927,15 @@ class AdminProductsControllerCore extends AdminController
 		parent::initContent();
 	}
 
-	public function initList()
+	public function renderList()
 	{
+		$this->addRowAction('edit');
+		$this->addRowAction('duplicate');
+		$this->addRowAction('delete');
+
 		if (!Tools::getValue('id_category'))
 			unset($this->fieldsDisplay['position']);
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function ajaxProcessProductManufacturers()
@@ -1744,7 +1967,7 @@ class AdminProductsControllerCore extends AdminController
 			$done[$current['infos']['id_parent']] = 0;
 		$done[$current['infos']['id_parent']] += 1;
 
-		$todo = sizeof($categories[$current['infos']['id_parent']]);
+		$todo = count($categories[$current['infos']['id_parent']]);
 		$doneC = $done[$current['infos']['id_parent']];
 
 		$level = $current['infos']['level_depth'] + 1;
@@ -1773,24 +1996,6 @@ class AdminProductsControllerCore extends AdminController
 		return $content;
 	}
 
-	public function displayErrors()
-	{
-		if ($this->includeSubTab('displayErrors'))
-			;
-		else if ($nbErrors = sizeof($this->_errors))
-		{
-			$this->content .= '<div class="error">
-				<img src="../img/admin/error2.png" />
-				'.$nbErrors.' '.($nbErrors > 1 ? $this->l('errors') : $this->l('error')).'
-				<ol>';
-			foreach ($this->_errors as $error)
-				$this->content .= '<li>'.$error.'</li>';
-			$this->content .= '
-				</ol>
-			</div>';
-		}
-	}
-
 	private function _displayDraftWarning($active)
 	{
 		$content = '<div class="warn draft" style="'.($active ? 'display:none' : '').'">
@@ -1809,53 +2014,53 @@ class AdminProductsControllerCore extends AdminController
 	public function initToolbar()
 	{
 		if ($this->display == 'edit' || $this->display == 'add')
+		{
 			if ($product = $this->loadObject(true))
 			{
-				if ($this->tabAccess['delete'])
-					$this->toolbar_btn['delete'] = array(
-						'short' => 'Delete',
-						'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id.'&amp;deleteproduct',
-						'desc' => $this->l('Delete this product'),
-						'confirm' => 1);
+				if ((bool)$product->id)
+				{
+					// adding button for delete this product
+					if ($this->tabAccess['delete']  && $this->display != 'add')
+						$this->toolbar_btn['delete'] = array(
+							'short' => 'Delete',
+							'href' => $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id.'&amp;deleteproduct',
+							'desc' => $this->l('Delete this product'),
+							'confirm' => 1);
 
-				if ($this->tabAccess['add'])
-					$this->toolbar_btn['duplicate'] = array(
-						'short' => 'Duplicate',
-						'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
-						'desc' => $this->l('Duplicate'),
-						'confirm' => 1
+					// adding button for duplicate this product
+					if ($this->tabAccess['add'] && $this->display != 'add')
+						$this->toolbar_btn['duplicate'] = array(
+							'short' => 'Duplicate',
+							'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
+							'desc' => $this->l('Duplicate'),
+							'confirm' => 1
+						);
+
+					// adding button for preview this product
+					if ($url_preview = $this->getPreviewUrl($product))
+						$this->toolbar_btn['preview'] = array(
+							'short' => 'Preview',
+							'href' => $url_preview,
+							'desc' => $this->l('prevdesc'),
+							'target' => true,
+							'class' => 'previewUrl'
+						);
+
+					// adding button for preview this product statistics
+					if (file_exists(_PS_MODULE_DIR_.'statsproduct/statsproduct.php') && $this->display != 'add')
+						$this->toolbar_btn['stats'] = array(
+						'short' => 'Statistics',
+						'href' => $this->context->link->getAdminLink('AdminStats').'&amp;module=statsproduct&amp;id_product='.$product->id,
+						'desc' => $this->l('Product sales'),
 					);
 
-				// @TODO navigation
-				if ($url_preview = $this->getPreviewUrl($product))
-					$this->toolbar_btn['preview'] = array(
-						'short' => 'Preview',
-						'href' => $url_preview,
-						'desc' => $this->l('prevdesc'),
-						'target' => true,
-						'class' => 'previewUrl'
+					// adding button for adding a new combination in Combinaition tab
+					$this->toolbar_btn['newCombination'] = array(
+						'short' => 'New combination',
+						'desc' => $this->l('New combination'),
+						'class' => 'toolbar-new'
 					);
-
-				if (file_exists(_PS_MODULE_DIR_.'statsproduct/statsproduct.php'))
-					$this->toolbar_btn['stats'] = array(
-					'short' => 'Statistics',
-					'href' => $this->context->link->getAdminLink('AdminStats').'&amp;module=statsproduct&amp;id_product='.$product->id,
-					'desc' => $this->l('View product sales'),
-				);
-
-				$this->toolbar_btn['cancel'] = array(
-					'short' => 'Close',
-					'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
-					'desc' => $this->l('Cancel'),
-					'confirm' => 1
-				);
-
-				if ($this->tabAccess['add'])
-					$this->toolbar_btn['new'] = array(
-					'short' => 'Create',
-					'href' => '#todo'.$this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$product->id,
-					'desc' => $this->l('Create'),
-				);
+				}
 
 				if ($this->tabAccess['edit'])
 				{
@@ -1872,63 +2077,85 @@ class AdminProductsControllerCore extends AdminController
 					);
 				}
 			}
+		}
+
 		parent::initToolbar();
 		$this->context->smarty->assign('toolbar_fix', 1);
 		$this->context->smarty->assign('show_toolbar', 1);
 		$this->context->smarty->assign('toolbar_btn', $this->toolbar_btn);
 	}
 
+	public function initToolbarTitle()
+	{
+		parent::initToolbarTitle();
+			if ($product = $this->loadObject(true))
+				if ((bool)$product->id)
+					$this->toolbar_title .= ' ('.$product->name[$this->context->language->id].')';
+	}
+
 	/**
-	 * initForm contains all necessary initialization needed for all tabs
+	 * renderForm contains all necessary initialization needed for all tabs
 	 *
 	 * @return void
 	 */
-	public function initForm()
+	public function renderForm()
 	{
-		if(!method_exists($this, 'initForm'.$this->action))
-			return "";
+		if(!method_exists($this, 'initForm'.$this->tab_display))
+			return;
+
+		// Used for loading each tab
+		$this->tpl_form_vars['tabs_preloaded'] = $this->tabs_preloaded;
+
+		$this->addJqueryUI('ui.datepicker');
 		// getLanguages init this->_languages
 		$this->getLanguages();
 		$languages = $this->_languages;
-		$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
+		$default_language = (int)(Configuration::get('PS_LANG_DEFAULT'));
 
 		$this->tpl_form_vars['currentIndex'] = self::$currentIndex;
-		$this->fields_form = array("pouet"=>"eh oui");
-		$this->addJs(_PS_JS_DIR_.'attributesBack.js');
+		$this->fields_form = array('');
 		$this->display = 'edit';
-		$this->addJqueryUI('ui.datepicker');
-		$this->addJqueryUI('ui.accordion');
-		$this->tpl_form_vars['pos_select'] = ($tab = Tools::getValue('tabs')) ? $tab : '0';
 		$this->tpl_form_vars['token'] = $this->token;
 		$this->tpl_form_vars['combinationImagesJs'] = $this->getCombinationImagesJs();
 		$id_product = Tools::getvalue('id_product');
 		$this->tpl_form_vars['form_action'] = $this->context->link->getAdminLink('AdminProducts').'&amp;id_product='.$id_product;
 		$this->tpl_form_vars['id_product'] = $id_product;
 
-		$this->tpl_form_vars['upload_max_filesize'] = ini_get('upload_max_filesize');
+		// Transform configuration option 'upload_max_filesize' in octets
+		$upload_max_filesize = Tools::getOctets(ini_get('upload_max_filesize'));
+
+		// Transform configuration option 'upload_max_filesize' in MegaOctets
+		$upload_max_filesize = ($upload_max_filesize / 1024) / 1024;
+
+		$this->tpl_form_vars['upload_max_filesize'] = $upload_max_filesize;
 		$this->tpl_form_vars['country_display_tax_label'] = $this->context->country->display_tax_label;
 
 		// let's calculate this once for all
 		if (!Validate::isLoadedObject($this->object) && Tools::getValue('id_product'))
 			$this->_errors[] = 'Unable to load object';
-	//		throw new PrestashopException('object not loaded');
 		else
 		{
 			$this->_displayDraftWarning($this->object->active);
-			$this->{'initForm'.$this->action}($this->object, $languages, $defaultLanguage);
+
+			$this->initPack($this->object);
+
+			$this->{'initForm'.$this->tab_display}($this->object, $languages, $default_language);
 			$this->tpl_form_vars['product'] = $this->object;
 			if ($this->ajax)
 				if (!isset($this->tpl_form_vars['custom_form']))
-					throw new PrestashopException('custom_form empty for action '.$this->action);
+					throw new PrestashopException('custom_form empty for action '.$this->tab_display);
 				else
 					return $this->tpl_form_vars['custom_form'];
 		}
-		return parent::initForm();
+
+		$parent = parent::renderForm();
+		$this->addJqueryPlugin(array('autocomplete', 'fancybox', 'typewatch'));
+		return $parent;
 	}
 
 	public function getPreviewUrl(Product $product)
 	{
-		if (!(bool)$this->context->shop->virtual_uri)
+		if (!(bool)$this->context->shop->virtual_uri && $this->context->shop->theme_name != 'default')
 			return false;
 
 		$preview_url = $this->context->link->getProductLink(
@@ -1956,11 +2183,10 @@ class AdminProductsControllerCore extends AdminController
 	}
 
 	/**
-	* Post traitment for accounting
+	* Post treatment for accounting
 	*/
-	public function postProcessFormAccounting()
+	public function processAccounting($token)
 	{
-
 		if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
 		{
 			$id_shop = $this->context->shop->getID();
@@ -1988,12 +2214,20 @@ class AdminProductsControllerCore extends AdminController
 	}
 
 	/**
-	* Post traitment for suppliers
+	* Post treatment for suppliers
 	*/
-	public function postProcessFormSuppliers()
+	public function processSuppliers($token)
 	{
 		if (Validate::isLoadedObject($product = new Product((int)Tools::getValue('id_product'))))
 		{
+			// Get all id_product_attribute
+			$attributes = $product->getAttributesResume($this->context->language->id);
+			if (empty($attributes))
+				$attributes[] = array(
+					'id_product_attribute' => 0,
+					'attribute_designation' => ''
+				);
+
 			// Get all available suppliers
 			$suppliers = Supplier::getSuppliers();
 
@@ -2012,7 +2246,7 @@ class AdminProductsControllerCore extends AdminController
 					$suppliers_to_associate[] = $supplier['id_supplier'];
 
 			// Delete already associated suppliers if needed
-			foreach ($associated_suppliers as $key => &$associated_supplier)
+			foreach ($associated_suppliers as $key => $associated_supplier)
 				if (!in_array($associated_supplier->id_supplier, $suppliers_to_associate))
 				{
 					$associated_supplier->delete();
@@ -2039,29 +2273,43 @@ class AdminProductsControllerCore extends AdminController
 				}
 			}
 
-			// Manage defaut supplier for product
-			if ($new_default_supplier != 0 && $new_default_supplier != $product->id_supplier && Supplier::supplierExists($new_default_supplier))
-			{
-				$product->id_supplier = $new_default_supplier;
-				$product->update();
-			}
-
 			$this->confirmations[] = $this->l('Suppliers of the product have been updated');
 
-			// Get all id_product_attribute
-			$attributes = $product->getAttributesResume($this->context->language->id);
-			if (empty($attributes))
-				$attributes[] = array(
-					'id_product_attribute' => 0,
-					'attribute_designation' => ''
-				);
-
-			// Manage references
+			// Manage references and prices
 			foreach ($attributes as $attribute)
 				foreach ($associated_suppliers as $supplier)
-					if (Tools::isSubmit('supplier_reference_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier))
+					if (Tools::isSubmit('supplier_reference_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier)
+						||
+						(
+							Tools::isSubmit('product_price_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier)
+							&&
+							Tools::isSubmit('product_price_currency_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier)
+						))
 					{
-						$reference = Tools::getValue('supplier_reference_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier, '');
+						$reference = pSQL(
+							Tools::getValue(
+								'supplier_reference_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier,
+								''
+							)
+						);
+
+						$price = (float)str_replace(
+							array(' ', ','),
+							array('', '.'),
+							Tools::getValue(
+								'product_price_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier,
+								0
+							)
+						);
+						$price = Tools::ps_round($price, 6);
+
+						$id_currency = (int)Tools::getValue(
+							'product_price_currency_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier,
+							0
+						);
+
+						if ($id_currency <= 0 || ( !($result = Currency::getCurrency($id_currency)) || empty($result) ))
+							$this->_errors[] = Tools::displayError($this->l('The selected currency is not valid.'));
 
 						if (!empty($reference))
 						{
@@ -2073,33 +2321,80 @@ class AdminProductsControllerCore extends AdminController
 								$product_supplier_entity = new ProductSupplier();
 								$product_supplier_entity->id_product = $product->id;
 								$product_supplier_entity->id_product_attribute = $attribute['id_product_attribute'];
-								$product_supplier_entity->id_supplier = $supplier->id_supplier;
-								$product_supplier_entity->product_supplier_reference = pSQL($reference);
+								$product_supplier_entity->id_supplier = (int)$supplier->id_supplier;
+								$product_supplier_entity->product_supplier_reference = $reference;
+								$product_supplier_entity->id_currency = $id_currency;
+								$product_supplier_entity->product_supplier_price_te = $price;
 								$product_supplier_entity->save();
 							}
 							else
 							{
 								//update existing record
 								$product_supplier_entity = new ProductSupplier($existing_id);
-								$reference = pSQL($reference);
 
-								if ($product_supplier_entity->product_supplier_reference != $reference)
+								if (($product_supplier_entity->product_supplier_reference != $reference)
+									||
+									($product_supplier_entity->product_supplier_price_te != $price)
+									||
+									($product_supplier_entity->id_currency != $id_currency))
 								{
-									$product_supplier_entity->product_supplier_reference = pSQL($reference);
+									$product_supplier_entity->product_supplier_reference = $reference;
+									$product_supplier_entity->id_currency = $id_currency;
+									$product_supplier_entity->product_supplier_price_te = $price;
 									$product_supplier_entity->update();
+								}
+							}
+
+							if ($product->id_supplier == $supplier->id_supplier)
+							{
+								if ((int)$attribute['id_product_attribute'] > 0)
+								{
+									Db::getInstance()->execute('
+										UPDATE '._DB_PREFIX_.'product_attribute
+										SET supplier_reference = "'.$reference.'",
+										wholesale_price = '.(float)Tools::convertPrice($price, $id_currency).'
+										WHERE id_product = '.(int)$product->id.'
+										AND id_product_attribute = '.(int)$attribute['id_product_attribute'].'
+										LIMIT 1
+									');
+								}
+								else
+								{
+									$product->wholesale_price = Tools::convertPrice($price, $id_currency); //converted in the default currency
+									$product->supplier_reference = $reference;
+									$update_product = true;
 								}
 							}
 						}
 					}
+					else if (Tools::isSubmit('supplier_reference_'.$product->id.'_'.$attribute['id_product_attribute'].'_'.$supplier->id_supplier))
+					{
+						//int attribute with default values if possible
+						if ((int)$attribute['id_product_attribute'] > 0)
+						{
+							$product_supplier = new ProductSupplier();
+							$product_supplier->id_product = $product->id;
+							$product_supplier->id_product_attribute = (int)$attribute['id_product_attribute'];
+							$product_supplier->id_supplier = $supplier->id_supplier;
+							$product_supplier->save();
+						}
+					}
+
+			// Manage defaut supplier for product
+			if ($new_default_supplier != 0 && $new_default_supplier != $product->id_supplier && Supplier::supplierExists($new_default_supplier))
+			{
+				$product->id_supplier = $new_default_supplier;
+				$product->update();
+			}
 
 			$this->confirmations[] = $this->l('Supplier Reference(s) of the product have been updated');
 		}
 	}
 
 	/**
-	* Post traitment for warehouses
+	* Post treatment for warehouses
 	*/
-	public function postProcessFormWarehouses()
+	public function processWarehouses($token)
 	{
 		if (Validate::isLoadedObject($product = new Product((int)Tools::getValue('id_product'))))
 		{
@@ -2124,7 +2419,7 @@ class AdminProductsControllerCore extends AdminController
 			{
 				foreach ($warehouses as $warehouse)
 				{
-					$key = $warehouse['id_warehouse'].'_'.$attribute['id_product'].'_'.$attribute['id_product_attribute'];
+					$key = $warehouse['id_warehouse'].'_'.$product->id.'_'.$attribute['id_product_attribute'];
 
 					// get elements to manage
 					if (Tools::isSubmit('check_warehouse_'.$key))
@@ -2181,64 +2476,145 @@ class AdminProductsControllerCore extends AdminController
 	/**
 	* Init data for accounting
 	*/
-	public function initFormAccounting($product, $t)
-	{
-		$error = '';
-		$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
-		$detail = array();
-
-		if (count($this->context->shop->getListOfID()) > 1)
-			$error = $this->l('Please select the shop you want to configure');
-		else
-		{
-			$zones = Zone::getZones();
-			$id_shop = $this->context->shop->getID();
-
-			// Set default zone value to the shop	and sort it
-			foreach($zones as $zone)
-			{
-				$detail['zones'][$zone['id_zone']]['name'] = $zone['name'];
-				$detail['zones'][$zone['id_zone']]['account_number'] = '';
-			}
-			$zoneAccountNumberList = Accounting::getProductAccountNumberZoneShop($product->id, $id_shop);
-
-			// Set Account number to the id_zone for an id_shop if exist
-			foreach($zoneAccountNumberList as $zone)
-				$detail['zones'][$zone['id_zone']]['account_number'] = $zone['account_number'];
-		}
-
-		$this->context->smarty->assign(array(
-			'productAccountNumberList' => $detail,
-			'shopName' => $this->context->shop->name,
-			'error' => $error,
-		));
-		$this->tpl_form_vars['custom_form'] = $this->context->smarty->fetch('products/accounting.tpl');
-	}
-
-	public function initFormPrices($obj, $languages, $defaultLanguage)
+	public function initFormAccounting($obj)
 	{
 		$data = $this->context->smarty->createData();
 
-		if ($this->object->id)
+		if ($obj->id)
+		{
+			$error = '';
+			$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
+			$detail = array();
+
+			if (count($this->context->shop->getListOfID()) > 1)
+				$error = $this->l('Please select the shop you want to configure');
+			else
+			{
+				$zones = Zone::getZones();
+				$id_shop = $this->context->shop->getID();
+
+				// Set default zone value to the shop	and sort it
+				foreach($zones as $zone)
+				{
+					$detail['zones'][$zone['id_zone']]['name'] = $zone['name'];
+					$detail['zones'][$zone['id_zone']]['account_number'] = '';
+				}
+				$zoneAccountNumberList = Accounting::getProductAccountNumberZoneShop($obj->id, $id_shop);
+
+				// Set Account number to the id_zone for an id_shop if exist
+				foreach($zoneAccountNumberList as $zone)
+					$detail['zones'][$zone['id_zone']]['account_number'] = $zone['account_number'];
+			}
+
+			$data->assign(array(
+				'productAccountNumberList' => $detail,
+				'shopName' => $this->context->shop->name,
+				'error' => $error,
+				'product' => $obj
+			));
+		}
+		else
+			$this->displayWarning($this->l('You must save this product before manage accounting.'));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function initFormAssociations($obj)
+	{
+		$product = $obj;
+		$data = $this->context->smarty->createData();
+		// Prepare Categories tree for display in Associations tab
+		$default_category = Tools::getValue('id_category', 1);
+
+		if (!$product->id)
+			$selected_cat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->default_form_language);
+		else
+		{
+			if (Tools::isSubmit('categoryBox'))
+				$selected_cat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->default_form_language);
+			else
+				$selected_cat = Product::getProductCategoriesFull($product->id, $this->default_form_language);
+		}
+
+		$translations = array(
+			'Home' => $this->l('Home'),
+			'selected' => $this->l('selected'),
+			'Collapse All' => $this->l('Collapse All'),
+			'Expand All' => $this->l('Expand All'),
+			'Check All' => $this->l('Check All'),
+			'Uncheck All'  => $this->l('Uncheck All'),
+			'search' => $this->l('Search a category')
+		);
+
+		// Multishop block
+		$data->assign('feature_shop_active', Shop::isFeatureActive());
+		$helper = new Helper();
+		if ($this->object && $this->object->id)
+			$helper->id = $this->object->id;
+		else
+			$helper->id = null;
+		$helper->table = $this->table;
+		$helper->identifier = $this->identifier;
+
+		$data->assign('displayAssoShop', $helper->renderAssoShop());
+
+		// Accessories block
+		$accessories = Product::getAccessoriesLight($this->context->language->id, $product->id);
+
+		if ($post_accessories = Tools::getValue('inputAccessories'))
+		{
+			$post_accessories_tab = explode('-', Tools::getValue('inputAccessories'));
+			foreach ($post_accessories_tab as $accessory_id)
+				if (!$this->haveThisAccessory($accessory_id, $accessories) && $accessory = Product::getAccessoryById($accessory_id))
+					$accessories[] = $accessory;
+		}
+		$data->assign('accessories', $accessories);
+
+		$product->manufacturer_name = Manufacturer::getNameById($product->id_manufacturer);
+
+		$data->assign(array('default_category' => $default_category,
+					'selected_cat_ids' => implode(',', array_keys($selected_cat)),
+					'selected_cat' => $selected_cat,
+					'category_tree' => Helper::renderAdminCategorieTree($translations, $selected_cat, 'categoryBox', false, true),
+				  	'product' => $product,
+					'link' => $this->context->link
+		));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function initFormPrices($obj)
+	{
+		$data = $this->context->smarty->createData();
+		$product = $obj;
+		if ($obj->id)
 		{
 			$shops = Shop::getShops();
 			$countries = Country::getCountries($this->context->language->id);
 			$groups = Group::getGroups($this->context->language->id);
 			$currencies = Currency::getCurrencies();
-			$currency =
-			$attributes = $this->object->getAttributesGroups((int)$this->context->language->id);
+			$attributes = $obj->getAttributesGroups((int)$this->context->language->id);
 			$combinations = array();
-			foreach($attributes as $attribute)
+			foreach ($attributes as $attribute)
 			{
 				$combinations[$attribute['id_product_attribute']]['id_product_attribute'] = $attribute['id_product_attribute'];
 				if (!isset($combinations[$attribute['id_product_attribute']]['attributes']))
 					$combinations[$attribute['id_product_attribute']]['attributes'] = '';
 				$combinations[$attribute['id_product_attribute']]['attributes'] .= $attribute['attribute_name'].' - ';
 
-				$combinations[$attribute['id_product_attribute']]['price'] = Tools::displayPrice(Tools::convertPrice(Product::getPriceStatic((int)$this->object->id, false, $attribute['id_product_attribute']), $this->context->currency), $this->context->currency);
+				$combinations[$attribute['id_product_attribute']]['price'] = Tools::displayPrice(
+					Tools::convertPrice(
+						Product::getPriceStatic((int)$obj->id, false, $attribute['id_product_attribute']),
+						$this->context->currency
+					), $this->context->currency
+				);
 			}
+
 			foreach ($combinations as &$combination)
 				$combination['attributes'] = rtrim($combination['attributes'], ' - ');
+			$data->assign('specificPriceModificationForm', $this->_displaySpecificPriceModificationForm(
+				$this->context->currency, $shops, $currencies, $countries, $groups)
+			);
 
 			$data->assign(array(
 				'shops' => $shops,
@@ -2246,26 +2622,179 @@ class AdminProductsControllerCore extends AdminController
 				'countries' => $countries,
 				'groups' => $groups,
 				'combinations' => $combinations,
-				'product' => $this->object
+				'product' => $product,
+				'multi_shop' => Shop::isFeatureActive(),
+				'link' => new Link()
 			));
-
-			$data->assign('country_display_tax_label', $this->context->country->display_tax_label);
-			$data->assign('specificPriceModificationForm', $this->_displaySpecificPriceModificationForm($this->context->currency, $shops, $currencies, $countries, $groups));
 		}
 		else
-			$data->assign('content', '<b>'.$this->l('You must save this product before adding specific prices').'.</b>');
+			$this->displayWarning($this->l('You must save this product before adding specific prices'));
 
-		$data->assign('currency', $this->context->currency);
+		// prices part
+		$data->assign('link', $this->context->link);
+		$data->assign('currency', $currency = $this->context->currency);
+		$data->assign('tax_rules_groups', TaxRulesGroup::getTaxRulesGroups(true));
+		$data->assign('taxesRatesByGroup', TaxRulesGroup::getAssociatedTaxRatesByIdCountry($this->context->country->id));
+		$data->assign('ecotaxTaxRate', Tax::getProductEcotaxRate());
+		$data->assign('tax_exclude_taxe_option', Tax::excludeTaxeOption());
+
+		$data->assign('ps_use_ecotax', Configuration::get('PS_USE_ECOTAX'));
+		if ($product->unit_price_ratio != 0)
+			$data->assign('unit_price', Tools::ps_round($product->price / $product->unit_price_ratio, 2));
+		else
+			$data->assign('unit_price', 0);
+
+		$data->assign('ps_tax', Configuration::get('PS_TAX'));
+
+		$data->assign('country_display_tax_label', $this->context->country->display_tax_label);
+
+		$unities = array(
+			'PS_WEIGHT_UNIT' => Configuration::get('PS_WEIGHT_UNIT'),
+			'PS_DISTANCE_UNIT' => Configuration::get('PS_DISTANCE_UNIT'),
+			'PS_VOLUME_UNIT' => Configuration::get('PS_VOLUME_UNIT'),
+			'PS_DIMENSION_UNIT' => Configuration::get('PS_DIMENSION_UNIT')
+		);
+
+		$data->assign(array(
+			'currency', $this->context->currency,
+			'product' => $product,
+			'unities' => $unities,
+			'token' => $this->token
+		));
 
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
-	private function _getFinalPrice($specificPrice, $productPrice, $taxRate)
+	public function initFormSeo($product, $languages, $default_language)
 	{
-		$price = Tools::ps_round((float)($specificPrice['price']) ? $specificPrice['price'] : $productPrice, 2);
-		if (!(float)($specificPrice['reduction']))
-			return (float)($specificPrice['price']);
-		return ($specificPrice['reduction_type'] == 'amount') ? ($price - $specificPrice['reduction'] / (1 + $taxRate / 100)) : ($price - $price * $specificPrice['reduction']);
+		$data = $this->context->smarty->createData();
+
+		$data->assign(array(
+			'product' => $product,
+			'languages' => $languages,
+			'default_language' => $default_language,
+			'ps_ssl_enabled' => Configuration::get('PS_SSL_ENABLED')
+		));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function initFormPack($product, $languages, $default_language)
+	{
+		$data = $this->context->smarty->createData();
+
+		$product->packItems = Pack::getItems($product->id, $this->context->language->id);
+
+		$input_pack_items = '';
+		if (Tools::getValue('inputPackItems'))
+			$input_pack_items = Tools::getValue('inputPackItems');
+		else
+			foreach ($product->packItems as $pack_item)
+				$input_pack_items .= $pack_item->pack_quantity.'x'.$pack_item->id.'-';
+
+		$input_namepack_items = '';
+		if (Tools::getValue('namePackItems'))
+			$input_namepack_items = Tools::getValue('namePackItems');
+		else
+			foreach ($product->packItems as $pack_item)
+				$input_namepack_items .= $pack_item->pack_quantity.' x '.$pack_item->name.'¤';
+
+		$data->assign(array(
+			'product' => $product,
+			'languages' => $languages,
+			'default_language' => $default_language,
+			'ps_ssl_enabled' => Configuration::get('PS_SSL_ENABLED'),
+			'is_pack' => ($product->id && Pack::isPack($product->id)) || Tools::getValue('ppack'),
+			'input_pack_items' => $input_pack_items,
+			'input_namepack_items' => $input_namepack_items
+		));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function initFormVirtualProduct($product, $languages, $default_language)
+	{
+		$data = $this->context->smarty->createData();
+
+		$currency = $this->context->currency;
+
+		/*
+		* Form for adding a virtual product like software, mp3, etc...
+		*/
+		$product_download = new ProductDownload();
+		if ($id_product_download = $product_download->getIdFromIdProduct($this->getFieldValue($product, 'id')))
+			$product_download = new ProductDownload($id_product_download);
+		$product->{'productDownload'} = $product_download;
+
+		// @todo handle is_virtual with the value of the product
+		$exists_file = realpath(_PS_DOWNLOAD_DIR_).'/'.$product->productDownload->filename;
+		$data->assign('product_downloaded', $product->productDownload->id && !empty($product->productDownload->display_filename));
+
+		if (!file_exists($exists_file)
+			&& !empty($product->productDownload->display_filename)
+			&& !empty($product->cache_default_attribute))
+		{
+			$msg = sprintf(Tools::displayError('This file "%s" is missing'), $product->productDownload->display_filename);
+		}
+		else
+			$msg = '';
+
+		$data->assign('download_product_file_missing', $msg);
+		$data->assign('download_dir_writable', ProductDownload::checkWritableDir());
+
+		if (empty($product->cache_default_attribute))
+		{
+			$data->assign('show_file_input', !strval(Tools::getValue('virtual_product_filename')) || $product->productDownload->id > 0);
+			// found in informations and combination : to merge
+			$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename')));
+			$display_filename = ($product->productDownload->id > 0) ? $product->productDownload->display_filename : htmlentities(Tools::getValue('virtual_product_name'), ENT_COMPAT, 'UTF-8');
+
+			if (!$product->productDownload->id || !$product->productDownload->active)
+				$hidden = 'display:none;';
+			else
+				$hidden = '';
+
+			$product->productDownload->nb_downloadable = ($product->productDownload->id > 0) ? $product->productDownload->nb_downloadable : htmlentities(Tools::getValue('virtual_product_nb_downloable'), ENT_COMPAT, 'UTF-8');
+			$product->productDownload->date_expiration = ($product->productDownload->id > 0) ? ((!empty($product->productDownload->date_expiration) && $product->productDownload->date_expiration != '0000-00-00 00:00:00') ? date('Y-m-d', strtotime($product->productDownload->date_expiration)) : '' ) : htmlentities(Tools::getValue('virtual_product_expiration_date'), ENT_COMPAT, 'UTF-8');
+			$product->productDownload->nb_days_accessible = ($product->productDownload->id > 0) ? $product->productDownload->nb_days_accessible : htmlentities(Tools::getValue('virtual_product_nb_days'), ENT_COMPAT, 'UTF-8');
+			$product->productDownload->is_shareable = $product->productDownload->id > 0 && $product->productDownload->is_shareable;
+		}
+		else
+		{
+			$error = '';
+			$product_attribute = ProductDownload::getAttributeFromIdProduct($this->getFieldValue($product, 'id'));
+			foreach ($product_attribute as $p)
+			{
+				$product_download_attribute = new ProductDownload($p['id_product_download']);
+				$exists_file2 = realpath(_PS_DOWNLOAD_DIR_).'/'.$product_download_attribute->filename;
+				if (!file_exists($exists_file2) && !empty($product_download_attribute->id_product_attribute))
+				{
+					$msg = sprintf(Tools::displayError('This file "%s" is missing'), $product_download_attribute->display_filename);
+					$error .= '<p class="alert" id="file_missing">
+						<b>'.$msg.' :<br/>
+						'.realpath(_PS_DOWNLOAD_DIR_).'/'.$product_download_attribute->filename.'</b>
+					</p>';
+				}
+			}
+			$data->assign('error_product_download', $error);
+		}
+
+		$data->assign('ad', dirname($_SERVER['PHP_SELF']));
+		$data->assign('product', $product);
+		$data->assign('token', $this->token);
+		$data->assign('currency', $currency);
+		$data->assign($this->tpl_form_vars);
+		$data->assign('link', $this->context->link);
+		$this->tpl_form_vars['product'] = $product;
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	private function _getFinalPrice($specific_price, $productPrice, $taxRate)
+	{
+		$price = Tools::ps_round((float)($specific_price['price']) ? $specific_price['price'] : $productPrice, 2);
+		if (!(float)($specific_price['reduction']))
+			return (float)($specific_price['price']);
+		return ($specific_price['reduction_type'] == 'amount') ? ($price - $specific_price['reduction'] / (1 + $taxRate / 100)) : ($price - $price * $specific_price['reduction']);
 	}
 
 	protected function _displaySpecificPriceModificationForm($defaultCurrency, $shops, $currencies, $countries, $groups)
@@ -2273,8 +2802,8 @@ class AdminProductsControllerCore extends AdminController
 		$content = '';
 		if (!($obj = $this->loadObject()))
 			return;
-		$specificPrices = SpecificPrice::getByProductId((int)($obj->id));
-		$specificPricePriorities = SpecificPrice::getPriority((int)($obj->id));
+		$specific_prices = SpecificPrice::getByProductId((int)$obj->id);
+		$specific_price_priorities = SpecificPrice::getPriority((int)$obj->id);
 
 		$taxRate = $obj->getTaxesRate(Address::initialize());
 
@@ -2297,29 +2826,29 @@ class AdminProductsControllerCore extends AdminController
 			$tmp[$group['id_group']] = $group;
 		$groups = $tmp;
 
-		if (!is_array($specificPrices) || !sizeof($specificPrices))
+		if (!is_array($specific_prices) || !count($specific_prices))
 			$content .= '
 				<tr>
-					<td colspan="9">'.$this->l('No specific prices').'</td>
+					<td colspan="13">'.$this->l('No specific prices').'</td>
 				</tr>';
 		else
 		{
 			$i = 0;
-			foreach ($specificPrices as $specificPrice)
+			foreach ($specific_prices as $specific_price)
 			{
-				$current_specific_currency = $currencies[($specificPrice['id_currency'] ? $specificPrice['id_currency'] : $defaultCurrency->id)];
-				if ($specificPrice['reduction_type'] == 'percentage')
-					$reduction = ($specificPrice['reduction'] * 100).' %';
+				$current_specific_currency = $currencies[($specific_price['id_currency'] ? $specific_price['id_currency'] : $defaultCurrency->id)];
+				if ($specific_price['reduction_type'] == 'percentage')
+					$reduction = ($specific_price['reduction'] * 100).' %';
 				else
-					$reduction = Tools::displayPrice(Tools::ps_round($specificPrice['reduction'], 2), $current_specific_currency);
+					$reduction = Tools::displayPrice(Tools::ps_round($specific_price['reduction'], 2), $current_specific_currency);
 
-				if ($specificPrice['from'] == '0000-00-00 00:00:00' && $specificPrice['to'] == '0000-00-00 00:00:00')
+				if ($specific_price['from'] == '0000-00-00 00:00:00' && $specific_price['to'] == '0000-00-00 00:00:00')
 					$period = $this->l('Unlimited');
 				else
-					$period = $this->l('From').' '.($specificPrice['from'] != '0000-00-00 00:00:00' ? $specificPrice['from'] : '0000-00-00 00:00:00').'<br />'.$this->l('To').' '.($specificPrice['to'] != '0000-00-00 00:00:00' ? $specificPrice['to'] : '0000-00-00 00:00:00');
-				if ($specificPrice['id_product_attribute'])
+					$period = $this->l('From').' '.($specific_price['from'] != '0000-00-00 00:00:00' ? $specific_price['from'] : '0000-00-00 00:00:00').'<br />'.$this->l('To').' '.($specific_price['to'] != '0000-00-00 00:00:00' ? $specific_price['to'] : '0000-00-00 00:00:00');
+				if ($specific_price['id_product_attribute'])
 				{
-					$combination = new Combination((int)$specificPrice['id_product_attribute']);
+					$combination = new Combination((int)$specific_price['id_product_attribute']);
 					$attributes = $combination->getAttributesName((int)$this->context->language->id);
 					$attributes_name = '';
 					foreach ($attributes as $attribute)
@@ -2328,21 +2857,36 @@ class AdminProductsControllerCore extends AdminController
 				}
 				else
 					$attributes_name = $this->l('All combinations');
+
+				$rule = new SpecificPriceRule((int)$specific_price['id_specific_price_rule']);
+				$rule_name = ($rule->id ? $rule->name : '--');
+
+				if ($specific_price['id_customer'])
+				{
+					$customer = new Customer((int)$specific_price['id_customer']);
+					if (Validate::isLoadedObject($customer))
+						$customer_full_name = $customer->firstname.' '.$customer->lastname;
+					unset($customer);
+				}
+
 				$content .= '
 				<tr '.($i%2 ? 'class="alt_row"' : '').'>
+					<td class="cell border">'.$rule_name.'</td>
 					<td class="cell border">'.$attributes_name.'</td>
-					<td class="cell border">'.($specificPrice['id_shop'] ? $shops[$specificPrice['id_shop']]['name'] : $this->l('All shops')).'</td>
-					<td class="cell border">'.($specificPrice['id_currency'] ? $currencies[$specificPrice['id_currency']]['name'] : $this->l('All currencies')).'</td>
-					<td class="cell border">'.($specificPrice['id_country'] ? $countries[$specificPrice['id_country']]['name'] : $this->l('All countries')).'</td>
-					<td class="cell border">'.($specificPrice['id_group'] ? $groups[$specificPrice['id_group']]['name'] : $this->l('All groups')).'</td>
-					<td class="cell border">'.Tools::displayPrice((float)$specificPrice['price'], $current_specific_currency).'</td>
+					'.(Shop::isFeatureActive() ? '<td class="cell border">'.($specific_price['id_shop'] ? $shops[$specific_price['id_shop']]['name'] : $this->l('All shops')).'</td>' : '').'
+					<td class="cell border">'.($specific_price['id_currency'] ? $currencies[$specific_price['id_currency']]['name'] : $this->l('All currencies')).'</td>
+					<td class="cell border">'.($specific_price['id_country'] ? $countries[$specific_price['id_country']]['name'] : $this->l('All countries')).'</td>
+					<td class="cell border">'.($specific_price['id_group'] ? $groups[$specific_price['id_group']]['name'] : $this->l('All groups')).'</td>
+					<td class="cell border" title="'.$this->l('ID:').' '.$specific_price['id_customer'].'">'.(isset($customer_full_name) ? $customer_full_name : $this->l('All customers')).'</td>
+					<td class="cell border">'.Tools::displayPrice((float)$specific_price['price'], $current_specific_currency).'</td>
 					<td class="cell border">'.$reduction.'</td>
 					<td class="cell border">'.$period.'</td>
-					<td class="cell border">'.$specificPrice['from_quantity'].'</th>
-					<td class="cell border"><b>'.Tools::displayPrice(Tools::ps_round((float)($this->_getFinalPrice($specificPrice, (float)($obj->price), $taxRate)), 2), $current_specific_currency).'</b></td>
-					<td class="cell border"><a href="'.self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&id_specific_price='.(int)($specificPrice['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a></td>
+					<td class="cell border">'.$specific_price['from_quantity'].'</th>
+					<td class="cell border"><b>'.Tools::displayPrice(Tools::ps_round((float)($this->_getFinalPrice($specific_price, (float)($obj->price), $taxRate)), 2), $current_specific_currency).'</b></td>
+					<td class="cell border">'.(!$rule->id ? '<a href="'.self::$currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&action=Prices&id_specific_price='.(int)($specific_price['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a>': '').'</td>
 				</tr>';
 				$i++;
+				unset($customer_full_name);
 			}
 		}
 		$content .= '
@@ -2368,40 +2912,44 @@ class AdminProductsControllerCore extends AdminController
 		</script>
 		';
 
+		// Not use id_customer
+		unset($specific_price_priorities[0]);
+		sort($specific_price_priorities);
 		$content .= '
 		<div class="separation"></div>
 		<h4>'.$this->l('Priorities management').'</h4>
-		<div class="hint clear" style="display:block;">
-				'.$this->l('Sometimes one customer could fit in multiple rules, priorities allows you to define which rule to apply.').'
-		</div>
-	<br />
+		<div class="hint" style="display:block;min-height:0;">
+				'.$this->l('Sometimes one customer can fit in multiple specific prices rules. Priorities allow you to define which rule applies to the customer.').'
+		</div
+	<br /><br />
 		<label>'.$this->l('Priorities:').'</label>
 		<div class="margin-form">
 			<select name="specificPricePriority[]">
-				<option value="id_shop"'.($specificPricePriorities[0] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
-				<option value="id_currency"'.($specificPricePriorities[0] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
-				<option value="id_country"'.($specificPricePriorities[0] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
-				<option value="id_group"'.($specificPricePriorities[0] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
-			</select>
-			<select name="specificPricePriority[]">
-				<option value="id_shop"'.($specificPricePriorities[1] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
-				<option value="id_currency"'.($specificPricePriorities[1] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
-				<option value="id_country"'.($specificPricePriorities[1] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
-				<option value="id_group"'.($specificPricePriorities[1] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
+				<option value="id_shop"'.($specific_price_priorities[0] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
+				<option value="id_currency"'.($specific_price_priorities[0] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
+				<option value="id_country"'.($specific_price_priorities[0] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
+				<option value="id_group"'.($specific_price_priorities[0] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
 			</select>
 			&gt;
 			<select name="specificPricePriority[]">
-				<option value="id_shop"'.($specificPricePriorities[2] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
-				<option value="id_currency"'.($specificPricePriorities[2] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
-				<option value="id_country"'.($specificPricePriorities[2] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
-				<option value="id_group"'.($specificPricePriorities[2] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
+				<option value="id_shop"'.($specific_price_priorities[1] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
+				<option value="id_currency"'.($specific_price_priorities[1] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
+				<option value="id_country"'.($specific_price_priorities[1] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
+				<option value="id_group"'.($specific_price_priorities[1] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
 			</select>
 			&gt;
 			<select name="specificPricePriority[]">
-				<option value="id_shop"'.($specificPricePriorities[3] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
-				<option value="id_currency"'.($specificPricePriorities[3] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
-				<option value="id_country"'.($specificPricePriorities[3] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
-				<option value="id_group"'.($specificPricePriorities[3] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
+				<option value="id_shop"'.($specific_price_priorities[2] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
+				<option value="id_currency"'.($specific_price_priorities[2] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
+				<option value="id_country"'.($specific_price_priorities[2] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
+				<option value="id_group"'.($specific_price_priorities[2] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
+			</select>
+			&gt;
+			<select name="specificPricePriority[]">
+				<option value="id_shop"'.($specific_price_priorities[3] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
+				<option value="id_currency"'.($specific_price_priorities[3] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
+				<option value="id_country"'.($specific_price_priorities[3] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
+				<option value="id_group"'.($specific_price_priorities[3] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
 			</select>
 		</div>
 
@@ -2434,7 +2982,7 @@ class AdminProductsControllerCore extends AdminController
 		return implode('¤', $customizableFieldIds);
 	}
 
-	private function _displayLabelField(&$label, $languages, $defaultLanguage, $type, $fieldIds, $id_customization_field)
+	private function _displayLabelField(&$label, $languages, $default_language, $type, $fieldIds, $id_customization_field)
 	{
 		$content = '';
 		$fieldsName = 'label_'.$type.'_'.(int)($id_customization_field);
@@ -2444,7 +2992,7 @@ class AdminProductsControllerCore extends AdminController
 		{
 			$fieldName = 'label_'.$type.'_'.(int)($id_customization_field).'_'.(int)($language['id_lang']);
 			$text = (isset($label[(int)($language['id_lang'])])) ? $label[(int)($language['id_lang'])]['name'] : '';
-			$content .= '<div class="lang_'.$language['id_lang'].'" id="'.$fieldName.'" style="display: '.((int)($language['id_lang']) == (int)($defaultLanguage) ? 'block' : 'none').'; clear: left; float: left; padding-bottom: 4px;">
+			$content .= '<div class="lang_'.$language['id_lang'].'" id="'.$fieldName.'" style="display: '.((int)($language['id_lang']) == (int)($default_language) ? 'block' : 'none').'; clear: left; float: left; padding-bottom: 4px;">
 						<div style="margin-right: 6px; float:left; text-align:right;">#'.(int)($id_customization_field).'</div><input type="text" name="'.$fieldName.'" value="'.htmlentities($text, ENT_COMPAT, 'UTF-8').'" style="float: left" />
 					</div>';
 		}
@@ -2457,7 +3005,7 @@ class AdminProductsControllerCore extends AdminController
 		return $content;
 	}
 
-	private function _displayLabelFields(&$obj, &$labels, $languages, $defaultLanguage, $type)
+	private function _displayLabelFields(&$obj, &$labels, $languages, $default_language, $type)
 	{
 		$content = '';
 		$type = (int)($type);
@@ -2466,158 +3014,72 @@ class AdminProductsControllerCore extends AdminController
 		$fieldIds = $this->_getCustomizationFieldIds($labels, $labelGenerated, $obj);
 		if (isset($labels[$type]))
 			foreach ($labels[$type] as $id_customization_field => $label)
-				$content .= $this->_displayLabelField($label, $languages, $defaultLanguage, $type, $fieldIds, (int)($id_customization_field));
+				$content .= $this->_displayLabelField($label, $languages, $default_language, $type, $fieldIds, (int)($id_customization_field));
 		return $content;
 	}
 
-	public function initFormCustomization($obj, $languages, $defaultLanguage)
+	public function initFormCustomization($obj, $languages, $default_language)
 	{
-		$content = '';
-		$labels = $obj->getCustomizationFields();
-		$defaultIso = Language::getIsoById($defaultLanguage);
+		$data = $this->context->smarty->createData();
 
-		$hasFileLabels = (int)($this->getFieldValue($obj, 'uploadable_files'));
-		$hasTextLabels = (int)($this->getFieldValue($obj, 'text_fields'));
+		if ((bool)$obj->id)
+		{
+			$labels = $obj->getCustomizationFields();
 
-		$content .= '
-			<table cellpadding="5">
-				<tr>
-					<td colspan="2"><b>'.$this->l('Add or modify customizable properties').'</b></td>
-				</tr>
-			</table>
-			<div class="separation"></div><br />
-			<table cellpadding="5" style="width:100%">
-				<tr>
-					<td style="width:150px;text-align:right;padding-right:10px;font-weight:bold;vertical-align:top;" valign="top">'.$this->l('File fields:').'</td>
-					<td style="padding-bottom:5px;">
-						<input type="text" name="uploadable_files" id="uploadable_files" size="4" value="'.((int)($this->getFieldValue($obj, 'uploadable_files')) ? (int)($this->getFieldValue($obj, 'uploadable_files')) : '0').'" />
-						<p>'.$this->l('Number of upload file fields displayed').'</p>
-					</td>
-				</tr>
-				<tr>
-					<td style="width:150px;text-align:right;padding-right:10px;font-weight:bold;vertical-align:top;" valign="top">'.$this->l('Text fields:').'</td>
-					<td style="padding-bottom:5px;">
-						<input type="text" name="text_fields" id="text_fields" size="4" value="'.((int)($this->getFieldValue($obj, 'text_fields')) ? (int)($this->getFieldValue($obj, 'text_fields')) : '0').'" />
-						<p>'.$this->l('Number of text fields displayed').'</p>
-					</td>
-				</tr>
-				<tr>
-					<td colspan="2" style="text-align:center;">
-						<input type="submit" name="submitCustomizationConfiguration" value="'.$this->l('Update settings').'" class="button" onclick="this.form.action += \'&addproduct&tabs=5\';" />
-					</td>
-				</tr>';
+			$has_file_labels = (int)$this->getFieldValue($obj, 'uploadable_files');
+			$has_text_labels = (int)$this->getFieldValue($obj, 'text_fields');
 
-				if ($hasFileLabels)
-				{
-					$content .= '
-				<tr><td colspan="2"><div class="separation"></div></td></tr>
-				<tr>
-					<td style="width:150px" valign="top">'.$this->l('Files fields:').'</td>
-					<td>';
-					$content .= $this->_displayLabelFields($obj, $labels, $languages, $defaultLanguage, Product::CUSTOMIZE_FILE);
-					$content .= '
-					</td>
-				</tr>';
-				}
+			$data->assign(array(
+				'obj' => $obj,
+				'table' => $this->table,
+				'languages' => $languages,
+				'has_file_labels' => $has_file_labels,
+				'display_file_labels' => $this->_displayLabelFields($obj, $labels, $languages, $default_language, Product::CUSTOMIZE_FILE),
+				'has_text_labels' => $has_text_labels,
+				'display_text_labels' => $this->_displayLabelFields($obj, $labels, $languages, $default_language, Product::CUSTOMIZE_TEXTFIELD),
+				'uploadable_files' => (int)($this->getFieldValue($obj, 'uploadable_files') ? (int)$this->getFieldValue($obj, 'uploadable_files') : '0'),
+				'text_fields' => (int)($this->getFieldValue($obj, 'text_fields') ? (int)$this->getFieldValue($obj, 'text_fields') : '0'),
+			));
+		}
+		else
+			$this->displayWarning($this->l('You must save this product before adding customization.'));
 
-				if ($hasTextLabels)
-				{
-					$content .= '
-				<tr><td colspan="2"><div class="separation"></div></td></tr>
-				<tr>
-					<td style="width:150px" valign="top">'.$this->l('Text fields:').'</td>
-					<td>';
-					$content .= $this->_displayLabelFields($obj, $labels, $languages, $defaultLanguage, Product::CUSTOMIZE_TEXTFIELD);
-					$content .= '
-					</td>
-				</tr>';
-				}
-
-				$content .= '
-				<tr>
-					<td colspan="2" style="text-align:center;">';
-				if ($hasFileLabels || $hasTextLabels)
-					$content .= '<input type="submit" name="submitProductCustomization" id="submitProductCustomization" value="'.$this->l('Save labels').'" class="button" onclick="this.form.action += \'&addproduct&tabs=5\';" style="margin-top: 9px" />';
-				$content .= '
-					</td>
-				</tr>
-			</table>';
-		$this->tpl_form_vars['custom_form'] = $content;
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
-	public function initFormAttachments($obj, $languages, $defaultLanguage)
+	public function initFormAttachments($obj, $languages, $default_language)
 	{
-		$content = '';
-		if (!($obj = $this->loadObject(true)))
-			return;
-		$languages = Language::getLanguages(false);
-		$attach1 = Attachment::getAttachments($this->context->language->id, $obj->id, true);
-		$attach2 = Attachment::getAttachments($this->context->language->id, $obj->id, false);
+		$data = $this->context->smarty->createData();
 
-				$content .= '
-		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset><legend><img src="../img/t/AdminAttachments.gif" />'.$this->l('Attachment').'</legend>
-				<label>'.$this->l('Filename:').' </label>
-				<div class="margin-form">';
-		foreach ($languages as $language)
-			$content .= '	<div id="attachment_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $defaultLanguage ? 'block' : 'none').'; float: left;">
-						<input size="33" type="text" name="attachment_name_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'attachment_name', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" /><sup> *</sup>
-					</div>';
-		$content .= $this->getTranslationsFlags($languages, $defaultLanguage, 'attachment_name¤attachment_description', 'attachment_name');
-		$content .= '	</div>
-				<div class="clear">&nbsp;</div>
-				<label>'.$this->l('Description:').' </label>
-				<div class="margin-form">';
-		foreach ($languages as $language)
-			$content .= '	<div id="attachment_description_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $defaultLanguage ? 'block' : 'none').'; float: left;">
-						<textarea name="attachment_description_'.$language['id_lang'].'">'.htmlentities($this->getFieldValue($obj, 'attachment_description', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'</textarea>
-					</div>';
-		$content .= $this->getTranslationsFlags($languages, $defaultLanguage, 'attachment_name¤attachment_description', 'attachment_description');
-		$content .= '	</div>
-				<div class="clear">&nbsp;</div>
-				<label>'.$this->l('File').'</label>
-				<div class="margin-form">
-					<p><input type="file" name="attachment_file" /></p>
-					<p>'.$this->l('Upload file from your computer').'</p>
-				</div>
-				<div class="clear">&nbsp;</div>
-				<div class="margin-form">
-					<input type="submit" value="'.$this->l('Add a new attachment file').'" name="submitAddAttachments" class="button" />
-				</div>
-				<div class="small"><sup>*</sup> '.$this->l('Required field').'</div>
-			</fieldset>
-		<div class="clear">&nbsp;</div>
-		<table>
-			<tr>
-				<td>
-					<p>'.$this->l('Attachments for this product:').'</p>
-					<select multiple id="selectAttachment1" name="attachments[]" style="width:300px;height:160px;">';
-			foreach ($attach1 as $attach)
-				$content .= '<option value="'.$attach['id_attachment'].'">'.$attach['name'].'</option>';
-			$content .= '	</select><br /><br />
-					<a href="#" id="removeAttachment" style="text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px">
-						'.$this->l('Remove').' &gt;&gt;
-					</a>
-				</td>
-				<td style="padding-left:20px;">
-					<p>'.$this->l('Available attachments:').'</p>
-					<select multiple id="selectAttachment2" style="width:300px;height:160px;">';
-			foreach ($attach2 as $attach)
-				$content .= '<option value="'.$attach['id_attachment'].'">'.$attach['name'].'</option>';
-			$content .= '	</select><br /><br />
-					<a href="#" id="addAttachment" style="text-align:center;display:block;border:1px solid #aaa;text-decoration:none;background-color:#fafafa;color:#123456;margin:2px;padding:2px">
-						&lt;&lt; '.$this->l('Add').'
-					</a>
-				</div>
-				</td>
-			</tr>
-		</table>
-		<div class="clear">&nbsp;</div>
-		<input type="submit" name="submitAttachments" id="submitAttachments" value="'.$this->l('Update attachments').'" class="button" />';
-		$this->tpl_form_vars['custom_form'] = $content;
+		if ((bool)$obj->id)
+		{
+			$attachment_name = array();
+			$attachment_description = array();
+			foreach ($languages as $language)
+			{
+				$attachment_name[$language['id_lang']] = $this->getFieldValue($obj, 'attachment_name', (int)$language['id_lang']);
+				$attachment_description[$language['id_lang']] = $this->getFieldValue($obj, 'attachment_description', (int)$language['id_lang']);
+			}
+
+			$data->assign(array(
+				'obj' => $obj,
+				'table' => $this->table,
+				'languages' => $languages,
+				'attach1' => Attachment::getAttachments($this->context->language->id, $obj->id, true),
+				'attach2' => Attachment::getAttachments($this->context->language->id, $obj->id, false),
+				'default_form_language' => $default_language,
+				'attachment_name' => $attachment_name,
+				'attachment_description' => $attachment_description,
+				'PS_ATTACHMENT_MAXIMUM_SIZE' => Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE')
+			));
+		}
+		else
+			$this->displayWarning($this->l('You must save this product before adding attachements.'));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
-	public function initFormInformations($product, $languages, $defaultLanguage)
+	public function initFormInformations($product)
 	{
 		$data = $this->context->smarty->createData();
 
@@ -2626,40 +3088,25 @@ class AdminProductsControllerCore extends AdminController
 		$this->tpl_form_vars['iso'] = file_exists(_PS_ROOT_DIR_.'/js/tiny_mce/langs/'.$iso.'.js') ? $iso : 'en';
 		$this->tpl_form_vars['ad'] = dirname($_SERVER['PHP_SELF']);
 		$this->tpl_form_vars['tinymce'] = true;
-		$this->addJS(_PS_JS_DIR_.'tiny_mce/tiny_mce.js');
-		$this->addJS(_PS_JS_DIR_.'tinymce.inc.js');
-
 
 		$currency = $this->context->currency;
-
-		$data->assign('languages',$languages);
+		$data->assign('languages', $this->_languages);
+		$data->assign('currency', $currency);
 		$this->object = $product;
 		$this->display = 'edit';
-		$content = '';
 
-		$has_attribute = $product->hasAttributes();
-		// @FIXME Stock, need to use StockManagerFactory
-		$qty = 0;
 		$cover = Product::getCover($product->id);
 		$this->_applyTaxToEcotax($product);
 
 		/*
-		* Form for add a virtual product like software, mp3, etc...
+		* Form for adding a virtual product like software, mp3, etc...
 		*/
-		$productDownload = new ProductDownload();
-		if ($id_product_download = $productDownload->getIdFromIdProduct($this->getFieldValue($product, 'id')))
-			$productDownload = new ProductDownload($id_product_download);
-		$product->{'productDownload'} = $productDownload;
+		$product_download = new ProductDownload();
+		if ($id_product_download = $product_download->getIdFromIdProduct($this->getFieldValue($product, 'id')))
+			$product_download = new ProductDownload($id_product_download);
+		$product->{'productDownload'} = $product_download;
 
-		$this->displayInitInformationAndAttachment();
-
-
-		$cache_default_attribute = (int) $this->getFieldValue($product, 'cache_default_attribute');
-		$data->assign('feature_shop_active', Shop::isFeatureActive());
-		// @todo : uses the helperform
-		$data->assign('displayAssoShop', $this->displayAssoShop());
-		$data->assign('carrier_list', $this->getCarrierList());
-
+		$cache_default_attribute = (int)$this->getFieldValue($product, 'cache_default_attribute');
 
 		$product_props = array();
 		// global informations
@@ -2681,173 +3128,54 @@ class AdminProductsControllerCore extends AdminController
 		array_push($product_props,
 			'price', 'wholesale_price', 'id_tax_rules_group', 'unit_price_ratio', 'on_sale',
 			'unity', 'minimum_quantity', 'additional_shipping_cost',
-			'available_now', 'available_later', 'available_date', 'out_of_stock'
+			'available_now', 'available_later', 'available_date'
 		);
 
-		if(Configuration::get('PS_USE_ECOTAX'))
+		if (Configuration::get('PS_USE_ECOTAX'))
 			array_push($product_props, 'ecotax');
 
-		foreach($product_props as $prop)
+		foreach ($product_props as $prop)
 			$product->$prop = $this->getFieldValue($product, $prop);
 
 		$product->name['class'] = 'updateCurrentText';
 		if (!$product->id)
 			$product->name['class'] .= ' copy2friendlyUrl';
 
-		$product->manufacturer_name = Manufacturer::getNameById($product->id_manufacturer);
-
-		$data->assign('ps_dimension_unit', Configuration::get('PS_DIMENSION_UNIT'));
-		$data->assign('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT'));
-		// @todo : initPack should not be called like this
-		$this->initPack($product);
-
-		/*
-		 * Form for add a virtual product like software, mp3, etc...
-		 */
-		$productDownload = new ProductDownload();
-		if ($id_product_download = $productDownload->getIdFromIdProduct($this->getFieldValue($product, 'id')))
-			$product->{'product_download'} = new ProductDownload($id_product_download);
-
-		$this->displayInitInformationAndAttachment();
-		// @todo price.js is used in information .. for now
-		$this->addJs(_PS_JS_DIR_.'price.js');
-
-		// @todo handle is_virtual with the value of the product
-		$exists_file = realpath(_PS_DOWNLOAD_DIR_).'/'.$product->productDownload->filename;
-		$data->assign('product_downloaded', $product->productDownload->id && !empty($product->productDownload->display_filename));
-
-		if (!file_exists($exists_file)
-			&& !empty($product->productDownload->display_filename)
-			&& !empty($product->cache_default_attribute))
-		{
-			$msg = sprintf(Tools::displayError('This file "%s" is missing'), $product->productDownload->display_filename);
-		}
-		else
-			$msg = '';
-
-		$data->assign('download_product_file_missing', $msg);
-		$data->assign('download_dir_writable', ProductDownload::checkWritableDir());
-
-		if (empty($product->cache_default_attribute))
-		{
-			$data->assign('show_file_input', !strval(Tools::getValue('virtual_product_filename')) OR $product->productDownload->id > 0);
-			// found in informations and combination : to merge
-			$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename')));
-			$display_filename = ($product->productDownload->id > 0) ? $product->productDownload->display_filename : htmlentities(Tools::getValue('virtual_product_name'), ENT_COMPAT, 'UTF-8');
-
-			if (!$product->productDownload->id || !$product->productDownload->active)
-				$hidden = 'display:none;';
-			else $hidden ='';
-
-			$product->productDownload->nb_downloadable = ($product->productDownload->id > 0) ? $product->productDownload->nb_downloadable : htmlentities(Tools::getValue('virtual_product_nb_downloable'), ENT_COMPAT, 'UTF-8');
-			$product->productDownload->date_expiration = ($product->productDownload->id > 0) ? ((!empty($product->productDownload->date_expiration) && $product->productDownload->date_expiration != '0000-00-00 00:00:00') ? date('Y-m-d', strtotime($product->productDownload->date_expiration)) : '' ) : htmlentities(Tools::getValue('virtual_product_expiration_date'), ENT_COMPAT, 'UTF-8');
-			$product->productDownload->nb_days_accessible = ($product->productDownload->id > 0) ? $product->productDownload->nb_days_accessible : htmlentities(Tools::getValue('virtual_product_nb_days'), ENT_COMPAT, 'UTF-8');
-			$product->productDownload->is_shareable = $product->productDownload->id > 0 && $product->productDownload->is_shareable;
-		}
-		else
-		{
-			$error ='';
-			$product_attribute = ProductDownload::getAttributeFromIdProduct($this->getFieldValue($product, 'id'));
-			foreach ($product_attribute as $p)
-			{
-				$productDownloadAttribute = new ProductDownload($p['id_product_download']);
-				$exists_file2 = realpath(_PS_DOWNLOAD_DIR_).'/'.$productDownloadAttribute->filename;
-				if (!file_exists($exists_file2) && !empty($productDownloadAttribute->id_product_attribute))
-				{
-					$msg = sprintf(Tools::displayError('This file "%s" is missing'), $productDownloadAttribute->display_filename);
-					$error .= '<p class="alert" id="file_missing">
-						<b>'.$msg.' :<br/>
-						'.realpath(_PS_DOWNLOAD_DIR_) .'/'. $productDownloadAttribute->filename.'</b>
-					</p>';
-				}
-			}
-			$data->assign('error_product_download', $error);
-		}
-
-		// prices part
-		$data->assign('currency', $currency = $this->context->currency);
-		$data->assign('tax_rules_groups', TaxRulesGroup::getTaxRulesGroups(true));
-		$data->assign('taxesRatesByGroup', TaxRulesGroup::getAssociatedTaxRatesByIdCountry($this->context->country->id));
-		$data->assign('ecotaxTaxRate', Tax::getProductEcotaxRate());
-		$data->assign('tax_exclude_taxe_option', Tax::excludeTaxeOption());
-
-		$data->assign('ps_use_ecotax', Configuration::get('PS_USE_ECOTAX'));
-		if ($product->unit_price_ratio != 0)
-			$data->assign('unit_price', Tools::ps_round($product->price)/$product->unit_price_ratio);
-		else
-			$data->assign('unit_price', 0);
-
-		$data->assign('ps_tax', Configuration::get('PS_TAX'));
-		$data->assign('ps_stock_management', Configuration::get('PS_STOCK_MANAGEMENT'));
-		$data->assign('has_attribute', $has_attribute);
-		// Check if product has combination, to display the available date only for the product or for each combination
-		if (Combination::isFeatureActive())
-			$data->assign('countAttributes', (int)Db::getInstance()->getValue('SELECT COUNT(id_product) FROM '._DB_PREFIX_.'product_attribute WHERE id_product = '.(int)$product->id));
-
-		$data->assign('ps_order_out_of_stock', Configuration::get('PS_ORDER_OUT_OF_STOCK'));
-
-		$default_category = Tools::getValue('id_category', 1);
-		$data->assign('default_category', $default_category);
-		if (!$product->id)
-		{
-			$selectedCat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->default_form_language);
-		}
-		else
-		{
-			if (Tools::isSubmit('categoryBox'))
-				$selectedCat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->default_form_language);
-			else
-				$selectedCat = Product::getProductCategoriesFull($product->id, $this->default_form_language);
-		}
-		$data->assign('selected_cat_ids', implode(',', array_keys($selectedCat)));
-		$data->assign('selected_cat', $selectedCat);
-
-		$trads = array(
-			'Home' => $this->l('Home'),
-			'selected' => $this->l('selected'),
-			'Collapse All' => $this->l('Collapse All'),
-			'Expand All' => $this->l('Expand All'),
-			'Check All' => $this->l('Check All'),
-			'Uncheck All'  => $this->l('Uncheck All'),
-			'search' => $this->l('Search a category')
-		);
-		$data->assign('category_tree', Helper::renderAdminCategorieTree($trads, $selectedCat, 'categoryBox', false, true));
-
 		$images = Image::getImages($this->context->language->id, $product->id);
 
-		foreach($images as $k => $image)
+		foreach ($images as $k => $image)
 			$images[$k]['src'] = $this->context->link->getImageLink($product->link_rewrite[$this->context->language->id], $product->id.'-'.$image['id_image'], 'small');
-		$data->assign('ps_ssl_enabled', Configuration::get('PS_SSL_ENABLED'));
 		$data->assign('images', $images);
 		$data->assign('imagesTypes', ImageType::getImagesTypes('products'));
 
-			$accessories = Product::getAccessoriesLight($this->context->language->id, $product->id);
-
-			if ($postAccessories = Tools::getValue('inputAccessories'))
-			{
-				$postAccessoriesTab = explode('-', Tools::getValue('inputAccessories'));
-				foreach ($postAccessoriesTab as $accessoryId)
-					if (!$this->haveThisAccessory($accessoryId, $accessories) && $accessory = Product::getAccessoryById($accessoryId))
-						$accessories[] = $accessory;
-			}
-			$data->assign('accessories', $accessories);
-			$product->tags = Tag::getProductTags($product->id);
-
-
-						$this->addJqueryPlugin('autocomplete');
+		$product->tags = Tag::getProductTags($product->id);
 
 		// TinyMCE
 		$iso_tiny_mce = $this->context->language->iso_code;
 		$iso_tiny_mce = (file_exists(_PS_JS_DIR_.'tiny_mce/langs/'.$iso_tiny_mce.'.js') ? $iso_tiny_mce : 'en');
-		$data->assign('ad', dirname($_SERVER["PHP_SELF"]));
+		$data->assign('ad', dirname($_SERVER['PHP_SELF']));
 		$data->assign('iso_tiny_mce', $iso_tiny_mce);
-		$categoryBox = Tools::getValue('categoryBox', array());
+		$category_box = Tools::getValue('categoryBox', array());
 		$data->assign('product', $product);
-		$data->assign('last_content', $content);
 		$data->assign('token', $this->token);
+		$data->assign('currency', $currency);
 		$data->assign($this->tpl_form_vars);
 		$data->assign('link', $this->context->link);
 		$this->tpl_form_vars['product'] = $product;
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function initFormShipping($obj)
+	{
+		$data = $this->context->smarty->createData();
+		$data->assign(array(
+						  'product' => $obj,
+						  'ps_dimension_unit' => Configuration::get('PS_DIMENSION_UNIT'),
+						  'ps_weight_unit' => Configuration::get('PS_WEIGHT_UNIT'),
+						  'carrier_list' => $this->getCarrierList(),
+						  'currency' => $this->context->currency,
+						  'country_display_tax_label' =>  $this->context->country->display_tax_label
+					  ));
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
@@ -2872,7 +3200,7 @@ class AdminProductsControllerCore extends AdminController
 	{
 		if (Tools::getValue('carriers'))
 		{
-			if (Validate::isLoadedObject($product = new Product((int)(Tools::getValue('id_product')))))
+			if (Validate::isLoadedObject($product = new Product((int)Tools::getValue('id_product'))))
 			{
 				if (Tools::getValue('carriers'))
 					$product->setCarriers(Tools::getValue('carriers'));
@@ -2880,274 +3208,274 @@ class AdminProductsControllerCore extends AdminController
 		}
 	}
 
-	public function initFormImages($obj, $token = null)
+	public function initFormImages($obj)
 	{
-		$this->addJs('admin-dnd');
-		$this->addJqueryPlugin('tablednd');
-
 		$data = $this->context->smarty->createData();
-		$data->assign('product', $this->loadObject());
-		$content = '';
-		if (!Tools::getValue('id_product'))
-			return ''; // TEMPO
-		global $attributeJs, $images;
-		$shops = false;
-		if (Shop::isFeatureActive())
-			$shops = Shop::getShops();
 
-		$data->assign('shops', $shops);
-		$countImages = Db::getInstance()->getValue('SELECT COUNT(id_product) FROM '._DB_PREFIX_.'image WHERE id_product = '.(int)$obj->id);
-		$data->assign('countImages', $countImages);
+		if ((bool)$obj->id)
+		{
+			$data->assign('product', $this->loadObject());
 
-		$images = Image::getImages($this->context->language->id, $obj->id);
-		$imagesTotal = Image::getImagesTotal($obj->id);
-		$data->assign('id_product', (int)Tools::getValue('id_product'));
-		$data->assign('id_category_default', (int)$this->_category->id);
+			$shops = false;
+			if (Shop::isFeatureActive())
+				$shops = Shop::getShops();
+			$data->assign('shops', $shops);
 
+			$count_images = Db::getInstance()->getValue('
+				SELECT COUNT(id_product)
+				FROM '._DB_PREFIX_.'image
+				WHERE id_product = '.(int)$obj->id
+			);
+			$data->assign('countImages', $count_images);
 
+			$images = Image::getImages($this->context->language->id, $obj->id);
+			$data->assign('id_product', (int)Tools::getValue('id_product'));
+			$data->assign('id_category_default', (int)$this->_category->id);
 
-		foreach ($images as $k => $image)
-			$images[$k] = new Image($image['id_image']);
+			foreach ($images as $k => $image)
+				$images[$k] = new Image($image['id_image']);
 
-		$data->assign('images', $images);
-		$data->assign('token', $token);
-		$data->assign($this->tpl_form_vars);
-		$data->assign('table', $this->table);
-		$data->assign('max_image_size', $this->max_image_size);
+			$data->assign('images', $images);
 
-		$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename_attribute')));
-		$data->assign('currency', $this->context->currency);
+			$data->assign('token', $this->token);
+			$data->assign('table', $this->table);
+			$data->assign('max_image_size', (int)Configuration::get('PS_PRODUCT_PICTURE_MAX_SIZE') / 1000);
+
+			$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename_attribute')));
+			$data->assign('currency', $this->context->currency);
+		}
+		else
+			$this->displayWarning($this->l('You must save this product before adding images.'));
 
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
-	public function initFormCombinations($obj, $languages, $defaultLanguage)
+	public function initFormCombinations($obj, $languages, $default_language)
 	{
-		return $this->initFormAttributes($obj, $languages, $defaultLanguage);
+		return $this->initFormAttributes($obj, $languages, $default_language);
 	}
 
-	public function initFormAttributes($product, $languages, $defaultLanguage)
+	public function initFormAttributes($product)
 	{
 		if (!Combination::isFeatureActive())
 		{
-			$this->displayWarning($this->l('This feature has been disabled, you can active this feature at this page:').' <a href="index.php?tab=AdminPerformance&token='.Tools::getAdminTokenLite('AdminPerformance').'#featuresDetachables">'.$this->l('Performances').'</a>');
+			$this->displayWarning($this->l('This feature has been disabled, you can active this feature at this page:').
+				' <a href="index.php?tab=AdminPerformance&token='.Tools::getAdminTokenLite('AdminPerformance').'#featuresDetachables">'.$this->l('Performances').'</a>');
 			return;
 		}
 
-		$smarty = $this->context->smarty;
-		$content = '';
-
-		$attributeJs = array();
-		$attributes = Attribute::getAttributes($this->context->language->id, true);
-		foreach ($attributes as $k => $attribute)
-			$attributeJs[$attribute['id_attribute_group']][$attribute['id_attribute']] = $attribute['name'];
-		$currency = $this->context->currency;
-		$smarty->assign('attributeJs', $attributeJs);
-		$smarty->assign('attributes_groups', AttributeGroup::getAttributesGroups($this->context->language->id));
-		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
-
-		$product->productDownload = new ProductDownload();
-		$id_product_download = (int) $product->productDownload->getIdFromIdProduct($this->getFieldValue($product, 'id'));
-		if (!empty($id_product_download))
-			$product->productDownload = new ProductDownload($id_product_download);
-
-	//	$smarty->assign('productDownload', $productDownload);
-		$smarty->assign('currency', $currency);
-
-		$images = Image::getImages($this->context->language->id, $product->id);
-		if ($product->id)
+		$data = $this->context->smarty->createData();
+		if ((bool)$product->id)
 		{
-			$smarty->assign('tax_exclude_option', Tax::excludeTaxeOption());
-			$smarty->assign('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT'));
+			$attribute_js = array();
+			$attributes = Attribute::getAttributes($this->context->language->id, true);
+			foreach ($attributes as $k => $attribute)
+				$attribute_js[$attribute['id_attribute_group']][$attribute['id_attribute']] = $attribute['name'];
+			$currency = $this->context->currency;
+			$data->assign('attributeJs', $attribute_js);
+			$data->assign('attributes_groups', AttributeGroup::getAttributesGroups($this->context->language->id));
+			$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
 
-			$smarty->assign('ps_use_ecotax', Configuration::get('PS_USE_ECOTAX'));
-			$smarty->assign('field_value_unity', $this->getFieldValue($product, 'unity'));
+			$product->productDownload = new ProductDownload();
+			$id_product_download = (int)$product->productDownload->getIdFromIdProduct($this->getFieldValue($product, 'id'));
+			if (!empty($id_product_download))
+				$product->productDownload = new ProductDownload($id_product_download);
 
-			$smarty->assign('reasons', $reasons = StockMvtReason::getStockMvtReasons($this->context->language->id));
-			$smarty->assign('ps_stock_mvt_reason_default', $ps_stock_mvt_reason_default = Configuration::get('PS_STOCK_MVT_REASON_DEFAULT'));
-			$smarty->assign('minimal_quantity', $this->getFieldValue($product, 'minimal_quantity') ? $this->getFieldValue($product, 'minimal_quantity') : 1);
-			$smarty->assign('available_date', ($this->getFieldValue($product, 'available_date') != 0) ? stripslashes(htmlentities(Tools::displayDate($this->getFieldValue($product, 'available_date'), $language['id_lang']))) : '0000-00-00');
-		  // date picker include
+		//	$data->assign('productDownload', $product_download);
+			$data->assign('currency', $currency);
 
-
-			$i = 0;
-			$smarty->assign('imageType', ImageType::getByNameNType('small', 'products'));
-			$smarty->assign('imageWidth', (isset($imageType['width']) ? (int)($imageType['width']) : 64) + 25);
-			foreach ($images as $k => $image)
-			{
-				$images[$k]['obj'] = new Image($image['id_image']);
-				++$i;
-			}
-			$smarty->assign('images', $images);
-			$content .= '
-		<div>
-		<table>
-		  <tr><td colspan="2"><div class="separation"></div></td></tr>
-		  <tr>
-			  <td colspan="2">
-					<br />
-					<table border="0" cellpadding="0" cellspacing="0" class="table">
-						<tr>
-							<th>'.$this->l('Attributes').'</th>
-							<th>'.$this->l('Impact').'</th>
-							<th>'.$this->l('Weight').'</th>
-							<th>'.$this->l('Reference').'</th>
-							<th>'.$this->l('EAN13').'</th>
-							<th>'.$this->l('UPC').'</th>';
-
-							if ($id_product_download && !empty($productDownload->display_filename))
-							{
-								$content .= '
-								<th class="center virtual_header">'.$this->l('Filename').'</th>
-								<th class="center virtual_header">'.$this->l('Number of downloads').'</th>
-								<th class="center virtual_header">'.$this->l('Number of days').'</th>
-								<th class="center virtual_header">'.$this->l('Share').'</th>';
-							}
-
-							$content .= '<th class="center">'.$this->l('Actions').'</th>
-						</tr>';
+			$images = Image::getImages($this->context->language->id, $product->id);
 			if ($product->id)
 			{
-				/* Build attributes combinaisons */
-				$combinaisons = $product->getAttributeCombinaisons($this->context->language->id);
-				$groups = array();
-				if (is_array($combinaisons))
+				$data->assign('tax_exclude_option', Tax::excludeTaxeOption());
+				$data->assign('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT'));
+
+				$data->assign('ps_use_ecotax', Configuration::get('PS_USE_ECOTAX'));
+				$data->assign('field_value_unity', $this->getFieldValue($product, 'unity'));
+
+				$data->assign('reasons', $reasons = StockMvtReason::getStockMvtReasons($this->context->language->id));
+				$data->assign('ps_stock_mvt_reason_default', $ps_stock_mvt_reason_default = Configuration::get('PS_STOCK_MVT_REASON_DEFAULT'));
+				$data->assign('minimal_quantity', $this->getFieldValue($product, 'minimal_quantity') ? $this->getFieldValue($product, 'minimal_quantity') : 1);
+				$data->assign('available_date', ($this->getFieldValue($product, 'available_date') != 0) ? stripslashes(htmlentities(Tools::displayDate($this->getFieldValue($product, 'available_date'), $this->context->language->id))) : '0000-00-00');
+
+				$i = 0;
+				$data->assign('imageType', ImageType::getByNameNType('small', 'products'));
+				$data->assign('imageWidth', (isset($image_type['width']) ? (int)($image_type['width']) : 64) + 25);
+				foreach ($images as $k => $image)
 				{
-					$combinationImages = $product->getCombinationImages($this->context->language->id);
-					foreach ($combinaisons as $k => $combinaison)
-					{
-						$combArray[$combinaison['id_product_attribute']]['wholesale_price'] = $combinaison['wholesale_price'];
-						$combArray[$combinaison['id_product_attribute']]['price'] = $combinaison['price'];
-						$combArray[$combinaison['id_product_attribute']]['weight'] = $combinaison['weight'];
-						$combArray[$combinaison['id_product_attribute']]['unit_impact'] = $combinaison['unit_price_impact'];
-						$combArray[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
-						$combArray[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
-						$combArray[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
-						$combArray[$combinaison['id_product_attribute']]['minimal_quantity'] = $combinaison['minimal_quantity'];
-						$combArray[$combinaison['id_product_attribute']]['available_date'] = strftime($combinaison['available_date']);
-						$combArray[$combinaison['id_product_attribute']]['id_image'] = isset($combinationImages[$combinaison['id_product_attribute']][0]['id_image']) ? $combinationImages[$combinaison['id_product_attribute']][0]['id_image'] : 0;
-						$combArray[$combinaison['id_product_attribute']]['default_on'] = $combinaison['default_on'];
-						$combArray[$combinaison['id_product_attribute']]['ecotax'] = $combinaison['ecotax'];
-						$combArray[$combinaison['id_product_attribute']]['attributes'][] = array($combinaison['group_name'], $combinaison['attribute_name'], $combinaison['id_attribute']);
-						if ($combinaison['is_color_group'])
-							$groups[$combinaison['id_attribute_group']] = $combinaison['group_name'];
-					}
+					$images[$k]['obj'] = new Image($image['id_image']);
+					++$i;
 				}
-				$irow = 0;
-				if (isset($combArray))
+				$data->assign('images', $images);
+			}
+			else
+				$this->content .= '<b>'.$this->l('You must save this product before adding combinations').'.</b>';
+
+			// @todo
+			$data->assign('up_filename', strval(Tools::getValue('virtual_product_filename_attribute')));
+			$data->assign($this->tpl_form_vars);
+			$data->assign(array(
+				'list' => $this->renderListAttributes($id_product_download, $product, $currency),
+				'product' => $product,
+				'id_category' => $product->id_category_default,
+				'token_generator' => Tools::getAdminTokenLite('AdminAttributeGenerator')
+			));
+		}
+		else
+			$this->displayWarning($this->l('You must save this product before adding combinations.'));
+
+		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
+	}
+
+	public function renderListAttributes($id_product_download, $product, $currency)
+	{
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+		$this->addRowAction('edit');
+		$this->addRowAction('default');
+		$this->addRowAction('delete');
+
+		$color_by_default = '#BDE5F8';
+
+		$this->fieldsDisplay = array(
+			'attributes' => array('title' => $this->l('Attributes'), 'align' => 'left', 'width' => 70),
+			'price' => array('title' => $this->l('Impact'), 'type' => 'price', 'align' => 'left', 'width' => 70),
+			'weight' => array('title' => $this->l('Weight'), 'align' => 'left', 'width' => 70),
+			'reference' => array('title' => $this->l('Reference'), 'align' => 'left', 'width' => 70),
+			'ean13' => array('title' => $this->l('EAN13'), 'align' => 'left', 'width' => 70),
+			'upc' => array('title' => $this->l('UPC'), 'align' => 'left', 'width' => 70)
+		);
+
+		$product_download = new ProductDownload($id_product_download);
+
+		if ($id_product_download && !empty($product_download->display_filename))
+		{
+			$this->fieldsDisplay['Filename'] = array('title' => $this->l('Filename'), 'align' => 'center', 'width' => 70);
+			$this->fieldsDisplay['nb_downloadable'] = array('title' => $this->l('Number of downloads'), 'align' => 'center', 'width' => 70);
+			$this->fieldsDisplay['date_expiration'] = array('title' => $this->l('Number of days'), 'align' => 'center', 'width' => 70);
+			$this->fieldsDisplay['is_shareable'] = array('title' => $this->l('Share'), 'align' => 'center', 'width' => 70);
+		}
+
+		if ($product->id)
+		{
+			/* Build attributes combinaisons */
+			$combinaisons = $product->getAttributeCombinaisons($this->context->language->id);
+			$groups = array();
+			$comb_array = array();
+			if (is_array($combinaisons))
+			{
+				$combination_images = $product->getCombinationImages($this->context->language->id);
+				foreach ($combinaisons as $k => $combinaison)
 				{
-					foreach ($combArray as $id_product_attribute => $product_attribute)
+					$price = Tools::displayPrice($combinaison['price'], $currency);
+
+					$comb_array[$combinaison['id_product_attribute']]['id_combinaison_attribute'] = $product->id.'||'.$combinaison['id_product_attribute'];
+					$comb_array[$combinaison['id_product_attribute']]['id_product_attribute'] = $combinaison['id_product_attribute'];
+					$comb_array[$combinaison['id_product_attribute']]['attributes'][] = array($combinaison['group_name'], $combinaison['attribute_name'], $combinaison['id_attribute']);
+					$comb_array[$combinaison['id_product_attribute']]['wholesale_price'] = $combinaison['wholesale_price'];
+					$comb_array[$combinaison['id_product_attribute']]['price'] = $price;
+					$comb_array[$combinaison['id_product_attribute']]['weight'] = $combinaison['weight'].Configuration::get('PS_WEIGHT_UNIT');
+					$comb_array[$combinaison['id_product_attribute']]['unit_impact'] = $combinaison['unit_price_impact'];
+					$comb_array[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
+					$comb_array[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
+					$comb_array[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
+					$comb_array[$combinaison['id_product_attribute']]['id_image'] = isset($combination_images[$combinaison['id_product_attribute']][0]['id_image']) ? $combination_images[$combinaison['id_product_attribute']][0]['id_image'] : 0;
+					$comb_array[$combinaison['id_product_attribute']]['available_date'] = strftime($combinaison['available_date']);
+					$comb_array[$combinaison['id_product_attribute']]['default_on'] = $combinaison['default_on'];
+					if ($combinaison['is_color_group'])
+						$groups[$combinaison['id_attribute_group']] = $combinaison['group_name'];
+				}
+			}
+
+			$irow = 0;
+			if (isset($comb_array))
+			{
+				foreach ($comb_array as $id_product_attribute => $product_attribute)
+				{
+					$list = '';
+					$js_list = '';
+
+					/* In order to keep the same attributes order */
+					asort($product_attribute['attributes']);
+
+					foreach ($product_attribute['attributes'] as $attribute)
 					{
-						$list = '';
-						$jsList = '';
+						$list .= addslashes(htmlspecialchars($attribute[0])).' - '.addslashes(htmlspecialchars($attribute[1])).', ';
+						$js_list .= '\''.addslashes(htmlspecialchars($attribute[0])).' : '.addslashes(htmlspecialchars($attribute[1])).'\', \''.$attribute[2].'\', ';
+					}
+					$list = rtrim($list, ', ');
+					$js_list = rtrim($js_list, ', ');
+					$comb_array[$id_product_attribute]['image'] = $product_attribute['id_image'] ? new Image($product_attribute['id_image']) : false;
+					$comb_array[$id_product_attribute]['available_date'] = $product_attribute['available_date'] != 0 ? date('Y-m-d', strtotime($product_attribute['available_date'])) : '0000-00-00';
+					$comb_array[$id_product_attribute]['attributes'] = $list;
+					if ($product_attribute['default_on'])
+					{
+						$this->list_skip_actions['default'][] = $product_attribute['id_combinaison_attribute'];
+						$comb_array[$id_product_attribute]['color'] = $color_by_default;
+					}
 
-						/* In order to keep the same attributes order */
-						asort($product_attribute['attributes']);
+					$id_product_download = $product->productDownload->getIdFromIdAttribute((int)$product->id, (int)$id_product_attribute);
+					if ($id_product_download)
+						$product->productDownload = new ProductDownload($id_product_download);
 
-						foreach ($product_attribute['attributes'] as $attribute)
-						{
-							$list .= addslashes(htmlspecialchars($attribute[0])).' - '.addslashes(htmlspecialchars($attribute[1])).', ';
-							$jsList .= '\''.addslashes(htmlspecialchars($attribute[0])).' : '.addslashes(htmlspecialchars($attribute[1])).'\', \''.$attribute[2].'\', ';
-						}
-						$list = rtrim($list, ', ');
-						$jsList = rtrim($jsList, ', ');
-						$attrImage = $product_attribute['id_image'] ? new Image($product_attribute['id_image']) : false;
-						$available_date = ($product_attribute['available_date'] != 0) ? date('Y-m-d', strtotime($product_attribute['available_date'])) : '0000-00-00';
+					$available_date_attribute = substr($product->productDownload->date_expiration, 0, -9);
 
-						$id_product_download = $product->productDownload->getIdFromIdAttribute((int) $product->id, (int) $id_product_attribute);
-						if ($id_product_download)
-							$product->productDownload = new ProductDownload($id_product_download);
+					if ($available_date_attribute == '0000-00-00')
+						$available_date_attribute = '';
 
-						$available_date_attribute = substr($product->productDownload->date_expiration, 0, -9);
-
-						if ($available_date_attribute == '0000-00-00')
-							$available_date_attribute = '';
-
+					if ($id_product_download && !empty($product->productDownload->display_filename))
+					{
 						if ($product->productDownload->is_shareable == 1)
 							$is_shareable = $this->l('Yes');
 						else
 							$is_shareable = $this->l('No');
 
-						$content .= '
-						<tr'.($irow++ % 2 ? ' class="alt_row"' : '').($product_attribute['default_on'] ? ' style="background-color:#D1EAEF"' : '').'>
-							<td>'.stripslashes($list).'</td>
-							<td class="right">'.($currency->format % 2 != 0 ? $currency->sign.' ' : '').$product_attribute['price'].($currency->format % 2 == 0 ? ' '.$currency->sign : '').'</td>
-							<td class="right">'.$product_attribute['weight'].Configuration::get('PS_WEIGHT_UNIT').'</td>
-							<td class="right">'.$product_attribute['reference'].'</td>
-							<td class="right">'.$product_attribute['ean13'].'</td>
-							<td class="right">'.$product_attribute['upc'].'</td>';
-
-							if ($id_product_download && !empty($product->productDownload->display_filename))
-							{
-								$content .= '<td class="right">'.$product->productDownload->getHtmlLink(false, true).'</td>
-								<td class="center">'.$product->productDownload->nb_downloadable.'</td>
-								<td class="center">'.$product->productDownload->nb_downloadable.'</td>
-								<td class="right">'.$is_shareable.'</td>';
-							}
-
-							$exists_file = realpath(_PS_DOWNLOAD_DIR_).'/'.$product->productDownload->filename;
-
-							if ($product->productDownload->id && file_exists($exists_file))
-								$filename = $product->productDownload->filename;
-							else
-								$filename = '';
-							// @todo : a better way to "fillCombinaison" maybe ?
-							$content .= '<td class="center">
-							<a style="cursor: pointer;">
-							<img src="../img/admin/edit.gif" alt="'.$this->l('Modify this combination').'"
-							onclick="javascript:fillCombinaison(\''.$product_attribute['wholesale_price'].'\', \''.$product_attribute['price'].'\', \''.$product_attribute['weight'].'\', \''.$product_attribute['unit_impact'].'\', \''.$product_attribute['reference'].'\', \''.$product_attribute['ean13'].'\',
-							\'0\', \''.($attrImage ? $attrImage->id : 0).'\', Array('.$jsList.'), \''.$id_product_attribute.'\', \''.$product_attribute['default_on'].'\', \''.$product_attribute['ecotax'].'\', \''.$product_attribute['upc'].'\', \''.$product_attribute['minimal_quantity'].'\', \''.$available_date.'\',
-							\''.$product->productDownload->display_filename.'\', \''.$filename.'\', \''.$product->productDownload->nb_downloadable.'\', \''.$available_date_attribute.'\',  \''.$product->productDownload->nb_days_accessible.'\',  \''.$product->productDownload->is_shareable.'\'); calcImpactPriceTI();" /></a>&nbsp;
-							'.(!$product_attribute['default_on'] ? '<a href="'.self::$currentIndex.'&defaultProductAttribute&id_product_attribute='.$id_product_attribute.'&id_product='.$product->id.'&'.(Tools::isSubmit('id_category') ? 'id_category='.(int)(Tools::getValue('id_category')).'&' : '&').'token='.Tools::getAdminToken('AdminProducts'.(int)(Tab::getIdFromClassName('AdminProducts')).$this->context->employee->id).'">
-							<img src="../img/admin/asterisk.gif" alt="'.$this->l('Make this the default combination').'" title="'.$this->l('Make this combination the default one').'"></a>' : '').'
-							<a href="'.self::$currentIndex.'&deleteProductAttribute&id_product_attribute='.$id_product_attribute.'&id_product='.$product->id.'&'.(Tools::isSubmit('id_category') ? 'id_category='.(int)(Tools::getValue('id_category')).'&' : '&').'token='.Tools::getAdminToken('AdminProducts'.(int)(Tab::getIdFromClassName('AdminProducts')).(int)$this->context->employee->id).'" onclick="return confirm(\''.$this->l('Are you sure?', __CLASS__, true, false).'\');">
-							<img src="../img/admin/delete.gif" alt="'.$this->l('Delete this combination').'" /></a></td>
-						</tr>';
+						$comb_array[$id_product_attribute]['link'] = $product->productDownload->getHtmlLink(false, true);
+						$comb_array[$id_product_attribute]['nb_downloadable'] = $product->productDownload->nb_downloadable;
+						$comb_array[$id_product_attribute]['is_shareable'] = $is_shareable;
 					}
-					$content .= '<tr><td colspan="7" align="center"><a href="'.self::$currentIndex.'&deleteAllProductAttributes&id_product='.$product->id.'&token='.Tools::getAdminToken('AdminProducts'.(int)(Tab::getIdFromClassName('AdminProducts')).(int)$this->context->employee->id).'" onclick="return confirm(\''.$this->l('Are you sure?', __CLASS__, true, false).'\');"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete this combination').'" /> '.$this->l('Delete all combinations').'</a></td></tr>';
+
+					$exists_file = realpath(_PS_DOWNLOAD_DIR_).'/'.$product->productDownload->filename;
+
+					if ($product->productDownload->id && file_exists($exists_file))
+						$filename = $product->productDownload->filename;
+					else
+						$filename = '';
+
+					//$comb_array[$id_product_attribute]['productDownload'] = $product->productDownload;
+					$comb_array[$id_product_attribute]['id_product_download'] = $id_product_download;
+					$comb_array[$id_product_attribute]['date_expiration'] = $available_date_attribute;
+					$comb_array[$id_product_attribute]['filename'] = $filename;
 				}
-				else
-					$content .= '<tr><td colspan="7" align="center"><i>'.$this->l('No combination yet').'.</i></td></tr>';
 			}
-			$content .= '
-						</table>
-						<br />'.$this->l('The row in blue is the default combination.').'
-						<br />
-						'.$this->l('A default combination must be designated for each product.').'
-						</td>
-						</tr>
-					</table>
-					<script type="text/javascript">
-						var impact = getE(\'attribute_price_impact\');
-						var impact2 = getE(\'attribute_weight_impact\');
+		}
 
-						var s_attr_group = $(\'#span_new_group\');
-						var s_attr_name = $(\'#span_new_attr\');
-						var s_impact = $(\'#span_impact\');
-						var s_impact2 = $(\'#span_weight_impact\');
+		foreach ($this->actions_available as $action)
+		{
+			if (!in_array($action, $this->actions) && isset($this->$action) && $this->$action)
+				$this->actions[] = $action;
+		}
 
-						init_elems();
-					</script>';
-				}
-				else
-					$content .= '<b>'.$this->l('You must save this product before adding combinations').'.</b>';
-		// @todo
-		$smarty->assign('up_filename', strval(Tools::getValue('virtual_product_filename_attribute')));
-		$this->context->smarty->assign($this->tpl_form_vars);
-		$this->context->smarty->assign(array(
-			'content' => $content,
-			'product' => $product,
-			'id_category' => $product->id_category_default,
-			'token_generator' => Tools::getAdminTokenLite('AdminAttributeGenerator')
-		));
-		$this->tpl_form_vars['custom_form'] = $this->context->smarty->fetch('products/combinations.tpl');
+		$helper = new HelperList();
+		$helper->identifier = 'id_combinaison_attribute';
+		$helper->token = $this->token;
+		$helper->currentIndex = self::$currentIndex;
+		$helper->no_link = true;
+		$helper->simple_header = true;
+		$helper->show_toolbar = false;
+		$helper->shopLinkType = $this->shopLinkType;
+		$helper->actions = $this->actions;
+		$helper->list_skip_actions = $this->list_skip_actions;
+		$helper->colorOnBackground = true;
+		$helper->override_folder = $this->tpl_folder.'combinaison/';
+
+		return $helper->generateList($comb_array, $this->fieldsDisplay);
 	}
 
-	public function initFormQuantities($obj)
+	public function initFormQuantities($obj, $languages)
 	{
 		$data = $this->context->smarty->createData();
 
-		if ($this->object->id)
+		if ($obj->id)
 		{
 			// Get all id_product_attribute
 			$attributes = $obj->getAttributesResume($this->context->language->id);
@@ -3168,7 +3496,62 @@ class AdminProductsControllerCore extends AdminController
 																														$attribute['id_product_attribute']);
 
 				// Get all product designation
-				$product_designation[$attribute['id_product_attribute']] = rtrim($obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'], ' - ');
+				$product_designation[$attribute['id_product_attribute']] = rtrim(
+					$obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'],
+					' - '
+				);
+			}
+
+			$show_quantities = true;
+			$shop_context = $this->context->shop();
+			$group_shop = $this->context->shop->getGroup();
+
+			// if we are in all shops context, it's not possible to manage quantities at this level
+			if ($shop_context == Shop::CONTEXT_ALL)
+				$show_quantities = false;
+			// if we are in group shop context
+			else if ($shop_context == Shop::CONTEXT_GROUP)
+			{
+				// if quantities are not shared between shops of the group, it's not possible to manage them at group level
+				if (!$group_shop->share_stock)
+					$show_quantities = false;
+			}
+			// if we are in shop context
+			else {
+				// if quantities are shared between shops of the group, it's not possible to manage them for a given shop
+				if ($group_shop->share_stock)
+					$show_quantities = false;
+			}
+
+			$data->assign('ps_stock_management', Configuration::get('PS_STOCK_MANAGEMENT'));
+			$data->assign('has_attribute', $obj->hasAttributes());
+			// Check if product has combination, to display the available date only for the product or for each combination
+			if (Combination::isFeatureActive())
+				$data->assign('countAttributes', (int)Db::getInstance()->getValue('SELECT COUNT(id_product) FROM '._DB_PREFIX_.'product_attribute WHERE id_product = '.(int)$obj->id));
+
+			// if advanced stock management is active, checks associations
+			$advanced_stock_management_warning = false;
+			if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') && $obj->advanced_stock_management)
+			{
+				$attributes = Product::getProductAttributesIds($obj->id);
+				$warehouses = array();
+				foreach ($attributes as $attribute)
+				{
+					$ws = Warehouse::getProductWarehouseList($obj->id, $attribute['id_product_attribute']);
+					if ($ws)
+						$warehouses[] = $ws;
+				}
+				$warehouses = array_unique($warehouses);
+
+				if (empty($warehouses))
+					$advanced_stock_management_warning = true;
+			}
+			if ($advanced_stock_management_warning)
+			{
+				$this->displayWarning($this->l('If you wish to use the advanced stock management, you have to:'));
+				$this->displayWarning('- '.$this->l('associate your products with warehouses'));
+				$this->displayWarning('- '.$this->l('associate your warehouses with carriers'));
+				$this->displayWarning('- '.$this->l('associate your warehouses with the appropriates shops'));
 			}
 
 			$data->assign(array(
@@ -3176,13 +3559,15 @@ class AdminProductsControllerCore extends AdminController
 				'available_quantity' => $available_quantity,
 				'stock_management_active' => Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT'),
 				'product_designation' => $product_designation,
-				'product' => $this->object,
+				'product' => $obj,
+				'show_quantities' => $show_quantities,
 				'token_preferences' => Tools::getAdminTokenLite('AdminPPreferences'),
-				'token' => $this->token
+				'token' => $this->token,
+				'languages' => $languages,
 			));
 		}
 		else
-			$data->assign('content', '<b>'.$this->l('You must save this product before manage quantities').'.</b>');
+			$this->displayWarning($this->l('You must save this product before managing quantities.'));
 
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
@@ -3191,13 +3576,13 @@ class AdminProductsControllerCore extends AdminController
 	{
 		$data = $this->context->smarty->createData();
 
-		if ($this->object->id)
+		if ($obj->id)
 		{
 			// Get all id_product_attribute
 			$attributes = $obj->getAttributesResume($this->context->language->id);
 			if (empty($attributes))
 				$attributes[] = array(
-					'id_product' => $this->object->id,
+					'id_product' => $obj->id,
 					'id_product_attribute' => 0,
 					'attribute_designation' => ''
 				);
@@ -3205,16 +3590,19 @@ class AdminProductsControllerCore extends AdminController
 			$product_designation = array();
 
 			foreach ($attributes as $attribute)
-				$product_designation[$attribute['id_product_attribute']] = rtrim($obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'], ' - ');
+				$product_designation[$attribute['id_product_attribute']] = rtrim(
+					$obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'],
+					' - '
+				);
 
 			// Get all available suppliers
 			$suppliers = Supplier::getSuppliers();
 
 			// Get already associated suppliers
-			$associated_suppliers = ProductSupplier::getSupplierCollection($this->object->id);
+			$associated_suppliers = ProductSupplier::getSupplierCollection($obj->id);
 
 			// Get already associated suppliers and force to retreive product declinaisons
-			$product_supplier_collection = ProductSupplier::getSupplierCollection($this->object->id, false);
+			$product_supplier_collection = ProductSupplier::getSupplierCollection($obj->id, false);
 
 			$default_supplier = 0;
 
@@ -3223,13 +3611,13 @@ class AdminProductsControllerCore extends AdminController
 				$supplier['is_selected'] = false;
 				$supplier['is_default'] = false;
 
-				foreach ($associated_suppliers as &$associated_supplier)
+				foreach ($associated_suppliers as $associated_supplier)
 					if ($associated_supplier->id_supplier == $supplier['id_supplier'])
 					{
 						$associated_supplier->name = $supplier['name'];
 						$supplier['is_selected'] = true;
 
-						if ($this->object->id_supplier == $supplier['id_supplier'])
+						if ($obj->id_supplier == $supplier['id_supplier'])
 						{
 							$supplier['is_default'] = true;
 							$default_supplier = $supplier['id_supplier'];
@@ -3244,13 +3632,14 @@ class AdminProductsControllerCore extends AdminController
 				'associated_suppliers' => $associated_suppliers,
 				'associated_suppliers_collection' => $product_supplier_collection,
 				'product_designation' => $product_designation,
-				'product' => $this->object,
+				'currencies' => Currency::getCurrencies(),
+				'product' => $obj,
 				'link' => $this->context->link,
 				'token' => $this->token
 			));
 		}
 		else
-			$data->assign('content', '<b>'.$this->l('You must save this product before manage suppliers').'.</b>');
+			$this->displayWarning($this->l('You must save this product before managing suppliers'));
 
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
@@ -3259,12 +3648,13 @@ class AdminProductsControllerCore extends AdminController
 	{
 		$data = $this->context->smarty->createData();
 
-		if ($this->object->id)
+		if ($obj->id)
 		{
 			// Get all id_product_attribute
 			$attributes = $obj->getAttributesResume($this->context->language->id);
 			if (empty($attributes))
 				$attributes[] = array(
+					'id_product' => $obj->id,
 					'id_product_attribute' => 0,
 					'attribute_designation' => ''
 				);
@@ -3272,26 +3662,29 @@ class AdminProductsControllerCore extends AdminController
 			$product_designation = array();
 
 			foreach ($attributes as $attribute)
-				$product_designation[$attribute['id_product_attribute']] = rtrim($obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'], ' - ');
+				$product_designation[$attribute['id_product_attribute']] = rtrim(
+					$obj->name[$this->context->language->id].' - '.$attribute['attribute_designation'],
+					' - '
+				);
 
 			// Get all available warehouses
 			$warehouses = Warehouse::getWarehouses(true);
 
 			// Get already associated warehouses
-			$associated_warehouses_collection = WarehouseProductLocation::getCollection($this->object->id);
+			$associated_warehouses_collection = WarehouseProductLocation::getCollection($obj->id);
 
 			$data->assign(array(
 				'attributes' => $attributes,
 				'warehouses' => $warehouses,
 				'associated_warehouses' => $associated_warehouses_collection,
 				'product_designation' => $product_designation,
-				'product' => $this->object,
+				'product' => $obj,
 				'link' => $this->context->link,
 				'token' => $this->token
 			));
 		}
 		else
-			$data->assign('content', '<b>'.$this->l('You must save this product before manage warehouses').'.</b>');
+			$this->displayWarning($this->l('You must save this product before managing warehouses'));
 
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
@@ -3315,43 +3708,48 @@ class AdminProductsControllerCore extends AdminController
 				$features[$k]['val'] = array();
 
 				$custom = true;
-				foreach ($this->object->getFeatures() as $tab_products)
+				foreach ($obj->getFeatures() as $tab_products)
 					if ($tab_products['id_feature'] == $tab_features['id_feature'])
 						$features[$k]['current_item'] = $tab_products['id_feature_value'];
 
 				$features[$k]['featureValues'] = FeatureValue::getFeatureValuesWithLang($this->context->language->id, (int)$tab_features['id_feature']);
-				if (sizeof($features[$k]['featureValues']))
+				if (count($features[$k]['featureValues']))
 					foreach ($features[$k]['featureValues'] as $value)
 						if ($features[$k]['current_item'] == $value['id_feature_value'])
 							$custom = false;
 
-				if($custom)
+				if ($custom)
 					$features[$k]['val'] = FeatureValue::getFeatureValueLang($features[$k]['current_item']);
 			}
+
+			$data->assign('available_features', $features);
+
+			$data->assign('product', $obj);
+			$data->assign('link', $this->context->link);
+			$data->assign('languages', $this->_languages);
+			$data->assign('default_form_language', $this->default_form_language);
 		}
+		else
+			$this->displayWarning($this->l('You must save this product before adding features.'));
 
-		$data->assign('available_features', $features);
-
-		$data->assign('product', $obj);
-		$data->assign('link', $this->context->link);
-		$data->assign('languages', $this->_languages);
-		$data->assign('default_form_language', $this->default_form_language);
 		$this->tpl_form_vars['custom_form'] = $this->context->smarty->createTemplate($this->tpl_form, $data)->fetch();
 	}
 
 	public function ajaxProcessProductQuantity()
 	{
-		if(!Tools::getValue('actionQty'))
+		if (!Tools::getValue('actionQty'))
 			return Tools::jsonEncode(array('error' => 'Undefined action'));
 
-		$product = new Product((int)(Tools::getValue('id_product')));
-		switch(Tools::getValue('actionQty'))
+		$product = new Product((int)Tools::getValue('id_product'));
+		switch (Tools::getValue('actionQty'))
 		{
 			case 'depends_on_stock':
 				if (Tools::getValue('value') === false)
 					return Tools::jsonEncode(array('error' => 'Undefined value'));
 				if ((int)Tools::getValue('value') != 0 && (int)Tools::getValue('value') != 1)
 					return Tools::jsonEncode(array('error' => 'Uncorrect value'));
+				if (!$product->advanced_stock_management && (int)Tools::getValue('value') == 1)
+					return Tools::jsonEncode(array('error' => 'Not possible if advanced stock management is not enabled'));
 
 				StockAvailable::setProductDependsOnStock($product->id, (int)Tools::getValue('value'));
 				break;
@@ -3370,63 +3768,25 @@ class AdminProductsControllerCore extends AdminController
 					return Tools::jsonEncode(array('error' => 'Undefined value'));
 				if (Tools::getValue('id_product_attribute') === false)
 					return Tools::jsonEncode(array('error' => 'Undefined id product attribute'));
-				// @todo : Product class should handle that
-				$stock_available = new StockAvailable(StockAvailable::getStockAvailableIdByProductId($product->id, (int)Tools::getValue('id_product_attribute')));
-				if (!$stock_available->id)
-				{
-					$stock_available->id_product = $product->id;
-					$stock_available->id_shop = Context::getContext()->shop->getID(true);
-					$stock_available->id_product_attribute = Tools::getValue('id_product_attribute');
-				}
-				$stock_available->quantity = (int)Tools::getValue('value');
-				$stock_available->save();
+
+				StockAvailable::setQuantity($product->id, (int)Tools::getValue('id_product_attribute'), (int)Tools::getValue('value'));
 				break;
+			case 'advanced_stock_management' :
+				if (Tools::getValue('value') === false)
+					return Tools::jsonEncode(array('error' => 'Undefined value'));
+				if ((int)Tools::getValue('value') != 1 && (int)Tools::getValue('value') != 0)
+					return Tools::jsonEncode(array('error' => 'Uncorrect value'));
+				if (!Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT') && (int)Tools::getValue('value') == 1)
+					return Tools::jsonEncode(array('error' => 'Not possible if advanced stock management is not enabled'));
+
+				$product->advanced_stock_management = (int)Tools::getValue('value');
+				$product->save();
+				if (StockAvailable::dependsOnStock($product->id) == 1 && (int)Tools::getValue('value') == 0)
+					StockAvailable::setProductDependsOnStock($product->id, 0);
+				break;
+
 		}
 		die(Tools::jsonEncode(array('error' => false)));
-	}
-
-	public function getLineTableImage($image, $imagesTotal, $token, $shops)
-	{
-		if (Shop::isFeatureActive())
-			$imgObj = new Image((int)$image['id_image']);
-		$image_obj = new Image($image['id_image']);
-		$img_path = $image_obj->getExistingImgPath();
-		$html =  '
-			<tr id="tr_'.$image_obj->id.'">
-				<td style="padding: 4px;"><a href="'._THEME_PROD_DIR_.$img_path.'.jpg" target="_blank">
-					<img src="'._THEME_PROD_DIR_.$img_path.'-small.jpg'.((int)(Tools::getValue('image_updated')) === (int)($image['id_image']) ? '?date='.time() : '').'"
-					alt="'.htmlentities(stripslashes($image['legend']), ENT_COMPAT, 'UTF-8').'" title="'.htmlentities(stripslashes($image['legend']), ENT_COMPAT, 'UTF-8').'" /></a>
-				</td>
-				<td class="center positionImage">'.(int)($image['position']).'</td>
-				<td id="td_'.$image_obj->id.'" class="pointer dragHandle center">';
-
-		$html .= '
-				<a '.($image['position'] == 1 ? ' style="display: none;"' : '').' href="'.self::$currentIndex.'&id_image='.$image['id_image'].'&imgPosition='.($image['position'] - 1).'&imgDirection=0&token='.($token ? $token : $this->token).'"><img src="../img/admin/up.gif" alt="" border="0"></a>
-				<a '.($image['position'] == $imagesTotal ? ' style="display: none;"' : '').' href="'.self::$currentIndex.'&id_image='.$image['id_image'].'&imgPosition='.($image['position'] + 1).'&imgDirection=1&token='.($token ? $token : $this->token).'"><img src="../img/admin/down.gif" alt="" border="0"></a>';
-		$html .= '
-				</td>';
-		if (Shop::isFeatureActive())
-			foreach ($shops as $shop)
-				$html .= '
-				<td class="center"><input type="checkbox" class="image_shop" name="'.(int)$image['id_image'].'" value="'.(int)$shop['id_shop'].'" '.($imgObj->isAssociatedToShop($shop['id_shop']) ? 'checked="1"' : '').' /></td>';
-		$html .= '
-				<td class="center"><a href="'.self::$currentIndex.'&id_image='.$image['id_image'].'&coverImage&token='.($token ? $token : $this->token).'"><img class="covered" src="../img/admin/'.($image['cover'] ? 'enabled.gif' : 'forbbiden.gif').'" alt="" /></a></td>
-				<td class="center">
-				<a href="#" class="delete_product_image"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete this image').'" title="'.$this->l('Delete this image').'" /></a>
-				</td>
-			</tr>';
-		$json = array(
-			'status' => 'ok',
-			'id'=>$image_obj->id,
-			'path' => _THEME_PROD_DIR_.$img_path.'.jpg',
-			'path_small' => _THEME_PROD_DIR_.$img_path.'-small.jpg',
-			'position' => $image['position'],
-			'cover' => $image['cover'],
-			'html' => $html
-			);
-
-		return $this->content = Tools::jsonEncode($json);
-	//	return $html;
 	}
 
 	public function getCombinationImagesJS()
@@ -3437,20 +3797,20 @@ class AdminProductsControllerCore extends AdminController
 		$content = 'var combination_images = new Array();';
 		if (!$allCombinationImages = $obj->getCombinationImages($this->context->language->id))
 			return $content;
-		foreach ($allCombinationImages as $id_product_attribute => $combinationImages)
+		foreach ($allCombinationImages as $id_product_attribute => $combination_images)
 		{
 			$i = 0;
-			$content .= 'combination_images['.(int)($id_product_attribute).'] = new Array();';
-			foreach ($combinationImages as $combinationImage)
-				$content .= 'combination_images['.(int)($id_product_attribute).']['.$i++.'] = '.(int)($combinationImage['id_image']).';';
+			$content .= 'combination_images['.(int)$id_product_attribute.'] = new Array();';
+			foreach ($combination_images as $combination_image)
+				$content .= 'combination_images['.(int)$id_product_attribute.']['.$i++.'] = '.(int)$combination_image['id_image'].';';
 		}
 		return $content;
 	}
 
-	public function haveThisAccessory($accessoryId, $accessories)
+	public function haveThisAccessory($accessory_id, $accessories)
 	{
 		foreach ($accessories as $accessory)
-			if ((int)($accessory['id_product']) == (int)($accessoryId))
+			if ((int)$accessory['id_product'] == (int)$accessory_id)
 				return true;
 		return false;
 	}
@@ -3461,19 +3821,19 @@ class AdminProductsControllerCore extends AdminController
 		$product->packItems = Pack::getItems($product->id, $this->context->language->id);
 
 		$input_pack_items = '';
-		if(Tools::getValue('inputPackItems'))
+		if (Tools::getValue('inputPackItems'))
 			$input_pack_items = Tools::getValue('inputPackItems');
 		else
-			foreach ($product->packItems as $packItem)
-				$input_pack_items .= $packItem->pack_quantity.'x'.$packItem->id.'-';
+			foreach ($product->packItems as $pack_item)
+				$input_pack_items .= $pack_item->pack_quantity.'x'.$pack_item->id.'-';
 		$this->tpl_form_vars['input_pack_items'] = $input_pack_items;
 
 		$input_namepack_items = '';
 		if (Tools::getValue('namePackItems'))
 			$input_namepack_items = Tools::getValue('namePackItems');
 		else
-			foreach ($product->packItems as $packItem)
-				$input_namepack_items.= $packItem->pack_quantity.' x '.$packItem->name.'¤';
+			foreach ($product->packItems as $pack_item)
+				$input_namepack_items .= $pack_item->pack_quantity.' x '.$pack_item->name.'¤';
 		$this->tpl_form_vars['input_namepack_items'] = $input_namepack_items;
 	}
 
@@ -3482,19 +3842,19 @@ class AdminProductsControllerCore extends AdminController
 		Pack::deleteItems($product->id);
 
 		// lines format: QTY x ID-QTY x ID
-		if (Tools::getValue('ppack'))
+		if (Tools::getValue('type_product') == 1)
 		{
 			$items = Tools::getValue('inputPackItems');
 			$lines = array_unique(explode('-', $items));
 			// lines is an array of string with format : QTYxID
-			if(count($lines))
+			if (count($lines))
 				foreach ($lines as $line)
 					if (!empty($line))
 					{
 						list($qty, $item_id) = explode('x', $line);
 						if ($qty > 0 && isset($item_id))
 						{
-							if (!Pack::addItem((int)($product->id), (int)($item_id), (int)($qty)))
+							if (!Pack::addItem((int)$product->id, (int)$item_id, (int)$qty))
 							return false;
 						}
 					}
@@ -3515,39 +3875,56 @@ class AdminProductsControllerCore extends AdminController
 		return $trad[$key];
 	}
 
-	/**
-	 * Load class object using identifier in $_GET (if possible)
-	 * otherwise return an empty object, or die
-	 *
-	 * @param boolean $opt Return an empty object if load fail
-	 * @return object
-	 */
-	protected function loadObject($opt = false)
+	public function setMedia()
 	{
-		if ($id = (int)(Tools::getValue($this->identifier)) AND Validate::isUnsignedId($id))
+		parent::setMedia();
+		if ($this->display == 'edit' || $this->display == 'add')
 		{
-			if (!$this->object)
-				$this->object = new $this->className($id);
-			if (Validate::isLoadedObject($this->object))
-				return $this->object;
-			$this->_errors[] = Tools::displayError('Object cannot be loaded (not found)');
-		}
-		else if ($opt)
-		{
-			$this->object = new $this->className();
-			return $this->object;
-		}
-		else
-			$this->_errors[] = Tools::displayError('Object cannot be loaded (identifier missing or invalid)');
+			$this->addjQueryPlugin(array(
+				'autocomplete',
+				'tablednd',
+				'thickbox',
+				'ajaxfileupload',
+				'date'
+			));
 
-		$this->displayErrors();
-		return $this->object;
+			$this->addJqueryUI(array(
+				'ui.core',
+				'ui.widget',
+				'ui.accordion'
+			));
+
+			$this->addJS(array(
+				_PS_JS_DIR_.'admin-products.js',
+				_PS_JS_DIR_.'attributesBack.js',
+				_PS_JS_DIR_.'price.js',
+				_PS_JS_DIR_.'tiny_mce/tiny_mce.js',
+				_PS_JS_DIR_.'tinymce.inc.js',
+				_PS_JS_DIR_.'fileuploader.js',
+				_PS_JS_DIR_.'admin-dnd.js',
+				_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.js',
+				_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.async.js',
+				_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.edit.js',
+				_PS_JS_DIR_.'admin-categories-tree.js',
+				_PS_JS_DIR_.'/jquery/ui/jquery.ui.progressbar.min.js'
+			));
+			$this->addCSS(_PS_JS_DIR_.'jquery/plugins/treeview/jquery.treeview.css');
+
+		}
 	}
 
-	public function displayInitInformationAndAttachment()
+	protected function _displayUnavailableProductWarning()
 	{
-		$this->addJqueryPlugin('thickbox');
-		$this->addJqueryPlugin('ajaxfileupload');
-		$this->addJqueryPlugin('date');
+		$content = '<div class="warn">
+				<p>
+				<span style="float: left">
+				'.$this->l('Your product will be saved as draft').'
+				</span>
+				<span style="float:right"><a href="#" class="button" style="display: block" onclick="submitAddProductAndPreview()" >'.$this->l('Save and preview').'</a></span>
+				<input type="hidden" name="fakeSubmitAddProductAndPreview" id="fakeSubmitAddProductAndPreview" />
+				<br class="clear" />
+				</p>
+			</div>';
+			$this->tpl_form_vars['warning_unavailable_product'] = $content;
 	}
 }

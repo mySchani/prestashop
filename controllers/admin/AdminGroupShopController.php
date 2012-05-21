@@ -66,7 +66,7 @@ class AdminGroupShopControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -118,7 +118,29 @@ class AdminGroupShopControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('Share orders and carts between shops of this group (you can share orders only if you share customers and stock)')
+					'desc' => $this->l('Share orders and carts between shops of this group (you can share orders only if you share customers and available quantities)')
+				),
+				array(
+					'type' => 'radio',
+					'label' => $this->l('Share available quantities to sale:'),
+					'name' => 'share_stock',
+					'required' => true,
+					'class' => 't',
+					'is_bool' => true,
+					'values' => array(
+						array(
+							'id' => 'share_stock_on',
+							'value' => 1,
+							'label' => $this->l('Enabled')
+						),
+						array(
+							'id' => 'share_stock_off',
+							'value' => 0,
+							'label' => $this->l('Disabled')
+						)
+					),
+					'desc' => $this->l('Share available quantities to sale between shops of this group'),
+					'h' => $this->l('When changing this option, all product available quantities for the current groupof shop will be reseted to 0.')
 				),
 				array(
 					'type' => 'radio',
@@ -154,6 +176,7 @@ class AdminGroupShopControllerCore extends AdminController
 		if (Shop::getTotalShops() > 1 && $obj->id)
 			$disabled = array(
 				'share_customer' => true,
+				'share_stock' => true,
 				'share_order' => true,
 				'active' => false
 			);
@@ -206,8 +229,10 @@ class AdminGroupShopControllerCore extends AdminController
 		);
 		if (isset($this->fields_import_form))
 			$this->tpl_form_vars = array_merge($this->tpl_form_vars, array('form_import' => $this->fields_import_form));
-
-		return parent::initForm();
+		$this->fields_value = array(
+			'active' => true
+			);
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -230,12 +255,18 @@ class AdminGroupShopControllerCore extends AdminController
 	{
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_group_shop->copyGroupShopData(Tools::getValue('importFromShop'), $import_data);
+
+		//Reset available quantitites
+		StockAvailable::resetProductFromStockAvailableByGroupShop($new_group_shop);
 	}
 
 	public function afterUpdate($new_group_shop)
 	{
 		if (Tools::getValue('useImportData') && ($import_data = Tools::getValue('importData')) && is_array($import_data))
 			$new_group_shop->copyGroupShopData(Tools::getValue('importFromShop'), $import_data);
+
+		//Reset available quantitites
+		StockAvailable::resetProductFromStockAvailableByGroupShop($new_group_shop);
 	}
 }
 

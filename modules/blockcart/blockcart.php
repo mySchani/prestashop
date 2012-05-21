@@ -77,10 +77,10 @@ class BlockCart extends Module
 		if ($useTax AND Configuration::get('PS_TAX_DISPLAY') == 1)
 		{
 			$totalToPayWithoutTaxes = $params['cart']->getOrderTotal(false);
-			$this->templateAssign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
+			$this->smarty->assign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
 		}
 
-		$this->templateAssign(array(
+		$this->smarty->assign(array(
 			'products' => $products,
 			'customizedDatas' => Product::getAllCustomizedDatas((int)($params['cart']->id)),
 			'CUSTOMIZE_FILE' => _CUSTOMIZE_FILE_,
@@ -94,12 +94,13 @@ class BlockCart extends Module
 			'product_total' => Tools::displayPrice($params['cart']->getOrderTotal($useTax, Cart::BOTH_WITHOUT_SHIPPING), $currency),
 			'total' => Tools::displayPrice($totalToPay, $currency),
 			'order_process' => Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order',
-			'ajax_allowed' => (int)(Configuration::get('PS_BLOCK_CART_AJAX')) == 1 ? true : false
+			'ajax_allowed' => (int)(Configuration::get('PS_BLOCK_CART_AJAX')) == 1 ? true : false,
+			'static_token' => Tools::getToken(false)
 		));
 		if (sizeof($errors))
-			$this->templateAssign('errors', $errors);
+			$this->smarty->assign('errors', $errors);
 		if(isset($this->context->cookie->ajax_blockcart_display))
-			$this->templateAssign('colapseExpandStatus', $this->context->cookie->ajax_blockcart_display);
+			$this->smarty->assign('colapseExpandStatus', $this->context->cookie->ajax_blockcart_display);
 	}
 
 	public function getContent()
@@ -159,7 +160,7 @@ class BlockCart extends Module
 			return;
 
 		// @todo this variable seems not used
-		$this->templateAssign('order_page', strpos($_SERVER['PHP_SELF'], 'order') !== false);
+		$this->smarty->assign('order_page', strpos($_SERVER['PHP_SELF'], 'order') !== false);
 		$this->assignContentVars($params);
 		return $this->display(__FILE__, 'blockcart.tpl');
 	}

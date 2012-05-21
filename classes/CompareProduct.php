@@ -20,37 +20,35 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10333 $
+*  @version  Release: $Revision: 11173 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class CompareProductCore extends ObjectModel
 {
-	public		$id_compare;
+	public $id_compare;
 
-	public 		$id_customer;
+	public $id_customer;
 
-	public 		$date_add;
+	public $date_add;
 
-	public 		$date_upd;
-
-	protected 	$fieldRequired = array(
-		'id_compare',
-		'id_customer');
-
-	protected 	$fieldsValidate = array(
-		'id_compare' => 'isUnsignedInt',
-		'id_customer' => 'isUnsignedInt'
-	);
-
-	protected $table = 'compare';
-
-	protected $identifier = 'id_compare';
-
+	public $date_upd;
 
 	/**
-	 * Get all comapare products of the customer
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'compare',
+		'primary' => 'id_compare',
+		'fields' => array(
+			'id_compare' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'id_customer' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+		),
+	);
+
+	/**
+	 * Get all compare products of the customer
 	 * @param int $id_customer
 	 * @return array
 	 */
@@ -65,8 +63,8 @@ class CompareProductCore extends ObjectModel
 		$compareProducts = null;
 
 		if ($results)
-		foreach($results as $result)
-			$compareProducts[] = $result['id_product'];
+			foreach($results as $result)
+				$compareProducts[] = $result['id_product'];
 
 		return $compareProducts;
 	}
@@ -89,9 +87,10 @@ class CompareProductCore extends ObjectModel
 			if ($sql)
 			{
 				$id_compare = Db::getInstance()->getValue('SELECT MAX(`id_compare`) FROM `'._DB_PREFIX_.'compare`');
-				$cookie->id_compare = $id_compare;
+				Context::getContext()->cookie->id_compare = $id_compare;
 			}
 		}
+
 		return Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'compare_product` (`id_compare`, `id_product`, `date_add`, `date_upd`)
 			VALUES ('.(int)($id_compare).', '.(int)($id_product).', NOW(), NOW())');
@@ -99,7 +98,8 @@ class CompareProductCore extends ObjectModel
 
 	/**
 	 * Remove a compare product for the customer
-	 * @param int $id_compare, int $id_product
+	 * @param int $id_compare
+	 * @param int $id_product
 	 * @return boolean
 	 */
 	public static function removeCompareProduct($id_compare, $id_product)

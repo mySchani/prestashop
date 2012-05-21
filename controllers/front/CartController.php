@@ -72,6 +72,8 @@ class CartControllerCore extends FrontController
 				$this->processDeleteProductInCart();
 			else if(Tools::getIsset('changeAddressDelivery'))
 				$this->processChangeProductAddressDelivery();
+			else if(Tools::getIsset('allowSeperatedPackage'))
+				$this->processAllowSeperatedPackage();
 			else if(Tools::getIsset('duplicate'))
 				$this->processDuplicateProduct();
 
@@ -115,6 +117,9 @@ class CartControllerCore extends FrontController
 
 	protected function processChangeProductAddressDelivery()
 	{
+		if (!Configuration::get('PS_ALLOW_MULTISHIPPING'))
+			return;
+		
 		$old_id_address_delivery = (int)Tools::getValue('old_id_address_delivery');
 		$new_id_address_delivery = (int)Tools::getValue('new_id_address_delivery');
 
@@ -124,9 +129,25 @@ class CartControllerCore extends FrontController
 			$old_id_address_delivery,
 			$new_id_address_delivery);
 	}
+	
+	protected function processAllowSeperatedPackage()
+	{
+		if (!Configuration::get('PS_SHIP_WHEN_AVAILABLE'))
+			return;
+		
+		if (Tools::getValue('value') === false)
+			die('{"error":true, "error_message": "No value setted"}');
+		
+		$this->context->cart->allow_seperated_package = (boolean)Tools::getValue('value');
+		$this->context->cart->update();
+		die('{"error":false}');
+	}
 
 	protected function processDuplicateProduct()
 	{
+		if (!Configuration::get('PS_ALLOW_MULTISHIPPING'))
+			return;
+		
 		if (
 			!$this->context->cart->duplicateProduct(
 				$this->id_product,
@@ -207,7 +228,7 @@ class CartControllerCore extends FrontController
 					$this->errors[] = Tools::displayError('You must add').' '.$minimal_quantity.' '.Tools::displayError('Minimum quantity');
 				}
 				else if (!$updateQuantity)
-					$this->errors[] = Tools::displayError('You already have the maximum quantity available for this product.');
+					$this->errors[] = Tools::displayError('You already have the maximum quantity available for this product.', false);
 			}
 		}
 		CartRule::autoRemoveFromCart();
@@ -228,6 +249,7 @@ class CartControllerCore extends FrontController
 	public function initContent()
 	{
 		$this->setTemplate(_PS_THEME_DIR_.'errors.tpl');
+		parent::initContent();
 	}
 
 	/**
@@ -236,7 +258,7 @@ class CartControllerCore extends FrontController
 	public function displayAjax()
 	{
 		if ($this->errors)
-			die(Tools::jsonEncode(array('hasError' => true, $this->errors)));
+			die(Tools::jsonEncode(array('hasError' => true, 'errors' => $this->errors)));
 
 		if (Tools::getIsset('summary'))
 		{
@@ -247,8 +269,7 @@ class CartControllerCore extends FrontController
 				if ($this->context->cart->id_address_delivery)
 					$deliveryAddress = new Address($this->context->cart->id_address_delivery);
 				$id_country = (isset($deliveryAddress) && $deliveryAddress->id) ? $deliveryAddress->id_country : Configuration::get('PS_COUNTRY_DEFAULT');
-				$result['carriers'] = Carrier::getCarriersForOrder(Country::getIdZone($id_country), $groups);
-				//$result['checked'] = Carrier::getDefaultCarrierSelection($result['carriers'], (int)$this->cart->id_carrier);
+
 				$result['HOOK_EXTRACARRIER'] = Hook::exec('extraCarrier', array('address' => (isset($deliveryAddress) && (int)$deliveryAddress->id) ? $deliveryAddress : null));
 			}
 			$result['summary'] = $this->context->cart->getSummaryDetails();

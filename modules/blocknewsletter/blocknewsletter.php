@@ -68,7 +68,7 @@ class Blocknewsletter extends Module
  	 	Configuration::updateValue('NW_SALT', Tools::passwdGen(16));
 
  	 	return Db::getInstance()->execute('
-		CREATE TABLE IF NOT EXISTS '._DB_PREFIX_.'newsletter (
+		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'newsletter` (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`id_shop` INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
 		  	`id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
@@ -429,7 +429,7 @@ class Blocknewsletter extends Module
  	 */
 	protected function sendVoucher($email, $code)
 	{
-		return Mail::Send($this->context->language->id, 'newsletter_voucher', Mail::l('Newsletter voucher'), array('{discount}' => $code), $email, null, null, null, null, null, dirname(__FILE__).'/mails/');
+		return Mail::Send($this->context->language->id, 'newsletter_voucher', Mail::l('Newsletter voucher', $this->context->language->id), array('{discount}' => $code), $email, null, null, null, null, null, dirname(__FILE__).'/mails/');
 	}
 
 	/**
@@ -439,7 +439,7 @@ class Blocknewsletter extends Module
 	 */
 	protected function sendConfirmationEmail($email)
 	{
-		return	Mail::Send($this->context->language->id, 'newsletter_conf', Mail::l('Newsletter confirmation'), array(), pSQL($email), null, null, null, null, null, dirname(__FILE__).'/mails/');
+		return	Mail::Send($this->context->language->id, 'newsletter_conf', Mail::l('Newsletter confirmation', $this->context->language->id), array(), pSQL($email), null, null, null, null, null, dirname(__FILE__).'/mails/');
 	}
 
 	/**
@@ -451,41 +451,43 @@ class Blocknewsletter extends Module
 	protected function sendVerificationEmail($email, $token)
 	{
 		$verif_url = Tools::getShopDomain(true)._MODULE_DIR_.$this->name.'/verification.php?token='.$token;
-		return Mail::Send($this->context->language->id, 'newsletter_verif', Mail::l('Email verification'), array('{verif_url}' => $verif_url), $email, null, null, null, null, null, dirname(__FILE__).'/mails/');
+		return Mail::Send($this->context->language->id, 'newsletter_verif', Mail::l('Email verification', $this->context->language->id), array('{verif_url}' => $verif_url), $email, null, null, null, null, null, dirname(__FILE__).'/mails/');
 	}
 
-	public function hookRightColumn($params)
+	public function hookDisplayRightColumn($params)
 	{
-		return $this->hookLeftColumn($params);
+		return $this->hookDisplayLeftColumn($params);
 	}
 
-	public function hookLeftColumn($params)
+	public function hookDisplayLeftColumn($params)
 	{
 		if (Tools::isSubmit('submitNewsletter'))
 		{
 			$this->newsletterRegistration();
 			if ($this->error)
 			{
-				$this->context->smarty->assign(array('color' => 'red',
-										'msg' => $this->error,
-										'nw_value' => isset($_POST['email']) ? pSQL($_POST['email']) : false,
-										'nw_error' => true,
-										'action' => $_POST['action']));
+				$this->smarty->assign(array('color' => 'red',
+					'msg' => $this->error,
+					'nw_value' => isset($_POST['email']) ? pSQL($_POST['email']) : false,
+					'nw_error' => true,
+					'action' => $_POST['action'])
+				);
 			}
 			else if ($this->valid)
 			{
-				$this->context->smarty->assign(array('color' => 'green',
-									'msg' => $this->valid,
-									'nw_error' => false));
+				$this->smarty->assign(array('color' => 'green',
+					'msg' => $this->valid,
+					'nw_error' => false)
+				);
 			}
 		}
-		$this->context->smarty->assign('this_path', $this->_path);
+		$this->smarty->assign('this_path', $this->_path);
  	 	return $this->display(__FILE__, 'blocknewsletter.tpl');
 	}
 
-	public function hookHeader($params)
+	public function hookDisplayHeader($params)
 	{
-		$this->context->controller->addCSS(($this->_path).'blocknewsletter.css', 'all');
+		$this->context->controller->addCSS($this->_path.'blocknewsletter.css', 'all');
 	}
 }
 

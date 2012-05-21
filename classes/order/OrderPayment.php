@@ -29,6 +29,7 @@ class OrderPaymentCore extends ObjectModel
 {
 	public $id_order;
 	public $id_currency;
+	public $id_order_invoice;
 	public $amount;
 	public $payment_method;
 	public $conversion_rate;
@@ -39,39 +40,27 @@ class OrderPaymentCore extends ObjectModel
 	public $card_holder;
 	public $date_add;
 
-	protected	$fieldsRequired = array('id_order', 'id_currency', 'amount');
-	protected	$fieldsSize = array('transaction_id' => 254, 'card_number' => 254, 'card_brand' => 254, 'card_expiration' => 254, 'card_holder' => 254);
-	protected	$fieldsValidate = array(
-		'id_order' => 'isUnsignedId',
-		'id_currency' => 'isUnsignedId',
-		'amount' => 'isPrice',
-		'payment_method' => 'isName',
-		'conversion_rate' => 'isFloat',
-		'transaction_id' => 'isAnything',
-		'card_number' => 'isAnything',
-		'card_brand' => 'isAnything',
-		'card_expiration' => 'isAnything',
-		'card_holder' => 'isAnything'
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_payment',
+		'primary' => 'id_order_payment',
+		'fields' => array(
+			'id_order' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_currency' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_order_invoice' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'amount' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+			'payment_method' => 	array('type' => self::TYPE_STRING, 'validate' => 'isName'),
+			'conversion_rate' => 	array('type' => self::TYPE_INT, 'validate' => 'isFloat'),
+			'transaction_id' => 	array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+			'card_number' => 		array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+			'card_brand' => 		array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+			'card_expiration' => 	array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+			'card_holder' => 		array('type' => self::TYPE_STRING, 'validate' => 'isAnything', 'size' => 254),
+			'date_add' => 			array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
 	);
-
-	protected 	$table = 'order_payment';
-	protected 	$identifier = 'id_order_payment';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_order'] = (int)($this->id_order);
-		$fields['id_currency'] = (int)($this->id_currency);
-		$fields['amount'] = (float)($this->amount);
-		$fields['payment_method'] = pSQL($this->payment_method);
-		$fields['transaction_id'] = pSQL($this->transaction_id);
-		$fields['card_number'] = pSQL($this->card_number);
-		$fields['card_brand'] = pSQL($this->card_brand);
-		$fields['card_expiration'] = pSQL($this->card_expiration);
-		$fields['card_holder'] = pSQL($this->card_holder);
-		$fields['date_add'] = pSQL($this->date_add);
-		return $fields;
-	}
 
 	public function add($autodate = true, $nullValues = false)
 	{
@@ -92,8 +81,21 @@ class OrderPaymentCore extends ObjectModel
 	{
 		return Db::getInstance()->ExecuteS('
 			SELECT *
-			FROM `'._DB_PREFIX_.'payment_order`
+			FROM `'._DB_PREFIX_.'order_payment`
 			WHERE `id_order` = '.(int)$id_order);
+	}
+
+	/**
+	 * Get Order Payments By Invoice ID
+	 * @static
+	 * @param $id_invoice Invoice ID
+	 * @return Collection Collection
+	 */
+	public static function getByInvoiceId($id_invoice)
+	{
+		$payments = new Collection('OrderPayment');
+		$payments->where('id_order_invoice', '=', $id_invoice);
+		return $payments;
 	}
 }
 

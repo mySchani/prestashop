@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10593 $
+*  @version  Release: $Revision: 11634 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -61,12 +61,12 @@ class HomeSlide extends ObjectModel
 
 	protected $tables = array('homeslider_slides, homeslider_slides_lang');
 	protected $table = 'homeslider_slides';
-	protected $identifier = 'id_slide';
+	protected $identifier = 'id_homeslider_slides';
 
 	public function getFields()
 	{
 		$this->validateFields();
-		$fields['id_slide'] = (int)$this->id;
+		$fields['id_homeslider_slides'] = (int)$this->id;
 		$fields['active'] = (int)$this->active;
 		$fields['position'] = (int)$this->position;
 		return $fields;
@@ -96,7 +96,7 @@ class HomeSlide extends ObjectModel
 
 		$res = parent::add($autodate, $null_values);
 		$res &= Db::getInstance()->execute('
-			INSERT INTO `'._DB_PREFIX_.'homeslider` (`id_shop`, `id_slide`)
+			INSERT INTO `'._DB_PREFIX_.'homeslider` (`id_shop`, `id_homeslider_slides`)
 			VALUES('.(int)$id_shop.', '.(int)$this->id.')'
 		);
 		return $res;
@@ -104,18 +104,21 @@ class HomeSlide extends ObjectModel
 
 	public function delete()
 	{
-		$res = null;
+		$res = true;
+
 		$images = $this->image;
 		foreach ($images as $image)
 		{
-			if (file_exists(dirname(__FILE__).'/images/'.$image))
-				$res &= @unlink(dirname(__FILE__).'/images/'.$image);
+			if (preg_match('/sample/', $image) === 0)
+				if ($image && file_exists(dirname(__FILE__).'/images/'.$image))
+					$res &= @unlink(dirname(__FILE__).'/images/'.$image);
 		}
 
 		$res &= $this->reOrderPositions();
+
 		$res &= Db::getInstance()->execute('
 			DELETE FROM `'._DB_PREFIX_.'homeslider`
-			WHERE `id_slide` = '.(int)$this->id
+			WHERE `id_homeslider_slides` = '.(int)$this->id
 		);
 
 		$res &= parent::delete();
@@ -131,20 +134,18 @@ class HomeSlide extends ObjectModel
 		$max = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT MAX(hss.`position`) as position
 			FROM `'._DB_PREFIX_.'homeslider_slides` hss, `'._DB_PREFIX_.'homeslider` hs
-			WHERE hss.`id_slide` = hs.`id_slide` AND hs.`id_shop` = '.(int)$id_shop
+			WHERE hss.`id_homeslider_slides` = hs.`id_homeslider_slides` AND hs.`id_shop` = '.(int)$id_shop
 		);
 
 		if ((int)$max == (int)$id_slide)
 			return true;
 
 		$rows = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT hss.`position` as position, hss.`id_slide` as id_slide
-			FROM `'._DB_PREFIX_.'homeslider_slides` hss, `'._DB_PREFIX_.'homeslider` hs
-			WHERE hss.`id_slide` = hs.`id_slide` AND hs.`id_shop` = '.(int)$id_shop.' AND hss.`position` > '.(int)$this->position
+			SELECT hss.`position` as position, hss.`id_homeslider_slides` as id_slide
+			FROM `'._DB_PREFIX_.'homeslider_slides` hss
+			LEFT JOIN `'._DB_PREFIX_.'homeslider` hs ON (hss.`id_homeslider_slides` = hs.`id_homeslider_slides`)
+			WHERE hs.`id_shop` = '.(int)$id_shop.' AND hss.`position` > '.(int)$this->position
 		);
-
-		if (!$rows)
-			return false;
 
 		foreach ($rows as $row)
 		{

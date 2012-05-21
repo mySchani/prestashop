@@ -116,6 +116,11 @@ class AuthControllerCore extends FrontController
 		if (Tools::getValue('create_account'))
 			$this->context->smarty->assign('email_create', 1);
 
+		if (Tools::getValue('multi-shipping') == 1)
+			$this->context->smarty->assign('multi_shipping', true);
+		else
+			$this->context->smarty->assign('multi_shipping', false);
+		
 		$this->assignAddressFormat();
 
 		// Call a hook to display more information on form
@@ -141,6 +146,7 @@ class AuthControllerCore extends FrontController
 			die(Tools::jsonEncode($return));
 		}
 		$this->setTemplate(_PS_THEME_DIR_.'authentication.tpl');
+		parent::initContent();
 	}
 
 	/**
@@ -288,16 +294,22 @@ class AuthControllerCore extends FrontController
 				$this->context->cookie->is_guest = $customer->isGuest();
 				$this->context->cookie->passwd = $customer->passwd;
 				$this->context->cookie->email = $customer->email;
+				
+				// Add customer to the context
+				$this->context->customer = $customer;
+				
 				if (Configuration::get('PS_CART_FOLLOWING') && (empty($this->context->cookie->id_cart) || Cart::getNbProducts($this->context->cookie->id_cart) == 0))
 					$this->context->cookie->id_cart = (int)Cart::lastNoneOrderedCart($this->context->customer->id);
+				
 				// Update cart address
+				$this->context->cart->id = $this->context->cookie->id_cart;
 				$this->context->cart->setDeliveryOption(null);
 				$this->context->cart->id_address_delivery = Address::getFirstCustomerAddressId((int)($customer->id));
+				
 				$this->context->cart->id_address_invoice = Address::getFirstCustomerAddressId((int)($customer->id));
 				$this->context->cart->secure_key = $customer->secure_key;
 				$this->context->cart->update();
-				// Add customer to the context
-				$this->context->customer = $customer;
+				$this->context->cart->autosetProductAddress();
 
 				Hook::exec('authentication');
 
@@ -307,7 +319,7 @@ class AuthControllerCore extends FrontController
 				if (!$this->ajax)
 				{
 					if ($back = Tools::getValue('back'))
-						Tools::redirect($back);
+						Tools::redirect(html_entity_decode($back));
 					Tools::redirect('index.php?controller=my-account');
 				}
 			}
@@ -321,6 +333,8 @@ class AuthControllerCore extends FrontController
 			);
 			die(Tools::jsonEncode($return));
 		}
+		else
+			$this->context->smarty->assign('authentification_error', $this->errors);
 	}
 
 	/**
@@ -338,7 +352,11 @@ class AuthControllerCore extends FrontController
 			$_POST['passwd'] = md5(time()._COOKIE_KEY_);
 		if (isset($_POST['guest_email']) && $_POST['guest_email'])
 			$_POST['email'] = $_POST['guest_email'];
-
+		// Checked the user address in case he changed his email address
+		if (!Validate::isEmail($email = Tools::getValue('email')) || empty($email))
+			$this->errors[] = Tools::displayError('Invalid e-mail address');
+		elseif (Customer::customerExists($email))
+			$this->errors[] = Tools::displayError('An account is already registered with this e-mail.', false);
 		// Preparing customer
 		$customer = new Customer();
 		$_POST['lastname'] = Tools::getValue('customer_lastname');
@@ -404,7 +422,7 @@ class AuthControllerCore extends FrontController
 						}
 						// redirection: if cart is not empty : redirection to the cart
 						if (count($this->context->cart->getProducts(true)) > 0)
-							Tools::redirect('index.php?controller=order');
+							Tools::redirect('index.php?controller=order&multi-shipping='.(int)Tools::getValue('multi-shipping'));
 						// else : redirection to the account
 						else
 							Tools::redirect('index.php?controller=my-account');
@@ -464,7 +482,7 @@ class AuthControllerCore extends FrontController
 		if (!count($this->errors))
 		{
 			if (Customer::customerExists(Tools::getValue('email')))
-				$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.');
+				$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.', false);
 			if (Tools::isSubmit('newsletter'))
 			{
 				$customer->ip_registration_newsletter = pSQL(Tools::getRemoteAddr());
@@ -501,6 +519,7 @@ class AuthControllerCore extends FrontController
 						{
 							if (!$customer->is_guest)
 							{
+								$this->context->customer = $customer;
 								$customer->cleanGroups();
 								// we add the guest customer in the default customer group
 								$customer->addGroups(array((int)Configuration::get('PS_CUSTOMER_GROUP')));
@@ -544,7 +563,7 @@ class AuthControllerCore extends FrontController
 							Tools::redirect('index.php?controller=my-account');
 							// redirection: if cart is not empty : redirection to the cart
 							if (count($this->context->cart->getProducts(true)) > 0)
-								Tools::redirect('index.php?controller=order');
+								Tools::redirect('index.php?controller=order&multi-shipping='.(int)Tools::getValue('multi-shipping'));
 							// else : redirection to the account
 							else
 								Tools::redirect('index.php?controller=my-account');
@@ -568,6 +587,7 @@ class AuthControllerCore extends FrontController
 				);
 				die(Tools::jsonEncode($return));
 			}
+			$this->context->smarty->assign('account_error', $this->errors);
 		}
 	}
 
@@ -580,7 +600,7 @@ class AuthControllerCore extends FrontController
 			$this->errors[] = Tools::displayError('Invalid e-mail address');
 		elseif (Customer::customerExists($email))
 		{
-			$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.');
+			$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.', false);
 			$_POST['email'] = $_POST['email_create'];
 			unset($_POST['email_create']);
 		}

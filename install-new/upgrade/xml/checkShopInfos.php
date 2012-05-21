@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 10686 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -210,7 +210,7 @@ if (isFormValid())
 
 
 	$stream_context = @stream_context_create(array('http' => array('timeout' => 5)));
-	$localization_file = @Tools::file_get_contents('http://www.prestashop.com/download/localization_pack.php?country='.$_GET['countryName'], false, $stream_context);
+	$localization_file = @Tools::file_get_contents('http://api.prestashop.com/download/localization_pack.php?country='.$_GET['countryName'], false, $stream_context);
 	if (!$localization_file AND file_exists(dirname(__FILE__).'/../../localization/'.strtolower($_GET['countryName']).'.xml'))
 		$localization_file = @file_get_contents(dirname(__FILE__).'/../../localization/'.strtolower($_GET['countryName']).'.xml');
 	if ($localization_file)

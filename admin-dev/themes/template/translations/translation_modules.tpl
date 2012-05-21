@@ -19,7 +19,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10542 $
+*  @version  Release: $Revision: 11429 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -32,11 +32,11 @@
 	{l s='Expressions to translate'} : <b>{$count}</b>. {l s='Click on the titles to open fieldsets'}.<br /><br />
 	{$limit_warning}
 	{if !$suoshin_exceeded}
-		<form method="post" action="{$url_submit}" class="form">
+		<form method="post" id="{$table}_form" action="{$url_submit}" class="form">
 		{$toggle_button}
-		{include file="translations/auto_translate.tpl"}
+		{*{include file="translations/auto_translate.tpl"}*}
 		<input type="hidden" name="lang" value="{$lang}" />
-		<input type="submit" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" />
+		<input type="submit" id="{$table}_form_submit_btn" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" />
 		<br /><br />
 	
 		{if count($modules_translations) > 1}
@@ -74,15 +74,13 @@
 												{capture assign="name"}{strtolower($module_name)}_{strtolower($theme_name)}_{strtolower($template_name)}_{md5($key)}{/capture}
 												{if $key|strlen < $textarea_sized}
 													<input type="text" 
-														   style="width: 450px" 
-														   name="{$name|md5}" 
-														   value="{$value|regex_replace:'#"#':'&quot;'|stripslashes}" />
+														style="width: 450px" 
+														name="{$name|md5}" 
+														value="{$value|regex_replace:'#"#':'&quot;'|stripslashes}" />
 												{else}
 													<textarea rows="{($key|strlen / $textarea_sized)|intval}" 
-															  style="width: 450px" 
-															  name="{$name|md5}">
-														{$value|regex_replace:'#"#':'&quot;'|stripslashes}
-													</textarea>
+														style="width: 450px" 
+														name="{$name|md5}">{$value|regex_replace:'#"#':'&quot;'|stripslashes}</textarea>
 												{/if}
 											</td>
 										</tr>
@@ -94,7 +92,6 @@
 				{/foreach}
 			{/foreach}
 		{/foreach}
-		<br /><input type="submit" name="submitTranslations{$type|ucfirst}" value="{l s='Update translations'}" class="button" /></form>
 	{/if}
 
 {/block}

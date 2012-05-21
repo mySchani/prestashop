@@ -114,6 +114,8 @@ abstract class DbCore
 
 	/**
 	 * Get number of rows in a result
+	 *
+	 * @param mixed $result
 	 */
 	abstract protected function _numRows($result);
 
@@ -129,6 +131,8 @@ abstract class DbCore
 
 	/**
 	 * Get next row for a query which doesn't return an array
+	 *
+	 * @param mixed $result
 	 */
 	abstract public function nextRow($result = false);
 
@@ -201,10 +205,10 @@ abstract class DbCore
 	public static function getClass()
 	{
 		$class = 'MySQL';
-		if (extension_loaded('mysqli'))
-			$class = 'DbMySQLi';
-		else if (extension_loaded('pdo_mysql'))
+		if (extension_loaded('pdo_mysql'))
 			$class = 'DbPDO';
+		else if (extension_loaded('mysqli'))
+			$class = 'DbMySQLi';
 		return $class;
 	}
 
@@ -246,19 +250,20 @@ abstract class DbCore
 	 *
 	 * @param string $table Table where insert/update data
 	 * @param string $data Data to insert/update
-	 * @param string $type INSERT or INSERT IGNORE or UPDATE
+	 * @param string $type INSERT or INSERT IGNORE or REPLACE or UPDATE
 	 * @param string $where WHERE clause, only for UPDATE (optional)
-	 * @param string $limit LIMIT clause (optional)
+	 * @param int $limit LIMIT clause (optional)
+	 * @param bool $use_cache
 	 * @param bool $use_null If true, replace empty strings and NULL by a NULL value
 	 * @return mixed|boolean SQL query result
 	 */
-	public function autoExecute($table, $data, $type, $where = false, $limit = false, $use_cache = 1, $use_null = false)
+	public function autoExecute($table, $data, $type, $where = '', $limit = 0, $use_cache = true, $use_null = false)
 	{
 		if (!$data)
 			return true;
 
 		$type = strtoupper($type);
-		if ($type == 'INSERT' || $type == 'INSERT IGNORE')
+		if ($type == 'INSERT' || $type == 'INSERT IGNORE' || $type == 'REPLACE')
 		{
 			// Check if $data is a list of row
 			$current = current($data);
@@ -295,7 +300,7 @@ abstract class DbCore
 			$sql = $type.' INTO `'.$table.'` ('.$keys_stringified.') VALUES '.implode(', ', $values_stringified);
 			if ($limit)
 				$sql .= ' LIMIT '.(int)$limit;
-			return $this->q($sql, $use_cache);
+			return (bool)$this->q($sql, $use_cache);
 		}
 		else if ($type == 'UPDATE')
 		{
@@ -315,7 +320,7 @@ abstract class DbCore
 				$sql .= ' WHERE '.$where;
 			if ($limit)
 				$sql .= ' LIMIT '.(int)$limit;
-			return $this->q($sql, $use_cache);
+			return (bool)$this->q($sql, $use_cache);
 		}
 		else
 			throw new PrestashopDatabaseException('Wrong argument (miss type) in Db::autoExecute()');
@@ -330,10 +335,10 @@ abstract class DbCore
 	 * @param string $values Data to insert/update
 	 * @param string $type INSERT or UPDATE
 	 * @param string $where WHERE clause, only for UPDATE (optional)
-	 * @param string $limit LIMIT clause (optional)
+	 * @param int $limit LIMIT clause (optional)
 	 * @return mixed|boolean SQL query result
 	 */
-	public function autoExecuteWithNullValues($table, $values, $type, $where = false, $limit = false)
+	public function autoExecuteWithNullValues($table, $values, $type, $where = '', $limit = 0)
 	{
 		return $this->autoExecute($table, $values, $type, $where, $limit, 0, true);
 	}
@@ -346,7 +351,9 @@ abstract class DbCore
 	 */
 	public function query($sql)
 	{
-		$sql = (string)$sql;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
+
 		$result = $this->_query($sql);
 		if (_PS_DEBUG_SQL_)
 			$this->displayError($sql);
@@ -362,14 +369,14 @@ abstract class DbCore
 	 * @param bool $use_cache Use cache or not
 	 * @return bool
 	 */
-	public function delete($table, $where = false, $limit = false, $use_cache = 1)
+	public function delete($table, $where = '', $limit = 0, $use_cache = true)
 	{
 		$this->result = false;
 		$sql = 'DELETE FROM `'.bqSQL($table).'`'.($where ? ' WHERE '.$where : '').($limit ? ' LIMIT '.(int)$limit : '');
 		$res = $this->query($sql);
 		if ($use_cache && $this->is_cache_enabled)
 			Cache::getInstance()->deleteQuery($sql);
-		return $res;
+		return (bool)$res;
 	}
 
 	/**
@@ -377,34 +384,37 @@ abstract class DbCore
 	 *
 	 * @param string $sql
 	 * @param bool $use_cache
-	 * @return mixed
+	 * @return bool
 	 */
-	public function execute($sql, $use_cache = 1)
+	public function execute($sql, $use_cache = true)
 	{
-		$sql = (string)$sql;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
+
 		$this->result = $this->query($sql);
 		if ($use_cache && $this->is_cache_enabled)
 			Cache::getInstance()->deleteQuery($sql);
-		return $this->result;
+		return (bool)$this->result;
 	}
 
 	/**
 	 * ExecuteS return the result of $sql as array
 	 *
 	 * @param string $sql query to execute
-	 * @param boolean $array return an array instead of a mysql_result object
-	 * @param int $use_cache if query has been already executed, use its result
+	 * @param boolean $array return an array instead of a mysql_result object (deprecated since 1.5.0, use query method instead)
+	 * @param bool $use_cache if query has been already executed, use its result
 	 * @return array or result object
 	 */
-	public function executeS($sql, $array = true, $use_cache = 1)
+	public function executeS($sql, $array = true, $use_cache = true)
 	{
-		$sql = (string)$sql;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
 
-		// This methode must be used only with queries which display results
-		if (!preg_match('#^\s*(select|show|explain)\s#i', $sql))
+		// This method must be used only with queries which display results
+		if (!preg_match('#^\s*(select|show|explain|describe)\s#i', $sql))
 		{
 			if (defined('_PS_MODE_DEV_') && _PS_MODE_DEV_)
-				throw new PrestashopDatabaseException('Db->executeS() must be used only with select, show or explain queries');
+				throw new PrestashopDatabaseException('Db->executeS() must be used only with select, show, explain or describe queries');
 			return $this->execute($sql, $use_cache);
 		}
 
@@ -438,12 +448,14 @@ abstract class DbCore
 	 * This function automatically add "limit 1" to the query
 	 *
 	 * @param mixed $sql the select query (without "LIMIT 1")
-	 * @param int $use_cache find it in cache first
+	 * @param bool $use_cache find it in cache first
 	 * @return array associative array of (field=>value)
 	 */
-	public function getRow($sql, $use_cache = 1)
+	public function getRow($sql, $use_cache = true)
 	{
-		$sql = (string)$sql;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
+
 		$sql .= ' LIMIT 1';
 		$this->result = false;
 		$this->last_query = $sql;
@@ -468,12 +480,14 @@ abstract class DbCore
 	 * getValue return the first item of a select query.
 	 *
 	 * @param mixed $sql
-	 * @param int $use_cache
-	 * @return void
+	 * @param bool $use_cache
+	 * @return mixed
 	 */
-	public function getValue($sql, $use_cache = 1)
+	public function getValue($sql, $use_cache = true)
 	{
-		$sql = (string)$sql;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
+
 		if (!$result = $this->getRow($sql, $use_cache))
 			return false;
 		return array_shift($result);
@@ -503,12 +517,13 @@ abstract class DbCore
 	 *
 	 * @param string $sql
 	 * @param bool $use_cache
+	 * @return mixed $result
 	 */
-	protected function q($sql, $use_cache = 1)
+	protected function q($sql, $use_cache = true)
 	{
-		global $webservice_call;
+		if ($sql instanceof DbQuery)
+			$sql = $sql->build();
 
-		$sql = (string)$sql;
 		$this->result = false;
 		$result = $this->query($sql);
 		if ($use_cache && $this->is_cache_enabled)
@@ -519,7 +534,7 @@ abstract class DbCore
 	/**
 	 * Display last SQL error
 	 *
-	 * @param unknown_type $sql
+	 * @param bool $sql
 	 */
 	public function displayError($sql = false)
 	{
@@ -531,8 +546,8 @@ abstract class DbCore
 		else if (_PS_DEBUG_SQL_ && $errno && !defined('PS_INSTALLATION_IN_PROGRESS'))
 		{
 			if ($sql)
-				throw new PrestashopDatabaseException(Tools::displayError($this->getMsgError().'<br /><br /><pre>'.$sql.'</pre>'));
-			throw new PrestashopDatabaseException(Tools::displayError($this->getMsgError()));
+				throw new PrestashopDatabaseException($this->getMsgError().'<br /><br /><pre>'.$sql.'</pre>');
+			throw new PrestashopDatabaseException($this->getMsgError());
 		}
 	}
 
@@ -564,7 +579,8 @@ abstract class DbCore
 	 * @param string $user Login for database connection
 	 * @param string $pwd Password for database connection
 	 * @param string $db Database name
-	 * @param bool $newDbLink
+	 * @param bool $new_db_link
+	 * @param bool $engine
 	 * @return int
 	 */
 	public static function checkConnection($server, $user, $pwd, $db, $new_db_link = true, $engine = null)
@@ -585,13 +601,7 @@ abstract class DbCore
 		return call_user_func_array(array(Db::getClass(), 'tryUTF8'), array($server, $user, $pwd));
 	}
 
-	/**
-	 * Alias of Db::getInstance()->ExecuteS
-	 *
-	 * @acces string query The query to execute
-	 * @return array Array of line returned by MySQL
-	 */
-	public static function s($sql, $use_cache = 1)
+	public static function s($sql, $use_cache = true)
 	{
 		return Db::getInstance()->executeS($sql, true, $use_cache);
 	}

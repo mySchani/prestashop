@@ -48,6 +48,7 @@ input {
 
 p {
 	margin: 0.5em 0;
+	color:#585A69;
 }
 
 hr {
@@ -126,6 +127,7 @@ form .simulate-disable-input{
 	color:#666666;
 	font-size:12px;
 }
+
 .block-mail {
 	margin:0 0 20px 0;
 }
@@ -223,7 +225,7 @@ label {
 label.t {
 	float: none;
 	clear: none;
-	padding: 0px;
+	padding: 0 5px 0;
 	margin: 0px;
 	font-weight: normal;
 	font-size: 12px;
@@ -319,6 +321,11 @@ select optgroup option {
 	width: 350px;
 }
 
+.lab_modules_positions img {
+	float:left;
+}
+
+
 /* STRUCTURE */
 
 #container {
@@ -329,6 +336,7 @@ select optgroup option {
 
 #main {
 	clear: left;
+	min-height: 600px;
 	/*border: 1px solid #999;
 	border-bottom: none;*/
 }
@@ -427,13 +435,13 @@ select optgroup option {
 
 #unhook_button_position_bottom {
 	overflow: hidden;
-	width: 600px;
+	width: 100%;
 	padding-top: 10px;
 }
 
 #unhook_button_position_top {
 	overflow: hidden;
-	width: 600px;
+	width: 100%;
 }
 
 #content .conf, #content .warn, #content .error {
@@ -459,7 +467,7 @@ select optgroup option {
 	min-height:32px;
 }
 #content .conf img, #content .warn img, #content .error img {
-	margin:-4px 5px 0 0;
+	margin:0 5px 0 0;
 }
 
 #content .error  {
@@ -467,6 +475,7 @@ select optgroup option {
 	border: 1px solid #CC0000;
 	color:#D8000C;
 	min-height: 32px;
+	line-height:28px;
     padding: 5px 5px 5px 40px;
 	border-radius:3px;
 }
@@ -497,7 +506,7 @@ select optgroup option {
 	background: #FEEFB3 url(../img/admin/icon-attention.png) no-repeat scroll 6px 6px;
 	border: 1px solid #9e6014;
 	color:#9e6014;
-	padding: 5px 5px 5px 40px;
+	padding: 10px 5px 5px 40px;
 	border-radius:3px;
 	min-height:32px;
 }
@@ -520,7 +529,7 @@ select optgroup option {
 	color:#4F8A10;
 	padding: 5px 5px 5px 40px;
 	border-radius:3px;
-	min-height:32px;	
+	min-height:32px;
 }
 
 
@@ -798,15 +807,27 @@ tr.deleted td {
 	margin-top: 4px;
 	margin-bottom: 2px;
 	border: 1px solid #00529B;
-	padding: 5px 5px 5px 40px;
+	padding:15px 5px 15px 40px;
 	color: #00529B;
 	background: #BDE5F8 url(../img/admin/icon-info.png) no-repeat 6px 5px;
 	border-radius:3px;
-	min-height:32px;
+	min-height:15px;
+}
+.hint p {
+	color: #00529B;
 }
 
+.hint .addImageDescription {
+	font-weight:bold;
+	font-size:16px;
+}
 div.hint {
 	position: relative;
+}
+
+div.hint ul li {
+	color: #00529B;
+	padding-left: 5px;
 }
 
 table tr th .hint {
@@ -1006,25 +1027,25 @@ table.permissions td {
 	#header_shoplist select.shopList option{
 		padding: 2px;
 	}
-	
+
 		#header_shoplist select.shopList .first{
 			font-weight: bold;
 			background-color: #408BD5;
 			color: #ffffff;
 		}
-		
+
 		#header_shoplist select.shopList .group{
 			font-weight: bold;
 			font-style: italic;
 			padding-left: 10px;
 			background-color: #C6DEFC;
 		}
-		
+
 		#header_shoplist select.shopList .shop{
 			padding-left: 20px;
 			background-color: #EAF2FC;
 		}
-		
+
 .multishop_info{
 	margin-top: 4px;
 	margin-bottom: 10px;
@@ -1220,7 +1241,7 @@ html[xmlns] .clearfix {
 	font-size: 8pt;
 }
 
-.table_info{	
+.table_info{
 	width: 283px;
 	float: left;
 	padding: 0;
@@ -1236,7 +1257,7 @@ html[xmlns] .clearfix {
 		color:000;
 		margin:0;
 		padding:6px;
- 		text-shadow:0 1px 0 #fff; 
+ 		text-shadow:0 1px 0 #fff;
 		display:block;
 		background-image: -moz-linear-gradient(center top , #F9F9F9, #ECECEC);
 		background: -webkit-gradient(linear, center top ,center bottom, from(#F9F9F9), to(#ECECEC)) repeat scroll 0 0 transparent;}
@@ -1365,7 +1386,7 @@ html[xmlns] .clearfix {
 	padding-left: 15px;
 	font-size: 12pt;
 	font-weight:normal;
-	
+
 }
 
 .admin-box2{
@@ -1648,6 +1669,7 @@ a.blue:hover {
 }
 .ac_over {
 	background: #ECEADE;
+	color:#585A69;
 }
 .button-translate {
 	padding:0px;
@@ -1707,12 +1729,26 @@ fieldset .optionsDescription{
     border: 1px solid #00529B;
     color: #00529B;
     font-family: Arial,Verdana,Helvetica,sans-serif;
-    font-size: 0.85em;
+    font-size: 12px;
     margin-bottom: 15px;
-    padding: 5px 5px 5px 40px;
+    padding: 10px 5px 5px 40px;
 	border-radius:3px;
 	min-height:32px;
-	line-height:32px;
+}
+
+fieldset .optionsDescription ul li {
+    color: #00529B;
+    margin:0;
+    padding:0;
+}
+
+p.product_description {
+font-family:Georgia, Arial, 'sans-serif';
+	font-style:italic;
+    clear: both;
+    text-align: left;
+	color:#7F7F7F;
+	text-align:right;
 }
 
 p.preference_description{
@@ -1721,6 +1757,7 @@ p.preference_description{
     clear: both;
     text-align: left;
     width: 500px;
+    color:#7F7F7F;
 }
 
 .preference_default_multishop{
@@ -1810,28 +1847,63 @@ div.progressBarImage
 #menu .submenu_size .submenu { display: none; position:absolute}
 #menu .submenu_size:hover > .submenu { display: block; }
 .submenu li{float:none;clear:left;}
+
+#fancybox-content { text-align:left;}
+
+/*customer_form*/
+#customers { display:block; position:relative;}
+#customer_form #fieldset_0 { text-align:left;}
 #customer_part #customers ul {
 	float:left;
 }
 #customer_part #customers ul li {
+	background-color:#fff;
 	display:inline;
 	list-style-type: none;
 	float:left;
 	margin:10px;
-}
-#customer_part #customers ul li .id_customer {
-	font-weight:bold;
-	color:green;
-}
-#products_part #products_found {	
-	display:none;
-}
-#vouchers_part #voucher_list {
-	display:none;
-}
-#vouchers_part #vouchers_err {
-	display:none;
-}
+	border:1px solid #ccc;
+	padding:5px;
+	width:200px;
+	border-radius:3px;
+	}
+#customer_part #customers ul li div.customerName { background-color:#eee; font-size:14px; text-shadow:0 1px 0 #fff; padding:2px; }
+#customer_part #customers ul li div.customerName a {  font-weight:bold;}
+#customer_part #customers ul li div.customerName .customerBirthday { font-size:12px;float:right;}
+#customer_part #customers ul li div.customerEmail a { font-size:12px; color:#666666;display: block; line-height: 20px;}
+#customer_part #customers ul li a.id_customer.button {float:right;}
+#customer_part #customers ul li .id_customer {}
+
+#products_part #products_found {display:none;}
+#vouchers_part #voucher_list {display:none;}
+#vouchers_part #vouchers_err {display:none;}
+
+/*address_part*/
+#address_part #address_delivery, #address_part #address_invoice { width:400px; float:left;}
+#address_part #address_delivery h3, #address_part #address_invoice h3 { margin-top:0;}
+#address_part #address_delivery {border-right:1px solid #cccccc;}
+#address_part #address_invoice { border-left: 1px solid #ffffff; padding-left:20px;}
+#address_part #address_delivery_detail, #address_invoice #address_invoice_detail { font-size:12px; line-height:18px; color:#585A69; padding:10px 0;}
+#address_part a#new_address {clear:both; float:left; margin:20px 0;}
+
+
+/*summary_part*/
+#summary_part b { float:left; display:block; border:1px solid red;}
+#summary_part #total_products,
+#summary_part #total_vouchers,
+#summary_part #total_shipping,
+#summary_part #total_without_taxes,
+#summary_part #total_taxes,
+#summary_part #total_with_taxes { font-size:20px; font-weight:normal; color:#000;}
+#summary_part .currency_sign { font-weight:normal;}
+#summary_part .order_message_right { float:left; border-left: 1px solid #ccc; }
+
+/*cart_summary*/
+#cart_summary { float:left; border-right: 1px solid #fff; width:400px;}
+#cart_summary ul li  { float:left; position: relative; width:185px; margin-bottom:20px; padding:5px;}
+#cart_summary ul li .total_cart { display:block; font-size:12px;}
+
+
 #loader_container {
 	display:none;
 	z-index: 100;
@@ -1852,30 +1924,153 @@ div.progressBarImage
 }
 ul.connectedSortable
 {
-	padding-left: 0;	
+	padding-left: 0;
 }
 ul.connectedSortable li.module_list {
 	margin: 0 5px 5px 5px;
 	padding: 5px;
-	font-size: 1.2em;
-	border: 1px solid #CCC;
-	background: #F6F6F6;
-	font-weight: bold;
-	color: #1C94C4;
-	outline: none;
-}
-/* Accounting css */
-.formAccountingExport {
-	display: none;
+	font-size:1.2em;
+	border:1px solid #CCC;
+	background:#F6F6F6;
+	font-weight:bold;
+	color:#1C94C4;
+	outline:none;
 }
 
+/* Accounting css */
+.formAccountingExport {
+	display:none;
+}
 .input-error
 {
 	color:#D8000C;
 	font-size:12px;
 	font-weight:normal;
-	margin: 0 0 10px 0;
-	line-height: 20px;
-	padding: 10px 15px;
+	margin:0 0 10px 0;
+	line-height:20px;
+	padding:10px 15px;
 	display:none;
 }
+
+/* Customer Thread */
+#CustomerThreadContacts{
+	float:left;
+	border:0;
+}
+#CustomerThreadContacts div {
+	background-color:#EFEFEF;
+	float:left;
+	margin:0 10px 10px 0;
+	border:1px solid #CFCFCF;
+}
+#CustomerThreadContacts p {
+	overflow:hidden;
+	line-height:15px;
+	height:45px;
+	margin:0;
+	padding:0 5px;
+}
+#CustomerThreadContacts h3 {
+	overflow:hidden;
+	line-height:25px;
+	color:#812143;
+	height:25px;
+	margin:0;
+}
+#CustomerThreadContacts a {
+	padding:0 5px;
+	display:block;
+	height:23px;
+	line-height:23px;
+	border:0;
+}
+#CustomerThreadContacts h4 {
+	margin:0;
+	line-height:23px;
+	height:23px;
+	border:0;
+	padding:0 5px;
+}
+#CustomerThreadContacts div#CustomerService {
+	width:300px;
+	background:none;
+	border:none;
+}
+#CustomerThreadContacts div#CustomerService table.table {
+	width:300px;
+}
+#CustomerThreadContacts div#CustomerService table.table thead{
+	margin:0;
+	line-height:23px;
+	height:23px;
+	border:0;
+	padding:0 5px;
+	font-weight:bold;
+	text-align:center;
+}
+#CustomerThreadContacts div#MeaningStatus{
+	width:300px
+}
+#ChangeStatus{
+	position:absolute;
+	margin:20px 20px 0 0;
+	right:10px;
+}
+
+/* ScrollTop */
+div#scrollTop a{
+	display:none;
+	background:url('../img/admin/scroll_top.png');
+	width:40px;
+	height:40px;
+	position:fixed;
+	bottom:30px;
+	right:30px;
+	border-radius:10px;
+	opacity:0.2;
+}
+div#scrollTop a:hover{
+	opacity:0.8;
+}
+
+.loader{
+	display:none;
+	margin: 450px 0 0 440px;
+	height:128px;
+	width:128px;
+	color:#fff;
+	background-image:url(../img/loader.gif);
+}
+
+.category-filter {
+	background-color:#dde0e9;
+	padding: 5px 10px;
+	min-height:20px;
+}
+.category-filter span { float:left; line-height: 18px; color:#585A69;}
+.category-filter a {
+	color:#585A69;
+	float:left;
+	line-height:20px;
+	padding:0 5px;
+}
+
+.category-filter #filternameForm { float:left; margin-left:10px; color:#585A69;}
+
+.current-edit { background-color: rgb(232, 237, 194); }
+
+.edit-note { width: 98%; height: 100px; }
+
+.payment_information { background-color: #BDE5F8 }
+
+
+/*conditions*/
+#conditions .condition_group {}
+#conditions .condition_separator { font-size:16px; margin:10px 0;}
+#conditions .condition_group h3 { margin:0 0 10px 0;}
+#conditions a#add_condition_group { font-size:16px;}
+#conditions #condition_list {}
+#conditions #condition_list .row { position:relative; height:25px; padding:10px 0; background-color:transparent;}
+#conditions #condition_list h4 { margin:0 0 10px 0;}
+#conditions #condition_list select { float:left; margin-right:10px;  width: 200px;}
+#conditions #condition_list a { float:left;}

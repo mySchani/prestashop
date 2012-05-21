@@ -53,22 +53,30 @@ class AdminSuppliersControllerCore extends AdminController
 
 		parent::__construct();
 	}
-	
+
 	public function setMedia()
 	{
 		parent::setMedia();
 		$this->addJqueryUi('ui.widget');
 		$this->addJqueryPlugin('tagify');
 	}
-	
-	public function initForm()
+
+	public function renderForm()
 	{
+		// loads current warehouse
+		if (!($obj = $this->loadObject(true)))
+			return;
+
 		$this->fields_form = array(
 			'legend' => array(
 				'title' => $this->l('Suppliers'),
 				'image' => '../img/admin/suppliers.gif'
 			),
 			'input' => array(
+				array(
+					'type' => 'hidden',
+					'name' => 'id_address',
+				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Name:'),
@@ -85,6 +93,67 @@ class AdminSuppliersControllerCore extends AdminController
 					'lang' => true,
 					'hint' => $this->l('Invalid characters:').' <>;=#{}',
 					'desc' => $this->l('Will appear in supplier list')
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Phone:'),
+					'name' => 'phone',
+					'size' => 15,
+					'maxlength' => 16,
+					'desc' => $this->l('Phone number of this supplier')
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Address:'),
+					'name' => 'address',
+					'size' => 100,
+					'maxlength' => 128,
+					'required' => true
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Address:').' (2)',
+					'name' => 'address2',
+					'size' => 100,
+					'maxlength' => 128,
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Postcode/ Zip Code:'),
+					'name' => 'postcode',
+					'size' => 10,
+					'maxlength' => 12,
+					'required' => true,
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('City:'),
+					'name' => 'city',
+					'size' => 20,
+					'maxlength' => 32,
+					'required' => true,
+				),
+				array(
+					'type' => 'select',
+					'label' => $this->l('Country:'),
+					'name' => 'id_country',
+					'required' => true,
+					'options' => array(
+						'query' => Country::getCountries($this->context->language->id, false),
+						'id' => 'id_country',
+						'name' => 'name'
+					),
+					'desc' => $this->l('Country where the state, region or city is located')
+				),
+				array(
+					'type' => 'select',
+					'label' => $this->l('State'),
+					'name' => 'id_state',
+					'required' => true,
+					'options' => array(
+						'id' => 'id_state',
+						'name' => 'name'
+					)
 				),
 				array(
 					'type' => 'file',
@@ -141,6 +210,28 @@ class AdminSuppliersControllerCore extends AdminController
 			)
 		);
 
+		// loads current address for this supplier - if possible
+		$address = null;
+		if ($obj->id_address > 0)
+			$address = new Address($obj->id_address);
+		// force specific fields values (address)
+		if ($address != null)
+		{
+			$this->fields_value = array(
+				'id_address' => $address->id,
+				'phone' => $address->phone,
+				'address' => $address->address1,
+				'address2' => $address->address2,
+				'postcode' => $address->postcode,
+				'city' => $address->city,
+				'id_country' => $address->id_country,
+				'id_state' => $address->id_state,
+			);
+		}
+		else
+			$this->fields_value['id_address'] = 0;
+
+
 		if (Shop::isFeatureActive())
 		{
 			$this->fields_form['input'][] = array(
@@ -151,17 +242,15 @@ class AdminSuppliersControllerCore extends AdminController
 			);
 		}
 
-		// Set logo image
+		// set logo image
 		$image = cacheImage(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg', $this->table.'_'.(int)$this->object->id.'.'.$this->imageType, 350, $this->imageType, true);
-		$this->fields_value = array(
-			'image' => $image ? $image : false,
-			'size' => $image ? filesize(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg') / 1000 : false
-		);
+		$this->fields_value['image'] = $image ? $image : false;
+		$this->fields_value['size'] = $image ? filesize(_PS_SUPP_IMG_DIR_.'/'.$this->object->id.'.jpg') / 1000 : false;
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
-	public function initView()
+	public function renderView()
 	{
 		$products = $this->object->getProductsLite($this->context->language->id);
 		$total_product = count($products);
@@ -201,24 +290,115 @@ class AdminSuppliersControllerCore extends AdminController
 			'supplier' => $this->object,
 			'products' => $products,
 			'stock_management' => Configuration::get('PS_STOCK_MANAGEMENT'),
+			'shopContext' => Context::getContext()->shop(),
 		);
 
-		return parent::initView();
+		return parent::renderView();
 	}
 
 	public function afterImageUpload()
 	{
 		/* Generate image with differents size */
-		if (($id_supplier = (int)(Tools::getValue('id_supplier'))) AND isset($_FILES) AND count($_FILES) AND file_exists(_PS_SUPP_IMG_DIR_.$id_supplier.'.jpg'))
+		if (($id_supplier = (int)Tools::getValue('id_supplier')) AND
+			 isset($_FILES) AND count($_FILES) AND file_exists(_PS_SUPP_IMG_DIR_.$id_supplier.'.jpg'))
 		{
-			$imagesTypes = ImageType::getImagesTypes('suppliers');
-			foreach ($imagesTypes AS $k => $imageType)
+			$images_types = ImageType::getImagesTypes('suppliers');
+			foreach ($images_types as $k => $image_type)
 			{
 				$file = _PS_SUPP_IMG_DIR_.$id_supplier.'.jpg';
-				imageResize($file, _PS_SUPP_IMG_DIR_.$id_supplier.'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height']));
+				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
+				imageResize($file, _PS_SUPP_IMG_DIR_.$id_supplier.'-'.stripslashes($image_type['name']).$theme.'.jpg', (int)$image_type['width'], (int)$image_type['height']);
 			}
 		}
 	}
-}
 
+	/**
+	 * AdminController::postProcess() override
+	 * @see AdminController::postProcess()
+	 */
+	public function postProcess()
+	{
+		// checks access
+		if (Tools::isSubmit('submitAdd'.$this->table) && !($this->tabAccess['add'] === '1'))
+		{
+			$this->_errors[] = Tools::displayError('You do not have the required permissions to add suppliers.');
+			return parent::postProcess();
+		}
+
+		if (Tools::isSubmit('submitAdd'.$this->table))
+		{
+			if (!($obj = $this->loadObject(true)))
+				return;
+
+			// updates/creates address if it does not exist
+			if (Tools::isSubmit('id_address') && (int)Tools::getValue('id_address') > 0)
+				$address = new Address((int)Tools::getValue('id_address')); // updates address
+			else
+				$address = new Address(); // creates address
+
+			$address->alias = Tools::getValue('name', null);
+			$address->lastname = 'supplier'; // skip problem with numeric characters in supplier name
+			$address->firstname = 'supplier'; // skip problem with numeric characters in supplier name
+			$address->address1 = Tools::getValue('address', null);
+			$address->address2 = Tools::getValue('address2', null);
+			$address->postcode = Tools::getValue('postcode', null);
+			$address->phone = Tools::getValue('phone', null);
+			$address->id_country = Tools::getValue('id_country', null);
+			$address->id_state = Tools::getValue('id_state', null);
+			$address->city = Tools::getValue('city', null);
+
+			$validation = $address->validateController();
+
+			// checks address validity
+			if (count($validation) > 0)
+			{
+				foreach ($validation as $item)
+					$this->_errors[] = $item;
+				$this->_errors[] = Tools::displayError('The address is not correct. Check if all required fields are filled.');
+			}
+			else
+			{
+				if (Tools::isSubmit('id_address') && Tools::getValue('id_address') > 0)
+					$address->update();
+				else
+				{
+					$address->save();
+					$_POST['id_address'] = $address->id;
+				}
+			}
+			return parent::postProcess();
+		}
+		else if (Tools::isSubmit('delete'.$this->table))
+		{
+			if (!($obj = $this->loadObject(true)))
+				return;
+			else if (SupplyOrder::supplierHasPendingOrders($obj->id))
+				$this->_errors[] = $this->l('It is not possible to delete a supplier if there is/are pending supply order(s).');
+			else
+			{
+				$address = new Address($obj->id_address);
+				$address->deleted = 1;
+				$address->save();
+				return parent::postProcess();
+			}
+		}
+		else
+			return parent::postProcess();
+	}
+
+	/**
+	 * @see AdminController::afterAdd()
+	 */
+	public function afterAdd($object)
+	{
+		$address = new Address($object->id_address);
+		if (Validate::isLoadedObject($address))
+		{
+			$address->id_supplier = $object->id_address;
+			$address->save();
+		}
+		return true;
+	}
+
+}
 

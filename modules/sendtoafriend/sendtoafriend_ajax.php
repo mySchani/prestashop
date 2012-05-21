@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 8288 $
+*  @version  Release: $Revision: 10954 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -66,7 +66,7 @@ if (Tools::getValue('action') == 'sendToMyFriend' AND
 		/* Email sending */
 		if (!Mail::Send((int)Context::getContext()->cookie->id_lang,
 				'send_to_a_friend',
-				Mail::l('A friend sent you a link to').' '.$product->name,
+				Mail::l('A friend sent you a link to', (int)Context::getContext()->cookie->id_lang).' '.$product->name,
 				$templateVars, $friendMail,
 				NULL,
 				(Context::getContext()->cookie->email ? Context::getContext()->cookie->email : NULL),

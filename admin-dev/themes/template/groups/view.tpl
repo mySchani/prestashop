@@ -29,7 +29,7 @@
 {block name="override_tpl"}
 
 	<fieldset style="width: 400px">
-		<span style="font-weight: bold; font-size: 14px;">{l s='Name:'}</span>
+		<span style="font-weight: bold; font-size: 14px;">{l s='Name:'}</span> {$group->name[$language->id]}
 		<div class="clear">&nbsp;</div>
 		<span style="font-weight: bold; font-size: 14px;">{l s='Discount:'}</span> {$group->reduction} {l s='%'}
 		<div class="clear">&nbsp;</div>
@@ -53,6 +53,8 @@
 			{else}
 				{l s='Tax included'}
 				{/if}
+		<div class="clear">&nbsp;</div>
+		<span style="font-weight: bold; font-size: 14px;">{l s='Show prices:'}</span> {if $group->show_prices}{l s='Yes'}{else}{l s='No'}{/if}
 		<div class="clear">&nbsp;</div>
 	</fieldset>
 	<h2>{l s='Customer members of this group'}</h2>

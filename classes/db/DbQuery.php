@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9690 $
+*  @version  Release: $Revision: 11354 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -65,10 +65,10 @@ class DbQueryCore
 	 * @param string $table Table name
 	 * @return DbQuery
 	 */
-	public function from($table)
+	public function from($table, $alias = null)
 	{
 		if (!empty($table))
-			$this->query['from'] = _DB_PREFIX_.$table;
+			$this->query['from'] = '`'._DB_PREFIX_.$table.'`'.($alias ? ' '.$alias : '');
 		return $this;
 	}
 
@@ -89,56 +89,50 @@ class DbQueryCore
 
 	/**
 	 * Add LEFT JOIN clause
-	 * 	E.g. $this->leftJoin('product p ON ...')
 	 *
-	 * @param string $join Table followed by ON claused
+	 * @param string $table Table name (without prefix)
+	 * @param string $alias Table alias
+	 * @param string $on ON clause
 	 */
-	public function leftJoin($join)
+	public function leftJoin($table, $alias = null, $on = null)
 	{
-		if (!empty($join))
-			return $this->join('LEFT JOIN '._DB_PREFIX_.$join);
-
-		return $this;
+		return $this->join('LEFT JOIN `'._DB_PREFIX_.bqSQL($table).'`'.($alias ? ' '.pSQL($alias) : '').($on ? ' ON '.$on : ''));
 	}
 
 	/**
 	 * Add INNER JOIN clause
 	 * 	E.g. $this->innerJoin('product p ON ...')
 	 *
-	 * @param string $join Table followed by ON claused
+	 * @param string $table Table name (without prefix)
+	 * @param string $alias Table alias
+	 * @param string $on ON clause
 	 */
-	public function innerJoin($join)
+	public function innerJoin($table, $alias = null, $on = null)
 	{
-		if (!empty($join))
-			return $this->join('INNER JOIN '._DB_PREFIX_.$join);
-
-		return $this;
+		return $this->join('INNER JOIN `'._DB_PREFIX_.bqSQL($table).'`'.($alias ? ' '.pSQL($alias) : '').($on ? ' ON '.$on : ''));
 	}
 
 	/**
 	 * Add LEFT OUTER JOIN clause
 	 *
-	 * @param string $join Table followed by ON claused
+	 * @param string $table Table name (without prefix)
+	 * @param string $alias Table alias
+	 * @param string $on ON clause
 	 */
-	public function leftOuterJoin($join)
+	public function leftOuterJoin($table, $alias = null, $on = null)
 	{
-		if (!empty($join))
-			return $this->join('LEFT OUTER JOIN '._DB_PREFIX_.$join);
-
-		return $this;
+		return $this->join('LEFT OUTER JOIN `'._DB_PREFIX_.bqSQL($table).'`'.($alias ? ' '.pSQL($alias) : '').($on ? ' ON '.$on : ''));
 	}
 
 	/**
 	 * Add NATURAL JOIN clause
 	 *
-	 * @param string $join
+	 * @param string $table Table name (without prefix)
+	 * @param string $alias Table alias
 	 */
-	public function naturalJoin($join)
+	public function naturalJoin($table, $alias = null)
 	{
-		if (!empty($join))
-			return $this->join('NATURAL JOIN '._DB_PREFIX_.$join);
-
-		return $this;
+		return $this->join('NATURAL JOIN `'._DB_PREFIX_.bqSQL($table).'`'.($alias ? ' '.pSQL($alias) : ''));
 	}
 
 	/**

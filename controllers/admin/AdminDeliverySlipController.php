@@ -57,7 +57,7 @@ class AdminDeliverySlipControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -66,7 +66,7 @@ class AdminDeliverySlipControllerCore extends AdminController
 			),
 			'input' => array(
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('From:'),
 					'name' => 'date_from',
 					'size' => 20,
@@ -75,7 +75,7 @@ class AdminDeliverySlipControllerCore extends AdminController
 					'desc' => $this->l('Format: 2007-12-31 (inclusive)')
 				),
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('To:'),
 					'name' => 'date_to',
 					'size' => 20,
@@ -95,7 +95,7 @@ class AdminDeliverySlipControllerCore extends AdminController
 			'date_to' => date('Y-m-d')
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -121,9 +121,9 @@ class AdminDeliverySlipControllerCore extends AdminController
 
 	public function initContent()
 	{
-		$this->content .= $this->initForm().'<br />';
+		$this->content .= $this->renderForm().'<br />';
 		$this->show_toolbar = false;
-		$this->content .= $this->initOptions();
+		$this->content .= $this->renderOptions();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,

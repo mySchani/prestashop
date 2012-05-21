@@ -72,14 +72,21 @@ class AdminWebserviceControllerCore extends AdminController
 												</ol>',
 							'cast' => 'intval',
 							'type' => 'bool'),
+						'PS_WEBSERVICE_CGI_HOST' => array(
+							'title' => $this->l('Active mode CGI for PHP:'),
+							'desc' => $this->l('Be sure PHP is not configured as an Apache module on your server'),
+							'cast' => 'intval',
+							'type' => 'bool'
+						),
 					),
+					'submit' => array()
 				),
 			);
 
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -158,7 +165,7 @@ class AdminWebserviceControllerCore extends AdminController
 			'permissions' => $permissions
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function initContent()
@@ -220,7 +227,7 @@ class AdminWebserviceControllerCore extends AdminController
 				!$instance->useNormalPermissionBehaviour())
 				unset($this->_list[$k]);
 
-		$this->initList();
+		$this->renderList();
 	}
 
 }

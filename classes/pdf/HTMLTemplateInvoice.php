@@ -42,7 +42,7 @@ class HTMLTemplateInvoiceCore extends HTMLTemplate
 
 		// header informations
 		$this->date = Tools::displayDate($order_invoice->date_add, (int)$this->order->id_lang);
-		$this->title = self::l('Invoice ').Configuration::get('PS_INVOICE_PREFIX').sprintf('%06d', $order_invoice->number);
+		$this->title = self::l('Invoice ').' #'.Configuration::get('PS_INVOICE_PREFIX', Context::getContext()->language->id).sprintf('%06d', $order_invoice->number);
 
 		// footer informations
 		$shop = new Shop((int)$this->order->id_shop);
@@ -74,7 +74,8 @@ class HTMLTemplateInvoiceCore extends HTMLTemplate
 			'delivery_address' => $formatted_delivery_address,
 			'invoice_address' => $formatted_invoice_address,
 			'tax_excluded_display' => Group::getPriceDisplayMethod($customer->id_default_group),
-          'tax_tab' => $this->getTaxTabContent()
+         	'tax_tab' => $this->getTaxTabContent(),
+			'customer' => $customer
 		));
 
 		return $this->smarty->fetch($this->getTemplate($country->iso_code));
@@ -109,9 +110,10 @@ class HTMLTemplateInvoiceCore extends HTMLTemplate
 	 */
 	protected function getTemplate($iso_country)
 	{
-		$template = _PS_THEME_DIR_.'/pdf/invoice.tpl';
+		$file = Configuration::get('PS_INVOICE_MODEL');
+		$template = _PS_THEME_DIR_.'/pdf/'.$file.'.tpl';
 
-		$iso_template = _PS_THEME_DIR_.'/pdf/invoice.'.$iso_country.'.tpl';
+		$iso_template = _PS_THEME_DIR_.'/pdf/'.$file.'.'.$iso_country.'.tpl';
 		if (file_exists($iso_template))
 			$template = $iso_template;
 

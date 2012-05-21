@@ -48,27 +48,22 @@ class OrderReturnCore extends ObjectModel
 	/** @var string Object last modification date */
 	public 		$date_upd;
 
-	protected $tables = array ('order_return');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'order_return',
+		'primary' => 'id_order_return',
+		'fields' => array(
+			'id_customer' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_order' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'question' => 		array('type' => self::TYPE_HTML, 'validate' => 'isMessage'),
+			'state' => 			array('type' => self::TYPE_STRING),
+			'date_add' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+		),
+	);
 
-	protected	$fieldsRequired = array ('id_customer', 'id_order');
-	protected	$fieldsValidate = array('id_customer' => 'isUnsignedId', 'id_order' => 'isUnsignedId', 'question' => 'isMessage');
-
-	protected 	$table = 'order_return';
-	protected 	$identifier = 'id_order_return';
-	
-	public function getFields()
-	{
-		$this->validateFields();
-
-		$fields['id_customer'] = pSQL($this->id_customer);
-		$fields['id_order'] = pSQL($this->id_order);
-		$fields['state'] = pSQL($this->state);
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['question'] = pSQL(Tools::nl2br($this->question), true);
-		return $fields;
-	}
-	
 	public function addReturnDetail($orderDetailList, $productQtyList, $customizationIds, $customizationQtyInput)
 	{
 		/* Classic product return */

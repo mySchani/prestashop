@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11470 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,7 +38,7 @@ class ToolsInstall
 	 */
 	public static function checkDB ($srv, $login, $password, $name, $posted = true)
 	{
-		// Don't include theses files if classes are already defined
+		// Don't include these files if classes are already defined
 		if (!class_exists('Validate', false))
 		{
 			include_once(INSTALL_PATH.'/../classes/Validate.php');

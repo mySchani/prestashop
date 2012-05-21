@@ -55,18 +55,15 @@ class AdminTagsControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 	 	$this->addRowAction('delete');
-
-	 	$this->bulk_actions = array(
-			'delete' => array('text' => $this->l('Delete selected'),
-			'confirm' => $this->l('Delete selected items?'))
-		);
 
 		$this->_select = 'l.name as lang, COUNT(pt.id_product) as products';
 		$this->_join = '
@@ -76,7 +73,7 @@ class AdminTagsControllerCore extends AdminController
 				ON (l.`id_lang` = a.`id_lang`)';
 		$this->_group = 'GROUP BY a.name, a.id_lang';
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function postProcess()
@@ -87,7 +84,7 @@ class AdminTagsControllerCore extends AdminController
 		return parent::postProcess();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		if (!($obj = $this->loadObject(true)))
 			return;
@@ -125,7 +122,7 @@ class AdminTagsControllerCore extends AdminController
 			)
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 }
 

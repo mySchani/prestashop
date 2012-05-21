@@ -59,17 +59,17 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 			)
 		);
 
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	public function initRulesList($id_group)
@@ -77,15 +77,11 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 	 	$this->table = 'tax_rule';
 	 	$this->identifier = 'id_tax_rule';
 	 	$this->lang = false;
-		$this->simple_header = true;
+		$this->list_simple_header = true;
 		$this->toolbar_btn = null;
 		$this->list_no_link = true;
 
 		$this->fieldsDisplay = array(
-			'id_tax_rule' => array(
-				'title' => $this->l('ID'),
-				'width' => 25
-			),
 			'country_name' => array(
 				'title' => $this->l('Country'),
 				'width' => 140
@@ -115,8 +111,6 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
 
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-
 		$this->_select = '
 			c.`name` AS country_name,
 			s.`name` AS state_name,
@@ -134,10 +128,10 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 
 		$this->show_toolbar = false;
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -186,7 +180,7 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 		if (!isset($obj->id))
 		{
 			$this->no_back = false;
-			$content = parent::initForm();
+			$content = parent::renderForm();
 		}
 		else
 		{
@@ -195,7 +189,7 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 				'href' => '#',
 				'desc' => $this->l('Add new tax rule')
 			);
-			$content = parent::initForm();
+			$content = parent::renderForm();
 			$this->tpl_folder = 'tax_rules/';
 			$content .= $this->initRuleForm();
 
@@ -219,8 +213,6 @@ class AdminTaxRulesGroupControllerCore extends AdminController
 					'label' => $this->l('Country:'),
 					'name' => 'country[]',
 					'id' => 'country',
-					'multiple' => true,
-					'size' => 15,
 					'options' => array(
 						'query' => Country::getCountries((int)$this->context->language->id),
 						'id' => 'id_country',

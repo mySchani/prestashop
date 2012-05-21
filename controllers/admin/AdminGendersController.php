@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class AdminGendersController extends AdminController
+class AdminGendersControllerCore extends AdminController
 {
 	public function __construct()
 	{
@@ -60,7 +60,7 @@ class AdminGendersController extends AdminController
 			),
 			'name' => array(
 				'title' => $this->l('Name'),
-				'width' => 150,
+				'width' => 'auto',
 				'filter_key' => 'b!name'
 			),
 			'type' => array(
@@ -82,14 +82,15 @@ class AdminGendersController extends AdminController
 				'align' => 'center',
 				'image' => 'genders',
 				'orderby' => false,
-				'search' => false
+				'search' => false,
+				'width' => 40
 			)
 		);
 
 		parent::__construct();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -166,7 +167,7 @@ class AdminGendersController extends AdminController
 			'image' => $obj->getImage()
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function displayGenderType($value, $tr)

@@ -50,22 +50,22 @@ class AdminSlipControllerCore extends AdminController
 				'align' => 'right'
  			)
  		);
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->optionTitle = $this->l('Slip');
 
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 	 	$this->addRowAction('delete');
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -74,7 +74,7 @@ class AdminSlipControllerCore extends AdminController
 			),
 			'input' => array(
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('From:'),
 					'name' => 'date_from',
 					'size' => 20,
@@ -83,7 +83,7 @@ class AdminSlipControllerCore extends AdminController
 					'desc' => $this->l('Format: 2007-12-31 (inclusive)')
 				),
 				array(
-					'type' => 'text',
+					'type' => 'date',
 					'label' => $this->l('To:'),
 					'name' => 'date_to',
 					'size' => 20,
@@ -105,7 +105,7 @@ class AdminSlipControllerCore extends AdminController
 		);
 
 		$this->show_toolbar = false;
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	public function postProcess()
@@ -132,8 +132,8 @@ class AdminSlipControllerCore extends AdminController
 	public function initContent()
 	{
 		$this->initToolbar();
-		$this->content .= $this->initList();
-		$this->content .= $this->initForm();
+		$this->content .= $this->renderList();
+		$this->content .= $this->renderForm();
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,

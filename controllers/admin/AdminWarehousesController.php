@@ -76,10 +76,10 @@ class AdminWarehousesControllerCore extends AdminController
 	}
 
 	/**
-	 * AdminController::initList() override
-	 * @see AdminController::initList()
+	 * AdminController::renderList() override
+	 * @see AdminController::renderList()
 	 */
-	public function initList()
+	public function renderList()
 	{
 		// Checks access
 		if (!($this->tabAccess['add'] === '1'))
@@ -111,20 +111,18 @@ class AdminWarehousesControllerCore extends AdminController
 		// display help informations
 		$this->displayInformation($this->l('This interface allows you to manage your warehouses.').'<br />');
 		$this->displayInformation($this->l('Before adding stock in your warehouses, you should check the general default currency used.').'<br />');
-		$this->displayInformation($this->l('Futhermore, for each warehouse, you have to check :
-											the management type (according to the law in your country), the valuation currency,
-											its associated carriers and shops.').'<br />');
-		$this->displayInformation($this->l('Finally, you can see detailed informations on your stock per warehouse, such as its valuation,
-											the number of products and quantities stored.'));
+		$this->displayInformation($this->l('Futhermore, for each warehouse, you have to check :'));
+		$this->displayInformation($this->l('the management type (according to the law in your country), the valuation currency, its associated carriers and shops.').'<br />');
+		$this->displayInformation($this->l('Finally, you can see detailed informations on your stock per warehouse, such as its valuation, the number of products and quantities stored, ...'));
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
 	/**
-	 * AdminController::initForm() override
-	 * @see AdminController::initForm()
+	 * AdminController::renderForm() override
+	 * @see AdminController::renderForm()
 	 */
-	public function initForm()
+	public function renderForm()
 	{
 		// loads current warehouse
 		if (!($obj = $this->loadObject(true)))
@@ -167,7 +165,8 @@ class AdminWarehousesControllerCore extends AdminController
 					'size' => 40,
 					'maxlength' => 45,
 					'required' => true,
-					'desc' => $this->l('Name of this warehouse')
+					'desc' => $this->l('Name of this warehouse'),
+					'hint' => $this->l('Invalid characters:').' 0-9!<>,;?=+()@#"�{}_$%:',
 				),
 				array(
 					'type' => 'text',
@@ -179,7 +178,7 @@ class AdminWarehousesControllerCore extends AdminController
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('Adress:'),
+					'label' => $this->l('Address:'),
 					'name' => 'address',
 					'size' => 100,
 					'maxlength' => 128,
@@ -187,10 +186,11 @@ class AdminWarehousesControllerCore extends AdminController
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('Adress:').' (2)',
+					'label' => $this->l('Address:').' (2)',
 					'name' => 'address2',
 					'size' => 100,
 					'maxlength' => 128,
+					'desc' => $this->l('Address of this warehouse (complementary address is optional).'),
 				),
 				array(
 					'type' => 'text',
@@ -277,6 +277,7 @@ class AdminWarehousesControllerCore extends AdminController
 			$this->fields_form['input'][] = array(
 				'type' => 'select',
 				'label' => $this->l('Management type:'),
+				'hint' => $this->l('Careful ! You won\'t be able to change this value later!'),
 				'name' => 'management_type',
 				'required' => true,
 				'options' => array(
@@ -303,6 +304,7 @@ class AdminWarehousesControllerCore extends AdminController
 			$this->fields_form['input'][] = array(
 				'type' => 'select',
 				'label' => $this->l('Stock valuation currency:'),
+				'hint' => $this->l('Careful ! You won\'t be able to change this value later!'),
 				'name' => 'id_currency',
 				'required' => true,
 				'options' => array(
@@ -361,7 +363,7 @@ class AdminWarehousesControllerCore extends AdminController
 		$this->fields_value['ids_shops[]'] = $ids_shop;
 		$this->fields_value['ids_carriers[]'] = $carriers;
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
 	/**
@@ -387,8 +389,7 @@ class AdminWarehousesControllerCore extends AdminController
 				$obj->setShops(Tools::getValue('ids_shops'));
 
 			// handles carriers associations
-			if (Tools::isSubmit('ids_carriers'))
-				$obj->setCarriers(Tools::getValue('ids_carriers'));
+			$obj->setCarriers(Tools::getValue('ids_carriers'));
 
 			// updates/creates address if it does not exist
 			if (Tools::isSubmit('id_address') && (int)Tools::getValue('id_address') > 0)
@@ -436,19 +437,31 @@ class AdminWarehousesControllerCore extends AdminController
 			if (!($obj = $this->loadObject(true)))
 				return;
 			else if ($obj->getQuantitiesOfProducts() > 0)
-				$this->_errors[] = $this->l('It is not possible to delete a Warehosue when there are products in it.');
+				$this->_errors[] = $this->l('It is not possible to delete a Warehouse when there are products in it.');
 			else if (SupplyOrder::warehouseHasPendingOrders($obj->id))
 				$this->_errors[] = $this->l('It is not possible to delete a Warehouse if it has pending supply orders.');
 			else
+			{
+				// sets the address of the warehouse as deleted
+				$address = new Address($obj->id_address);
+				$address->deleted = 1;
+				$address->save();
+
+				// removes associations
+				$obj->setCarriers(array());
+				$obj->setShops(array());
+				$obj->resetProductsLocations();
+
 				return parent::postProcess();
+			}
 	}
 
 	/**
-	 * @see AdminController::initView()
+	 * @see AdminController::renderView()
 	 */
-	public function initView()
+	public function renderView()
 	{
-		$this->displayInformation($this->l('This interface allows you to display detailed informations on your warehouse.').'<br />');
+		$this->displayInformation($this->l('This interface allows you to display detailed informations on your warehouse.'));
 
 		$id_warehouse = (int)Tools::getValue('id_warehouse');
 		$warehouse = new Warehouse($id_warehouse);
@@ -460,7 +473,7 @@ class AdminWarehousesControllerCore extends AdminController
 		if (!Validate::isLoadedObject($warehouse) ||
 			!Validate::isLoadedObject($employee) ||
 			!Validate::isLoadedObject($currency))
-			return parent::initView();
+			return parent::renderView();
 
 		$this->tpl_view_vars = array(
 			'warehouse' => $warehouse,
@@ -473,6 +486,20 @@ class AdminWarehousesControllerCore extends AdminController
 			'warehouse_quantities' => $warehouse->getQuantitiesofProducts(),
 		);
 
-		return parent::initView();
+		return parent::renderView();
+	}
+
+	/**
+	 * @see AdminController::afterAdd()
+	 */
+	public function afterAdd($object)
+	{
+		$address = new Address($object->id_address);
+		if (Validate::isLoadedObject($address))
+		{
+			$address->id_warehouse = $object->id_address;
+			$address->save();
+		}
+		return true;
 	}
 }

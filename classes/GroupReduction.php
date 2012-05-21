@@ -31,22 +31,20 @@ class GroupReductionCore extends ObjectModel
 	public	$id_category;
 	public	$reduction;
 
- 	protected $fieldsRequired = array('id_group', 'id_category', 'reduction');
- 	protected $fieldsValidate = array('id_group' => 'isUnsignedId', 'id_category' => 'isUnsignedId', 'reduction' => 'isPrice');
-
-	protected $table = 'group_reduction';
-	protected $identifier = 'id_group_reduction';
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'group_reduction',
+		'primary' => 'id_group_reduction',
+		'fields' => array(
+			'id_group' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_category' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'reduction' => 		array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+		),
+	);
 
 	protected static $reduction_cache = array();
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_group'] = (int)$this->id_group;
-		$fields['id_category'] = (int)$this->id_category;
-		$fields['reduction'] = (float)$this->reduction;
-		return $fields;
-	}
 
 	public function add($autodate = true, $null_values = false)
 	{
@@ -60,18 +58,18 @@ class GroupReductionCore extends ObjectModel
 
 	public function delete()
 	{
-		$resource = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT p.`id_product`
 			FROM `'._DB_PREFIX_.'product` p
 			WHERE p.`id_category_default` = '.(int)$this->id_category
-		, false);
+		);
 
-		while ($row = Db::getInstance()->nextRow($resource))
-		{
-			$query = 'DELETE FROM `'._DB_PREFIX_.'product_group_reduction_cache` WHERE `id_product` = '.(int)$row['id_product'];
-			if (Db::getInstance()->execute($query) === false)
-				return false;
-		}
+		$ids = array();
+		foreach ($products as $row)
+			$ids[] = $row['id_product'];
+
+		if ($ids)
+			Db::getInstance()->delete(_DB_PREFIX_.'product_group_reduction_cache', 'id_product IN ('.implode(', ', $ids).')');
 		return (parent::delete());
 	}
 
@@ -82,15 +80,15 @@ class GroupReductionCore extends ObjectModel
 
 	protected function _setCache()
 	{
-		$resource = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT p.`id_product`
 			FROM `'._DB_PREFIX_.'product` p
 			WHERE p.`id_category_default` = '.(int)$this->id_category
-		, false);
+		);
 
 		$query = 'INSERT INTO `'._DB_PREFIX_.'product_group_reduction_cache` (`id_product`, `id_group`, `reduction`) VALUES ';
 		$updated = false;
-		while ($row = Db::getInstance()->nextRow($resource))
+		foreach ($products as $row)
 		{
 			$query .= '('.(int)$row['id_product'].', '.(int)$this->id_group.', '.(float)$this->reduction.'), ';
 			$updated = true;
@@ -103,21 +101,23 @@ class GroupReductionCore extends ObjectModel
 
 	protected function _updateCache()
 	{
-		$resource = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT p.`id_product`
 			FROM `'._DB_PREFIX_.'product` p
 			WHERE p.`id_category_default` = '.(int)$this->id_category
 		, false);
 
-		while ($row = Db::getInstance()->nextRow($resource))
-		{
-			$query = 'UPDATE `'._DB_PREFIX_.'product_group_reduction_cache`
-                                  SET `reduction` = '.(float)$this->reduction.'
-                                  WHERE `id_product` = '.(int)$row['id_product'].' AND `id_group` = '.(int)$this->id_group;
-			if (Db::getInstance()->execute($query) === false)
-				return false;
-		}
-		return true;
+		$ids = array();
+		foreach ($products as $product)
+			$ids[] = $product['id_product'];
+
+		$result = true;
+		if ($ids)
+			$result &= Db::getInstance()->autoExecute(_DB_PREFIX_.'product_group_reduction_cache', array(
+				'reduction' => (float)$this->reduction,
+			), 'UPDATE', 'id_product IN('.implode(', ', $ids).') AND id_group = '.(int)$this->id_group);
+
+		return $result;
 	}
 
 	public static function getGroupReductions($id_group, $id_lang)

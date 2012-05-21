@@ -19,9 +19,9 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 7978 $
+*  @version  Release: $Revision: 11196 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<li><a href="{$base_dir_ssl}modules/favoriteproducts/favoriteproducts-account.php" title="{l s='My favorite products' mod='favoriteproducts'}">{l s='My favorite products' mod='favoriteproducts'}</a></li>
+<li class="favoriteproducts"><a href="{$base_dir_ssl}modules/favoriteproducts/favoriteproducts-account.php" title="{l s='My favorite products' mod='favoriteproducts'}"><img src="{$module_template_dir}img/favorites.png" class="icon" /> {l s='My favorite products' mod='favoriteproducts'}</a></li>

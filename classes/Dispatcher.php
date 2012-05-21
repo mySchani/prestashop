@@ -44,16 +44,16 @@ class DispatcherCore
 			'rule' =>		'{category:/}{id}-{rewrite}{-:ean13}.html',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_product'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'ean13' =>			array('regexp' => '[a-zA-Z0-9-]*'),
-				'category' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'reference' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'manufacturer' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'supplier' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'ean13' =>			array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'category' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'reference' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'manufacturer' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'supplier' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 				'price' =>			array('regexp' => '[0-9\.,]*'),
-				'tags' =>			array('regexp' => '[a-zA-Z0-9-]*'),
+				'tags' =>			array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'category_rule' => array(
@@ -61,9 +61,9 @@ class DispatcherCore
 			'rule' =>		'{id}-{rewrite}',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_category'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'supplier_rule' => array(
@@ -71,9 +71,9 @@ class DispatcherCore
 			'rule' =>		'{id}__{rewrite}',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_supplier'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'manufacturer_rule' => array(
@@ -81,9 +81,9 @@ class DispatcherCore
 			'rule' =>		'{id}_{rewrite}',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_manufacturer'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'cms_rule' => array(
@@ -91,9 +91,9 @@ class DispatcherCore
 			'rule' =>		'content/{id}-{rewrite}',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_cms'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'cms_category_rule' => array(
@@ -101,17 +101,17 @@ class DispatcherCore
 			'rule' =>		'content/category/{id}-{rewrite}',
 			'keywords' => array(
 				'id' =>				array('regexp' => '[0-9]+', 'param' => 'id_cms_category'),
-				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-]*'),
-				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-]*'),
+				'rewrite' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_keywords' =>	array('regexp' => '[a-zA-Z0-9-\pL]*'),
+				'meta_title' =>		array('regexp' => '[a-zA-Z0-9-\pL]*'),
 			),
 		),
 		'module' => array(
 			'controller' =>	'module',
-			'rule' =>		'module/{module}/{action}',
+			'rule' =>		'module/{module}/{process}',
 			'keywords' => array(
 				'module' =>			array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'module'),
-				'action' =>			array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'action'),
+				'process' =>		array('regexp' => '[a-zA-Z0-9_-]+', 'param' => 'process'),
 			),
 		),
 	);
@@ -149,7 +149,7 @@ class DispatcherCore
 	/**
 	 * @var string Controller to use if found controller doesn't exist
 	 */
-	protected $controller_not_found = 'PageNotFound';
+	protected $controller_not_found = 'pagenotfound';
 
 	/**
 	 * @var array List of controllers where are stored controllers
@@ -183,6 +183,7 @@ class DispatcherCore
 			$this->request_uri = $_SERVER['REQUEST_URI'];
 		else if (isset($_SERVER['HTTP_X_REWRITE_URL']))
 			$this->request_uri = $_SERVER['HTTP_X_REWRITE_URL'];
+		$this->request_uri = rawurldecode($this->request_uri);
 	}
 
 	/**
@@ -227,7 +228,10 @@ class DispatcherCore
 		if (!Validate::isTabName($name))
 		return false;
 
-		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('SELECT id_tab, class_name, module FROM `'._DB_PREFIX_.'tab` WHERE LOWER(class_name) = \''.pSQL($name).'\'');
+		$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
+		SELECT id_tab, class_name, module
+		FROM `'._DB_PREFIX_.'tab`
+		WHERE LOWER(class_name) = \''.pSQL($name).'\'');
 		return $row;
 	}
 
@@ -282,6 +286,20 @@ class DispatcherCore
  			if (!isset($controllers[$this->controller]))
  				$this->controller = strtolower($this->controller_not_found);
  			$controller_class = $controllers[$this->controller];
+
+			// If module controller is called, we have to call the right module controller
+			if ($controller_class == 'ModuleController')
+			{
+				$module_name = Tools::getValue('module');
+				$module = Module::getInstanceByName($module_name);
+				if (Validate::isLoadedObject($module) && $module->active && file_exists(_PS_MODULE_DIR_.$module_name.'/'.$module_name.'Controller.php'))
+				{
+					include_once(_PS_MODULE_DIR_.$module_name.'/'.$module_name.'Controller.php');
+					$controller_class = 'Module'.$module_name.'Controller';
+				}
+				else
+					$controller_class = $controllers[$this->controller_not_found];
+			}
 		}
 		// BO dispatch
 		else
@@ -301,7 +319,7 @@ class DispatcherCore
 			if (!empty($controller_row['module']))
 				$controller_type = self::includeModuleClass($controller_row['module'], $controller_class);
 			// If it is an AdminTab, include it
-			elseif (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php'))
+			else if (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php'))
 			{
 				include(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php');
 				$controller_type = 'tab';
@@ -310,8 +328,8 @@ class DispatcherCore
 			if (isset($controller_type) && $controller_type == 'tab')
 			{
 				require_once(_PS_ADMIN_DIR_.'/functions.php');
-				$ajaxMode = !empty($_REQUEST['ajaxMode']);
-				runAdminTab($controller_class, $ajaxMode);
+				$ajax_mode = !empty($_REQUEST['ajaxMode']);
+				runAdminTab($controller_class, $ajax_mode);
 				return;
 			}
 
@@ -399,7 +417,7 @@ class DispatcherCore
 			$keywords = $transform_keywords;
 		}
 
-		$regexp = '#^/'.$regexp.'#';
+		$regexp = '#^/'.$regexp.'#u';
 		$this->routes[$route_id] = array(
 			'rule' =>		$rule,
 			'regexp' =>		$regexp,
@@ -479,18 +497,23 @@ class DispatcherCore
 		if ($this->use_routes && $use_routes)
 		{
 			$url = $route['rule'];
+			$add_param = array();
 			foreach ($params as $key => $value)
 			{
 				if (!isset($route['keywords'][$key]))
-					continue;
-				$data = $route['keywords'][$key];
-				if ($params[$key])
-					$replace = $route['keywords'][$key]['prepend'].$params[$key].$route['keywords'][$key]['append'];
+					$add_param[$key] = $value;
 				else
-					$replace = '';
-				$url = preg_replace('#\{([^{}]+:)?'.$key.'(:[^{}])?\}#', $replace, $url);
+				{
+					if ($params[$key])
+						$replace = $route['keywords'][$key]['prepend'].$params[$key].$route['keywords'][$key]['append'];
+					else
+						$replace = '';
+					$url = preg_replace('#\{([^{}]+:)?'.$key.'(:[^{}])?\}#', $replace, $url);
+				}
 			}
 			$url = preg_replace('#\{([^{}]+:)?[a-z0-9_]+?(:[^{}])?\}#', '', $url);
+			if (count($add_param))
+				$url .= '?'.http_build_query($add_param);
 		}
 		// Build a classic url index.php?controller=foo&...
 		else

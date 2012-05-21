@@ -36,33 +36,23 @@ class TaxRuleCore extends ObjectModel
 	 public $behavior;
 	 public $description;
 
-	 protected $fieldsRequired = array('id_tax_rules_group', 'id_country', 'id_tax');
-	 protected $fieldsValidate = array('id_tax_rules_group' => 'isUnsignedId',
-	 											   'id_country' => 'isUnsignedId',
-	 											   'id_state' => 'isUnsignedId',
-	 											   'zipcode_from' => 'isPostCode',
-	 											   'zipcode_to' => 'isPostCode',
-	 											   'id_tax' => 'isUnsignedId',
-	 											   'behavior' => 'isUnsignedInt',
-	 											   'description' => 'isString');
-
-	protected $table = 'tax_rule';
-	protected $identifier = 'id_tax_rule';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_tax_rules_group'] = (int)$this->id_tax_rules_group;
-		$fields['id_country'] = (int)$this->id_country;
-		$fields['id_state'] = (int)$this->id_state;
-		$fields['zipcode_from'] = (int)$this->zipcode_from;
-		$fields['zipcode_to'] = (int)$this->zipcode_to;
-		$fields['behavior'] = (int)$this->behavior;
-		$fields['id_tax'] = (int)$this->id_tax;
-		$fields['description'] = $this->description;
-
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'tax_rule',
+		'primary' => 'id_tax_rule',
+		'fields' => array(
+			'id_tax_rules_group' => array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_country' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_state' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'zipcode_from' => 		array('type' => self::TYPE_INT, 'validate' => 'isPostCode'),
+			'zipcode_to' => 		array('type' => self::TYPE_INT, 'validate' => 'isPostCode'),
+			'id_tax' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'behavior' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
+			'description' => 		array('type' => self::TYPE_STRING, 'validate' => 'isString'),
+		),
+	);
 
     public static function deleteByGroupId($id_group)
     {

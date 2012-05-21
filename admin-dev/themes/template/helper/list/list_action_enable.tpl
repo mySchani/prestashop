@@ -19,12 +19,11 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9839 $
+*  @version  Release: $Revision: 10891 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<a href="{$url_enable}" {if isset($confirm)}onclick="return confirm('{$confirm}');"{/if}>
-	<img src="../img/admin/{if $enabled}enabled.gif{else}disabled.gif{/if}"
-	alt="{if $enabled}{l s='Enabled'}{else}{l s='Disabled'}{/if}" title="{if $enabled}{l s='Enabled'}{else}{l s='Disabled'}{/if}" />
+<a href="{$url_enable}" {if isset($confirm)}onclick="return confirm('{$confirm}');"{/if} title="{if $enabled}{l s='Enabled'}{else}{l s='Disabled'}{/if}">
+	<img src="../img/admin/{if $enabled}enabled.gif{else}disabled.gif{/if}" alt="{if $enabled}{l s='Enabled'}{else}{l s='Disabled'}{/if}" />
 </a>

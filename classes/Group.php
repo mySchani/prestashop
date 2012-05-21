@@ -38,49 +38,38 @@ class GroupCore extends ObjectModel
 	/** @var int Price display method (tax inc/tax exc) */
 	public $price_display_method;
 
+	/** @var boolean Show prices */
+	public $show_prices = 1;
+
 	/** @var string Object creation date */
 	public $date_add;
 
 	/** @var string Object last modification date */
 	public $date_upd;
 
-	protected $tables = array ('group');
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'group',
+		'primary' => 'id_group',
+		'multilang' => true,
+		'fields' => array(
+			'reduction' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isFloat'),
+			'price_display_method' => 	array('type' => self::TYPE_INT, 'validate' => 'isPriceDisplayMethod', 'required' => true),
+			'show_prices' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'date_add' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
+			'date_upd' => 				array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 
-	protected $fieldsRequired = array('price_display_method');
-	protected $fieldsSize = array();
-	protected $fieldsValidate = array('reduction' => 'isFloat', 'price_display_method' => 'isPriceDisplayMethod');
-
-	protected	$fieldsRequiredLang = array('name');
-	protected	$fieldsSizeLang = array('name' => 32);
-	protected	$fieldsValidateLang = array('name' => 'isGenericName');
-
-	protected $table = 'group';
-	protected $identifier = 'id_group';
+			// Lang fields
+			'name' => 					array('type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'required' => true, 'size' => 32),
+		),
+	);
 
 	protected static $cache_reduction = array();
 	protected static $group_price_display_method = array();
 
-	protected	$webserviceParameters = array();
-
-	public function getFields()
-	{
-		$this->validateFields();
-		if (isset($this->id))
-			$fields['id_group'] = (int)$this->id;
-		$fields['reduction'] = (float)$this->reduction;
-		$fields['price_display_method'] = (int)$this->price_display_method;
-		$fields['date_add'] = pSQL($this->date_add);
-		$fields['date_upd'] = pSQL($this->date_upd);
-
-		return $fields;
-	}
-
-	public function getTranslationsFieldsChild()
-	{
-		if (!$this->validateFieldsLang())
-			return false;
-		return $this->getTranslationsFields(array('name'));
-	}
+	protected $webserviceParameters = array();
 
 	public static function getGroups($id_lang)
 	{
@@ -233,7 +222,7 @@ class GroupCore extends ObjectModel
 	public static function truncateModulesRestrictions($id_group)
 	{
 		return Db::getInstance()->execute('
-		DELETE FROM `'._DB_PREFIX_.'group_module_restriction`
+		DELETE FROM `'._DB_PREFIX_.'module_group`
 		WHERE `id_group` = '.(int)$id_group);
 	}
 
@@ -245,27 +234,32 @@ class GroupCore extends ObjectModel
 	public static function truncateRestrictionsByModule($id_module)
 	{
 		return Db::getInstance()->execute('
-		DELETE FROM `'._DB_PREFIX_.'group_module_restriction`
+		DELETE FROM `'._DB_PREFIX_.'module_group`
 		WHERE `id_module` = '.(int)$id_module);
 	}
 
 	/**
 	 * Adding restrictions modules to the group with id $id_group
-	 * @param integer id_group
-	 * @param array modules
-	 * @param integer authorized
+	 * @param $id_group
+	 * @param $modules
+	 * @param array $shops
+	 * @return bool
+	 * @internal param \id_group $integer
+	 * @internal param \modules $array
+	 * @internal param \authorized $integer
 	 */
-	public static function addModulesRestrictions($id_group, $modules, $authorized)
+	public static function addModulesRestrictions($id_group, $modules, $shops = array(1))
 	{
-		if (!is_array($modules) AND !empty($modules))
+		if (!is_array($modules) && !empty($modules))
 			return false;
 		else
 		{
 			//delete all record for this group
-			Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'group_module_restriction` WHERE `id_group` = '.(int)$id_group.' AND `authorized` = '.(int)$authorized);
-			$sql = 'INSERT INTO `'._DB_PREFIX_.'group_module_restriction` (`id_group`, `id_module`, `authorized`) VALUES ';
+			Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'module_group` WHERE `id_group` = '.(int)$id_group);
+			$sql = 'INSERT INTO `'._DB_PREFIX_.'module_group` (`id_module`, `id_shop`, `id_group`) VALUES ';
 			foreach ($modules as $mod)
-				$sql .= '("'.(int)$id_group.'", "'.(int)$mod.'", "'.(int)$authorized.'"),';
+				foreach ($shops as $s)
+					$sql .= '("'.(int)$mod.'", "'.(int)$s.'", "'.(int)$id_group.'"),';
 			// removing last comma to avoid SQL error
 			$sql = substr($sql, 0, strlen($sql) - 1);
 			Db::getInstance()->execute($sql);
@@ -276,16 +270,35 @@ class GroupCore extends ObjectModel
 	 * Add restrictions for a new module
 	 * We authorize every groups to the new module
 	 * @param integer id_module
+	 * @param array $shops
 	 */
-	public static function addRestrictionsForModule($id_module)
+	public static function addRestrictionsForModule($id_module, $shops = array(1))
 	{
 		$groups = Group::getGroups(Context::getContext()->language->id);
-		$sql = 'INSERT INTO `'._DB_PREFIX_.'group_module_restriction` (`id_group`, `id_module`, `authorized`) VALUES ';
+		$sql = 'INSERT INTO `'._DB_PREFIX_.'module_group` (`id_module`, `id_shop`, `id_group`) VALUES ';
 		foreach ($groups as $g)
-			$sql .= '("'.(int)$g['id_group'].'", "'.(int)$id_module.'", "1"),';
+			foreach ($shops as $s)
+				$sql .= '("'.(int)$id_module.'", "'.(int)$s.'", "'.(int)$g['id_group'].'"),';
 		// removing last comma to avoid SQL error
 		$sql = substr($sql, 0, strlen($sql) - 1);
 		Db::getInstance()->execute($sql);
+	}
+
+	/**
+	 * Return current group object
+	 * Use context
+	 * @static
+	 * @return Group Group object
+	 */
+	public static function getCurrent()
+	{
+		$customer = Context::getContext()->customer;
+		$id_group = (int)Configuration::get('PS_UNIDENTIFIED_GROUP');
+
+		if (Validate::isLoadedObject($customer))
+			$id_group = (int)$customer->id_default_group;
+
+		return new self($id_group);
 	}
 }
 

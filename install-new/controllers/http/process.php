@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @version  Release: $Revision: 11612 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -65,6 +65,8 @@ class InstallControllerHttpProcess extends InstallControllerHttp
 			$this->processInstallModules();
 		else if (Tools::getValue('installFixtures'))
 			$this->processInstallFixtures();
+		else if (Tools::getValue('installTheme'))
+			$this->processInstallTheme();
 		else if (Tools::getValue('preactivation'))
 			$this->processPreactivation();
 	}
@@ -98,6 +100,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
 	{
 		$this->initializeContext();
 
+		// @todo remove true in populateDatabase for 1.5.0 RC version
 		if (!$this->model_install->populateDatabase(true) || $this->model_install->getErrors())
 			$this->ajaxJsonAnswer(false, $this->model_install->getErrors());
 		$this->session->xml_loader_ids = $this->model_install->xml_loader_ids;
@@ -177,6 +180,20 @@ class InstallControllerHttpProcess extends InstallControllerHttp
 	}
 
 	/**
+	 * PROCESS : installTheme
+	 * Install theme
+	 */
+	public function processInstallTheme()
+	{
+		$this->initializeContext();
+
+		$this->model_install->installTheme();
+		if ($this->model_install->getErrors())
+			$this->ajaxJsonAnswer(false, $this->model_install->getErrors());
+		$this->ajaxJsonAnswer(true);
+	}
+
+	/**
 	 * PROCESS : preactivation
 	 * (currently not used)
 	 */
@@ -185,7 +202,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
 		foreach ($this->session->partners as $partner => $data)
 		{
 			/*$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 5)));
-			$url = 'http://www.prestashop.com/partner/preactivation/actions.php?version=1.0&partner='.addslashes($_GET['partner']);
+			$url = 'http://api.prestashop.com/partner/preactivation/actions.php?version=1.0&partner='.addslashes($_GET['partner']);
 
 			// Protect fields
 			foreach ($_GET as $key => $value)
@@ -212,6 +229,7 @@ class InstallControllerHttpProcess extends InstallControllerHttp
 			'configureShop',
 			'installModules',
 			'installFixtures',
+			'installTheme',
 			//'preactivation',
 		);
 		$this->displayTemplate('process');

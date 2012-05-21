@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10150 $
+*  @version  Release: $Revision: 11390 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -59,46 +59,38 @@ class StockCore extends ObjectModel
 	/** @var int the unit price without tax forthe current product */
 	public $price_te;
 
-	protected $fieldsRequired = array(
-		'id_warehouse',
-		'id_product',
-		'id_product_attribute',
-		'physical_quantity',
-		'usable_quantity',
-		'price_te',
+	/**
+	 * @see ObjectModel::$definition
+	 */
+	public static $definition = array(
+		'table' => 'stock',
+		'primary' => 'id_stock',
+		'fields' => array(
+			'id_warehouse' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'id_product_attribute' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
+			'reference' => 				array('type' => self::TYPE_STRING, 'validate' => 'isReference'),
+			'ean13' => 					array('type' => self::TYPE_STRING, 'validate' => 'isEan13'),
+			'upc' => 					array('type' => self::TYPE_STRING, 'validate' => 'isUpc'),
+			'physical_quantity' => 		array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'required' => true),
+			'usable_quantity' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt', 'required' => true),
+			'price_te' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'required' => true),
+		),
 	);
 
-	protected $fieldsSize = array();
-
-	protected $fieldsValidate = array(
-		'id_warehouse' => 'isUnsignedId',
-		'id_product' => 'isUnsignedId',
-		'id_product_attribute' => 'isUnsignedId',
-		'reference' => 'isReference',
-		'ean13' => 'isEan13',
-		'upc' => 'isUpc',
-		'physical_quantity' => 'isUnsignedInt',
-		'usable_quantity' => 'isInt',
-		'price_te' => 'isPrice',
-	);
-
-	protected $table = 'stock';
-	protected $identifier = 'id_stock';
-
-	public function getFields()
-	{
-		$this->validateFields();
-		$fields['id_warehouse'] = (int)$this->id_warehouse;
-		$fields['id_product'] = (int)$this->id_product;
-		$fields['id_product_attribute'] = (int)$this->id_product_attribute;
-		$fields['reference'] = pSQL($this->reference);
-		$fields['ean13'] = pSQL($this->ean13);
-		$fields['upc'] = pSQL($this->upc);
-		$fields['physical_quantity'] = (int)$this->physical_quantity;
-		$fields['usable_quantity'] = (int)$this->usable_quantity;
-		$fields['price_te'] = (float)round($this->price_te, 6);
-		return $fields;
-	}
+	/**
+	 * @see ObjectModel::$webserviceParameters
+	 */
+ 	protected $webserviceParameters = array(
+ 		'fields' => array(
+ 			'id_warehouse' => array('xlink_resource' => 'warehouses'),
+ 			'id_product' => array('xlink_resource' => 'products'),
+ 			'id_product_attribute' => array('xlink_resource' => 'combinations'),
+ 			'real_quantity' => array('getter' => 'getWsRealQuantity', 'setter' => false),
+ 		),
+ 		'hidden_fields' => array(
+ 		),
+ 	);
 
 	/**
 	 * @see ObjectModel::update()
@@ -151,5 +143,15 @@ class StockCore extends ObjectModel
 				$this->upc = $product->upc;
 			}
 		}
+	}
+
+	/**
+	 * Webservice : used to get the real quantity of a product
+	 */
+	public function getWsRealQuantity()
+	{
+		$manager = StockManagerFactory::getManager();
+		$quantity = $manager->getProductRealQuantities($this->id_product, $this->id_product_attribute, $this->id_warehouse, true);
+		return $quantity;
 	}
 }

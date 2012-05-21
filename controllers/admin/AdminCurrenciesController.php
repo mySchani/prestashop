@@ -25,8 +25,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-include_once(_PS_ADMIN_DIR_.'/../classes/AdminTab.php');
-
 class AdminCurrenciesControllerCore extends AdminController
 {
 	public function __construct()
@@ -44,6 +42,8 @@ class AdminCurrenciesControllerCore extends AdminController
 			'conversion_rate' => array('title' => $this->l('Conversion rate'), 'float' => true, 'align' => 'center', 'width' => 50, 'search' => false),
 			'active' => array('title' => $this->l('Enabled'), 'width' => 25, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false),
 		);
+
+	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->options = array(
 			'general' => array(
@@ -82,18 +82,17 @@ class AdminCurrenciesControllerCore extends AdminController
 		parent::__construct();
 	}
 
-	public function initList()
+	public function renderList()
 	{
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->_where = 'AND a.`deleted` = 0';
 
-		return parent::initList();
+		return parent::renderList();
 	}
 
-	public function initForm()
+	public function renderForm()
 	{
 		$this->fields_form = array(
 			'legend' => array(
@@ -247,49 +246,73 @@ class AdminCurrenciesControllerCore extends AdminController
 			'class' => 'button'
 		);
 
-		return parent::initForm();
+		return parent::renderForm();
 	}
 
-	public function postProcess()
+	/**
+	 * @see AdminController::processDelete()
+	 * @param $token
+	 */
+	public function processDelete($token)
 	{
-		if ($this->action == 'delete')
+		if (Validate::isLoadedObject($object = $this->loadObject()))
 		{
-			if (Validate::isLoadedObject($object = $this->loadObject()))
-			{
-				if ($object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-					$this->_errors[] = $this->l('You can\'t delete the default currency');
-				else if ($object->delete())
-					Tools::redirectAdmin(self::$currentIndex.'&conf=1'.'&token='.$this->token);
-				else
-					$this->_errors[] = Tools::displayError('An error occurred during deletion.');
-			}
+			if ($object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
+				$this->_errors[] = $this->l('You can\'t delete the default currency');
+			else if ($object->delete())
+				Tools::redirectAdmin(self::$currentIndex.'&conf=1'.'&token='.$this->token);
 			else
-				$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' 
-					<b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-		}
-		else if ($this->action == 'status')
-		{
-			if (Validate::isLoadedObject($object = $this->loadObject()))
-			{
-				if ($object->active && $object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-					$this->_errors[] = $this->l('You can\'t disable the default currency');
-				else if ($object->toggleStatus())
-					Tools::redirectAdmin(self::$currentIndex.'&conf=5'.((($id_category =
-						(int)Tools::getValue('id_category')) && Tools::getValue('id_product')) ? '&id_category='.$id_category : '').'&token='.$this->token);
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating status.');
-			}
-			else
-				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' 
-					<b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-		}
-		else if (Tools::isSubmit('submitExchangesRates'))
-		{
-			if (!$this->_errors[] = Currency::refreshCurrencies())
-				Tools::redirectAdmin(self::$currentIndex.'&conf=6'.'&token='.$this->token);
+				$this->_errors[] = Tools::displayError('An error occurred during deletion.');
 		}
 		else
-			parent::postProcess();
+			$this->_errors[] = Tools::displayError('An error occurred while deleting object.').'
+				<b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+	}
+
+	/**
+	 * @see AdminController::processStatus()
+	 * @param $token
+	 */
+	public function processStatus($token)
+	{
+		if (Validate::isLoadedObject($object = $this->loadObject()))
+		{
+			if ($object->active && $object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
+				$this->_errors[] = $this->l('You can\'t disable the default currency');
+			else if ($object->toggleStatus())
+				Tools::redirectAdmin(self::$currentIndex.'&conf=5'.((($id_category =
+					(int)Tools::getValue('id_category')) && Tools::getValue('id_product')) ? '&id_category='.$id_category : '').'&token='.$this->token);
+			else
+				$this->_errors[] = Tools::displayError('An error occurred while updating status.');
+		}
+		else
+			$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').'
+				<b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+	}
+
+	/**
+	 * Update currency exchange rates
+	 * @param $token
+	 */
+	public function processExchangeRates($token)
+	{
+		if (!$this->_errors[] = Currency::refreshCurrencies())
+			Tools::redirectAdmin(self::$currentIndex . '&conf=6' . '&token=' . $this->token);
+	}
+
+	/**
+	 * @see AdminController::initProcess()
+	 */
+	public function initProcess()
+	{
+		if (Tools::isSubmit('submitExchangesRates'))
+		{
+			if ($this->tabAccess['edit'] === '1')
+				$this->action = 'exchangeRates';
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+		}
+		parent::initProcess();
 	}
 
 	public function updateOptionPsCurrencyDefault($value)

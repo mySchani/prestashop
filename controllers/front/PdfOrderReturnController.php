@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10231 $
+*  @version  Release: $Revision: 10941 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,7 +35,7 @@ class PdfOrderReturnControllerCore extends FrontController
 		if (!$this->context->customer->isLogged())
 			Tools::redirect('index.php?controller=authentication&back=order-follow');
 
-		if (isset(Tools::getValue('id_order_return')) && Validate::isUnsignedId(Tools::getValue('id_order_return')))
+		if (Tools::getValue('id_order_return') && Validate::isUnsignedId(Tools::getValue('id_order_return')))
 			$this->orderReturn = new OrderReturn(Tools::getValue('id_order_return'));
 
 		if (!isset($this->orderReturn) || !Validate::isLoadedObject($this->orderReturn))
