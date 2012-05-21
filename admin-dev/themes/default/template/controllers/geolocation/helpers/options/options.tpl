@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,14 +18,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13052 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14050 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 {extends file="helpers/options/options.tpl"}
-{block name="start_field_block"}
+{block name="field"}
 	{if $field['type'] == 'checkbox_table'}
 		<div class="margin-form" style="float: left; padding-left: 0; width: 317px; margin-top: 6px; height: 300px; overflow-y: auto;">
 			<table class="table" cellspacing="0">
@@ -44,18 +44,18 @@
 					{/foreach}
 				</tbody>
 			</table>
-	{elseif $field['type'] == 'textarea_newlines'}
-		<div class="margin-form">
-			<textarea name={$key} cols="{$field['cols']}" rows="{$field['rows']}">{$field['value']|replace:';':"\n"|escape:'htmlall':'UTF-8'}</textarea>
+		</div>
+		<div class="clear"></div>
+		<br />
 	{else}
-		<div class="margin-form">
+		{$smarty.block.parent}
 	{/if}
 {/block}
 
-{block name="end_field_block"}
-	{if $field['type'] == 'checkbox_table'}
-		<div class="clear"></div>
-		<br />
+{block name="input"}
+	{if $field['type'] == 'textarea_newlines'}
+		<textarea name={$key} cols="{$field['cols']}" rows="{$field['rows']}">{$field['value']|replace:';':"\n"|escape:'htmlall':'UTF-8'}</textarea>
+	{else}
+		{$smarty.block.parent}
 	{/if}
-	</div>
 {/block}

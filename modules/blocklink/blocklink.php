@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7077 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -184,7 +184,7 @@ class BlockLink extends Module
 		}
 
 		$assos_shop = Tools::getValue('checkBoxShopAsso_blocklink');
-		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'blocklink_shop WHERE id_blocklink='.(int)$id_link);
+		Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'blocklink_shop WHERE id_blocklink='.(int)$id_link);
 		foreach ($assos_shop as $asso)
 			foreach ($asso as $id_shop => $row)
 				Db::getInstance()->insert('blocklink_shop', array(
@@ -320,7 +320,7 @@ class BlockLink extends Module
 				<div class="margin-form"><input type="checkbox" name="newWindow" id="newWindow" '.((isset($links) && $links['new_window']) ? 'checked="checked"' : '').' /></div>';
 				if (Shop::isFeatureActive())
 				{
-					$helper = new Helper();
+					$helper = new HelperForm();
 					$helper->id = (int)Tools::getValue('id_link');
 					$helper->table = 'blocklink';
 					$helper->identifier = 'id_blocklink';

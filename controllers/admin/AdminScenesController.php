@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -69,34 +69,37 @@ class AdminScenesControllerCore extends AdminController
 		/* Generate image with differents size */
 		if (!($obj = $this->loadObject(true)))
 			return;
+
 		if ($obj->id && (isset($_FILES['image']) || isset($_FILES['thumb'])))
 		{
+			$base_img_path = _PS_SCENE_IMG_DIR_.$obj->id.'.jpg';
 			$images_types = ImageType::getImagesTypes('scenes');
+
 			foreach ($images_types as $k => $image_type)
 			{
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				if ($image_type['name'] == 'large_scene' && isset($_FILES['image']))
 					ImageManager::resize(
-						$_FILES['image']['tmp_name'],
-						_PS_SCENE_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
+						$base_img_path,
+						_PS_SCENE_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).'.jpg',
 						(int)$image_type['width'],
 						(int)$image_type['height']
 					);
 				else if ($image_type['name'] == 'thumb_scene')
 				{
 					if (isset($_FILES['thumb']) && !$_FILES['thumb']['error'])
-						$tmp_name = $_FILES['thumb']['tmp_name'];
+						$base_thumb_path = _PS_SCENE_THUMB_IMG_DIR_.$obj->id.'.jpg';
 					else
-						$tmp_name = $_FILES['image']['tmp_name'];
+						$base_thumb_path = $base_img_path;
 					ImageManager::resize(
-						$tmp_name,
-						_PS_SCENE_THUMB_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).$theme.'.jpg',
+						$base_thumb_path,
+						_PS_SCENE_THUMB_IMG_DIR_.$obj->id.'-'.stripslashes($image_type['name']).'.jpg',
 						(int)$image_type['width'],
 						(int)$image_type['height']
 					);
 				}
 			}
 		}
+
 		return true;
 	}
 
@@ -136,7 +139,7 @@ class AdminScenesControllerCore extends AdminController
 				'image' => '../img/admin/photo.gif',
 				),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			),
 			'input' => array(
@@ -145,11 +148,11 @@ class AdminScenesControllerCore extends AdminController
 					'name' => 'description',
 					'label' => $this->l('How to map products in the image:'),
 					'text' => $this->l('When a customer hovers over the image with the mouse, a pop-up appears displaying a brief description of the product.').
-						$this->l('The customer can then click to open the product\'s full product page. ').
-						$this->l('To achieve this, please define the \'mapping zone\' that, when hovered over, will display the pop-up. ').
+						$this->l('The customer can then click to open the product\'s full product page.').
+						$this->l('To achieve this, please define the \'mapping zone\' that, when hovered over, will display the pop-up.').
 						$this->l('Left-click with your mouse to draw the four-sided mapping zone, then release.').
-						$this->l('Then, begin typing the name of the associated product. A list of products appears. ').
-						$this->l('Click the appropriate product, then click OK. Repeat these steps for each mapping zone you wish to create. ').
+						$this->l('Then, begin typing the name of the associated product. A list of products appears.').
+						$this->l('Click the appropriate product, then click OK. Repeat these steps for each mapping zone you wish to create.').
 						$this->l('When you have finished mapping zones, click Save Image Map.')
 				),
 				array(
@@ -187,11 +190,10 @@ class AdminScenesControllerCore extends AdminController
 
 		$image_to_map_desc = '';
 		$image_to_map_desc .= $this->l('Format:').' JPG, GIF, PNG. '.$this->l('File size:').' '
-				.(Tools::getMaxUploadSize() / 1024).''.$this->l('KB max.').' '
+				.(Tools::getMaxUploadSize() / 1024).''.$this->l('kB max.').' '
 				.$this->l('If larger than the image size setting, the image will be reduced to ')
 				.' '.$large_scene_image_type['width'].'x'.$large_scene_image_type['height'].'px '
-				.$this->l('(width x height). If smaller than the image-size setting, a white background will be added in order to achieve the 
-					correct image size.').'.<br />'.
+				.$this->l('(width x height). If smaller than the image-size setting, a white background will be added in order to achieve the correct image size.').'<br />'.
 				$this->l('Note: To change image dimensions, please change the \'large_scene\' image type settings to the desired size (in Back Office > Preferences > Images).');
 		if ($obj->id && file_exists(_PS_SCENE_IMG_DIR_.$obj->id.'-large_scene.jpg'))
 		{
@@ -218,7 +220,7 @@ class AdminScenesControllerCore extends AdminController
 			$img_alt_desc = '';
 			$img_alt_desc .= $this->l('If you want to use a thumbnail other than one generated from simply reducing the mapped image, please upload it here.')
 				.'<br />'.$this->l('Format:').' JPG, GIF, PNG. '
-				.$this->l('Filesize:').' '.(Tools::getMaxUploadSize() / 1024).''.$this->l('Kb max.').' '
+				.$this->l('Filesize:').' '.(Tools::getMaxUploadSize() / 1024).''.$this->l('kB max.').' '
 				.$this->l('Automatically resized to')
 				.' '.$thumb_scene_image_type['width'].'x'.$thumb_scene_image_type['height'].'px '.$this->l('(width x height)').'.<br />'
 				.$this->l('Note: To change image dimensions, please change the \'thumb_scene\' image type settings to the desired size (in Back Office > Preferences > Images).');
@@ -272,7 +274,7 @@ class AdminScenesControllerCore extends AdminController
 		}
 		else
 		{
-			$image_to_map_desc .= '<br/><span class="bold">'.$this->l('Please add a picture to continue mapping the image...').'</span><br/><br/>';
+			$image_to_map_desc .= '<br/><span class="bold">'.$this->l('Please add a picture to continue mapping the image.').'</span><br/><br/>';
 			$image_to_map_desc .= '</div>';
 		}
 		if (Shop::isFeatureActive())
@@ -281,7 +283,6 @@ class AdminScenesControllerCore extends AdminController
 				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 

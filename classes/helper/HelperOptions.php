@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13151 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13961 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -64,19 +64,20 @@ class HelperOptionsCore extends Helper
 
 			foreach ($category_data['fields'] as $key => $field)
 			{
-				// Set field value
-				$field['value'] = $this->getOptionValue($key, $field);
+				// Set field value unless explicitly denied
+				if (!isset($field['auto_value']) || $field['auto_value'])
+					$field['value'] = $this->getOptionValue($key, $field);
 
 				// Check if var is invisible (can't edit it in current shop context), or disable (use default value for multishop)
 				$isDisabled = $isInvisible = false;
 				if (Shop::isFeatureActive())
 				{
-					if (isset($field['visibility']) && $field['visibility'] > $this->context->shop->getContextType())
+					if (isset($field['visibility']) && $field['visibility'] > Shop::getContext())
 					{
 						$isDisabled = true;
 						$isInvisible = true;
 					}
-					else if (Context::shop() != Shop::CONTEXT_ALL && !Configuration::isOverridenByCurrentContext($key))
+					else if (Shop::getContext() != Shop::CONTEXT_ALL && !Configuration::isOverridenByCurrentContext($key))
 						$isDisabled = true;
 				}
 				$field['is_disabled'] = $isDisabled;
@@ -121,12 +122,10 @@ class HelperOptionsCore extends Helper
 							}
 						</script>';
 					$field['link_remove_ip'] = ' &nbsp<a href="#" class="button" onclick="addRemoteAddr(); return false;">'.$this->l('Add my IP', 'Helper').'</a>';
-					if (!isset($category_data['bottom']))
-						$category_data['bottom'] = '<script type="text/javascript">changeCMSActivationAuthorization();</script>';
 				}
 
 				// Multishop default value
-				$field['multishop_default'] = (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL && !$isInvisible);
+				$field['multishop_default'] = (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL && !$isInvisible);
 
 				// Assign the modifications back to parent array
 				$category_data['fields'][$key] = $field;
@@ -143,7 +142,7 @@ class HelperOptionsCore extends Helper
 			'title' => $this->title,
 			'toolbar_btn' => $this->toolbar_btn,
 			'show_toolbar' => $this->show_toolbar,
-			'toolbar_fix' => $this->toolbar_fix,
+			'toolbar_scroll' => $this->toolbar_scroll,
 			'current' => $this->currentIndex,
 			'table' => $this->table,
 			'token' => $this->token,

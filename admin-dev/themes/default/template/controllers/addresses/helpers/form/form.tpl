@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13052 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14051 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,12 +27,26 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name="label"}
+	{if $input.name == 'vat_number'}
+		{if $vat == 'is_applicable'}
+			<div id="vat_area" style="display: visible">
+		{else if $vat == 'management'}
+			<div id="vat_area" style="display: hidden">
+		{else}
+			<div style="display: none;">
+		{/if}
+	{/if}
+
+	{if $input.type == 'text_customer' && !isset($customer)}
+		<label>{l s='Customer e-mail'}</label>
+	{else}
+		{$smarty.block.parent}
+	{/if}
 {/block}
 
-{block name="start_field_block"}
+{block name="field"}
 	{if $input.type == 'text_customer'}
 		{if isset($customer)}
-			<label>{$input.label}</label>
 			<div class="margin-form"><a style="display: block; padding-top: 4px;" href="?tab=AdminCustomers&id_customer={$customer->id}&viewcustomer&token={$tokenCustomer}">{$customer->lastname} {$customer->firstname} ({$customer->email})</a></div>
 			<input type="hidden" name="id_customer" value="{$customer->id}" />
 			<input type="hidden" name="email" value="{$customer->email}" />
@@ -71,35 +85,14 @@
 				}
 			});
 			</script>
-			<label>{l s='Customer e-mail'}</label>
 			<div class="margin-form">
 				<input type="text" size="33" name="email" value="{$fields_value[$input.name]|escape:'htmlall':'UTF-8'|htmlentities}" style="text-transform: lowercase;" /> <sup>*</sup>
 			</div>
 		{/if}
-	{else} 
-		{if $input.name == 'vat_number'}		
-			{if $vat == 'is_applicable'}
-				<div id="vat_area" style="display: visible">
-			{else if $vat == 'management'}
-				<div id="vat_area" style="display: hidden">
-			{else}
-				<div style="display: none;">
-			{/if}
-		{else if $input.name == 'id_state'}
-				<div id="contains_states" {if $contains_states}style="display:none;"{/if}>
-		{/if}
-		<label>{$input.label} </label>
-		<div class="margin-form">
+	{else}
+		{$smarty.block.parent}
 	{/if}
-{/block}
-
-{block name="end_field_block"}
-	{* close div margin-form *}
-	{if $input.type != 'text_customer'}
-		</div>
-	{/if}
-	{* close hidden div *}
-	{if $input.name == 'vat_number' || $input.name == 'id_state'}
+	{if $input.name == 'vat_number'}
 		</div>
 	{/if}
 {/block}

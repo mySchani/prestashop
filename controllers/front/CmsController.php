@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12074 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13847 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,6 +80,8 @@ class CmsControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		$parent_cat = new CMSCategory(1, $this->context->language->id);
 		$this->context->smarty->assign('id_current_lang', $this->context->language->id);
 		$this->context->smarty->assign('home_title', $parent_cat->name);
@@ -107,6 +109,5 @@ class CmsControllerCore extends FrontController
 		}
 
 		$this->setTemplate(_PS_THEME_DIR_.'cms.tpl');
-		parent::initContent();
 	}
 }

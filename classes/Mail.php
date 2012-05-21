@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -32,19 +32,25 @@ include_once(_PS_SWIFT_DIR_.'Swift/Plugin/Decorator.php');
 
 class MailCore
 {
+	const TYPE_HTML = 1;
+	const TYPE_TEXT = 2;
+	const TYPE_BOTH = 3;
+
 	public static function Send($id_lang, $template, $subject, $templateVars, $to,
 		$toName = null, $from = null, $fromName = null, $fileAttachment = null, $modeSMTP = null, $templatePath = _PS_MAIL_DIR_, $die = false)
 	{
-		$configuration = Configuration::getMultiple(array('PS_SHOP_EMAIL',
-														  'PS_MAIL_METHOD',
-														  'PS_MAIL_SERVER',
-														  'PS_MAIL_USER',
-														  'PS_MAIL_PASSWD',
-														  'PS_SHOP_NAME',
-														  'PS_MAIL_SMTP_ENCRYPTION',
-														  'PS_MAIL_SMTP_PORT',
-														  'PS_MAIL_METHOD',
-														  'PS_MAIL_TYPE'));
+		$configuration = Configuration::getMultiple(array(
+			'PS_SHOP_EMAIL',
+			'PS_MAIL_METHOD',
+			'PS_MAIL_SERVER',
+			'PS_MAIL_USER',
+			'PS_MAIL_PASSWD',
+			'PS_SHOP_NAME',
+			'PS_MAIL_SMTP_ENCRYPTION',
+			'PS_MAIL_SMTP_PORT',
+			'PS_MAIL_METHOD',
+			'PS_MAIL_TYPE'
+		));
 
 		if (!isset($configuration['PS_MAIL_SMTP_ENCRYPTION'])) $configuration['PS_MAIL_SMTP_ENCRYPTION'] = 'off';
 		if (!isset($configuration['PS_MAIL_SMTP_PORT'])) $configuration['PS_MAIL_SMTP_PORT'] = 'default';
@@ -83,13 +89,13 @@ class MailCore
 			
 		if (!Validate::isTplName($template))
 		{
-	 		Tools::dieOrLog(Tools::displayError('Error: invalid email template'), $die);
+	 		Tools::dieOrLog(Tools::displayError('Error: invalid e-mail template'), $die);
 	 		return false;
 		}
 			
 		if (!Validate::isMailSubject($subject))
 		{
-	 		Tools::dieOrLog(Tools::displayError('Error: invalid email subject'), $die);
+	 		Tools::dieOrLog(Tools::displayError('Error: invalid e-mail subject'), $die);
 	 		return false;
 		}
 
@@ -103,7 +109,7 @@ class MailCore
 				$addr = trim($addr);
 				if (!Validate::isEmail($addr))
 				{
-					Tools::dieOrLog(Tools::displayError('Error: invalid email address'), $die);
+					Tools::dieOrLog(Tools::displayError('Error: invalid e-mail address'), $die);
 					return false;
 				}
 				if (is_array($toName))
@@ -111,14 +117,15 @@ class MailCore
 					if ($toName && is_array($toName) && Validate::isGenericName($toName[$key]))
 						$to_name = $toName[$key];
 				}
-				$to_list->addTo($addr, base64_encode($to_name));
+                /* Encode accentuated chars */
+				$to_list->addTo($addr, '=?UTF-8?B?'.base64_encode($to_name).'?=');
 			}
 			$to_plugin = $to[0];
 			$to = $to_list;
 		} else {
 			/* Simple recipient, one address */
 			$to_plugin = $to;
-			$to = new Swift_Address($to, base64_encode($toName));
+			$to = new Swift_Address($to, '=?UTF-8?B?'.base64_encode($toName).'?=');
 		}
 		try {
 			/* Connect with the appropriate configuration */
@@ -172,7 +179,7 @@ class MailCore
 			}
 			else if (!file_exists($templatePath.$template.'.txt') || !file_exists($templatePath.$template.'.html'))
 			{
-				Tools::dieOrLog(Tools::displayError('Error - The following email template is missing:').' '.$templatePath.$template.'.txt', $die);
+				Tools::dieOrLog(Tools::displayError('Error - The following e-mail template is missing:').' '.$templatePath.$template.'.txt', $die);
 				return false;
 			}
 			$templateHtml = file_get_contents($templatePath.$template.'.html');
@@ -192,9 +199,9 @@ class MailCore
 			$templateVars['{shop_name}'] = Tools::safeOutput(Configuration::get('PS_SHOP_NAME'));
 			$templateVars['{shop_url}'] = Tools::getShopDomain(true, true).__PS_BASE_URI__;
 			$swift->attachPlugin(new Swift_Plugin_Decorator(array($to_plugin => $templateVars)), 'decorator');
-			if ($configuration['PS_MAIL_TYPE'] == 3 || $configuration['PS_MAIL_TYPE'] == 2)
+			if ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_TEXT)
 				$message->attach(new Swift_Message_Part($templateTxt, 'text/plain', '8bit', 'utf-8'));
-			if ($configuration['PS_MAIL_TYPE'] == 3 || $configuration['PS_MAIL_TYPE'] == 1)
+			if ($configuration['PS_MAIL_TYPE'] == Mail::TYPE_BOTH || $configuration['PS_MAIL_TYPE'] == Mail::TYPE_HTML)
 				$message->attach(new Swift_Message_Part($templateHtml, 'text/html', '8bit', 'utf-8'));
 			if ($fileAttachment && isset($fileAttachment['content']) && isset($fileAttachment['name']) && isset($fileAttachment['mime']))
 				$message->attach(new Swift_Message_Attachment($fileAttachment['content'], $fileAttachment['name'], $fileAttachment['mime']));

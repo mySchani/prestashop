@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision$
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -39,6 +39,7 @@ class shopimporter extends ImportModule
 		$this->version = '1.0';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
+		$this->is_configurable = 1;
 
 		parent::__construct ();
 
@@ -1237,9 +1238,9 @@ class shopimporter extends ImportModule
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'country_lang');
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'country');
 			case 'group' :
-				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'customer_group');
-				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'group_lang');
-				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'group');
+				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'customer_group');
+				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'group_lang');
+				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'group');
 				break;
 			case 'combination' :
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'product_attribute');

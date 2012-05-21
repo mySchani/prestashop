@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7521 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -107,10 +107,7 @@ class ToolsCore
 				header($header);
 		}
 
-		if (isset($_SERVER['HTTP_REFERER']) && $url == $_SERVER['HTTP_REFERER'])
-			header('Location: '.$_SERVER['HTTP_REFERER']);
-		else
-			header('Location: '.$url);
+		header('Location: '.$url);
 		exit;
 	}
 
@@ -379,12 +376,15 @@ class ToolsCore
 	{
 		if (!$context)
 			$context = Context::getContext();
-		if (($id_lang = (int)Tools::getValue('id_lang')) && Validate::isUnsignedId($id_lang))
-			$context->cookie->id_lang = $id_lang;
 
-		$language = new Language($id_lang);
-		if (Validate::isLoadedObject($language))
-			$context->language = $language;
+		// update language only if new id is different from old id
+		if (($id_lang = (int)Tools::getValue('id_lang')) && Validate::isUnsignedId($id_lang) && $context->cookie->id_lang != (int)$id_lang)
+		{
+			$context->cookie->id_lang = $id_lang;
+			$language = new Language($id_lang);
+			if (Validate::isLoadedObject($language))
+				$context->language = $language;
+		}
 	}
 
 	/**
@@ -757,7 +757,7 @@ class ToolsCore
 			{
 				$sql = 'SELECT `name`, `meta_title`, `meta_description`, `meta_keywords`, `description_short`
 						FROM `'._DB_PREFIX_.'product` p
-						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product`'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').')
+						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product`'.Shop::addSqlRestrictionOnLang('pl').')
 						WHERE pl.id_lang = '.(int)$id_lang.'
 							AND pl.id_product = '.(int)$id_product.'
 							AND p.active = 1';
@@ -779,7 +779,7 @@ class ToolsCore
 				$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 				SELECT `name`, `meta_title`, `meta_description`, `meta_keywords`, `description`
 				FROM `'._DB_PREFIX_.'category_lang` cl
-				WHERE cl.`id_lang` = '.(int)($id_lang).' AND cl.`id_category` = '.(int)$id_category.Context::getContext()->shop->addSqlRestrictionOnLang('cl'));
+				WHERE cl.`id_lang` = '.(int)($id_lang).' AND cl.`id_category` = '.(int)$id_category.Shop::addSqlRestrictionOnLang('cl'));
 				if ($row)
 				{
 					if (empty($row['meta_description']))
@@ -979,7 +979,7 @@ class ToolsCore
 			{
 				$sql = 'SELECT c.id_category, cl.name, cl.link_rewrite
 						FROM '._DB_PREFIX_.'category c
-						LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.$context->shop->addSqlRestrictionOnLang('cl').')
+						LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.Shop::addSqlRestrictionOnLang('cl').')
 						WHERE c.nleft <= '.$interval['nleft'].'
 							AND c.nright >= '.$interval['nright'].'
 							AND c.nleft >= '.$intervalRoot['nleft'].'
@@ -1522,7 +1522,7 @@ class ToolsCore
 	public static function cccJS($js_files)
 	{
 		Tools::displayAsDeprecated();
-		return Media::cccJS($css_files);
+		return Media::cccJS($js_files);
 	}
 
 	private static $_cache_nb_media_servers = null;
@@ -1560,9 +1560,6 @@ class ToolsCore
 			$cache_control = (int)Configuration::get('PS_HTACCESS_CACHE_CONTROL');
 		if (is_null($disable_multiviews))
 			$disable_multiviews = (int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS');
-
-		if (!$rewrite_settings && !Shop::isFeatureActive())
-			return true;
 
 		// Check current content of .htaccess and save all code outside of prestashop comments
 		$specific_before = $specific_after = '';
@@ -1619,8 +1616,17 @@ class ToolsCore
 				// Rewrite virtual multishop uri
 				if ($uri['virtual'])
 				{
+					if (!$rewrite_settings)
+					{
+						fwrite($write_fd, 'RewriteCond %{HTTP_HOST} ^'.$domain.'$'."\n");
+						fwrite($write_fd, 'RewriteRule ^'.trim($uri['virtual'], '/').'/?$ '.$uri['physical'].$uri['virtual']."index.php [L,R]\n");
+					}
+					else
+					{
+						fwrite($write_fd, 'RewriteCond %{HTTP_HOST} ^'.$domain.'$'."\n");
+						fwrite($write_fd, 'RewriteRule ^'.trim($uri['virtual'], '/').'$ '.$uri['physical'].$uri['virtual']." [L,R]\n");
+					}
 					fwrite($write_fd, 'RewriteCond %{HTTP_HOST} ^'.$domain.'$'."\n");
-					fwrite($write_fd, 'RewriteRule ^'.trim($uri['virtual'], '/').'$ '.$uri['physical'].$uri['virtual']."index.php [L,R]\n");
 					fwrite($write_fd, 'RewriteRule ^'.ltrim($uri['virtual'], '/').'(.*) '.$uri['physical']."$1 [L]\n\n");
 				}
 
@@ -1694,7 +1700,11 @@ FileETag INode MTime Size
 
 		// In case the user hasn't rewrite mod enabled
 		fwrite($write_fd, "#If rewrite mod isn't enabled\n");
-		fwrite($write_fd, 'ErrorDocument 404 '.$uri['physical']."index.php?controller=404\n\n");
+
+		// Do not remove ($domains is already iterated upper)
+		reset($domains);
+		$domain = current($domains);
+		fwrite($write_fd, 'ErrorDocument 404 '.$domain[0]['physical']."index.php?controller=404\n\n");
 
 		fwrite($write_fd, "# ~~end~~ Do not remove this comment, Prestashop will keep automatically the code outside this comment when .htaccess will be generated again\n");
 		fwrite($write_fd, "\n\n".trim($specific_after));
@@ -1833,7 +1843,7 @@ FileETag INode MTime Size
 	public static function pRegexp($s, $delim)
 	{
 		$s = str_replace($delim, '\\'.$delim, $s);
-		foreach (array('?', '[', ']', '(', ')', '{', '}', '-', '.', '+', '*', '^', '$') as $char)
+		foreach (array('?', '[', ']', '(', ')', '{', '}', '-', '.', '+', '*', '^', '$', '`', '"', '%') as $char)
 			$s = str_replace($char, '\\'.$char, $s);
 		return $s;
 	}
@@ -2191,8 +2201,43 @@ FileETag INode MTime Size
 
 		foreach ($files as $file)
 			if (strpos($file, $real_ext) && strpos($file, $real_ext) == (strlen($file) - $real_ext_length))
-				$filtered_files[] = $dir.'/'.$file;
+				$filtered_files[] = $dir.DIRECTORY_SEPARATOR.$file;
 		return $filtered_files;
+	}
+
+	/**
+	 * Align 2 version with the same number of sub version
+	 * version_compare will work better for its comparison :)
+	 * (Means: '1.8' to '1.9.3' will change '1.8' to '1.8.0')
+	 * @static
+	 * @param $v1
+	 * @param $v2
+	 */
+	public static function alignVersionNumber(&$v1, &$v2)
+	{
+		$len1 = count(explode('.', trim($v1, '.')));
+		$len2 = count(explode('.', trim($v2, '.')));
+		$len = 0;
+		$str = '';
+
+		if ($len1 > $len2)
+		{
+			$len = $len1 - $len2;
+			$str = &$v2;
+		}
+		else if ($len2 > $len1)
+		{
+			$len = $len2 - $len1;
+			$str = &$v1;
+		}
+
+		for ($len; $len > 0; $len--)
+			$str .= '.0';
+	}
+	
+	public static function modRewriteActive()
+	{
+		return Tools::apacheModExists('mod_rewrite');
 	}
 }
 

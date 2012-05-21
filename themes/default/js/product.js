@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -202,7 +202,7 @@ function updateDisplay()
 				$('#quantityAvailableTxtMultiple').show();
 			}
 		}
-		}
+	}
 	else
 	{
 		//show the hook out of stock
@@ -340,21 +340,21 @@ function updateDisplay()
 			$('#not_impacted_by_discount').show();
 		else
 			$('#not_impacted_by_discount').hide();
-					
+		
 		var taxExclPrice = (display_specific_price ? (specific_currency ? display_specific_price : display_specific_price * currencyRate) : priceTaxExclWithoutGroupReduction) + selectedCombination['price'] * currencyRate;
 
 		if (display_specific_price)
-			var productPriceWithoutReduction = priceTaxExclWithoutGroupReduction + selectedCombination['price'] * currencyRate;
+			productPriceWithoutReduction = priceTaxExclWithoutGroupReduction + selectedCombination['price'] * currencyRate; // Need to be global => no var
 
 		if (!displayPrice && !noTaxForThisProduct)
 		{
-			var productPrice = taxExclPrice * tax;
+			productPrice = taxExclPrice * tax; // Need to be global => no var
 			if (display_specific_price)
 				productPriceWithoutReduction = ps_round(productPriceWithoutReduction * tax, 2);
 		}
 		else
 		{
-			var productPrice = ps_round(taxExclPrice, 2);
+			productPrice = ps_round(taxExclPrice, 2); // Need to be global => no var
 			if (display_specific_price)
 				productPriceWithoutReduction = ps_round(productPriceWithoutReduction, 2);
 		}
@@ -388,70 +388,75 @@ function updateDisplay()
 		productPriceWithoutReduction += ecotaxAmount;
 
 		//productPrice = ps_round(productPrice * currencyRate, 2);
-		if (productPrice > 0)
-			$('#our_price_display').text(formatCurrency(productPrice, currencyFormat, currencySign, currencyBlank));
-		else
-			$('#our_price_display').text(formatCurrency(0, currencyFormat, currencySign, currencyBlank));
-
+		var our_price = '';
+		if (productPrice > 0) {
+			our_price = formatCurrency(productPrice, currencyFormat, currencySign, currencyBlank);
+		} else {
+			our_price = formatCurrency(0, currencyFormat, currencySign, currencyBlank);
+		}
+		$('#our_price_display').text(our_price);
 		$('#old_price_display').text(formatCurrency(productPriceWithoutReduction, currencyFormat, currencySign, currencyBlank));
 		if (productPriceWithoutReduction > productPrice)
 			$('#old_price,#old_price_display,#old_price_display_taxes').show();
 		else
 			$('#old_price,#old_price_display,#old_price_display_taxes').hide();
-		/* Special feature: "Display product price tax excluded on product page" */
+		// Special feature: "Display product price tax excluded on product page"
 		if (!noTaxForThisProduct)
 			var productPricePretaxed = productPrice / tax;
 		else
 			var productPricePretaxed = productPrice;
 		$('#pretaxe_price_display').text(formatCurrency(productPricePretaxed, currencyFormat, currencySign, currencyBlank));
-		/* Unit price */
-        productUnitPriceRatio = parseFloat(productUnitPriceRatio);
+		// Unit price 
+		productUnitPriceRatio = parseFloat(productUnitPriceRatio);
 		if (productUnitPriceRatio > 0 )
 		{
-        	newUnitPrice = (productPrice / parseFloat(productUnitPriceRatio)) + selectedCombination['unit_price'];
+			newUnitPrice = (productPrice / parseFloat(productUnitPriceRatio)) + selectedCombination['unit_price'];
 			$('#unit_price_display').text(formatCurrency(newUnitPrice, currencyFormat, currencySign, currencyBlank));
 		}
 
-		/* Ecotax */
+		// Ecotax
 		var ecotaxAmount = !displayPrice ? ps_round(selectedCombination['ecotax'] * (1 + ecotaxTax_rate / 100), 2) : selectedCombination['ecotax'];
 		$('#ecotax_price_display').text(formatCurrency(ecotaxAmount, currencyFormat, currencySign, currencyBlank));
 	}
 }
 
 //update display of the large image
-function displayImage(domAAroundImgThumb)
+function displayImage(domAAroundImgThumb, no_animation)
 {
-    if (domAAroundImgThumb.attr('href'))
-    {
-        var newSrc = domAAroundImgThumb.attr('href').replace('thickbox','large');
-        if ($('#bigpic').attr('src') != newSrc)
-        {
-            $('#bigpic').fadeOut('fast', function(){
-                $(this).attr('src', newSrc).show();
-                if (typeof(jqZoomEnabled) != 'undefined' && jqZoomEnabled)
-                    $(this).attr('alt', domAAroundImgThumb.attr('href'));
-            });
-        }
-        $('#views_block li a').removeClass('shown');
-        $(domAAroundImgThumb).addClass('shown');
-    }
+	if (typeof(no_animation) == 'undefined')
+		no_animation = false;
+	
+	if (domAAroundImgThumb.attr('href'))
+	{
+		var newSrc = domAAroundImgThumb.attr('href').replace('thickbox','large');
+		if ($('#bigpic').attr('src') != newSrc)
+		{
+			$('#bigpic').fadeOut((no_animation ? 0 : 'fast'), function(){
+				$(this).attr('src', newSrc).show();
+				if (typeof(jqZoomEnabled) != 'undefined' && jqZoomEnabled)
+					$(this).attr('alt', domAAroundImgThumb.attr('href'));
+			});
+		}
+		$('#views_block li a').removeClass('shown');
+		$(domAAroundImgThumb).addClass('shown');
+	}
 }
 
 //update display of the discounts table
 function displayDiscounts(combination)
 {
-    $('#quantityDiscount table tbody tr').each(function() {
-        if (($(this).attr('id') != 'quantityDiscount_0') &&
-            ($(this).attr('id') != 'quantityDiscount_'+combination) &&
-            ($(this).attr('id') != 'noQuantityDiscount'))
-            $(this).fadeOut('slow');
-    });
+	$('#quantityDiscount table tbody tr').each(function() {
+		if (($(this).attr('id') != 'quantityDiscount_0') &&
+			($(this).attr('id') != 'quantityDiscount_'+combination) &&
+			($(this).attr('id') != 'noQuantityDiscount'))
+			$(this).fadeOut('slow');
+	 });
 
-    if ($('#quantityDiscount_'+combination).length != 0) {
-        $('#quantityDiscount_'+combination).show();
-        $('#noQuantityDiscount').hide();
-    } else
-        $('#noQuantityDiscount').show();
+	if ($('#quantityDiscount_'+combination).length != 0) {
+		$('#quantityDiscount_'+combination).show();
+		$('#noQuantityDiscount').hide();
+	} else
+		$('#noQuantityDiscount').show();
 }
 
 // Serialscroll exclude option bug ?
@@ -534,7 +539,6 @@ $(document).ready(function()
 			//position: "right" //zooming div position(default position value is "right")
 		});
 	}
-
 	//add a link on the span 'view full size' and on the big image
 	$('span#view_full_size, div#image-block img').click(function(){
 		$('#views_block li a.shown').click();
@@ -559,7 +563,6 @@ $(document).ready(function()
 	else if (typeof productHasAttributes != 'undefined' && !productHasAttributes)
 		refreshProductImages(0);
 
-	//
 	$('a#resetImages').click(function() {
 		refreshProductImages(0);
 	});
@@ -569,6 +572,12 @@ $(document).ready(function()
 		'transitionIn'	: 'elastic',
 		'transitionOut'	: 'elastic'
 	});
+	
+	original_url = window.location+'';
+	first_url_check = true;
+	checkUrl();
+	initLocationChange();
+	
 });
 
 function saveCustomization()
@@ -617,14 +626,14 @@ function colorPickerClick(elt)
 	id_attribute = $(elt).attr('id').replace('color_', '');
 	$('.color_pick').parent().removeClass('selected');
 	$(elt).fadeTo('fast', 1, function(){
-								$(this).fadeTo('slow', 0, function(){
-									$(this).fadeTo('slow', 1, function(){
+								$(this).fadeTo('fast', 0, function(){
+									$(this).fadeTo('fast', 1, function(){
 										$(this).parent().addClass('selected');
 										});
 									});
 								});
 	$('#color_pick_hidden').val(id_attribute);
-	findCombination();
+	findCombination(false);
 }
 
 
@@ -653,15 +662,11 @@ function getProductAttribute()
 	// redirection
 	if (url.indexOf('#') != -1)
 		url = url.substring(0, url.indexOf('#'));
+
+	// set ipa to the customization form
+	$('#customizationForm').attr('action', $('#customizationForm').attr('action')+request)
 	window.location = url+request;
 }
-
-$(document).ready(function(){
-	original_url = window.location+'';
-	first_url_check = true;
-	checkUrl();
-	initLocationChange();
-});
 
 function initLocationChange(time)
 {
@@ -705,7 +710,7 @@ function checkUrl()
 			// find combination
 			if (count > 0)
 			{
-				findCombination();
+				findCombination(false);
 				original_url = window.location+'';
 			}
 			// no combination found = removing attributes from url

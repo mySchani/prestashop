@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12925 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13897 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -74,13 +74,18 @@ class ShopUrlCore extends ObjectModel
 		return parent::getFields();
 	}
 
+	public function getBaseURI()
+	{
+		return $this->physical_uri.$this->virtual_uri;
+	}
+
 	public function getURL($ssl = false)
 	{
 		if (!$this->id)
 			return;
 
 		$url = ($ssl) ? 'https://'.$this->domain_ssl : 'http://'.$this->domain;
-		return $url.$this->physical_uri.$this->virtual_uri;
+		return $url.$this->getBaseUri();
 	}
 
 	/**
@@ -143,7 +148,7 @@ class ShopUrlCore extends ObjectModel
 		if (!self::$main_domain)
 			self::$main_domain = Db::getInstance()->getValue('SELECT domain
 															FROM '._DB_PREFIX_.'shop_url
-															WHERE main=1 AND id_shop = '.Context::getContext()->shop->getID(true));
+															WHERE main=1 AND id_shop = '.Context::getContext()->shop->id);
 		return self::$main_domain;
 	}
 
@@ -154,7 +159,7 @@ class ShopUrlCore extends ObjectModel
 			$sql = 'SELECT domain_ssl
 					FROM '._DB_PREFIX_.'shop_url
 					WHERE main = 1
-						AND id_shop='.Context::getContext()->shop->getID(true);
+						AND id_shop='.Context::getContext()->shop->id;
 			self::$main_domain_ssl = Db::getInstance()->getValue($sql);
 		}
 		return self::$main_domain_ssl;
@@ -168,6 +173,7 @@ class ShopUrlCore extends ObjectModel
 	 */
 	public static function virtualUriExists($virtual_uri, $id_shop_tested)
 	{
+		Tools::displayAsDeprecated();
 		$virtual_uri = trim($virtual_uri);
 		if (substr($virtual_uri, -1) != '/')
 			$virtual_uri .= '/';
@@ -176,5 +182,23 @@ class ShopUrlCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'shop_url`
 		WHERE `id_shop` != '.(int)$id_shop_tested.'
 		AND `virtual_uri` = "'.pSQL($virtual_uri).'"');
+	}
+	
+	/**
+	 * @static
+	 * @param string $domain
+	 * @param string $physical_uri
+	 * @param string $virtual_uri
+	 * @param int $id_shop_tested
+	 * @return bool
+	 */
+	public static function urlExists($domain, $physical_uri, $virtual_uri, $id_shop_tested)
+	{
+		$url = $domain.$physical_uri.$virtual_uri;
+		return (bool)Db::getInstance()->getValue('
+		SELECT *
+		FROM `'._DB_PREFIX_.'shop_url`
+		WHERE `id_shop` != '.(int)$id_shop_tested.'
+		AND CONCAT(`domain`, `physical_uri`, `virtual_uri`) ="'.pSQL($url).'"');
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -41,7 +41,8 @@ class OrderOpcControllerCore extends ParentOrderController
 		if ($this->nbProducts)
 			$this->context->smarty->assign('virtual_cart', false);
 		
-		$this->context->smarty->assign('is_multi_address_delivery', $this->context->cart->isMultiAddressDelivery());
+		$this->context->smarty->assign('is_multi_address_delivery', $this->context->cart->isMultiAddressDelivery() || ((int)Tools::getValue('multi-shipping') == 1));
+		$this->context->smarty->assign('open_multishipping_fancybox', (int)Tools::getValue('multi-shipping') == 1);
 		
 		$this->isLogged = (bool)($this->context->customer->id && Customer::customerIdExistsStatic((int)$this->context->cookie->id_customer));
 
@@ -67,6 +68,7 @@ class OrderOpcControllerCore extends ParentOrderController
 						case 'updateCarrierAndGetPayments':
 							if ((Tools::isSubmit('delivery_option') || Tools::isSubmit('id_carrier')) && Tools::isSubmit('recyclable') && Tools::isSubmit('gift') && Tools::isSubmit('gift_message'))
 							{
+								$this->_assignWrappingAndTOS();
 								if ($this->_processCarrier())
 								{
 									$carriers = $this->context->cart->simulateCarriersOutput();
@@ -81,7 +83,7 @@ class OrderOpcControllerCore extends ParentOrderController
 									die(Tools::jsonEncode($return));
 								}
 								else
-									$this->errors[] = Tools::displayError('Error occurred updating cart.');
+									$this->errors[] = Tools::displayError('Error occurred while updating cart.');
 								if (count($this->errors))
 									die('{"hasError" : true, "errors" : ["'.implode('\',\'', $this->errors).'"]}');
 								exit;
@@ -188,6 +190,9 @@ class OrderOpcControllerCore extends ParentOrderController
 									$this->context->cart->id_address_invoice = Tools::isSubmit('same') ? $this->context->cart->id_address_delivery : (int)(Tools::getValue('id_address_invoice'));
 									if (!$this->context->cart->update())
 										$this->errors[] = Tools::displayError('An error occurred while updating your cart.');
+									
+									if (!$this->context->cart->isMultiAddressDelivery())
+										$this->context->cart->setNoMultishipping(); // As the cart is no multishipping, set each delivery address lines with the main delivery address
 
 									if (!count($this->errors))
 									{
@@ -270,6 +275,8 @@ class OrderOpcControllerCore extends ParentOrderController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		// SHOPPING CART
 		$this->_assignSummaryInformations();
 		// WRAPPING AND TOS
@@ -289,7 +296,7 @@ class OrderOpcControllerCore extends ParentOrderController
 			'sl_country' => isset($selectedCountry) ? $selectedCountry : 0,
 			'PS_GUEST_CHECKOUT_ENABLED' => Configuration::get('PS_GUEST_CHECKOUT_ENABLED'),
 			'errorCarrier' => Tools::displayError('You must choose a carrier before', false),
-			'errorTOS' => Tools::displayError('You must accept terms of service before', false),
+			'errorTOS' => Tools::displayError('You must accept the Terms of Service before', false),
 			'isPaymentStep' => (bool)(isset($_GET['isPaymentStep']) && $_GET['isPaymentStep']),
 			'genders' => Gender::getGenders(),
 		));
@@ -323,7 +330,6 @@ class OrderOpcControllerCore extends ParentOrderController
 
 		$this->_processAddressFormat();
 		$this->setTemplate(_PS_THEME_DIR_.'order-opc.tpl');
-		parent::initContent();
 	}
 
 	protected function _getGuestInformations()
@@ -375,7 +381,7 @@ class OrderOpcControllerCore extends ParentOrderController
 					'carriers' => $carriers,
 					'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
 					'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
-					'delivery_option' => $this->context->cart->getDeliveryOption()
+					'delivery_option' => $this->context->cart->getDeliveryOption(null, true)
 				))
 			));
 		}
@@ -396,7 +402,7 @@ class OrderOpcControllerCore extends ParentOrderController
 		if (!$this->isLogged)
 			return '<p class="warning">'.Tools::displayError('Please sign in to see payment methods').'</p>';
 		if ($this->context->cart->OrderExists())
-			return '<p class="warning">'.Tools::displayError('Error: this order is already validated').'</p>';
+			return '<p class="warning">'.Tools::displayError('Error: this order has already been validated').'</p>';
 		if (!$this->context->cart->id_customer || !Customer::customerIdExistsStatic($this->context->cart->id_customer) || Customer::isBanned($this->context->cart->id_customer))
 			return '<p class="warning">'.Tools::displayError('Error: no customer').'</p>';
 		$address_delivery = new Address($this->context->cart->id_address_delivery);
@@ -410,12 +416,12 @@ class OrderOpcControllerCore extends ParentOrderController
 			else
 				return '<p class="warning">'.Tools::displayError('Error: There are no carriers available that deliver to this address').'</p>';
 		}
-		if (!$this->context->cart->getDeliveryOption() && !$this->context->cart->isVirtualCart())
+		if (!$this->context->cart->getDeliveryOption(null, true) && !$this->context->cart->isVirtualCart())
 			return '<p class="warning">'.Tools::displayError('Error: please choose a carrier').'</p>';
 		if (!$this->context->cart->id_currency)
 			return '<p class="warning">'.Tools::displayError('Error: no currency has been selected').'</p>';
 		if (!$this->context->cookie->checkedTOS && Configuration::get('PS_CONDITIONS'))
-			return '<p class="warning">'.Tools::displayError('Please accept Terms of Service').'</p>';
+			return '<p class="warning">'.Tools::displayError('Please accept the Terms of Service').'</p>';
 
 		/* If some products have disappear */
 		if (!$this->context->cart->checkQuantities())
@@ -463,13 +469,13 @@ class OrderOpcControllerCore extends ParentOrderController
 			'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
 			'carriers' => $carriers,
 			'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
-			'delivery_option' => $this->context->cart->getDeliveryOption(),
+			'delivery_option' => $this->context->cart->getDeliveryOption(null, true),
 			'address_collection' => $this->context->cart->getAddressCollection(),
 			'opc' => true,
 			'HOOK_BEFORECARRIER' => Hook::exec('displayBeforeCarrier', array(
 				'carriers' => $carriers,
 				'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
-				'delivery_option' => $this->context->cart->getDeliveryOption()
+				'delivery_option' => $this->context->cart->getDeliveryOption(null, true)
 			))
 		);
 		
@@ -487,7 +493,7 @@ class OrderOpcControllerCore extends ParentOrderController
 				'HOOK_BEFORECARRIER' => Hook::exec('displayBeforeCarrier', array(
 					'carriers' => $carriers,
 					'delivery_option_list' => $this->context->cart->getDeliveryOptionList(),
-					'delivery_option' => $this->context->cart->getDeliveryOption()
+					'delivery_option' => $this->context->cart->getDeliveryOption(null, true)
 				)),
 				'carrier_block' => $this->context->smarty->fetch(_PS_THEME_DIR_.'order-carrier.tpl')
 			);

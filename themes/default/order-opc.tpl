@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6594 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -28,7 +28,7 @@
 	{capture name=path}{l s='Your shopping cart'}{/capture}
 	{include file="$tpl_dir./breadcrumb.tpl"}
 	<h2 id="cart_title">{l s='Your shopping cart'}</h2>
-	<p class="warning">{l s='This store has not accepted your new order.'}</p>
+	<p class="warning">{l s='Your new order was not accepted.'}</p>
 {else}
 <script type="text/javascript">
 	// <![CDATA[
@@ -58,7 +58,7 @@
 	var txtNoCarrierIsSelected = "{l s='No carrier has been selected'}";
 	var txtNoCarrierIsNeeded = "{l s='No carrier is needed for this order'}";
 	var txtConditionsIsNotNeeded = "{l s='No terms of service must be accepted'}";
-	var txtTOSIsAccepted = "{l s='Terms of service is accepted'}";
+	var txtTOSIsAccepted = "{l s='Terms of service have been accepted'}";
 	var txtTOSIsNotAccepted = "{l s='Terms of service have not been accepted'}";
 	var txtThereis = "{l s='There is'}";
 	var txtErrors = "{l s='error(s)'}";

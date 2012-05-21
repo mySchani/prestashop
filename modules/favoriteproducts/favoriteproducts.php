@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11944 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13667 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -70,7 +70,7 @@ class FavoriteProducts extends Module
 
 	public function uninstall()
 	{
-		if (!parent::uninstall() OR !Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'favorite_product`'))
+		if (!parent::uninstall() || !Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'favorite_product`'))
 			return false;
 		return true;
 	}
@@ -79,11 +79,18 @@ class FavoriteProducts extends Module
 	{
 		include_once(dirname(__FILE__).'/FavoriteProduct.php');
 
-		$favoriteProducts = FavoriteProduct::getFavoriteProducts($this->context->customer->id, $this->context->language->id);
-
-		$this->smarty->assign(array('favorite_products' => $favoriteProducts));
+		$products = FavoriteProduct::getFavoriteProducts($this->context->customer->id, $this->context->language->id);
+		$this->smarty->assign(array(
+			'favorite_products' => $products,
+		));
 
 		return $this->display(__FILE__, 'my-account.tpl');
+	}
+
+	public function hookDisplayMobileCustomerAccount($params)
+	{
+		$this->smarty->assign('mobile_hook', true);
+		return $this->hookDisplayCustomerAccount($params);
 	}
 
 	public function hookDisplayMyAccountBlock($params)
@@ -97,7 +104,8 @@ class FavoriteProducts extends Module
 
 		$this->smarty->assign(array(
 			'isCustomerFavoriteProduct' => (FavoriteProduct::isCustomerFavoriteProduct($this->context->customer->id, Tools::getValue('id_product')) ? 1 : 0),
-			'isLogged' => (int)$this->context->customer->logged));
+			'isLogged' => (int)$this->context->customer->logged,
+		));
 		return $this->display(__FILE__, 'favoriteproducts-extra.tpl');
 	}
 

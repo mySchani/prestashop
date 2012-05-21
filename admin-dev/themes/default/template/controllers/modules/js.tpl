@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9771 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -32,10 +32,11 @@
 <script type="text/javascript">
 	var token = '{$token}';
 	var currentIndex = '{$currentIndex}';
+	var currentIndexWithToken = '{$currentIndex}&token={$token}';
 	var dirNameCurrentIndex = '{$dirNameCurrentIndex}';
 	var ajaxCurrentIndex = '{$ajaxCurrentIndex}';
 	var by = '{l s='by'}';
-	var errorLogin = '{l s='Could not login to Addons'}';
+	var errorLogin = '{l s='PrestaShop was unable to login to Addons, please check your credentials and your internet connection.'}';
 	var confirmPreferencesSaved = '{l s='Preferences saved'}';
 	{if isset($smarty.get.anchor)}var anchor = '{$smarty.get.anchor|htmlentities|replace:'(':''|replace:')':''|replace:'{':''|replace:'}':''|replace:'\'':''|replace:'/':''}';{else}var anchor = '';{/if}
 
@@ -217,7 +218,7 @@
 							{
 								$('#addons_loading').html('');
 								$('#addons_login_div').fadeOut();
-								window.location.href = window.location.href;
+								window.location.href = currentIndexWithToken;
 							}
 							else
 								$('#addons_loading').html(errorLogin);
@@ -232,6 +233,47 @@
 			return false;
 		});
 
+
+		// Method to log out PrestaShop Addons WebServices
+		$('#addons_logout_button').click(function()
+		{
+			try
+			{
+				resAjax = $.ajax({
+						type:"POST",
+						url : ajaxCurrentIndex,
+						async: true,
+						data : {
+							ajax : "1",
+							token : token,
+							controller : "AdminModules",
+							action : "logOutAddonsWebservices"
+						},
+ 						beforeSend: function(xhr)
+						{
+							$('#addons_loading').html('<img src="../img/loader.gif" border="0">');
+						},
+						success : function(data)
+						{
+							// res.status  = cache or refresh
+							if (data == 'OK')
+							{
+								$('#addons_loading').html('');
+								$('#addons_login_div').fadeOut();
+								window.location.href = currentIndexWithToken;
+							}
+							else
+								$('#addons_loading').html(errorLogin);
+						},
+						error: function(res,textStatus,jqXHR)
+						{
+							//jAlert("TECHNICAL ERROR"+res);
+						}
+				});
+			}
+			catch(e){}
+			return false;
+		});
 
 
 		// Method to set filter on modules
@@ -262,7 +304,7 @@
 						{
 							// res.status  = cache or refresh
 							if (data == 'OK')
-								window.location.href = window.location.href;
+								window.location.href = currentIndexWithToken;
 						},
 						error: function(res,textStatus,jqXHR)
 						{

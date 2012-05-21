@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8897 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -28,16 +28,58 @@
 
 {block name="override_tpl"}
 
+	<script type="text/javascript">
+		$(document).ready(function()
+		{
+			$.ajax({
+				type: 'GET',
+				url: '{$link->getAdminLink('AdminInformation')}',
+				data: {
+					'action': 'checkFiles',
+					'ajax': 1
+				},
+				dataType: 'json',
+				success: function(json)
+				{
+					var tab = {
+						'missing': '{l s='Missing files'}',
+						'updated': '{l s='Updated files'}'
+					};
+
+					if (json.missing.length || json.updated.length)
+						$('#changedFiles').html('<div class="warn">{l s='Changed/missing files have been detected'}</div>');
+					else
+						$('#changedFiles').html('<div class="conf">{l s='No change has been detected in your files'}</div>');
+
+					$.each(tab, function(key, lang)
+					{
+						if (json[key].length)
+						{
+							var html = $('<ul>').attr('id', key+'_files');
+							$(json[key]).each(function(key, file)
+							{
+								html.append($('<li>').html(file))
+							});
+							$('#changedFiles')
+								.append($('<h3>').html(lang+' ('+json[key].length+')'))
+								.append(html);
+						}
+					});
+				}
+			});
+		});
+	</script>
+
 	<fieldset>
-		<legend><img src="../img/t/AdminInformation.gif" alt="" />{l s='Information'}</legend>
-		<p>{l s='This information must be indicated when you report a bug on our bug tracker or if you report a problem on our forum.'}</p>
+		<legend><img src="../img/t/AdminInformation.gif" alt="" />{l s='Configuration Information'}</legend>
+		<p>{l s='This information must be provided when you report an issue on our bug tracker or forum.'}</p>
 	</fieldset>
 	<br />
 	<fieldset>
 		<legend><img src="../img/t/AdminInformation.gif" alt="" /> {l s='Information about your configuration'}</legend>
 		<h3>{l s='Server information'}</h3>
 		<p>
-			<b>{l s='Prestashop Version'}:</b> {$version.ps}
+			<b>{l s='Prestashop version'}:</b> {$version.ps}
 		</p>
 	
 		{if count($uname)}
@@ -47,35 +89,44 @@
 		{/if}
 	
 		<p>
-			<b>{l s='Server software Version'}:</b> {$version.server}
+			<b>{l s='Server software version'}:</b> {$version.server}
 		</p>
 		<p>
-			<b>{l s='PHP Version'}:</b> {$version.php}
-		</p>
-		<p>
-			<b>{l s='MySQL Version'}:</b> {$version.mysql}
+			<b>{l s='PHP version'}:</b> {$version.php}
 		</p>
 		{if $apache_instaweb}
 		<p style="color:red;font-weight:700">{l s='PageSpeed module for Apache installed (mod_instaweb)'}</p>
 		{/if}
+
+		<hr />
+		<h3>{l s='Database information'}</h3>
+		<p>
+			<b>{l s='MySQL version'}:</b> {$database.version}
+		</p>
+		<p>
+			<b>{l s='MySQL engine'}:</b> {$database.engine}
+		</p>
+		<p>
+			<b>{l s='Tables prefix'}:</b> {$database.prefix}
+		</p>
 	
 		<hr />
 		<h3>{l s='Store information'}</h3>
 		<p>
-			<b>{l s='URL of your website'}:</b> {$shop.url}
+			<b>{l s='Shop URL'}:</b> {$shop.url}
 		</p>
 		<p>
-			<b>{l s='Theme name used'}:</b> {$shop.theme}
+			<b>{l s='Current theme in use'}:</b> {$shop.theme}
 		</p>
 		<hr />
-		<h3>{l s='Mail information'}</h3>
+		<h3>{l s='Mail configuration'}</h3>
 		<p>
 			<b>{l s='Mail method'}:</b>
 	
 	{if $mail}
-		{l s='You use PHP mail() function.'}</p>
+		{l s='You are using the PHP mail() function.'}</p>
 	{else}
-		{l s='You use your own SMTP parameters'}</p>
+		{l s='You are using your own SMTP parameters.'}</p>
 		<p>
 			<b>{l s='SMTP server'}:</b> {$smtp.server}
 		</p>
@@ -105,7 +156,7 @@
 		<hr />
 		<h3>{l s='Your information'}</h3>
 		<p>
-			<b>{l s='Information from you'}:</b> {$user_agent}
+			<b>{l s='Your web browser'}:</b> {$user_agent}
 		</p>
 	</fieldset>
 	<br />
@@ -117,7 +168,7 @@
 					<span style="color:green;font-weight:bold;">OK</span>
 				</p>
 			{else}
-				<span style="color:red">{l s='Please consult the following error(s)'}</span>
+				<span style="color:red">{l s='Please fix the following error(s)'}</span>
 			</p>
 			<ul>
 				{foreach from=$testsRequired item='value' key='key'}
@@ -134,17 +185,23 @@
 				<span style="color:green;font-weight:bold;">OK</span>
 			</p>
 			{else}
-				<span style="color:red">{l s='Please consult the following error(s)'}</span>
+				<span style="color:red">{l s='Please fix the following error(s)'}</span>
 			</p>
 			<ul>
 				{foreach from=$testsOptional item='value' key='key'}
 					{if $value eq 'fail'}
-						<li>{$testsErrors[$key]}</li>
+						<li>{$key}</li>
 					{/if}
 				{/foreach}
 			</ul>
 			{/if}
 	
+	</fieldset>
+
+	<br />
+	<fieldset>
+		<legend><img src="../img/t/AdminInformation.gif" alt="" /> {l s='List of changed files'}</legend>
+		<div id="changedFiles"><img src="../img/admin/ajax-loader.gif" /> {l s='Checking files...'}</div>
 	</fieldset>
 
 {/block}

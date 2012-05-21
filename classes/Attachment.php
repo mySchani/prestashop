@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -88,8 +88,10 @@ class AttachmentCore extends ObjectModel
 	}
 
 	/**
+	 * deassociate $id_product from the current object
+	 *
 	 * @static
-	 * @param $id_product
+	 * @param $id_product int
 	 * @return bool
 	 */
 	public static function deleteProductAttachments($id_product)
@@ -100,6 +102,23 @@ class AttachmentCore extends ObjectModel
 	}
 
 	/**
+	 * associate $id_product to the current object.
+	 * 
+	 * @param int $id_product id of the product to associate
+	 * @return boolean true if succed
+	 */
+	public function attachProduct($id_product)
+	{
+		return Db::getInstance()->execute('
+			INSERT INTO '._DB_PREFIX_.'product_attachment 
+				(id_attachment, id_product) VALUES
+				('.(int)$this->id.', '.(int)$id_product.')');
+	}
+
+	/**
+	 * associate an array of id_attachment $array to the product $id_product
+	 * and remove eventual previous association
+	 *
 	 * @static
 	 * @param $id_product
 	 * @param $array
@@ -108,12 +127,14 @@ class AttachmentCore extends ObjectModel
 	public static function attachToProduct($id_product, $array)
 	{
 		$result1 = Attachment::deleteProductAttachments($id_product);
+
 		if (is_array($array))
 		{
 			$ids = array();
 			foreach ($array as $id_attachment)
 				if ((int)$id_attachment > 0)
-					$ids[] = '('.(int)$id_product.','.(int)$id_attachment.')';
+					$ids[] = array('id_product' => (int)$id_product, 'id_attachment' => (int)$id_attachment);
+
 			Db::getInstance()->execute('
 				UPDATE '._DB_PREFIX_.'product
 				SET cache_has_attachments = '.(count($ids) ? '1' : '0').'
@@ -121,10 +142,10 @@ class AttachmentCore extends ObjectModel
 				LIMIT 1
 			');
 
-			return ($result1 && count($ids) && Db::getInstance()->execute('
-				INSERT INTO '._DB_PREFIX_.'product_attachment (id_product, id_attachment)
-				VALUES '.implode(',', $ids))
-			);
+			if (!empty($ids))
+				$result2 = Db::getInstance()->insert('product_attachment', $ids);
+
+			return ($result1 && (!isset($result2) || $result2));
 		}
 		return $result1;
 	}
@@ -138,7 +159,7 @@ class AttachmentCore extends ObjectModel
 				$ids_attachements[] = $attachement['id_attachment'];
 
 			$sql = 'SELECT * FROM `'._DB_PREFIX_.'product_attachment` pa
-					LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pa.`id_product` = pl.`id_product`'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').')
+					LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pa.`id_product` = pl.`id_product`'.Shop::addSqlRestrictionOnLang('pl').')
 					WHERE `id_attachment` IN ('.implode(',', array_map('intval', $ids_attachements)).')
 						AND pl.`id_lang` = '.(int)$id_lang;
 			$tmp = Db::getInstance()->executeS($sql);

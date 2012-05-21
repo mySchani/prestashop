@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -46,18 +46,13 @@
 		<tr>
 			<td><div class="clear">&nbsp;</div></td>
 		</tr>
-		<tr>
-			<td style="width:150px;"></td>
-			<td>
-				<input type="submit" name="submitCustomizationConfiguration" value="{l s='Update settings'}" class="button" onclick="this.form.action += '&addproduct&tabs=5';" />
-			</td>
-		</tr>
+
 		{if $has_file_labels}
 			<tr>
 				<td colspan="2"><div class="separation"></div></td>
 			</tr>
 			<tr>
-				<td style="width:150px" valign="top">{l s='Files fields:'}</td>
+				<td style="width:200px" valign="top">{l s='Define the label of the file fields:'}</td>
 				<td>
 					{$display_file_labels}
 				</td>
@@ -68,18 +63,11 @@
 				<td colspan="2"><div class="separation"></div></td>
 			</tr>
 			<tr>
-				<td style="width:150px" valign="top">{l s='Text fields:'}</td>
+				<td style="width:200px" valign="top">{l s='Define the label of the text fields:'}</td>
 				<td>
 					{$display_text_labels}
 				</td>
 			</tr>
 		{/if}
-		<tr>
-			<td colspan="2" style="text-align:center;">
-				{if $has_file_labels || $has_text_labels}
-					<input type="submit" name="submitProductCustomization" id="submitProductCustomization" value="{l s='Save labels'}" class="button" onclick="this.form.action += '&addproduct&tabs=5';" style="margin-top: 9px" />
-				{/if}
-			</td>
-		</tr>
 	</table>
 {/if}

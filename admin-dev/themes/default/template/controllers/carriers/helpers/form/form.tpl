@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -38,14 +38,12 @@
 	{if $input.type == 'select' && $input.name == 'id_tax_rules_group'}
 		<div id="shipping_costs_div" style="display:{if isset($fields_value.is_free) && $fields_value.is_free}none{else}block{/if}">
 	{/if}
-	{if isset($input.label)}
-		<label>{$input.label} </label>
-	{/if}
+	{$smarty.block.parent}
 {/block}
 
-{block name="end_field_block"}
+{block name="field"}
+	{$smarty.block.parent}
 	{if $input.type == 'select' && $input.name == 'range_behavior'}
 		</div>
 	{/if}
-	</div>
 {/block}

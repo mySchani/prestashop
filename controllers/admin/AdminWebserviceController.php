@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -29,6 +29,7 @@ class AdminWebserviceControllerCore extends AdminController
 {
 	/** this will be filled later */
 	public $fields_form = array('webservice form');
+	protected $toolbar_scroll = false;
 
 	public function __construct()
 	{
@@ -68,7 +69,7 @@ class AdminWebserviceControllerCore extends AdminController
 						'PS_WEBSERVICE' => array('title' => $this->l('Enable PrestaShop Webservice:'),
 							'desc' => $this->l('Before activating the webservice, you must be sure to: ').
 												'<ol>
-													<li>'.$this->l('be certain URL rewrite is available on this server').'</li>
+													<li>'.$this->l('be certain that URL rewriting is available on this server').'</li>
 													<li>'.$this->l('be certain that the 5 methods GET, POST, PUT, DELETE and HEAD are supported by this server').'</li>
 												</ol>',
 							'cast' => 'intval',
@@ -146,7 +147,6 @@ class AdminWebserviceControllerCore extends AdminController
 				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -176,6 +176,37 @@ class AdminWebserviceControllerCore extends AdminController
 
 		parent::initContent();
 	}
+
+	/**
+	 * Function used to render the options for this controller
+	 */
+	public function renderOptions()
+	{
+		if ($this->options && is_array($this->options))
+		{
+			$helper = new HelperOptions($this);
+			$this->setHelperDisplay($helper);
+			$helper->toolbar_scroll = true;
+			$helper->toolbar_btn = array('save' => array(
+								'href' => '#',
+								'desc' => $this->l('Save')
+							));
+			$helper->id = $this->id;
+			$helper->tpl_vars = $this->tpl_option_vars;
+			$options = $helper->generateOptions($this->options);
+
+			return $options;
+		}
+	}
+
+	public function initProcess()
+	{
+		parent::initProcess();
+		// This is a composite page, we don't want the "options" display mode
+		if ($this->display == 'options')
+			$this->display = '';
+	}
+
 
 	public function postProcess()
 	{
@@ -210,7 +241,7 @@ class AdminWebserviceControllerCore extends AdminController
 				if (!in_array('mod_auth_basic', $apache_modules))
 					$this->warnings[] = $this->l('Please activate the Apache module \'mod_auth_basic\' to allow authentication of PrestaShop webservice.');
 				if (!in_array('mod_rewrite', $apache_modules))
-					$this->warnings[] = $this->l('Please activate the Apache module \'mod_rewrite\' to allow using the PrestaShop webservice.');
+					$this->warnings[] = $this->l('Please activate the Apache module \'mod_rewrite\' to allow the PrestaShop webservice.');
 			}
 			else
 				$this->warnings[] = $this->l('We could not check if basic authentication and rewrite extensions are activated. 

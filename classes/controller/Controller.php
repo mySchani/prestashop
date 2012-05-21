@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12872 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13805 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -73,6 +73,8 @@ abstract class ControllerCore
 	protected $status = '';
 
 	protected $redirect_after = null;
+	
+	public $controller_type;
 	
 	/**
 	 * check that the controller is available for the current user/visitor
@@ -299,14 +301,15 @@ abstract class ControllerCore
 	public function addJqueryUI($component, $theme = 'base', $check_dependencies = true)
 	{
 		$ui_path = array();
-		if (is_array($component))
-			foreach ($component as $ui)
-				$ui_path = Media::getJqueryUIPath($ui, $theme, $check_dependencies);
-		else
-			$ui_path = Media::getJqueryUIPath($component, $theme, $check_dependencies);
+		if (!is_array($component))
+			$component = array($component);
 
-		$this->addCSS($ui_path['css']);
-		$this->addJS($ui_path['js']);
+		foreach ($component as $ui)
+		{
+			$ui_path = Media::getJqueryUIPath($ui, $theme, $check_dependencies);
+			$this->addCSS($ui_path['css']);
+			$this->addJS($ui_path['js']);
+		}
 	}
 
 	/**

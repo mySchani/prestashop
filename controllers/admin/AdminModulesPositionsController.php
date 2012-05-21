@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>o
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7466 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -71,13 +71,13 @@ class AdminModulesPositionsControllerCore extends AdminController
 				elseif (!$id_hook || !Validate::isLoadedObject($hook))
 					$this->errors[] = Tools::displayError('Hook cannot be loaded.');
 				elseif (Hook::getModulesFromHook($id_hook, $id_module))
-					$this->errors[] = Tools::displayError('This module is already transplanted to this hook.');
+					$this->errors[] = Tools::displayError('This module is already transplanted to this hook');
 				elseif (!$module->isHookableOn($hook->name))
-					$this->errors[] = Tools::displayError('This module can\'t be transplanted to this hook.');
+					$this->errors[] = Tools::displayError('This module cannot be transplanted to this hook.');
 				// Adding vars...
 				else
 				{
-					if (!$module->registerHook($hook->name, Context::getContext()->shop->getListOfID()))
+					if (!$module->registerHook($hook->name, Shop::getContextListShopID()))
 						$this->errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
 					else
 					{
@@ -89,7 +89,7 @@ class AdminModulesPositionsControllerCore extends AdminController
 							if (!Validate::isFileName($except))
 								$this->errors[] = Tools::displayError('No valid value for field exceptions');
 
-						if (!$this->errors && !$module->registerExceptions($id_hook, $exceptions, Context::getContext()->shop->getListOfID()))
+						if (!$this->errors && !$module->registerExceptions($id_hook, $exceptions, Shop::getContextListShopID()))
 							$this->errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
 					}
 
@@ -150,7 +150,7 @@ class AdminModulesPositionsControllerCore extends AdminController
 								$this->errors[] = Tools::displayError('No valid value for field exceptions');
 
 						// Add files exceptions
-						if (!$module->editExceptions($id_hook, $exceptions, Context::getContext()->shop->getListOfID()))
+						if (!$module->editExceptions($id_hook, $exceptions, Shop::getContextListShopID()))
 							$this->errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
 						else
 							Tools::redirectAdmin(self::$currentIndex.'&conf=16'.($this->display_key ? '&show_modules='.$this->display_key : '').'&token='.$this->token);
@@ -176,8 +176,8 @@ class AdminModulesPositionsControllerCore extends AdminController
 					$this->errors[] = Tools::displayError('Hook cannot be loaded.');
 				else
 				{
-					if (!$module->unregisterHook($id_hook, Context::getContext()->shop->getListOfID())
-						|| !$module->unregisterExceptions($id_hook, Context::getContext()->shop->getListOfID()))
+					if (!$module->unregisterHook($id_hook, Shop::getContextListShopID())
+						|| !$module->unregisterExceptions($id_hook, Shop::getContextListShopID()))
 						$this->errors[] = Tools::displayError('An error occurred while deleting module from hook.');
 					else
 						Tools::redirectAdmin(self::$currentIndex.'&conf=17'.($this->display_key ? '&show_modules='.$this->display_key : '').'&token='.$this->token);
@@ -267,25 +267,23 @@ class AdminModulesPositionsControllerCore extends AdminController
 			'href' => self::$currentIndex.'&addToHook'.($this->display_key ? '&show_modules='.$this->display_key : '').'&token='.$this->token,
 			'desc' => $this->l('Transplant a module')
 		);
-
+				
 		$this->context->smarty->assign(array(
 			'show_toolbar' => true,
 			'toolbar_btn' => $this->toolbar_btn,
 			'title' => $this->toolbar_title,
-			'toolbar_fix' => 'false',
+			'toolbar_scroll' => 'false',
 			'token' => $this->token,
 			'url_show_modules' => self::$currentIndex.'&token='.$this->token.'&show_modules=',
 			'modules' => $module_instances,
 			'url_show_invisible' => self::$currentIndex.'&token='.$this->token.'&show_modules='.(int)Tools::getValue('show_modules').'&hook_position=',
 			'hook_position' => Tools::getValue('hook_position'),
-			'live_edit' => Shop::isFeatureActive() && $this->context->shop->getContextType() != Shop::CONTEXT_SHOP,
-			'url_live_edit' => $this->context->link->getPageLink('index', false, null,
-				'live_edit&ad='.$admin_dir.'&liveToken='.sha1($admin_dir._COOKIE_KEY_)
-				.(Shop::isFeatureActive()?'&id_shop='.Context::getContext()->shop->getID() : '')),
+			'live_edit' => Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_SHOP,
+			'url_live_edit' => $this->context->shop->getBaseUrl().'?live_edit&ad='.$admin_dir.'&liveToken='.sha1($admin_dir._COOKIE_KEY_),
 			'display_key' => $this->display_key,
 			'hooks' => $hooks,
 			'url_submit' => self::$currentIndex.'&token='.$this->token,
-			'can_move' => (Shop::isFeatureActive() && $this->context->shop->getContextType() != Shop::CONTEXT_SHOP) ? false : true,
+			'can_move' => (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_SHOP) ? false : true,
 		));
 
 		return $this->createTemplate('list_modules.tpl')->fetch();
@@ -309,7 +307,7 @@ class AdminModulesPositionsControllerCore extends AdminController
 					FROM '._DB_PREFIX_.'hook_module
 					WHERE id_module = '.$id_module.'
 						AND id_hook = '.$id_hook.'
-						AND id_shop IN('.implode(', ', Context::getContext()->shop->getListOfID()).')';
+						AND id_shop IN('.implode(', ', Shop::getContextListShopID()).')';
 			if (!Db::getInstance()->getValue($sql))
 				Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token);
 

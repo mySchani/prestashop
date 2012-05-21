@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -65,7 +65,28 @@ class RangeWeightCore extends ObjectModel
 		WHERE `id_carrier` = '.(int)$id_carrier.'
 		ORDER BY `delimiter1` ASC');
 	}
-
+	
+	public static function rangeExist($id_carrier, $delimiter1, $delimiter2)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT count(*)
+		FROM `'._DB_PREFIX_.'range_weight`
+		WHERE `id_carrier` = '.(int)$id_carrier.'
+		AND `delimiter1` = '.(float)$delimiter1.' AND `delimiter2`='.(float)$delimiter2);
+	}
+	
+	public static function isOverlapping($id_carrier, $delimiter1, $delimiter2)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT count(*)
+		FROM `'._DB_PREFIX_.'range_weight`
+		WHERE `id_carrier` = '.(int)$id_carrier.'
+		AND (`delimiter1` BETWEEN '.(float)$delimiter1.' AND '.(float)$delimiter2.'
+		OR `delimiter2` BETWEEN '.(float)$delimiter1.' AND '.(float)$delimiter2.'
+		OR '.(float)$delimiter1.' BETWEEN `delimiter1` AND `delimiter1`
+		OR '.(float)$delimiter2.' BETWEEN `delimiter1` AND `delimiter1`)');
+	}
+	
 	/**
 	 * Override add to create delivery value for all zones
 	 * @see classes/ObjectModelCore::add()

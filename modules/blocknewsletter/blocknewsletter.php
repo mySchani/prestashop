@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -164,7 +164,7 @@ class Blocknewsletter extends Module
 		$sql = 'SELECT `email`
 				FROM '._DB_PREFIX_.'newsletter
 				WHERE `email` = \''.pSQL($customerEmail).'\'
-				AND id_shop = '.$this->context->shop->getID(true);
+				AND id_shop = '.$this->context->shop->id;
 
 		if (Db::getInstance()->getRow($sql))
 			return self::GUEST_REGISTERED;
@@ -172,7 +172,7 @@ class Blocknewsletter extends Module
 		$sql = 'SELECT `newsletter`
 				FROM '._DB_PREFIX_.'customer
 				WHERE `email` = \''.pSQL($customerEmail).'\'
-				AND id_shop = '.$this->context->shop->getID(true);
+				AND id_shop = '.$this->context->shop->id;
 
 		if (!$registered = Db::getInstance()->getRow($sql))
 			return self::GUEST_NOT_REGISTERED;
@@ -199,13 +199,13 @@ class Blocknewsletter extends Module
 				return $this->error = $this->l('E-mail address not registered');
 			else if ($register_status == self::GUEST_REGISTERED)
 			{
-				if (!Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'newsletter WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->context->shop->getID(true)))
+				if (!Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'newsletter WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->context->shop->id))
 					return $this->error = $this->l('Error during unsubscription');
 				return $this->valid = $this->l('Unsubscription successful');
 			}
 			else if ($register_status == self::CUSTOMER_REGISTERED)
 			{
-				if (!Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 0 WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->context->shop->getID(true)))
+				if (!Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 0 WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->context->shop->id))
 					return $this->error = $this->l('Error during unsubscription');
 				return $this->valid = $this->l('Unsubscription successful');
 			}
@@ -298,7 +298,7 @@ class Blocknewsletter extends Module
 		$sql = 'UPDATE '._DB_PREFIX_.'customer
 				SET `newsletter` = 1, newsletter_date_add = NOW(), `ip_registration_newsletter` = \''.pSQL(Tools::getRemoteAddr()).'\'
 				WHERE `email` = \''.pSQL($email).'\'
-				AND id_shop = '.$this->context->shop->getID(true);
+				AND id_shop = '.$this->context->shop->id;
 
 	 	return Db::getInstance()->execute($sql);
 	}
@@ -314,8 +314,8 @@ class Blocknewsletter extends Module
 	{
 		$sql = 'INSERT INTO '._DB_PREFIX_.'newsletter (id_shop, id_group_shop, email, newsletter_date_add, ip_registration_newsletter, http_referer, active)
 				VALUES
-				('.$this->context->shop->getID().',
-				'.$this->context->shop->getGroupID().',
+				('.$this->context->shop->id.',
+				'.$this->context->shop->id_group_shop.',
 				\''.pSQL($email).'\',
 				NOW(),
 				\''.pSQL(Tools::getRemoteAddr()).'\',
@@ -462,7 +462,7 @@ class Blocknewsletter extends Module
 		return $this->hookDisplayLeftColumn($params);
 	}
 
-	public function hookDisplayLeftColumn($params)
+	private function _prepareHook($params)
 	{
 		if (Tools::isSubmit('submitNewsletter'))
 		{
@@ -470,21 +470,26 @@ class Blocknewsletter extends Module
 			if ($this->error)
 			{
 				$this->smarty->assign(array('color' => 'red',
-					'msg' => $this->error,
-					'nw_value' => isset($_POST['email']) ? pSQL($_POST['email']) : false,
-					'nw_error' => true,
-					'action' => $_POST['action'])
+						'msg' => $this->error,
+						'nw_value' => isset($_POST['email']) ? pSQL($_POST['email']) : false,
+						'nw_error' => true,
+						'action' => $_POST['action'])
 				);
 			}
 			else if ($this->valid)
 			{
 				$this->smarty->assign(array('color' => 'green',
-					'msg' => $this->valid,
-					'nw_error' => false)
+						'msg' => $this->valid,
+						'nw_error' => false)
 				);
 			}
 		}
 		$this->smarty->assign('this_path', $this->_path);
+	}
+
+	public function hookDisplayLeftColumn($params)
+	{
+		$this->_prepareHook($params);
 		return $this->display(__FILE__, 'blocknewsletter.tpl');
 	}
 
@@ -492,6 +497,10 @@ class Blocknewsletter extends Module
 	{
 		$this->context->controller->addCSS($this->_path.'blocknewsletter.css', 'all');
 	}
+
+	public function hookDisplayMobileIndex($params)
+	{
+		$this->_prepareHook($params);
+		return $this->display(__FILE__, 'blockmobilenewsletter.tpl');
+	}
 }
-
-

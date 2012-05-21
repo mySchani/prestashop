@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -56,8 +56,13 @@ class EmployeeCore extends ObjectModel
 	/** @var string Display back office background in the specified color */
 	public $bo_color;
 
+	public $default_tab;
+
 	/** @var string employee's chosen theme */
 	public $bo_theme;
+
+	/** @var integer employee desired screen width */
+	public $bo_width;
 
 	/** @var bool, true */
 	public $bo_show_screencast;
@@ -83,7 +88,9 @@ class EmployeeCore extends ObjectModel
 			'active' => 			array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'id_profile' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt', 'required' => true),
 			'bo_color' => 			array('type' => self::TYPE_STRING, 'validate' => 'isColor', 'size' => 32),
+			'default_tab' => 		array('type' => self::TYPE_INT, 'validate' => 'isInt'),
 			'bo_theme' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'size' => 32),
+			'bo_width' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt'),
 			'bo_show_screencast' => array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
 			'stats_date_from' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
 			'stats_date_to' => 		array('type' => self::TYPE_DATE, 'validate' => 'isDate'),
@@ -250,10 +257,10 @@ class EmployeeCore extends ObjectModel
 	{
 		$context = Context::getContext();
 
-		switch ($type = $context->shop->getContextType())
+		switch (Shop::getContext())
 		{
-			case 1:
-				if ($context->shop->checkIfShopExist($context->shop->id))
+			case Shop::CONTEXT_SHOP:
+				if ($context->shop->checkIfShopExist(Shop::getContextShopID()))
 				{
 					if (!in_array($context->shop->id, Employee::getEmployeeShopById($id_employee)))
 						return false;
@@ -262,10 +269,10 @@ class EmployeeCore extends ObjectModel
 					return false;
 			break;
 
-			case 2:
-				if ($context->shop->checkIfGroupShopExist($context->shop->getGroupID()))
+			case Shop::CONTEXT_GROUP:
+				if ($context->shop->checkIfGroupShopExist(Shop::getContextGroupShopID()))
 				{
-					$shops = $context->shop->getIdShopsByIdGroupShop($context->shop->getGroupID());
+					$shops = $context->shop->getIdShopsByIdGroupShop(Shop::getContextGroupShopID());
 					foreach ($shops as $shop)
 						if (!in_array($shop, Employee::getEmployeeShopById($id_employee)))
 							return false;
@@ -274,7 +281,7 @@ class EmployeeCore extends ObjectModel
 					return false;
 			break;
 
-			case 3:
+			case Shop::CONTEXT_ALL:
 				if ($context->employee->id_profile == _PS_ADMIN_PROFILE_ ||
 					$context->shop->getTotalShopsWhoExists() == Employee::getTotalEmployeeShopById($id_employee))
 					return true;

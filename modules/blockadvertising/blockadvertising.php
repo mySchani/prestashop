@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -67,7 +67,7 @@ class BlockAdvertising extends Module
 		$this->displayName = $this->l('Block advertising');
 		$this->description = $this->l('Adds a block to display an advertisement.');
 		
-		if ($this->context->shop->getContextType() == Shop::CONTEXT_SHOP)
+		if (Shop::getContext() == Shop::CONTEXT_SHOP)
 		{	
 			if (defined('_PS_ADMIN_DIR_') || file_exists(_PS_MODULE_DIR_.$this->name.'/'.$this->adv_imgname.'-'.(int)$this->context->shop->id.'.'.Configuration::get('BLOCKADVERT_IMG_EXT')))
 			{

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -72,10 +72,10 @@ class Blockcontact extends Module
 		<h2>'.$this->displayName.'</h2>
 		<form action="'.Tools::htmlentitiesutf8($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>			
-				<label for="telnumber">'.$this->l('Telephone number : ').'</label>
+				<label for="telnumber">'.$this->l('Telephone number:').'</label>
 				<input type="text" id="telnumber" name="telnumber" value="'.((Configuration::get('blockcontact_telnumber') != '') ? Configuration::get('blockcontact_telnumber') : '').'" />
 				<div class="clear">&nbsp;</div>
-				<label for="email">'.$this->l('Email : ').'</label>
+				<label for="email">'.$this->l('Email:').'</label>
 				<input type="text" id="email" name="email" value="'.((Configuration::get('blockcontact_email') != '') ? Configuration::get('blockcontact_email') : '').'" />
 				<div class="clear">&nbsp;</div>
 				<div class="margin-form">

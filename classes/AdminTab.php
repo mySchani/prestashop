@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,12 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * @deprecated 1.5.0
+ */
 abstract class AdminTabCore
 {
 	/** @var integer Tab id */
@@ -187,8 +190,6 @@ abstract class AdminTabCore
 	public $ignore_sleep = false;
 
 	public static $tabParenting = array(
-//		'AdminProducts' => 'AdminCatalog',
-//		'AdminCategories' => 'AdminCatalog',
 		'AdminCms' => 'AdminCmsContent',
 		'AdminCmsCategories' => 'AdminCmsContent',
 		'AdminOrdersStates' => 'AdminStatuses',
@@ -198,9 +199,6 @@ abstract class AdminTabCore
 		'AdminReturnStates' => 'AdminStatuses',
 		'AdminStatsTab' => 'AdminStats'
 	);
-
-	/** @var array noTabLink array of admintabs with no content */
-	public $noTabLink = array('AdminCatalog', 'AdminTools', 'AdminStock', 'AdminAccounting');
 
 	public function __construct()
 	{
@@ -249,7 +247,7 @@ abstract class AdminTabCore
 		if(Module::getModuleNameFromClass($currentClass))
 		{
 			$string = str_replace('\'', '\\\'', $string);
-			return Module::findTranslation(Module::$classInModule[$currentClass], $string, $currentClass);
+			return Translate::getModuleTranslation(Module::$classInModule[$currentClass], $string, $currentClass);
 		}
 		global $_LANGADM;
 
@@ -418,7 +416,7 @@ abstract class AdminTabCore
 			{
 				if (!$adminTab->viewAccess())
 				{
-					echo Tools::displayError('Access denied');
+					echo Tools::displayError('Access denied.');
 					return false;
 				}
 				if (!count($actions))
@@ -867,7 +865,7 @@ abstract class AdminTabCore
 							if (isset($value[0]) && !empty($value[0]))
 							{
 								if (!Validate::isDate($value[0]))
-									$this->_errors[] = Tools::displayError('\'from:\' date format is invalid (YYYY-MM-DD)');
+									$this->_errors[] = Tools::displayError('\'From:\' date format is invalid (YYYY-MM-DD)');
 								else
 									$sqlFilter .= ' AND '.$key.' >= \''.pSQL(Tools::dateFrom($value[0])).'\'';
 							}
@@ -875,7 +873,7 @@ abstract class AdminTabCore
 							if (isset($value[1]) && !empty($value[1]))
 							{
 								if (!Validate::isDate($value[1]))
-									$this->_errors[] = Tools::displayError('\'to:\' date format is invalid (YYYY-MM-DD)');
+									$this->_errors[] = Tools::displayError('\'To:\' date format is invalid (YYYY-MM-DD)');
 								else
 									$sqlFilter .= ' AND '.$key.' <= \''.pSQL(Tools::dateTo($value[1])).'\'';
 							}
@@ -995,7 +993,7 @@ abstract class AdminTabCore
 				{
 					foreach ($fields as $key => $options)
 					{
-						if (isset($options['visibility']) && $options['visibility'] > Context::getContext()->shop->getContextType())
+						if (isset($options['visibility']) && $options['visibility'] > Shop::getContext())
 							continue;
 
 						if (Shop::isFeatureActive() && isset($_POST['configUseDefault'][$key]))
@@ -1089,7 +1087,7 @@ abstract class AdminTabCore
 				return false;
 			else
 			{
-				$tmpName = $_FILES[$name]['tmp_name'];
+				$_FILES[$name]['tmp_name'] = $tmpName;
 				// Copy new image
 				if (!ImageManager::resize($tmpName, _PS_IMG_DIR_.$dir.$id.'.'.$this->imageType, (int)$width, (int)$height, ($ext ? $ext : $this->imageType)))
 					$this->_errors[] = Tools::displayError('An error occurred while uploading image.');
@@ -1306,22 +1304,22 @@ abstract class AdminTabCore
 			$selectShop = ', shop.name as shop_name ';
 			$joinShop = ' LEFT JOIN '._DB_PREFIX_.$this->shopLinkType.' shop
 							ON a.id_'.$this->shopLinkType.' = shop.id_'.$this->shopLinkType;
-			$whereShop = $this->context->shop->addSqlRestriction($this->shopShareDatas, 'a', $this->shopLinkType);
+			$whereShop = Shop::addSqlRestriction($this->shopShareDatas, 'a', $this->shopLinkType);
 		}
 
 		$assos = Shop::getAssoTables();
 		if (isset($assos[$this->table]) && $assos[$this->table]['type'] == 'shop')
 		{
 			$filterKey = $assos[$this->table]['type'];
-			$idenfierShop = $this->context->shop->getListOfID();
+			$idenfierShop = Shop::getContextListShopID();
 		}
-		else if (Context::shop() == Shop::CONTEXT_GROUP)
+		else if (Shop::getContext() == Shop::CONTEXT_GROUP)
 		{
 			$assos = GroupShop::getAssoTables();
 			if (isset($assos[$this->table]) && $assos[$this->table]['type'] == 'group_shop')
 			{
 				$filterKey = $assos[$this->table]['type'];
-				$idenfierShop = array($this->context->shop->getGroupID());
+				$idenfierShop = array(Shop::getContextGroupShopID());
 			}
 		}
 
@@ -1333,7 +1331,7 @@ abstract class AdminTabCore
 			else if (!preg_match('#(\s|,)\s*a\.`?'.pSQL($this->identifier).'`?(\s|,|$)#', $this->_group))
 				$this->_group .= ', a.'.pSQL($this->identifier);
 
-			if (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL && !preg_match('#`?'.preg_quote(_DB_PREFIX_.$this->table.'_'.$filterKey).'`? *sa#', $this->_join))
+			if (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL && !preg_match('#`?'.preg_quote(_DB_PREFIX_.$this->table.'_'.$filterKey).'`? *sa#', $this->_join))
 				$filterShop = 'JOIN `'._DB_PREFIX_.$this->table.'_'.$filterKey.'` sa ON (sa.'.$this->identifier.' = a.'.$this->identifier.' AND sa.id_'.$filterKey.' IN ('.implode(', ', $idenfierShop).'))';
 		}
 		///////////////////////
@@ -1869,12 +1867,12 @@ abstract class AdminTabCore
 				$isDisabled = $isInvisible = false;
 				if (Shop::isFeatureActive())
 				{
-					if (isset($field['visibility']) && $field['visibility'] > $this->context->shop->getContextType())
+					if (isset($field['visibility']) && $field['visibility'] > Shop::getContext())
 					{
 						$isDisabled = true;
 						$isInvisible = true;
 					}
-					else if (Context::shop() != Shop::CONTEXT_ALL && !Configuration::isOverridenByCurrentContext($key))
+					else if (Shop::getContext() != Shop::CONTEXT_ALL && !Configuration::isOverridenByCurrentContext($key))
 						$isDisabled = true;
 				}
 
@@ -1903,7 +1901,7 @@ abstract class AdminTabCore
 					$this->$method($key, $field, $value);
 
 				// Multishop default value
-				if (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL && !$isInvisible)
+				if (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL && !$isInvisible)
 					echo '<div class="preference_default_multishop">
 							<label>
 								<input type="checkbox" name="configUseDefault['.$key.']" value="1" '.(($isDisabled) ? 'checked="checked"' : '').' onclick="checkMultishopDefaultValue(this, \''.$key.'\')" /> '.$this->l('Use default value').'
@@ -2166,7 +2164,7 @@ abstract class AdminTabCore
 	public function getFieldValue($obj, $key, $id_lang = NULL, $id_shop = null)
 	{
 		if (!$id_shop && $obj->isLangMultishop())
-			$id_shop = Context::getContext()->shop->getID();
+			$id_shop = Context::getContext()->shop->id;
 
 		if ($id_lang)
 			$defaultValue = ($obj->id && isset($obj->{$key}[$id_lang])) ? $obj->{$key}[$id_lang] : '';
@@ -2332,7 +2330,7 @@ abstract class AdminTabCore
 
 	protected function displayAssoShop($type = 'shop')
 	{
-		if (!Shop::isFeatureActive() || (!$this->_object && $this->context->shop->getContextType() != Shop::CONTEXT_ALL))
+		if (!Shop::isFeatureActive() || (!$this->_object && Shop::getContext() != Shop::CONTEXT_ALL))
 			return;
 
 		if ($type != 'shop' && $type != 'group_shop')

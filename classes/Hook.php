@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7025 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -177,7 +177,7 @@ class HookCore extends ObjectModel
 					FROM `'._DB_PREFIX_.'hook` h
 					INNER JOIN `'._DB_PREFIX_.'hook_module` hm ON (h.id_hook = hm.id_hook)
 					INNER JOIN `'._DB_PREFIX_.'module` as m    ON (m.id_module = hm.id_module)
-					WHERE hm.id_shop IN('.implode(', ', Context::getContext()->shop->getListOfID()).')
+					WHERE hm.id_shop IN('.implode(', ', Shop::getContextListShopID()).')
 					GROUP BY hm.id_hook, hm.id_module
 					ORDER BY hm.position';
 			$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -240,7 +240,7 @@ class HookCore extends ObjectModel
 		if (!Cache::isStored($cache_id))
 		{
 			// Get shops and groups list
-			$shop_list = $context->shop->getListOfID();
+			$shop_list = Shop::getContextListShopID();
 			if (isset($context->customer) && $context->customer->isLogged())
 				$groups = $context->customer->getGroups();
 
@@ -368,10 +368,9 @@ class HookCore extends ObjectModel
 
 				// Call hook method
 				if ($hook_callable)
-					$display = call_user_func(array($moduleInstance, 'hook'.$hook_name), $hookArgs);
+					$display = $moduleInstance->{'hook'.$hook_name}($hookArgs);
 				else if ($hook_retro_callable)
-					$display = call_user_func(array($moduleInstance, 'hook'.$retro_hook_name), $hookArgs);
-
+					$display = $moduleInstance->{'hook'.$retro_hook_name}($hookArgs);
 				// Live edit
 				if ($array['live_edit'] && ((Tools::isSubmit('live_edit') && Tools::getValue('ad') && (Tools::getValue('liveToken') == sha1(Tools::getValue('ad')._COOKIE_KEY_)))))
 				{

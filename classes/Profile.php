@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -114,17 +114,33 @@ class ProfileCore extends ObjectModel
 	{
 		if (!isset(self::$_cache_accesses[$id_profile]))
 		{
-			$result = Db::getInstance()->executeS('
-			SELECT *
-			FROM `'._DB_PREFIX_.'access`
-			WHERE `id_profile` = '.(int)$id_profile);
-
-			self::$_cache_accesses[$id_profile] = array();
-			foreach ($result as $row)
+			// Super admin profile has full auth
+			if ($id_profile == _PS_ADMIN_PROFILE_)
 			{
-				if (!isset(self::$_cache_accesses[$id_profile][$row['id_tab']]))
-					self::$_cache_accesses[$id_profile][$row['id_tab']] = array();
-				self::$_cache_accesses[$id_profile][$row['id_tab']] = $row;
+				foreach (Tab::getTabs(Context::getContext()->language->id) as $tab)
+					self::$_cache_accesses[$id_profile][$tab['id_tab']] = array(
+						'id_profile' => _PS_ADMIN_PROFILE_,
+						'id_tab' => $tab['id_tab'],
+						'view' => '1',
+						'add' => '1',
+						'edit' => '1',
+						'delete' => '1',
+					);
+			}
+			else
+			{
+				$result = Db::getInstance()->executeS('
+				SELECT *
+				FROM `'._DB_PREFIX_.'access`
+				WHERE `id_profile` = '.(int)$id_profile);
+
+				self::$_cache_accesses[$id_profile] = array();
+				foreach ($result as $row)
+				{
+					if (!isset(self::$_cache_accesses[$id_profile][$row['id_tab']]))
+						self::$_cache_accesses[$id_profile][$row['id_tab']] = array();
+					self::$_cache_accesses[$id_profile][$row['id_tab']] = $row;
+				}
 			}
 		}
 		return self::$_cache_accesses[$id_profile];

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -32,6 +32,7 @@ class ConnectionsSourceCore extends ObjectModel
 	public $request_uri;
 	public $keywords;
 	public $date_add;
+	public static $uri_max_size = 255;
 
 	/**
 	 * @see ObjectModel::$definition
@@ -74,7 +75,7 @@ class ConnectionsSourceCore extends ObjectModel
 				return false;
 			if (Validate::isAbsoluteUrl(strval($_SERVER['HTTP_REFERER'])))
 			{
-				$source->http_referer = strval($_SERVER['HTTP_REFERER']);
+				$source->http_referer = substr(strval($_SERVER['HTTP_REFERER']), 0, ConnectionsSource::$uri_max_size);
 				$source->keywords = trim(SearchEngine::getKeywords(strval($_SERVER['HTTP_REFERER'])));
 				if (!Validate::isMessage($source->keywords))
 					return false;
@@ -89,6 +90,7 @@ class ConnectionsSourceCore extends ObjectModel
 			$source->request_uri .= strval($_SERVER['REQUEST_URI']);
 		if (!Validate::isUrl($source->request_uri))
 			$source->request_uri = '';
+		$source->request_uri = substr($source->request_uri, 0, ConnectionsSource::$uri_max_size);
 		return $source->add();
 	}
 	

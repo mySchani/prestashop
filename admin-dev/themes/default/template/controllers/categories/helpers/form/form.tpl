@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,14 +18,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 {extends file="helpers/form/form.tpl"}
 
-{block name="end_field_block"}
+{block name="description"}
+	{$smarty.block.parent}
 	{if ($input.name == 'groupBox')}
 		<p class="hint" style="display:block; position:relative; display:inline-block;">
 			<span>{$input.info_introduction}</span><br />
@@ -33,5 +34,5 @@
 			<span>{$input.guest}</span><br />
 			<span>{$input.customer}</span><br />
 		</p>
-	{/if}</div>
+	{/if}
 {/block}

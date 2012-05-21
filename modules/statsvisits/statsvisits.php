@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -59,7 +59,7 @@ class StatsVisits extends ModuleGraph
 		$sql = 'SELECT COUNT(c.`id_connections`)
 				FROM `'._DB_PREFIX_.'connections` c
 				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
-					'.$this->sqlShopRestriction(false, 'c');
+					'.Shop::addSqlRestriction(false, 'c');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
 
@@ -68,7 +68,7 @@ class StatsVisits extends ModuleGraph
 		$sql = 'SELECT COUNT(DISTINCT c.`id_guest`)
 				FROM `'._DB_PREFIX_.'connections` c
 				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
-					'.$this->sqlShopRestriction(false, 'c');
+					'.Shop::addSqlRestriction(false, 'c');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
 
@@ -120,12 +120,12 @@ class StatsVisits extends ModuleGraph
 				$this->_query[0] = 'SELECT date_add, COUNT(`date_add`) as total
 					FROM `'._DB_PREFIX_.'connections`
 					WHERE 1
-						'.$this->sqlShopRestriction().'
+						'.Shop::addSqlRestriction().'
 						AND `date_add` BETWEEN ';
 				$this->_query[1] = 'SELECT date_add, COUNT(DISTINCT `id_guest`) as total
 					FROM `'._DB_PREFIX_.'connections`
 					WHERE 1
-						'.$this->sqlShopRestriction().'
+						'.Shop::addSqlRestriction().'
 						AND `date_add` BETWEEN ';
 				break;
 		}

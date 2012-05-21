@@ -4,7 +4,6 @@
 <!--
 var install_is_done = '<?php echo addslashes($this->l('Done!')) ?>';
 var process_steps = <?php echo Tools::jsonEncode($this->process_steps) ?>;
-var process_percent = <?php echo 100 / count($this->process_steps) ?>;
 -->
 </script>
 
@@ -45,7 +44,12 @@ var process_percent = <?php echo 100 / count($this->process_steps) ?>;
 			</tr>
 			<tr>
 				<td class="label"><?php echo $this->l('Password:') ?></td>
-				<td class="resultEnd"><?php echo htmlspecialchars($this->session->admin_password) ?></td>
+				<td class="resultEnd">
+					<span id="password_content"><?php echo preg_replace('#.#', '*', $this->session->admin_password) ?></span>
+					<span id="password_display">
+						(<a href="#" onclick="$('#password_content').html('<?php echo htmlspecialchars($this->session->admin_password) ?>'); $('#password_display').hide(); return false"><?php echo $this->l('Display') ?></a>)
+					</span>
+				</td>
 			</tr>
 		</table>
 
@@ -55,13 +59,13 @@ var process_percent = <?php echo 100 / count($this->process_steps) ?>;
 			<img src="theme/img/visu_boBlock.png" alt="" />
 			<h3><?php echo $this->l('Back Office'); ?></h3>
 			<p class="description"><?php echo $this->l('Manage your store using your Back Office. Manage your orders and customers, add modules, change themes, etc.') ?></p>
-			<a href="../admin" class="BO" target="_blank"><span><?php echo $this->l('Manage your store') ?></span></a>
+			<a class="BO" target="_blank"><span><?php echo $this->l('Manage your store') ?></span></a>
 		</div>
 		<div id="foBlock" class="blockInfoEnd last clearfix" onclick="window.open('../')" />
 			<img src="theme/img/visu_foBlock.png" alt="" />
 			<h3><?php echo $this->l('Front Office'); ?></h3>
 			<p class="description"><?php echo $this->l('Discover your store as your future customers will see it!') ?></p>
-			<a href="../" class="FO" target="_blank"><span><?php echo $this->l('Discover your store') ?></span></a>
+			<a class="FO" target="_blank"><span><?php echo $this->l('Discover your store') ?></span></a>
 		</div>
 	</div>
 </div>

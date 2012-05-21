@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,27 +18,28 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 $(document).ready(function() {
-initTableDnD();
-})
+    initTableDnD();
+});
 
 function initTableDnD(table)
 {
 	if (typeof(table) == 'undefined')
 		table = 'table.tableDnD';
+
 	$(table).tableDnD({
 		onDragStart: function(table, row) {
 			originalOrder = $.tableDnD.serialize();
 			reOrder = ':even';
 			if (table.tBodies[0].rows[1] && $('#' + table.tBodies[0].rows[1].id).hasClass('alt_row'))
 				reOrder = ':odd';
-			$('#'+table.id+ '#' + row.id).parent('tr').addClass('myDragClass');
+			$(table).find('#' + row.id).parent('tr').addClass('myDragClass');
 		},
 		dragHandle: 'dragHandle',
 		onDragClass: 'myDragClass',
@@ -46,7 +47,7 @@ function initTableDnD(table)
 			if (originalOrder != $.tableDnD.serialize()) {
 				var way = (originalOrder.indexOf(row.id) < $.tableDnD.serialize().indexOf(row.id))? 1 : 0;
 				var ids = row.id.split('_');
-				var tableDrag = $('#' + table.id);
+				var tableDrag = table;
 				var params = '';
 				if (table.id == 'cms_category')
 					params = {
@@ -69,6 +70,22 @@ function initTableDnD(table)
 						ajaxCMSPositions: true,
 						id_cms_category: ids[1],
 						id_cms: ids[2],
+						way: way,
+						token: token
+					};
+				if (table.id == 'cms_block_0')
+					params = {
+						ajaxCMSBlockPositions: true,
+						id_cms_block: ids[1],
+						position: ids[2],
+						way: way,
+						token: token
+					};
+				if (table.id == 'cms_block_1')
+					params = {
+						ajaxCMSBlockPositions: true,
+						id_cms_block: ids[1],
+						position: ids[2],
 						way: way,
 						token: token
 					};
@@ -100,8 +117,8 @@ function initTableDnD(table)
 				if (table.id.indexOf('attribute') != -1 && table.id != 'attribute_group') {
 					params = {
 						ajaxAttributesPositions: true,
-						id_attribute_group: ids[1],
-						id_attribute: ids[2],
+						id_attribute_group: ids[2],
+						id_attribute: ids[3],
 						way: way,
 						token: token
 					};
@@ -110,7 +127,7 @@ function initTableDnD(table)
 				if (table.id == 'attribute_group') {
 					params = {
 						ajaxGroupsAttributesPositions: true,
-						id_attribute_group: ids[1],
+						id_attribute_group: ids[2],
 						way: way,
 						token: token
 					}
@@ -133,7 +150,16 @@ function initTableDnD(table)
 						token: token
 					}
 				}
-				
+
+				if (table.id == 'tab') {
+					params = {
+						ajaxTabsPositions: true,
+						id_tab : ids[2],
+						way: way,
+						token: token
+					}
+				}
+
 				$.ajax({
 					type: 'POST',
 					async: false,
@@ -181,7 +207,7 @@ function initTableDnD(table)
 							}
 							
 							var up_reg  = new RegExp('position=[-]?[0-9]+&');
-							tableDrag.children('tbody').children('tr').each(function(i) {
+							$(tableDrag).children('tbody').children('tr').each(function(i) {
 								$(this).attr('id', $(this).attr('id').replace(reg, '_' + i));
 								// Update link position
 								// Up links
@@ -191,17 +217,18 @@ function initTableDnD(table)
 								$(this).children('td.dragHandle a:even').attr('href', $(this).children('td.dragHandle a:even').attr('href').replace(up_reg, 'position='+ (i + 1) +'&'));
 								
 							});
-							tableDrag.children('tbody').children('tr').not('.nodrag').removeClass('alt_row').removeClass('not_alt_row');
-							tableDrag.children('tbody').children('tr:not(".nodrag"):odd').addClass('alt_row');
-							tableDrag.children('tbody').children('tr:not(".nodrag"):even').addClass('not_alt_row');
-							tableDrag.children('tbody').children('tr').children('td.dragHandle').children('a:hidden').show();
+							$(tableDrag).children('tbody').children('tr').not('.nodrag').removeClass('alt_row').removeClass('not_alt_row');
+							$(tableDrag).children('tbody').children('tr:not(".nodrag"):odd').addClass('alt_row');
+							$(tableDrag).children('tbody').children('tr:not(".nodrag"):even').addClass('not_alt_row');
+							$(tableDrag).children('tbody').children('tr').children('td.dragHandle').children('a:hidden').show();
+
 							if (alternate) {
-								tableDrag.children('tbody').children('tr').children('td.dragHandle:first').children('a:odd').hide();
-								tableDrag.children('tbody').children('tr').children('td.dragHandle:last').children('a:even').hide();
+								$(tableDrag).children('tbody').children('tr').children('td.dragHandle:first').children('a:odd').hide();
+								$(tableDrag).children('tbody').children('tr').children('td.dragHandle:last').children('a:even').hide();
 							}
 							else {
-								tableDrag.children('tbody').children('tr').children('td.dragHandle:first').children('a:even').hide();
-								tableDrag.children('tbody').children('tr').children('td.dragHandle:last').children('a:odd').hide();
+								$(tableDrag).children('tbody').children('tr').children('td.dragHandle:first').children('a:even').hide();
+								$(tableDrag).children('tbody').children('tr').children('td.dragHandle:last').children('a:odd').hide();
 							}
 						}
 					}

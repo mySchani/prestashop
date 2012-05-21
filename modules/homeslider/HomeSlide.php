@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11991 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13613 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -63,7 +63,7 @@ class HomeSlide extends ObjectModel
 	public function add($autodate = true, $null_values = false)
 	{
 		$context = Context::getContext();
-		$id_shop = $context->shop->getID();
+		$id_shop = $context->shop->id;
 
 		$res = parent::add($autodate, $null_values);
 		$res &= Db::getInstance()->execute('
@@ -100,7 +100,7 @@ class HomeSlide extends ObjectModel
 	{
 		$id_slide = $this->id;
 		$context = Context::getContext();
-		$id_shop = $context->shop->getID();
+		$id_shop = $context->shop->id;
 
 		$max = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT MAX(hss.`position`) as position
@@ -125,6 +125,8 @@ class HomeSlide extends ObjectModel
 			$current_slide->update();
 			unset($current_slide);
 		}
+
 		return true;
 	}
+
 }

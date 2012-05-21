@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -75,6 +75,9 @@
 	var txtProduct = "{l s='product'}";
 	var txtProducts = "{l s='products'}";
 	{/if}
+	
+	var addressMultishippingUrl = "{$link->getPageLink('address', true, NULL, "back={$back_order_page}?step=1{'&multi-shipping=1'|urlencode}{if $back}&mod={$back|urlencode}{/if}")}";
+	var addressUrl = "{$link->getPageLink('address', true, NULL, "back={$back_order_page}?step=1{if $back}&mod={$back}{/if}")}";
 
 	var formatedAddressFieldsValuesList = new Array();
 
@@ -169,7 +172,7 @@
 			<div class="title">{l s='Multi-shipping'}</div>
 			<div class="description">
 				<a href="{$link->getPageLink('order', true, NULL, 'step=1&multi-shipping=1')}"/>
-					{l s='Specify a delivery address for each products ordered.'}
+					{l s='Specify a delivery address for each product ordered.'}
 				</a>
 			</div>
 		</div>
@@ -181,11 +184,11 @@
 			<div class="button_multishipping_mode" id="multishipping_mode_box">
 				<div class="title">{l s='Multi-shipping'}</div>
 				<div class="description">
-					<input type="checkbox" id="multishipping_mode_checkbox" onchange="multishippingMode(this); return false;"/><label for="multishipping_mode_checkbox">{l s='I want to specify a delivery address for each products I order.'}</label>
+					<input type="checkbox" id="multishipping_mode_checkbox" onchange="multishippingMode(this); return false;"/><label for="multishipping_mode_checkbox">{l s='I want to specify a delivery address for each product I order.'}</label>
 				</div>
 				<div class="description_off">
 					<a href="{$link->getPageLink('order-opc', true, NULL, 'ajax=1&multi-shipping=1&method=multishipping')}" id="link_multishipping_form" title="{l s='Choose the delivery addresses'}">
-						{l s='Specify a delivery address for each products.'}
+						{l s='Specify a delivery address for each product.'}
 					</a>
 				</div>
 			</div>
@@ -195,6 +198,7 @@
 				{else}
 				var multishipping_mode = false;
 				{/if}
+				var open_multishipping_fancybox = {$open_multishipping_fancybox|intval};
 			</script>
 		</div>
 	{/if}
@@ -214,7 +218,7 @@
 		</p>
 		<p class="checkbox addressesAreEquals" {if $cart->isVirtualCart()}style="display:none;"{/if}>
 			<input type="checkbox" name="same" id="addressesAreEquals" value="1" onclick="updateAddressesDisplay();{if $opc}updateAddressSelection();{/if}" {if $cart->id_address_invoice == $cart->id_address_delivery || $addresses|@count == 1}checked="checked"{/if} />
-			<label for="addressesAreEquals">{l s='Use the same address for billing.'}</label>
+			<label for="addressesAreEquals">{l s='Use the delivery address as the billing address.'}</label>
 		</p>
 
 		<p id="address_invoice_form" class="select" {if $cart->id_address_invoice == $cart->id_address_delivery}style="display: none;"{/if}>

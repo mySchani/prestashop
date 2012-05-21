@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -37,6 +37,7 @@
 		"priceByLine":   "{if $priceDisplay == $smarty.const.PS_TAX_EXC}{displayWtPrice|html_entity_decode:2:'UTF-8' p=$product.total}{else}{displayWtPrice|html_entity_decode:2:'UTF-8' p=$product.total_wt}{/if}",
 		"name":          "{$product.name|html_entity_decode:2:'UTF-8'|escape|truncate:15:'...':true}",
 		"price":         "{if $priceDisplay == $smarty.const.PS_TAX_EXC}{displayWtPrice|html_entity_decode:2:'UTF-8' p=$product.total}{else}{displayWtPrice|html_entity_decode:2:'UTF-8' p=$product.total_wt}{/if}",
+		"price_float":   "{$product.total}",
 		"idCombination": {if isset($product.attributes_small)}{$productAttributeId}{else}0{/if},
 		"idAddressDelivery": {if isset($product.id_address_delivery)}{$product.id_address_delivery}{else}0{/if},
 {if isset($product.attributes_small)}
@@ -87,14 +88,16 @@
 		"name":            "{$discount.name|cat:' : '|cat:$discount.description|truncate:18:'...'|addslashes|replace:'\\\'':'\''}",
 		"description":     "{$discount.description|addslashes|replace:'\\\'':'\''}",
 		"nameDescription": "{$discount.name|cat:' : '|cat:$discount.description|truncate:18:'...'|addslashes|replace:'\\\'':'\''}",
-		"link":            "{$link->getPageLink('order', true, NULL, "deleteDiscount={$discount.id_discount}")}",
-		"price":           "-{if $discount.value_real != '!'}{if $priceDisplay == 1}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_tax_exc}{else}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_real}{/if}{/if}"
+		"link":            "{$link->getPageLink("$order_process", true, NULL, "deleteDiscount={$discount.id_discount}")}",
+		"price":           "{if $priceDisplay == 1}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_tax_exc}{else}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_real}{/if}",
+		"price_float":     "{if $priceDisplay == 1}{$discount.value_tax_exc}{else}{$discount.value_real}{/if}"
 	{rdelim}
 	{if !$smarty.foreach.discounts.last},{/if}
 {/foreach}{/if}
 ],
 
 "shippingCost": "{$shipping_cost|html_entity_decode:2:'UTF-8'}",
+"shippingCostFloat": "{$shipping_cost_float|html_entity_decode:2:'UTF-8'}",
 {if isset($tax_cost)}
 "taxCost": "{$tax_cost|html_entity_decode:2:'UTF-8'}",
 {/if}

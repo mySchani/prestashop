@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,11 +18,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9771 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+
+			{if count($modules)}
 
 				<table cellspacing="0" cellpadding="0" style="width: 100%; margin-bottom:10px;" class="table" id="">
 					<col width="20px">
@@ -56,7 +58,9 @@
 										{/if}
 										<dl class="">
 											<dt>{l s='Version'} :</dt>
-											<dd>{$module->version} {if isset($module->version_addons)}({l s='Update'} {$module->version_addons} {l s='available on PrestaShop Addons'}){/if}</dd>|
+											<dd>{$module->version} 
+												{if isset($module->version_addons)}({l s='Update'} {$module->version_addons} {l s='available on PrestaShop Addons'}){/if}
+											</dd>|
 										</dl>
 										<dl class="">
 											<dt>{l s='Category'} :</dt>
@@ -70,16 +74,24 @@
 									</div>
 								</div>
 							</td>
-							<td><a {if isset($module->id) && $module->id gt 0 && !empty($module->options.uninstall_onclick)}onclick="{$module->options.uninstall_onclick}"{/if} href="{if isset($module->id) && $module->id gt 0}{$module->options.uninstall_url}{else}{$module->options.install_url}{/if}" class="button installed"><span>{if isset($module->id) && $module->id gt 0}{l s='Uninstall'}{else}{l s='Install'}{/if}</span></a></td>
+							<td>
+								<ul id="list-action-button">
+									{if $module->id && isset($module->version_addons) && $module->version_addons}
+										<li><a href="{$module->options.update_url}" class="button updated"><span>{l s='Update it!'}</span></a></li>
+									{/if}
+					      			<li><a {if isset($module->id) && $module->id gt 0 && !empty($module->options.uninstall_onclick)}onclick="{$module->options.uninstall_onclick}"{/if} href="{if isset($module->id) && $module->id gt 0}{$module->options.uninstall_url}{else}{$module->options.install_url}{/if}" class="button installed"><span>{if isset($module->id) && $module->id gt 0}{l s='Uninstall'}{else}{l s='Install'}{/if}</span></a></li>
+								</ul>
+							</td>
 						</tr>
 					{/foreach}
 					</tbody>
 				</table>
 
-				{if count($modules)}
-					<div style="margin-top: 12px;">
-						<input type="button" class="button big" value="{l s='Install the selection'}" onclick="modules_management('install')"/>
-						<input type="button" class="button big" value="{l s='Uninstall the selection'}" onclick="modules_management('uninstall')" />
-					</div>
-				{/if}
+				<div style="margin-top: 12px;">
+					<input type="button" class="button big" value="{l s='Install the selection'}" onclick="modules_management('install')"/>
+					<input type="button" class="button big" value="{l s='Uninstall the selection'}" onclick="modules_management('uninstall')" />
+				</div>
+			{else}
+				<div style="margin-top: 12px;color: #585A69;font-size: 16px;"><p align="center">{l s='No modules available in this section.'}</p></div>
+			{/if}
 

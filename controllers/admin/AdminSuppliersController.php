@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -29,19 +29,19 @@ class AdminSuppliersControllerCore extends AdminController
 {
 	public function __construct()
 	{
-	 	$this->table = 'supplier';
-	 	$this->className = 'Supplier';
+		$this->table = 'supplier';
+		$this->className = 'Supplier';
 
 		$this->addRowAction('view');
 		$this->addRowAction('edit');
 		$this->addRowAction('delete');
-	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
+		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
 
 		$this->_select = 'COUNT(ps.`id_product`) AS products';
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product_supplier` ps ON (a.`id_supplier` = ps.`id_supplier`)';
 		$this->_group = 'GROUP BY a.`id_supplier`';
 
- 		$this->fieldImageSettings = array('name' => 'logo', 'dir' => 'su');
+		$this->fieldImageSettings = array('name' => 'logo', 'dir' => 'su');
 
 		$this->fieldsDisplay = array(
 			'id_supplier' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
@@ -86,10 +86,11 @@ class AdminSuppliersControllerCore extends AdminController
 					'hint' => $this->l('Invalid characters:').' <>;=#{}',
 				),
 				array(
-					'type' => 'text',
+					'type' => 'textarea',
 					'label' => $this->l('Description:'),
 					'name' => 'description',
-					'size' => 33,
+					'cols' => 60,
+					'rows' => 10,
 					'lang' => true,
 					'hint' => $this->l('Invalid characters:').' <>;=#{}',
 					'desc' => $this->l('Will appear in supplier list')
@@ -119,7 +120,7 @@ class AdminSuppliersControllerCore extends AdminController
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('Postcode/ Zip Code:'),
+					'label' => $this->l('Postcode / Zip Code:'),
 					'name' => 'postcode',
 					'size' => 10,
 					'maxlength' => 12,
@@ -138,10 +139,11 @@ class AdminSuppliersControllerCore extends AdminController
 					'label' => $this->l('Country:'),
 					'name' => 'id_country',
 					'required' => true,
+					'default_value' => (int)$this->context->country->id,
 					'options' => array(
 						'query' => Country::getCountries($this->context->language->id, false),
 						'id' => 'id_country',
-						'name' => 'name'
+						'name' => 'name',
 					),
 					'desc' => $this->l('Country where the state, region or city is located')
 				),
@@ -229,16 +231,18 @@ class AdminSuppliersControllerCore extends AdminController
 			);
 		}
 		else
-			$this->fields_value['id_address'] = 0;
+			$this->fields_value = array(
+				'id_address' => 0,
+				'id_country' => Configuration::get('PS_COUNTRY_DEFAULT')
+			);
 
 
 		if (Shop::isFeatureActive())
 		{
 			$this->fields_form['input'][] = array(
-				'type' => 'group_shop',
+				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -257,23 +261,23 @@ class AdminSuppliersControllerCore extends AdminController
 		for ($i = 0; $i < $total_product; $i++)
 		{
 			$products[$i] = new Product($products[$i]['id_product'], false, $this->context->language->id);
-			// Build attributes combinaisons
-			$combinaisons = $products[$i]->getAttributeCombinations($this->context->language->id);
-			foreach ($combinaisons as $k => $combinaison)
+			// Build attributes combinations
+			$combinations = $products[$i]->getAttributeCombinations($this->context->language->id);
+			foreach ($combinations as $k => $combination)
 			{
 				$comb_infos = Supplier::getProductInformationsBySupplier($this->object->id,
 																		 $products[$i]->id,
-																		 $combinaison['id_product_attribute']);
-				$comb_array[$combinaison['id_product_attribute']]['product_supplier_reference'] = $comb_infos['product_supplier_reference'];
-				$comb_array[$combinaison['id_product_attribute']]['product_supplier_price_te'] = Tools::displayPrice($comb_infos['product_supplier_price_te'], new Currency($comb_infos['id_currency']));
-				$comb_array[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
-				$comb_array[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
-				$comb_array[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
-				$comb_array[$combinaison['id_product_attribute']]['quantity'] = $combinaison['quantity'];
-				$comb_array[$combinaison['id_product_attribute']]['attributes'][] = array(
-					$combinaison['group_name'],
-					$combinaison['attribute_name'],
-					$combinaison['id_attribute']
+																		 $combination['id_product_attribute']);
+				$comb_array[$combination['id_product_attribute']]['product_supplier_reference'] = $comb_infos['product_supplier_reference'];
+				$comb_array[$combination['id_product_attribute']]['product_supplier_price_te'] = Tools::displayPrice($comb_infos['product_supplier_price_te'], new Currency($comb_infos['id_currency']));
+				$comb_array[$combination['id_product_attribute']]['reference'] = $combination['reference'];
+				$comb_array[$combination['id_product_attribute']]['ean13'] = $combination['ean13'];
+				$comb_array[$combination['id_product_attribute']]['upc'] = $combination['upc'];
+				$comb_array[$combination['id_product_attribute']]['quantity'] = $combination['quantity'];
+				$comb_array[$combination['id_product_attribute']]['attributes'][] = array(
+					$combination['group_name'],
+					$combination['attribute_name'],
+					$combination['id_attribute']
 				);
 			}
 
@@ -286,14 +290,14 @@ class AdminSuppliersControllerCore extends AdminController
 						$list .= $attribute[0].' - '.$attribute[1].', ';
 					$comb_array[$key]['attributes'] = rtrim($list, ', ');
 				}
-				isset($comb_array) ? $products[$i]->combinaison = $comb_array : '';
+				isset($comb_array) ? $products[$i]->combination = $comb_array : '';
 				unset($comb_array);
 			}
 			else
 			{
 				$product_infos = Supplier::getProductInformationsBySupplier($this->object->id,
-																		 	$products[$i]->id,
-																		 	0);
+																			$products[$i]->id,
+																			0);
 				$products[$i]->product_supplier_reference = $product_infos['product_supplier_reference'];
 				$products[$i]->product_supplier_price_te = Tools::displayPrice($product_infos['product_supplier_price_te'], new Currency($product_infos['id_currency']));
 			}
@@ -303,7 +307,7 @@ class AdminSuppliersControllerCore extends AdminController
 			'supplier' => $this->object,
 			'products' => $products,
 			'stock_management' => Configuration::get('PS_STOCK_MANAGEMENT'),
-			'shopContext' => Context::getContext()->shop(),
+			'shopContext' => Shop::getContext(),
 		);
 
 		return parent::renderView();
@@ -388,7 +392,7 @@ class AdminSuppliersControllerCore extends AdminController
 			if (!($obj = $this->loadObject(true)))
 				return;
 			else if (SupplyOrder::supplierHasPendingOrders($obj->id))
-				$this->errors[] = $this->l('It is not possible to delete a supplier if there is/are pending supply order(s).');
+				$this->errors[] = $this->l('It is not possible to delete a supplier if there are any pending supply order.');
 			else
 			{
 				$address = new Address($obj->id_address);

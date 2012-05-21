@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9646 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -93,7 +93,7 @@
 					<th width="80">{l s='UPC'}</th>
 					{if $stock_management && $shopContext != Shop::CONTEXT_ALL}<th class="right" width="150">{l s='Available Quantity'}</th>{/if}
 				</tr>
-				{foreach $product->combinaison AS $id_product_attribute => $product_attribute}
+				{foreach $product->combination AS $id_product_attribute => $product_attribute}
 					<tr {if $id_product_attribute %2}class="alt_row"{/if} >
 						<td>{$product_attribute.attributes}</td>
 						<td>{$product_attribute.reference}</td>

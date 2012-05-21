@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6957 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -123,14 +123,14 @@ class StatsBestCategories extends ModuleGrid
 
 		// If a shop is selected, get all children categories for the shop
 		$categories = array();
-		if ($this->context->shop->getContextType() != Shop::CONTEXT_ALL)
+		if (Shop::getContext() != Shop::CONTEXT_ALL)
 		{
 			$sql = 'SELECT c.nleft, c.nright
 					FROM '._DB_PREFIX_.'category c
 					WHERE c.id_category IN (
 						SELECT s.id_category
 						FROM '._DB_PREFIX_.'shop s
-						WHERE s.id_shop IN ('.implode(', ', $this->context->shop->getListOfID()).')
+						WHERE s.id_shop IN ('.implode(', ', Shop::getContextListShopID()).')
 					)';
 			if ($result = Db::getInstance()->executeS($sql))
 			{
@@ -170,8 +170,8 @@ class StatsBestCategories extends ModuleGrid
 				AND dr.`time_end` BETWEEN '.$dateBetween.'
 			) AS totalPageViewed
 		FROM `'._DB_PREFIX_.'category` ca
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` calang ON (ca.`id_category` = calang.`id_category` AND calang.`id_lang` = '.(int)$id_lang.$this->context->shop->addSqlRestrictionOnLang('calang').')
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` parent ON (ca.`id_parent` = parent.`id_category` AND parent.`id_lang` = '.(int)$id_lang.$this->context->shop->addSqlRestrictionOnLang('parent').')
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` calang ON (ca.`id_category` = calang.`id_category` AND calang.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('calang').')
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` parent ON (ca.`id_parent` = parent.`id_category` AND parent.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('parent').')
 		LEFT JOIN `'._DB_PREFIX_.'category_product` capr ON ca.`id_category` = capr.`id_category`
 		LEFT JOIN (
 			SELECT pr.`id_product`, t.`totalQuantitySold`, t.`totalPriceSold`

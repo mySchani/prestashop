@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -61,7 +61,7 @@ class StatsProduct extends ModuleGraph
 				FROM `'._DB_PREFIX_.'order_detail` od
 				LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
 				WHERE od.`product_id` = '.(int)$id_product.'
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND o.`date_add` BETWEEN '.$dateBetween;
 		return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
@@ -74,7 +74,7 @@ class StatsProduct extends ModuleGraph
 				FROM `'._DB_PREFIX_.'order_detail` od
 				LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
 				WHERE od.`product_id` = '.(int)$id_product.'
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND o.`date_add` BETWEEN '.$dateBetween;
 		return (float)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
@@ -89,7 +89,7 @@ class StatsProduct extends ModuleGraph
 				LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
 				LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
 				WHERE pt.`name` = \'product\'
-					'.$this->sqlShopRestriction(false, 'pv').'
+					'.Shop::addSqlRestriction(false, 'pv').'
 					AND p.`id_object` = '.(int)$id_product.'
 					AND dr.`time_start` BETWEEN '.$dateBetween.'
 					AND dr.`time_end` BETWEEN '.$dateBetween;
@@ -102,8 +102,8 @@ class StatsProduct extends ModuleGraph
 		$sql = 'SELECT p.`id_product`, p.reference, pl.`name`, IFNULL(stock.quantity, 0) as quantity
 				FROM `'._DB_PREFIX_.'product` p
 				'.Product::sqlStock('p', 0).'
-				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.`id_product` = pl.`id_product`'.$this->context->shop->addSqlRestrictionOnLang('pl').'
-				'.$this->context->shop->addSqlAssociation('product', 'p').'
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.`id_product` = pl.`id_product`'.Shop::addSqlRestrictionOnLang('pl').'
+				'.Shop::addSqlAssociation('product', 'p').'
 				'.(Tools::getValue('id_category') ? 'LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON p.`id_product` = cp.`id_product`' : '').'
 				WHERE pl.`id_lang` = '.(int)$id_lang.'
 					'.(Tools::getValue('id_category') ? 'AND cp.id_category = '.(int)Tools::getValue('id_category') : '').'
@@ -118,7 +118,7 @@ class StatsProduct extends ModuleGraph
 				FROM `'._DB_PREFIX_.'orders` o
 				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
 				WHERE o.date_add BETWEEN '.$this->getDate().'
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND od.product_id = '.(int)$id_product;
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -129,7 +129,7 @@ class StatsProduct extends ModuleGraph
 		$sql = 'SELECT pl.name as pname, pl.id_product, SUM(od.product_quantity) as pqty, AVG(od.product_price) as pprice
 				FROM `'._DB_PREFIX_.'orders` o
 				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
-				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = od.product_id AND pl.id_lang = '.(int)$id_lang.$this->context->shop->addSqlRestrictionOnLang('pl').')
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = od.product_id AND pl.id_lang = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').')
 				WHERE o.id_customer IN (
 						SELECT o.id_customer
 						FROM `'._DB_PREFIX_.'orders` o
@@ -138,7 +138,7 @@ class StatsProduct extends ModuleGraph
 						AND o.valid = 1
 						AND od.product_id = '.(int)$id_product.'
 					)
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.date_add BETWEEN '.$this->getDate().'
 					AND o.valid = 1
 					AND od.product_id != '.(int)$id_product.'
@@ -312,7 +312,7 @@ class StatsProduct extends ModuleGraph
 						FROM `'._DB_PREFIX_.'order_detail` od
 						LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
 						WHERE od.`product_id` = '.(int)$this->_id_product.'
-							'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+							'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 							AND o.valid = 1
 							AND o.`date_add` BETWEEN '.$dateBetween.'
 						GROUP BY o.`date_add`';
@@ -323,7 +323,7 @@ class StatsProduct extends ModuleGraph
 						LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
 						LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
 						WHERE pt.`name` = \'product\'
-							'.$this->sqlShopRestriction(false, 'pv').'
+							'.Shop::addSqlRestriction(false, 'pv').'
 							AND p.`id_object` = '.(int)$this->_id_product.'
 							AND dr.`time_start` BETWEEN '.$dateBetween.'
 							AND dr.`time_end` BETWEEN '.$dateBetween.'
@@ -335,7 +335,7 @@ class StatsProduct extends ModuleGraph
 						FROM `'._DB_PREFIX_.'orders` o
 						LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
 						WHERE od.`product_id` = '.(int)$this->_id_product.'
-							'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+							'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 							AND o.valid = 1
 							AND o.`date_add` BETWEEN '.$dateBetween.'
 						GROUP BY od.`product_attribute_id`';
@@ -371,9 +371,9 @@ class StatsProduct extends ModuleGraph
 
 			$combArray = array();
 			$assocNames = array();
-			$combinaisons = $product->getAttributeCombinations((int)$this->getLang());
-			foreach ($combinaisons as $k => $combinaison)
-				$combArray[$combinaison['id_product_attribute']][] = array('group' => $combinaison['group_name'], 'attr' => $combinaison['attribute_name']);
+			$combinations = $product->getAttributeCombinations((int)$this->getLang());
+			foreach ($combinations as $k => $combination)
+				$combArray[$combination['id_product_attribute']][] = array('group' => $combination['group_name'], 'attr' => $combination['attribute_name']);
 			foreach ($combArray as $id_product_attribute => $product_attribute)
 			{
 				$list = '';

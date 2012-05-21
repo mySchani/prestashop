@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7227 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -101,14 +101,38 @@ try
 
 	$context->currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 
-	$shopID = '';
+	$shop_id = '';
+	Shop::setContext(Shop::CONTEXT_ALL);
 	if ($context->cookie->shopContext)
 	{
 		$split = explode('-', $context->cookie->shopContext);
-		if (count($split) == 2 && $split[0] == 's')
-			$shopID = (int)$split[1];
+		if (count($split) == 2)
+		{
+			if ($split[0] == 'g')
+				Shop::setContext(Shop::CONTEXT_GROUP, $split[1]);
+			else
+			{
+				Shop::setContext(Shop::CONTEXT_SHOP, $split[1]);
+				$shop_id = $split[1];
+			}
+		}
 	}
-	$context->shop = new Shop($shopID);
+	else if ($context->employee->id_profile == _PS_ADMIN_PROFILE_)
+		$shop_id = '';
+	else if ($context->shop->getTotalShopsWhoExists() != Employee::getTotalEmployeeShopById((int)$context->employee->id))
+	{
+		$shops = Employee::getEmployeeShopById((int)$context->employee->id);
+		if (count($shops))
+			$shop_id = (int)$shops[0];
+	}
+	else
+		Employee::getEmployeeShopAccess((int)$context->employee->id);
+
+	// Replace existing shop if necessary
+	if (!$shop_id)
+		$context->shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+	else if ($context->shop->id != $shop_id)
+		$context->shop = new Shop($shop_id);
 }
 catch(PrestaShopException $e)
 {

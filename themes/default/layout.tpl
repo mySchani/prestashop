@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,19 +18,27 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11274 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13866 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+{assign var='header_file' value='./header.tpl'}
+{assign var='footer_file' value='./footer.tpl'}
+{if $mobile_device != false}
+	{assign var='header_file' value='./mobile/header.tpl'}
+	{assign var='footer_file' value='./mobile/footer.tpl'}
+	{assign var='HOOK_HEADER' value=''}
+{/if}
+
 {if !empty($display_header)}
-	{include file='./header.tpl' HOOK_HEADER=$HOOK_HEADER}
+	{include file=$header_file HOOK_HEADER=$HOOK_HEADER}
 {/if}
 {if !empty($template)}
 	{$template}
 {/if}
 {if !empty($display_footer)}
-	{include file='./footer.tpl'}
+	{include file=$footer_file}
 {/if}
 {if !empty($live_edit)}
 	{$live_edit}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13072 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13714 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -261,6 +261,36 @@ class InstallControllerHttpConfigure extends InstallControllerHttp
 		);
 		sort($list_activities);
 		$this->list_activities = $list_activities;
+
+		// Countries list
+		$this->list_countries = array();
+		$countries = $this->language->getCountries();
+		$top_countries = array(
+			'fr', 'es', 'us',
+			'gb', 'it', 'de',
+			'nl', 'pl', 'id',
+			'be', 'br', 'se',
+			'ca', 'ru', 'cn',
+		);
+
+		foreach ($top_countries as $iso)
+			$this->list_countries[] = array('iso' => $iso, 'name' => $countries[$iso]);
+		$this->list_countries[] = array('name' => '-----------------');
+
+		foreach ($countries as $iso => $lang)
+			if (!in_array($iso, $top_countries))
+				$this->list_countries[] = array('iso' => $iso, 'name' => $lang);
+
+		// Try to detect default country
+		if (!$this->session->shop_country)
+		{
+			$detect_language = $this->language->detectLanguage();
+			if (isset($detect_language['primarytag']))
+			{
+				$this->session->shop_country = (isset($detect_language['subtag'])) ? $detect_language['subtag'] : $detect_language['primarytag'];
+				$this->session->shop_timezone = $this->getTimezoneByIso($this->session->shop_country);
+			}
+		}
 
 		// Install type
 		$this->install_type = ($this->session->install_type) ? $this->session->install_type : 'full';

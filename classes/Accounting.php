@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -27,12 +27,33 @@
 
 class AccountingCore
 {
+	const CONF_NAME = 'ACCOUNTING_CONFIGURATION';
+	
+	/**
+     * Default Values
+     * All key modification have to be changed into the localization pack and xml
+     * This configuration is applied for a specific shop
+     *
+     * @var array
+     */
+	public static $acc_conf = array(
+		'customer_prefix' => '',
+		'journal' => '',
+		'account_length' => '',
+		'account_submit_shipping_charge' => '',
+		'account_unsubmit_shipping_charge' => '',
+		'account_gift_wripping' => '',
+		'account_handling' => ''
+	);
+
+	public static $acc_conf_cached = false;
+
 	/**
 	* Set an account number to a zone (will be refactoring for a dynamic use depending of the Controller)
-	* @var array $assoZoneShopList correspond to an associated list of id_zone - id_shop - num
+	* @var array $asso_zone_shop_list correspond to an associated list of id_zone - id_shop - num
 	* @return bool To know if any modification in the database succeed
 	*/
-	public static function setAccountNumberByZoneShop($assoZoneShopList)
+	public static function setAccountNumberByZoneShop($asso_zone_shop_list)
 	{
 		$query = '
 			REPLACE INTO`'._DB_PREFIX_.'accounting_zone_shop`
@@ -42,7 +63,7 @@ class AccountingCore
 		$values = '';
 		
 		// Build the query for the update 
-		foreach ($assoZoneShopList as $asso)
+		foreach ($asso_zone_shop_list as $asso)
 			if (array_key_exists('id_zone', $asso) &&
 					array_key_exists('id_shop', $asso) &&
 					array_key_exists('num', $asso))
@@ -56,10 +77,10 @@ class AccountingCore
 	
 	/**
 	* Add or update product accounting information for a product (will be refactoring for a dynamic use depending of the Controller)
-	* @param int $id_product
-	* @param array $accountingInfos
+	* @param array $asso_product_zone_shop
+    * @return mixed bool|array
 	*/
-	public static function saveProductAccountingInformations($assoProductZoneShop)
+	public static function saveProductAccountingInformations($asso_product_zone_shop)
 	{
 		$query = '
 			REPLACE INTO`'._DB_PREFIX_.'accounting_product_zone_shop`
@@ -67,7 +88,7 @@ class AccountingCore
 			VALUES %s';
 		
 		$values = '';
-		foreach ($assoProductZoneShop as $asso)
+		foreach ($asso_product_zone_shop as $asso)
 			if (array_key_exists('id_zone', $asso) &&
 					array_key_exists('id_shop', $asso) &&
 					array_key_exists('id_product', $asso) &&
@@ -107,5 +128,84 @@ class AccountingCore
 			SELECT `id_shop`, `id_zone`, `account_number` 
 			FROM `'._DB_PREFIX_.'accounting_zone_shop`
 			WHERE `id_shop` = '.(int)$id_shop);
+	}
+
+	/**
+	 * Get the Accounting Configuration
+	 * If a key is defined, then it will try to get the value
+	 *
+	 * @static
+	 * @param null $key
+	 * @return array|bool
+	 */
+	public static function getConfiguration($key = null)
+	{
+		// Cache for call performance
+		if (!self::$acc_conf_cached)
+		{
+			// Merge default values with the configured values
+			if ($conf = unserialize(Configuration::get(Accounting::CONF_NAME)))
+				self::$acc_conf = array_merge(self::$acc_conf, $conf);
+			self::$acc_conf_cached = true;
+		}
+
+		// Return value key or the complete configuration depending of the $key definition
+		return (!$key) ? self::$acc_conf : ((isset(self::$acc_conf[$key]) ? self::$acc_conf[$key] : false));
+	}
+
+	/**
+	 * Update Accounting configuration
+	 *
+	 * @static
+	 * @param $acc_conf
+	 */
+	public static function updateConfiguration($acc_conf)
+	{
+		Configuration::updateValue(Accounting::CONF_NAME, serialize($acc_conf));
+	}
+
+	/**
+	 * Get the list of export done
+	 *
+	 * @static
+	 * @return array
+	 */
+	public static function getExportedList()
+	{
+		return Db::getInstance()->executeS('
+			SELECT * FROM `'._DB_PREFIX_.'accounting_export` ORDER BY `date` DESC');
+	}
+
+	/**
+	 * Get the displayed customer account.
+	 * Pad with / without prefix if the account is set
+	 *
+	 * @static
+	 * @param $id_customer
+	 * @param $default_value
+	 * @return string
+	 */
+	public static function getDisplayedCustomerAccount($id_customer, $default_value = false)
+	{
+		$acc_num = Db::getInstance()->getValue('
+			SELECT account_number FROM `'._DB_PREFIX_.'customer`
+			WHERE id_customer = '.(int)$id_customer);
+
+		$display = $acc_num;
+		if (empty($acc_num) || $default_value)
+		{
+			$display = Accounting::getConfiguration('customer_prefix');
+			$max_len = Accounting::getConfiguration('account_length');
+			$len = Tools::strlen($display) + Tools::strlen((string)$id_customer);
+
+			// Pad the displayed string
+			while ($max_len > 0 && $max_len > $len)
+			{
+				$display .= '0';
+				--$max_len;
+			}
+			$display .= (string)$id_customer;
+		}
+		return $display;
 	}
 }

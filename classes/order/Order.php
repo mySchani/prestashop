@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7331 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -291,7 +291,7 @@ class OrderCore extends ObjectModel
 		if ($this->hasBeenDelivered())
 		{
 			if (!Configuration::get('PS_ORDER_RETURN'))
-				die(Tools::displayError());
+				throw new PrestaShopException('PS_ORDER_RETURN is not defined in table configuration');
 			$orderDetail->product_quantity_return += (int)($quantity);
 			return $orderDetail->update();
 		}
@@ -613,7 +613,7 @@ class OrderCore extends ObjectModel
 				FROM '._DB_PREFIX_.'product_attribute_image
 				WHERE id_product_attribute = '.(int)$product['product_attribute_id']);
 
-		if (!isset($image['id_image']) || !$image['id_image'])
+		if (!isset($id_image) || !$id_image)
 			$id_image = Db::getInstance()->getValue('
 				SELECT id_image
 				FROM '._DB_PREFIX_.'image
@@ -789,7 +789,7 @@ class OrderCore extends ObjectModel
 		$sql = 'SELECT `id_order`
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE DATE_ADD(date_upd, INTERVAL -1 DAY) <= \''.pSQL($date_to).'\' AND date_upd >= \''.pSQL($date_from).'\'
-					'.Context::getContext()->shop->addSqlRestriction()
+					'.Shop::addSqlRestriction()
 					.($type ? ' AND '.pSQL(strval($type)).'_number != 0' : '')
 					.($id_customer ? ' AND id_customer = '.(int)($id_customer) : '');
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -815,7 +815,7 @@ class OrderCore extends ObjectModel
 				FROM `'._DB_PREFIX_.'orders` o
 				LEFT JOIN `'._DB_PREFIX_.'customer` c ON (c.`id_customer` = o.`id_customer`)
 				WHERE 1
-					'.Context::getContext()->shop->addSqlRestriction(false, 'o').'
+					'.Shop::addSqlRestriction(false, 'o').'
 				ORDER BY o.`date_add` DESC
 				'.((int)$limit ? 'LIMIT 0, '.(int)$limit : '');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
@@ -838,7 +838,7 @@ class OrderCore extends ObjectModel
 		$sql = 'SELECT `id_order`
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE DATE_ADD(invoice_date, INTERVAL -1 DAY) <= \''.pSQL($date_to).'\' AND invoice_date >= \''.pSQL($date_from).'\'
-					'.Context::getContext()->shop->addSqlRestriction()
+					'.Shop::addSqlRestriction()
 					.($type ? ' AND '.pSQL(strval($type)).'_number != 0' : '')
 					.($id_customer ? ' AND id_customer = '.(int)($id_customer) : '').
 				' ORDER BY invoice_date ASC';
@@ -863,7 +863,7 @@ class OrderCore extends ObjectModel
 		$sql = 'SELECT id_order
 				FROM '._DB_PREFIX_.'orders o
 				WHERE o.`current_state` = '.(int)$id_order_state.'
-				'.Context::getContext()->shop->addSqlRestriction(false, 'o').'
+				'.Shop::addSqlRestriction(false, 'o').'
 				ORDER BY invoice_date ASC';
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
@@ -933,7 +933,7 @@ class OrderCore extends ObjectModel
 		$sql = 'SELECT COUNT(`id_order`) AS nb
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE `id_customer` = '.(int)$id_customer
-					.Context::getContext()->shop->addSqlRestriction();
+					.Shop::addSqlRestriction();
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 
 		return isset($result['nb']) ? $result['nb'] : 0;
@@ -950,7 +950,7 @@ class OrderCore extends ObjectModel
 		$sql = 'SELECT `id_order`
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE `id_cart` = '.(int)($id_cart)
-					.Context::getContext()->shop->addSqlRestriction();
+					.Shop::addSqlRestriction();
 		$result = Db::getInstance()->getRow($sql);
 
 		return isset($result['id_order']) ? $result['id_order'] : false;
@@ -1115,32 +1115,12 @@ class OrderCore extends ObjectModel
 		$this->update();
 	}
 
-	public static function printPDFIcons($id_order, $tr)
-	{
-		$order = new Order($id_order);
-		$orderState = $order->getCurrentOrderState();
-		if (!Validate::isLoadedObject($orderState) || !Validate::isLoadedObject($order))
-			die(Tools::displayError('Invalid objects'));
-		echo '<span style="width:20px; margin-right:5px;">';
-		if (($orderState->invoice && $order->invoice_number) && (int)($tr['product_number']))
-			echo '<a target="_blank" href="pdf.php?id_order='.(int)$order->id.'&pdf"><img src="../img/admin/tab-invoice.gif" alt="invoice" /></a>';
-		else
-			echo '&nbsp;';
-		echo '</span>';
-		echo '<span style="width:20px;">';
-		if ($orderState->delivery && $order->delivery_number)
-			echo '<a target="_blank" href="pdf.php?id_delivery='.(int)$order->delivery_number.'"><img src="../img/admin/delivery.gif" alt="delivery" /></a>';
-		else
-			echo '&nbsp;';
-		echo '</span>';
-	}
-
 	public static function getByDelivery($id_delivery)
 	{
 		$sql = 'SELECT id_order
 				FROM `'._DB_PREFIX_.'orders`
 				WHERE `delivery_number` = '.(int)($id_delivery).'
-				'.Context::getContext()->shop->addSqlRestriction();
+				'.Shop::addSqlRestriction();
 		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return new Order((int)($res['id_order']));
 	}
@@ -1179,7 +1159,7 @@ class OrderCore extends ObjectModel
 				WHERE o.`id_order` = '.(int)$this->id.'
 					AND c.`email` = \''.pSQL($email).'\'
 					AND c.`is_guest` = 1
-					'.Context::getContext()->shop->addSqlRestriction(false, 'c');
+					'.Shop::addSqlRestriction(false, 'c');
 		return (bool)Db::getInstance()->getValue($sql);
 	}
 
@@ -1415,7 +1395,7 @@ class OrderCore extends ObjectModel
 	 */
 	public function getShipping()
 	{
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 			SELECT DISTINCT oc.`id_order_invoice`, oc.`weight`, oc.`shipping_cost_tax_excl`, oc.`shipping_cost_tax_incl`, c.`url`, oc.`id_carrier`, c.`name` as `state_name`, oc.`date_add`, "Delivery" as `type`, "true" as `can_edit`, oc.`tracking_number`, oc.`id_order_carrier`
 			FROM `'._DB_PREFIX_.'orders` o
 			LEFT JOIN `'._DB_PREFIX_.'order_history` oh

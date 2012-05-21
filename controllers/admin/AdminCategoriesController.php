@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -31,6 +31,7 @@ class AdminCategoriesControllerCore extends AdminController
 	 *  @var object Category() instance for navigation
 	 */
 	private $_category = null;
+	protected $position_identifier = 'id_category_to_move';
 
 	public function __construct()
 	{
@@ -66,7 +67,7 @@ class AdminCategoriesControllerCore extends AdminController
 			'position' => array(
 				'title' => $this->l('Position'),
 				'width' => 40,
-				'filter_key' => 'position',
+				'filter_key' => 'cs!position',
 				'align' => 'center',
 				'position' => 'position'
 			),
@@ -79,10 +80,6 @@ class AdminCategoriesControllerCore extends AdminController
 				'orderby' => false
 			)
 		);
-
-		// if we are not in a shop context, we remove the position column
-		if ($this->context->shop() != Shop::CONTEXT_SHOP)
-			unset($this->fieldsDisplay['position']);
 
 		$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected')));
 		$this->specificConfirmDelete = false;
@@ -98,12 +95,22 @@ class AdminCategoriesControllerCore extends AdminController
 		if (($id_category = Tools::getvalue('id_category')) && $this->action != 'select_delete')
 			$this->_category = new Category($id_category);
 		else
-			if (Shop::isFeatureActive() && $this->context->shop() == Shop::CONTEXT_SHOP)
+			if (Shop::isFeatureActive() && Shop::getContext() == Shop::CONTEXT_SHOP)
 				$this->_category = new Category($this->context->shop->id_category);
 			else if (count(Category::getCategoriesWithoutParent()) > 1)
 				$this->_category = Category::getTopCategory();
 			else
-				$this->_category = new Category(2);
+				$this->_category = new Category(Configuration::get('PS_HOME_CATEGORY'));
+
+		// if we are not in a shop context, we remove the position column
+		if (Shop::getContext() != Shop::CONTEXT_SHOP)
+			unset($this->fieldsDisplay['position']);
+		// shop restriction : if category is not available for current shop, we redirect to the list from default category
+		if (!Shop::isCategoryAvailable($this->_category->id))
+		{
+			$this->redirect_after = self::$currentIndex.'&id_category='.(int)$this->context->shop->getCategory().'&token='.$this->token;
+			$this->redirect();
+		}
 	}
 	
 	public function initContent()
@@ -140,8 +147,8 @@ class AdminCategoriesControllerCore extends AdminController
 		else if (!$is_multishop && $count_categories_without_parent > 1)
 			$id_parent = $top_category->id;
 		else if ($is_multishop && $count_categories_without_parent == 1)
-			$id_parent = 2; //TODO need to get the ID category where category = Home
-		else if ($is_multishop && $count_categories_without_parent > 1 && $this->context->shop() != Shop::CONTEXT_SHOP)
+			$id_parent = Configuration::get('PS_HOME_CATEGORY');
+		else if ($is_multishop && $count_categories_without_parent > 1 && Shop::getContext() != Shop::CONTEXT_SHOP)
 			$id_parent = $top_category->id;
 		else
 			$id_parent = $this->context->shop->id_category;
@@ -152,13 +159,13 @@ class AdminCategoriesControllerCore extends AdminController
 		$id_shop = $id ? $id : Configuration::get('PS_SHOP_DEFAULT');
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'category_shop` cs ON (a.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')';
 		// we add restriction for shop
-		if (Shop::CONTEXT_SHOP == Context::getContext()->shop() && $is_multishop)
-			$this->_where = ' AND cs.`id_shop` = '.(int)Context::getContext()->shop->getID(true);
+		if (Shop::getContext() == Shop::CONTEXT_SHOP && $is_multishop)
+			$this->_where = ' AND cs.`id_shop` = '.(int)Context::getContext()->shop->id;
 
 		$categories_tree = $this->_category->getParentsCategories();
 		if (empty($categories_tree)
 			&& ($this->_category->id_category != 1 || Tools::isSubmit('id_category'))
-			&& (Shop::CONTEXT_SHOP == Context::getContext()->shop() && !$is_multishop && $count_categories_without_parent > 1))
+			&& (Shop::getContext() == Shop::CONTEXT_SHOP && !$is_multishop && $count_categories_without_parent > 1))
 			$categories_tree = array(array('name' => $this->_category->name[$this->context->language->id]));
 
 		asort($categories_tree);
@@ -175,13 +182,13 @@ class AdminCategoriesControllerCore extends AdminController
 			$this->tpl_list_vars['REQUEST_URI'] = $_SERVER['REQUEST_URI'];
 			$this->tpl_list_vars['POST'] = $_POST;
 		}
-		
+
 		return parent::renderList();
 	}
 
 	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
 	{
-		parent::getList($id_lang, 'cs.position', $order_way, $start, $limit, Context::getContext()->shop->getID(true));
+		parent::getList($id_lang, 'cs.position', $order_way, $start, $limit, Context::getContext()->shop->id);
 		// Check each row to see if there are combinations and get the correct action in consequence
 
 		$nb_items = count($this->_list);
@@ -204,15 +211,23 @@ class AdminCategoriesControllerCore extends AdminController
 	{
 		if (empty($this->display))
 		{
-			$this->toolbar_btn['new-url'] = array(
-				'href' => self::$currentIndex.'&amp;add'.$this->table.'root&amp;token='.$this->token,
-				'desc' => $this->l('Add new root category')
-			);
+			if (Shop::isFeatureActive())
+				$this->toolbar_btn['new-url'] = array(
+					'href' => self::$currentIndex.'&amp;add'.$this->table.'root&amp;token='.$this->token,
+					'desc' => $this->l('Add new root category')
+				);
 			$this->toolbar_btn['new'] = array(
 				'href' => self::$currentIndex.'&amp;add'.$this->table.'&amp;token='.$this->token,
 				'desc' => $this->l('Add new')
 			);
 		}
+		// be able to edit the Home category
+		if (count(Category::getCategoriesWithoutParent()) == 1 && !Tools::isSubmit('id_category')
+			&& ($this->display == 'view' || empty($this->display)))
+			$this->toolbar_btn['edit'] = array(
+				'href' => self::$currentIndex.'&amp;update'.$this->table.'&amp;id_category='.(int)$this->_category->id.'&amp;token='.$this->token,
+				'desc' => $this->l('Edit')
+			);
 		if (Tools::getValue('id_category') && !Tools::isSubmit('updatecategory'))
 		{
 			$this->toolbar_btn['edit'] = array(
@@ -233,6 +248,17 @@ class AdminCategoriesControllerCore extends AdminController
 				'desc' => $this->l('Add new')
 			);
 		parent::initToolbar();
+		if ($this->_category->id == Category::getTopCategory()->id && isset($this->toolbar_btn['new']))
+			unset($this->toolbar_btn['new']);
+		// after adding a category
+		if (empty($this->display))
+		{
+			$id_category = (Tools::isSubmit('id_category')) ? '&amp;id_parent='.(int)Tools::getValue('id_category') : '';
+			$this->toolbar_btn['new'] = array(
+				'href' => self::$currentIndex.'&amp;add'.$this->table.'&amp;token='.$this->token.$id_category,
+				'desc' => $this->l('Add new')
+			);
+		}
 	}
 
 	public function initProcess()
@@ -263,15 +289,15 @@ class AdminCategoriesControllerCore extends AdminController
 	{
 		$this->initToolbar();
 		$obj = $this->loadObject(true);
-		$id_shop = Context::getContext()->shop->getID(true);
+		$id_shop = Context::getContext()->shop->id;
 		$selected_cat = array((isset($obj->id_parent) && $obj->isParentCategoryAvailable($id_shop))? $obj->id_parent : Tools::getValue('id_parent', Category::getRootCategory()->id));
 		$unidentified = new Group(Configuration::get('PS_UNIDENTIFIED_GROUP'));
 		$guest = new Group(Configuration::get('PS_GUEST_GROUP'));
 		$default = new Group(Configuration::get('PS_CUSTOMER_GROUP'));
 
-		$unidentified_group_information = sprintf($this->l('%s - All persons without a customer account or unauthenticated.'), '<b>'.$unidentified->name[$this->context->language->id].'</b>');
+		$unidentified_group_information = sprintf($this->l('%s - All people without a validated customer account.'), '<b>'.$unidentified->name[$this->context->language->id].'</b>');
 		$guest_group_information = sprintf($this->l('%s - Customer who placed an order with the Guest Checkout.'), '<b>'.$guest->name[$this->context->language->id].'</b>');
-		$default_group_information = sprintf($this->l('%s - All persons who created an account on this site.'), '<b>'.$default->name[$this->context->language->id].'</b>');
+		$default_group_information = sprintf($this->l('%s - All people who created an account on this site.'), '<b>'.$default->name[$this->context->language->id].'</b>');
 		$root_category = Category::getRootCategory();
 		$root_category = array('id_category' => $root_category->id_category, 'name' => $root_category->name);
 		$this->fields_form = array(
@@ -400,27 +426,30 @@ class AdminCategoriesControllerCore extends AdminController
 					'label' => $this->l('Group access:'),
 					'name' => 'groupBox',
 					'values' => Group::getGroups(Context::getContext()->language->id),
-					'info_introduction' => $this->l('You have now three default customer groups.'),
+					'info_introduction' => $this->l('You now have three default customer groups.'),
 					'unidentified' => $unidentified_group_information,
 					'guest' => $guest_group_information,
 					'customer' => $default_group_information,
-					'desc' => $this->l('Mark all groups you want to give access to this category')
+					'desc' => $this->l('Mark all customer groups you want to give access to this category')
 				)
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
 		if (Shop::isFeatureActive())
-		{
 			$this->fields_form['input'][] = array(
 				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
-		}
+		// remove category tree and radio button "is_root_category" if this category has the root category as parent category to avoid any conflict
+		if ($this->_category->id_parent == Category::getTopCategory()->id && Tools::isSubmit('updatecategory'))
+			foreach ($this->fields_form['input'] as $k => $input)
+				if (in_array($input['name'], array('id_parent', 'is_root_category')))
+					unset($this->fields_form['input'][$k]);
+
 		if (Tools::isSubmit('add'.$this->table.'root'))
 			unset($this->fields_form['input'][2],$this->fields_form['input'][3]);
 
@@ -469,7 +498,7 @@ class AdminCategoriesControllerCore extends AdminController
 					$this->errors[] = Tools::displayError($this->l('Category cannot be moved here'));
 			}
 			else
-				$this->errors[] = Tools::displayError($this->l('Category cannot be parent of herself.'));
+				$this->errors[] = Tools::displayError($this->l('Category cannot be parent of itself.'));
 		}
 		parent::processAdd($token);
 	}
@@ -570,14 +599,14 @@ class AdminCategoriesControllerCore extends AdminController
 			$images_types = ImageType::getImagesTypes('categories');
 			foreach ($images_types as $k => $image_type)
 			{
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				ImageManager::resize(
 					_PS_CAT_IMG_DIR_.$id_category.'.jpg',
-					_PS_CAT_IMG_DIR_.$id_category.'-'.stripslashes($image_type['name']).$theme.'.jpg',
+					_PS_CAT_IMG_DIR_.$id_category.'-'.stripslashes($image_type['name']).'.jpg',
 					(int)$image_type['width'], (int)$image_type['height']
 				);
 			}
 		}
+
 		return $ret;
 	}
 

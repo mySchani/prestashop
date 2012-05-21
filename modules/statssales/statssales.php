@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -109,7 +109,7 @@ class StatsSales extends ModuleGraph
 				FROM `'._DB_PREFIX_.'orders` o
 				'.((int)Tools::getValue('id_country') ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
 				WHERE o.valid = 1
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					'.((int)Tools::getValue('id_country') ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
 					AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween();
 		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
@@ -119,7 +119,7 @@ class StatsSales extends ModuleGraph
 				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON od.`id_order` = o.`id_order`
 				'.((int)Tools::getValue('id_country') ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
 				WHERE o.valid = 1
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					'.((int)Tools::getValue('id_country') ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
 					AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween();
 		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
@@ -158,7 +158,7 @@ class StatsSales extends ModuleGraph
 			LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON od.`id_order` = o.`id_order`
 			'.((int)($this->id_country) ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
 			WHERE o.valid = 1
-				'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+				'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 				'.((int)($this->id_country) ? 'AND a.id_country = '.(int)$this->id_country : '').'
 				AND o.`invoice_date` BETWEEN ';
 		$this->_query2 = ' GROUP BY o.id_order';

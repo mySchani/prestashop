@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12596 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -216,11 +216,11 @@ class ImageManagerCore
 	public static function validateUpload($file, $max_file_size = 0)
 	{
 		if ((int)$max_file_size > 0 && $file['size'] > (int)$max_file_size)
-			return Tools::displayError('Image is too large').' ('.($file['size'] / 1000).Tools::displayError('KB').'). '.Tools::displayError('Maximum allowed:').' '.($max_file_size / 1000).Tools::displayError('KB');
+			return Tools::displayError('Image is too large').' ('.($file['size'] / 1000).Tools::displayError('kB').'). '.Tools::displayError('Maximum allowed:').' '.($max_file_size / 1000).Tools::displayError('kB');
 		if (!ImageManager::isRealImage($file['tmp_name'], $file['type']))
 			return Tools::displayError('Image format not recognized, allowed formats are: .gif, .jpg, .png');
 		if ($file['error'])
-			return Tools::displayError('Error while uploading image; please change your server\'s settings.').'('.Tools::displayError('Error code: ').$file['error'].')';
+			return Tools::displayError('Error while uploading image; please change your server\'s settings.').'('.Tools::displayError('Error code:').$file['error'].')';
 		return false;
 	}
 

@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9795 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -26,28 +26,25 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name="label"}
-
 	{if $input.type == 'text' && $input.name == 'ps_cache_fs_directory_depth'}
 		<div id="directory_depth">
-			<div class="warn">{l s='The system CacheFS should be used only when the infrastructure contain only one front-end server. Ask your hosting company if you don\'t know.'}</div>
+			<div class="warn">{l s='The CacheFS system should be used only when the infrastructure contains only one front-end server. If you are not sure, ask your hosting company.'}</div>
+	{else}
+		{$smarty.block.parent}
 	{/if}
-
-	{if isset($input.label)}
-		<label>{$input.label} </label>
-	{/if}
-
 {/block}
 
-{block name="start_field_block"}
-	<div class="margin-form">
+{block name="input"}
 	{if $input.type == 'radio' && $input.name == 'combination' && $input.disabled}
 		<div class="warn">
-			{l s='This feature can\'t be disabled because this is currently in use.'}
+			{l s='This feature cannot be disabled because it is currently in use.'}
 		</div>
 	{/if}
+	{$smarty.block.parent}
 {/block}
 
-{block name="end_field_block"}
+{block name="description"}
+	{$smarty.block.parent}
 	{if $input.type == 'radio' && $input.name == 'combination'}
 		<ul style="list-style-type:disc;margin:0 0 0 30px;">
 			<li>{l s='Combinations tab on product page'}</li>
@@ -60,10 +57,14 @@
 			<li>{l s='Feature'}</li>
 			<li>{l s='Feature value'}</li>
 		</ul>
-	{elseif $input.type == 'text' && $input.name == 'ps_cache_fs_directory_depth'}
+	{/if}
+{/block}
+
+{block name="field"}
+	{$smarty.block.parent}
+	{if $input.type == 'text' && $input.name == 'ps_cache_fs_directory_depth'}
 		</div>
 	{/if}
-	</div>
 {/block}
 
 {block name="other_input"}
@@ -95,8 +96,8 @@
 				<div class="margin-form">
 					<table style="width: 320px;" cellspacing="0" cellpadding="0" class="table">
 					<tr>
-						<th style="width: 20px; text-align: center">{l s='Id'}</th>
-						<th style="width: 200px; text-align: center">{l s='Ip'}</th>
+						<th style="width: 20px; text-align: center">{l s='ID'}</th>
+						<th style="width: 200px; text-align: center">{l s='IP address'}</th>
 						<th style="width: 50px; text-align: center">{l s='Port'}</th>
 						<th style="width: 30px; text-align: right; font-weight: bold;">{l s='Weight'}</th>
 						<th style="width: 20px; text-align: right;">&nbsp;</th>

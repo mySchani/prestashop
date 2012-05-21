@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -59,9 +59,9 @@ class GroupReductionCore extends ObjectModel
 	public function delete()
 	{
 		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT p.`id_product`
-			FROM `'._DB_PREFIX_.'product` p
-			WHERE p.`id_category_default` = '.(int)$this->id_category
+			SELECT ps.`id_product`
+			FROM `'._DB_PREFIX_.'product_shop` ps
+			WHERE ps.`id_category_default` = '.(int)$this->id_category
 		);
 
 		$ids = array();
@@ -69,21 +69,21 @@ class GroupReductionCore extends ObjectModel
 			$ids[] = $row['id_product'];
 
 		if ($ids)
-			Db::getInstance()->delete(_DB_PREFIX_.'product_group_reduction_cache', 'id_product IN ('.implode(', ', $ids).')');
+			Db::getInstance()->delete('product_group_reduction_cache', 'id_product IN ('.implode(', ', $ids).')');
 		return (parent::delete());
 	}
 
 	protected function _clearCache()
 	{
-		return Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'product_group_reduction_cache` WHERE `id_group` = '.(int)$this->id_group);
+		return Db::getInstance()->delete('product_group_reduction_cache', 'id_group = '.(int)$this->id_group);
 	}
 
 	protected function _setCache()
 	{
 		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT p.`id_product`
-			FROM `'._DB_PREFIX_.'product` p
-			WHERE p.`id_category_default` = '.(int)$this->id_category
+			SELECT ps.`id_product`
+			FROM `'._DB_PREFIX_.'product_shop` ps
+			WHERE ps.`id_category_default` = '.(int)$this->id_category
 		);
 
 		$query = 'INSERT INTO `'._DB_PREFIX_.'product_group_reduction_cache` (`id_product`, `id_group`, `reduction`) VALUES ';
@@ -102,9 +102,9 @@ class GroupReductionCore extends ObjectModel
 	protected function _updateCache()
 	{
 		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT p.`id_product`
-			FROM `'._DB_PREFIX_.'product` p
-			WHERE p.`id_category_default` = '.(int)$this->id_category,
+			SELECT ps.`id_product`
+			FROM `'._DB_PREFIX_.'product_shop` ps
+			WHERE ps.`id_category_default` = '.(int)$this->id_category,
 		false);
 
 		$ids = array();
@@ -122,7 +122,7 @@ class GroupReductionCore extends ObjectModel
 
 	public static function getGroupReductions($id_group, $id_lang)
 	{
-		$lang = $id_lang.Context::getContext()->shop->addSqlRestrictionOnLang('cl');
+		$lang = $id_lang.Shop::addSqlRestrictionOnLang('cl');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT gr.`id_group_reduction`, gr.`id_group`, gr.`id_category`, gr.`reduction`, cl.`name` AS category_name
 			FROM `'._DB_PREFIX_.'group_reduction` gr

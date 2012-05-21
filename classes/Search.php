@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7489 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -178,7 +178,7 @@ class SearchCore
 					FROM '._DB_PREFIX_.'search_word sw
 					LEFT JOIN '._DB_PREFIX_.'search_index si ON sw.id_word = si.id_word
 					WHERE sw.id_lang = '.(int)$id_lang.'
-						AND sw.id_shop = '.$context->shop->getID(true).'
+						AND sw.id_shop = '.$context->shop->id.'
 						AND sw.word LIKE
 					'.($word[0] == '-'
 						? ' \''.pSQL(Tools::substr($word, 1, PS_SEARCH_MAX_WORD_LENGTH)).'%\''
@@ -201,7 +201,7 @@ class SearchCore
 				FROM '._DB_PREFIX_.'search_word sw
 				LEFT JOIN '._DB_PREFIX_.'search_index si ON sw.id_word = si.id_word
 				WHERE sw.id_lang = '.(int)$id_lang.'
-					AND sw.id_shop = '.$context->shop->getID(true).'
+					AND sw.id_shop = '.$context->shop->id.'
 					AND si.id_product = p.id_product
 					AND ('.implode(' OR ', $score_array).')
 			) position';
@@ -211,9 +211,10 @@ class SearchCore
 				INNER JOIN `'._DB_PREFIX_.'category_product` cp ON cp.`id_category` = cg.`id_category`
 				INNER JOIN `'._DB_PREFIX_.'category` c ON cp.`id_category` = c.`id_category`
 				INNER JOIN `'._DB_PREFIX_.'product` p ON cp.`id_product` = p.`id_product`
-				'.$context->shop->addSqlAssociation('product', 'p', false).'
+				'.Shop::addSqlAssociation('product', 'p', false).'
 				WHERE c.`active` = 1
 					AND p.`active` = 1
+					AND p.`visibility` IN ("both", "search")
 					AND indexed = 1
 					AND cg.`id_group` '.(!$id_customer ?  '= 1' : 'IN (
 						SELECT id_group FROM '._DB_PREFIX_.'customer_group
@@ -252,11 +253,12 @@ class SearchCore
 					FROM '._DB_PREFIX_.'product p
 					INNER JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 						p.`id_product` = pl.`id_product`
-						AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').'
+						AND pl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').'
 					)
+					'.Shop::addSqlAssociation('product', 'p').'
 					INNER JOIN `'._DB_PREFIX_.'category_lang` cl ON (
-						p.`id_category_default` = cl.`id_category`
-						AND cl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('cl').'
+						asso_shop_product.`id_category_default` = cl.`id_category`
+						AND cl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('cl').'
 					)
 					WHERE p.`id_product` '.$product_pool.'
 					ORDER BY position DESC LIMIT 10';
@@ -281,9 +283,11 @@ class SearchCore
 				FROM '._DB_PREFIX_.'product p
 				INNER JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 					p.`id_product` = pl.`id_product`
-					AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').'
+					AND pl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').'
 				)
-				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
+				LEFT JOIN `'._DB_PREFIX_.'product_tax_rules_group_shop` ptrgs ON (p.`id_product` = ptrgs.`id_product` 
+					AND ptrgs.id_shop='.(int)$context->shop->id.')
+				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (ptrgs.`id_tax_rules_group` = tr.`id_tax_rules_group`
 					AND tr.`id_country` = '.(int)$context->country->id.'
 					AND tr.`id_state` = 0)
 				LEFT JOIN `'._DB_PREFIX_.'tax` tax ON (tax.`id_tax` = tr.`id_tax`)
@@ -300,9 +304,11 @@ class SearchCore
 				FROM '._DB_PREFIX_.'product p
 				INNER JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 					p.`id_product` = pl.`id_product`
-					AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').'
+					AND pl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').'
 				)
-				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
+				LEFT JOIN `'._DB_PREFIX_.'product_tax_rules_group_shop` ptrgs ON (p.`id_product` = ptrgs.`id_product` 
+					AND ptrgs.id_shop='.(int)$context->shop->id.')
+				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (ptrgs.`id_tax_rules_group` = tr.`id_tax_rules_group`
 					AND tr.`id_country` = '.(int)Context::getContext()->country->id.'
 				AND tr.`id_state` = 0)
 				LEFT JOIN `'._DB_PREFIX_.'tax` tax ON (tax.`id_tax` = tr.`id_tax`)
@@ -374,12 +380,14 @@ class SearchCore
 			FROM '._DB_PREFIX_.'product p
 			LEFT JOIN '._DB_PREFIX_.'product_lang pl
 				ON p.id_product = pl.id_product
+			'.Shop::addSqlAssociation('product', 'p').'
 			LEFT JOIN '._DB_PREFIX_.'category_lang cl
-				ON (cl.id_category = p.id_category_default AND pl.id_lang = cl.id_lang)
+				ON (cl.id_category = asso_shop_product.id_category_default AND pl.id_lang = cl.id_lang)
 			LEFT JOIN '._DB_PREFIX_.'manufacturer m
 				ON m.id_manufacturer = p.id_manufacturer
 			WHERE p.indexed = 0
-				'.($id_product ? 'AND p.id_product = '.(int)$id_product : '').'
+			AND p.visibility IN ("both", "search")
+			'.($id_product ? 'AND p.id_product = '.(int)$id_product : '').'
 			LIMIT '.(int)$limit
 		);
 	}
@@ -393,17 +401,18 @@ class SearchCore
 
 		if ($full)
 		{
-			$db->Execute('TRUNCATE '._DB_PREFIX_.'search_index');
-			$db->Execute('TRUNCATE '._DB_PREFIX_.'search_word');
-			$db->Execute('UPDATE '._DB_PREFIX_.'product SET indexed = 0');
+			$db->execute('TRUNCATE '._DB_PREFIX_.'search_index');
+			$db->execute('TRUNCATE '._DB_PREFIX_.'search_word');
+			$db->execute('UPDATE '._DB_PREFIX_.'product SET indexed = 0');
 		}
 		else
 		{
-			// Do it even if you already know the product id in order to be sure that it exists
+			// Do it even if you already know the product id in order to be sure that it exists and it needs to be indexed
 			$products = $db->executeS('
 				SELECT id_product
 				FROM '._DB_PREFIX_.'product
-				WHERE '.($id_product ? 'id_product = '.(int)$id_product : 'indexed = 0')
+				WHERE visibility IN ("both", "search")
+				AND '.($id_product ? 'id_product = '.(int)$id_product : 'indexed = 0')
 			);
 
 			$ids = array();
@@ -411,7 +420,7 @@ class SearchCore
 				foreach ($products as $product)
 					$ids[] = (int)$product['id_product'];
 			if (count($ids))
-				$db->Execute('DELETE FROM '._DB_PREFIX_.'search_index WHERE id_product IN ('.implode(',', $ids).')');
+				$db->execute('DELETE FROM '._DB_PREFIX_.'search_index WHERE id_product IN ('.implode(',', $ids).')');
 		}
 
 		// Every fields are weighted according to the configuration in the backend
@@ -507,7 +516,7 @@ class SearchCore
 					if (count($queryArray))
 					{
 						// The words are inserted...
-						$db->Execute('
+						$db->execute('
 						INSERT IGNORE INTO '._DB_PREFIX_.'search_word (id_lang, id_shop, word)
 						VALUES '.implode(',', $queryArray));
 					}
@@ -601,14 +610,14 @@ class SearchCore
 		{
 			$sql = 'SELECT COUNT(DISTINCT pt.`id_product`) nb
 					FROM `'._DB_PREFIX_.'product` p
-					'.$context->shop->addSqlAssociation('product', 'p').'
+					'.Shop::addSqlAssociation('product', 'p').'
 					LEFT JOIN `'._DB_PREFIX_.'product_tag` pt ON (p.`id_product` = pt.`id_product`)
 					LEFT JOIN `'._DB_PREFIX_.'tag` t ON (pt.`id_tag` = t.`id_tag` AND t.`id_lang` = '.(int)$id_lang.')
 					LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = p.`id_product`)
 					LEFT JOIN `'._DB_PREFIX_.'category_shop` cs ON (cp.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 					LEFT JOIN `'._DB_PREFIX_.'category_group` cg ON (cg.`id_category` = cp.`id_category`)
 					WHERE p.`active` = 1
-						AND cs.`id_shop` = '.(int)Context::getContext()->shop->getID().'
+						AND cs.`id_shop` = '.(int)Context::getContext()->shop->id.'
 						AND cg.`id_group` '.(!$id_customer ?  '= 1' : 'IN (
 							SELECT id_group FROM '._DB_PREFIX_.'customer_group
 							WHERE id_customer = '.(int)$id_customer.')').'
@@ -628,12 +637,14 @@ class SearchCore
 				FROM `'._DB_PREFIX_.'product` p
 				INNER JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 					p.`id_product` = pl.`id_product`
-					AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').'
+					AND pl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').'
 				)
-				'.$context->shop->addSqlAssociation('product', 'p', false).'
+				'.Shop::addSqlAssociation('product', 'p', false).'
 				LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
 				LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
-				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
+				LEFT JOIN `'._DB_PREFIX_.'product_tax_rules_group_shop` ptrgs ON (p.`id_product` = ptrgs.`id_product` 
+					AND ptrgs.id_shop='.(int)$context->shop->id.')
+				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (ptrgs.`id_tax_rules_group` = tr.`id_tax_rules_group`
 					AND tr.`id_country` = '.(int)$context->country->id.'
 					AND tr.`id_state` = 0)
 				LEFT JOIN `'._DB_PREFIX_.'tax` tax ON (tax.`id_tax` = tr.`id_tax`)
@@ -645,7 +656,7 @@ class SearchCore
 				LEFT JOIN `'._DB_PREFIX_.'category_shop` cs ON (cg.`id_category` = cs.`id_category` AND cs.`id_shop` = '.(int)$id_shop.')
 				'.Product::sqlStock('p', 0).'
 				WHERE p.`active` = 1
-					AND cs.`id_shop` = '.(int)Context::getContext()->shop->getID().'
+					AND cs.`id_shop` = '.(int)Context::getContext()->shop->id.'
 					AND cg.`id_group` '.(!$id_customer ?  '= 1' : 'IN (
 						SELECT id_group FROM '._DB_PREFIX_.'customer_group
 						WHERE id_customer = '.(int)$id_customer.')').'

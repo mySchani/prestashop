@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -209,8 +209,16 @@ class LinkCore
 		$params = array();
 		$params['id'] = $cms->id;
 		$params['rewrite'] = (!$alias) ? $cms->link_rewrite : $alias;
-		$params['meta_keywords'] =	Tools::str2url($cms->meta_keywords);
-		$params['meta_title'] = Tools::str2url($cms->meta_title);
+
+        if (isset($cms->meta_keywords[$id_lang]) && !empty($cms->meta_keywords[$id_lang]))
+            $params['meta_keywords'] = Tools::str2url($cms->meta_keywords[$id_lang]);
+        else
+            $params['meta_keywords'] = '';
+
+        if (isset($cms->meta_title[$id_lang]) && !empty($cms->meta_title[$id_lang]))
+            $params['meta_title'] = Tools::str2url($cms->meta_title[$id_lang]);
+        else
+            $params['meta_title'] = '';
 
 		return $url.Dispatcher::getInstance()->createUrl('cms_rule', $params, $this->allow);
 	}
@@ -416,14 +424,28 @@ class LinkCore
 
 	public function getPaginationLink($type, $id_object, $nb = false, $sort = false, $pagination = false, $array = false)
 	{
+		// If no parameter $type, try to get it by using the controller name
+		if (!$type && !$id_object)
+		{
+			$method_name = 'get'.Dispatcher::getInstance()->getController().'Link';
+			if (method_exists($this, $method_name) && isset($_GET['id_'.Dispatcher::getInstance()->getController()]))
+			{
+				$type = Dispatcher::getInstance()->getController();
+				$id_object = $_GET['id_'.Dispatcher::getInstance()->getController()];
+			}
+		}
+		
 		if ($type && $id_object)
 			$url = $this->{'get'.$type.'Link'}($id_object, null);
 		else
 		{
-			$url = $this->url;
-			if (Configuration::get('PS_REWRITING_SETTINGS'))
-				$url = $this->getPageLink(basename($url));
+			if (isset(Context::getContext()->controller->php_self))
+				$name = Context::getContext()->controller->php_self;
+			else
+				$name = Dispatcher::getInstance()->getController();
+			$url = $this->getPageLink($name);
 		}
+		
 		$vars = (!$array) ? '' : array();
 		$vars_nb = array('n', 'search_query');
 		$vars_sort = array('orderby', 'orderway');

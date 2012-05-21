@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 12447 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -31,6 +31,6 @@ function update_module_followup()
 	if (!$id_followup)
 		return;
 
-	Db::getInstance()->Execute('ALTER TABLE `'._DB_PREFIX_.'log_email` ADD INDEX `date_add`(`date_add`), ADD INDEX `id_cart`(`id_cart`);');
+	Db::getInstance()->execute('ALTER TABLE `'._DB_PREFIX_.'log_email` ADD INDEX `date_add`(`date_add`), ADD INDEX `id_cart`(`id_cart`);');
 }
 

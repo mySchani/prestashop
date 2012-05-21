@@ -1,7 +1,7 @@
 <?php
 
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -20,7 +20,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8797 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -105,10 +105,9 @@ abstract class HTMLTemplateCore
 		$logo = '';
 
 		if (Configuration::get('PS_LOGO_INVOICE') != false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO_INVOICE')))
-			$logo = _PS_IMG_.Configuration::get('PS_LOGO_INVOICE');
+			$logo = _PS_IMG_DIR_.Configuration::get('PS_LOGO_INVOICE');
 		else if (Configuration::get('PS_LOGO') != false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO')))
-			$logo = _PS_IMG_.Configuration::get('PS_LOGO');
-
+			$logo = _PS_IMG_DIR_.Configuration::get('PS_LOGO');
 		return $logo;
 	}
 

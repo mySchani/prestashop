@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,24 +18,28 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 {extends file="helpers/form/form.tpl"}
 
-{block name="start_field_block"}
-	<div class="margin-form">
+{block name="input"}
 	{if $input.type == 'special'}
-		<p id="{$input.name}"><img src="../img/admin/{$input.img}" alt="" /> {$input.text}</p>
+		<div id="#resultCheckLangPack">
+			<p id="lang_pack_loading" style="display:none"><img src="../img/admin/{$input.img}" alt="" /> {$input.text}</p>
+			<p id="lang_pack_msg" style="display:none"></p>
+		</div>
+	{else}
+		{$smarty.block.parent}
 	{/if}
 {/block}
 
 {block name=script}
 		var langPackOk = "<img src=\"{$smarty.const._PS_IMG_}admin/information.png\" alt=\"\" /> {l s='A language pack is available for this ISO (name is'}";
-		var langPackVersion = "{l s='The compatible Prestashop version for this language and your system is: '}";
-		var langPackInfo = "{l s='After creating the language, you can import the content of the language pack, which you can download above under "Tools - Translations"'}";
+		var langPackVersion = "{l s='The compatible Prestashop version for this language and your system is:'}";
+		var langPackInfo = "{l s='After creating the language, you can import the content of the language pack, which you can download above under "Localization - Translations"'}";
 		var noLangPack = "<img src=\"{$smarty.const._PS_IMG_}admin/information.png\" alt=\"\" /> {l s='No language pack available on prestashop.com for this ISO code'}";
 		var download = "{l s='Download'}";
 

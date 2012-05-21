@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -52,11 +52,11 @@
 		<label>{l s='File'}</label>
 		<div class="margin-form">
 			<p><input type="file" name="attachment_file" /></p>
-			<p class="preference_description">{l s='Upload file from your computer'} ({$PS_ATTACHMENT_MAXIMUM_SIZE} {l s='Mo maximum'})</p>
+			<p class="preference_description">{l s='Upload a file from your computer'} ({$PS_ATTACHMENT_MAXIMUM_SIZE} {l s='MB maximum'})</p>
 		</div>
 		<div class="clear">&nbsp;</div>
 		<div class="margin-form">
-			<input type="submit" value="{l s='Download a attachment file'}" name="submitAddAttachments" class="button" />
+			<input type="submit" value="{l s='Download an attachment file'}" name="submitAddAttachments" class="button" />
 		</div>
 		<div class="small"><sup>*</sup> {l s='Required field'}</div>
 	</fieldset>
@@ -90,13 +90,9 @@
 	</table>
 	<div class="clear">&nbsp;</div>
 	<input type="hidden" name="arrayAttachments" id="arrayAttachments" value="{foreach $attach1 as $attach}{$attach.id_attachment},{/foreach}" />
-	<input type="submit" name="submitAttachments" id="submitAttachments" value="{l s='Update attachments'}" class="button" />
-	
-	
-	<script type="text/javascript">
-		//displayFlags(languages, id_language, allowEmployeeFormLang);
-		$(document).ready(function() {
 
+	<script type="text/javascript">
+		$(document).ready(function(){
 			$("#addAttachment").live('click', function() {
 				$("#selectAttachment2 option:selected").each(function(){
 					var val = $('#arrayAttachments').val();

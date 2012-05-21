@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10333 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13991 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -41,7 +41,7 @@ function hook_blocksearch_on_header()
 			WHERE `id_hook` = '.(int)$id_hook.'
 		');
 		
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'hook_module` (`id_module`, `id_hook`, `position`) 
 			VALUES ('.(int)$id_module.', '.(int)$id_hook.', '.($position+1).')
 		');

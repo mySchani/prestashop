@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13131 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,6 +38,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 		$this->table = 'stock';
 		$this->className = 'Stock';
 		$this->lang = false;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->fieldsDisplay = array(
 			'reference' => array(
@@ -60,7 +61,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 				'havingFilter' => true
 			),
 			'price_te' => array(
-				'title' => $this->l('Price (te)'),
+				'title' => $this->l('Price (tax excl.)'),
 				'width' => 150,
 				'orderby' => true,
 				'search' => false,
@@ -74,7 +75,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 				'search' => false,
 				'type' => 'price',
 				'currency' => true,
-				'hint' => $this->l('Valuation of the physical quantity. The sum (for all prices) is not available for all warehouses, please filter by warehouse.')
+				'hint' => $this->l('Total value of the physical quantity. The sum (for all prices) is not available for all warehouses, please filter by warehouse.')
 			),
 			'physical_quantity' => array(
 				'title' => $this->l('Physical quantity'),
@@ -134,7 +135,10 @@ class AdminStockInstantStateControllerCore extends AdminController
 		)';
 
 		if ($this->getCurrentCoverageWarehouse() != -1)
+		{
 			$this->_where .= ' AND a.id_warehouse = '.$this->getCurrentCoverageWarehouse();
+			self::$currentIndex .= '&id_warehouse='.(int)$this->getCurrentCoverageWarehouse();
+		}
 
 		// toolbar btn
 		$this->toolbar_btn = array();
@@ -148,7 +152,7 @@ class AdminStockInstantStateControllerCore extends AdminController
 		$this->ajax_params = array('id_warehouse' => $this->getCurrentCoverageWarehouse());
 
 		// displays help information
-		$this->displayInformation($this->l('This interface allows you to display detailed informations on your stock, per warehouse.'));
+		$this->displayInformation($this->l('This interface allows you to display detailed information on your stock per warehouse.'));
 
 		// sets toolbar
 		$this->initToolbar();
@@ -180,6 +184,19 @@ class AdminStockInstantStateControllerCore extends AdminController
 		if (Tools::isSubmit('csv') && (int)Tools::getValue('id_warehouse') != -1)
 			$limit = false;
 
+		$order_by_valuation = false;
+		$order_by_real_quantity = false;
+		if ($this->context->cookie->{$this->table.'Orderby'} == 'valuation')
+		{
+			unset($this->context->cookie->{$this->table.'Orderby'});
+			$order_by_valuation = true;
+		}
+		else if ($this->context->cookie->{$this->table.'Orderby'} == 'real_quantity')
+		{
+			unset($this->context->cookie->{$this->table.'Orderby'});
+			$order_by_real_quantity = true;
+		}
+
 		parent::getList($id_lang, $order_by, $order_way, $start, $limit, $id_lang_shop);
 
 		$nb_items = count($this->_list);
@@ -200,8 +217,10 @@ class AdminStockInstantStateControllerCore extends AdminController
 			$query->select('SUM(price_te * physical_quantity) as valuation');
 			$query->from('stock');
 			$query->where('id_product = '.(int)$item['id_product'].' AND id_product_attribute = '.(int)$item['id_product_attribute']);
+
 			if ($this->getCurrentCoverageWarehouse() != -1)
 				$query->where('id_warehouse = '.(int)$this->getCurrentCoverageWarehouse());
+
 			$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($query);
 
 			$item['physical_quantity'] = $res['physical_quantity'];
@@ -219,6 +238,39 @@ class AdminStockInstantStateControllerCore extends AdminController
 			else
 				$item['valuation'] = $res['valuation'];
 		}
+
+		if ($this->getCurrentCoverageWarehouse() != -1 && $order_by_valuation)
+			usort($this->_list, array($this, 'valuationCmp'));
+		else if ($order_by_real_quantity)
+			usort($this->_list, array($this, 'realQuantityCmp'));
+	}
+
+	/**
+	 * CMP
+	 *
+	 * @param array $n
+	 * @param array $m
+	 */
+	public function valuationCmp($n, $m)
+	{
+		if ($this->context->cookie->{$this->table.'Orderway'} == 'desc')
+			return $n['valuation'] > $m['valuation'];
+		else
+			return $n['valuation'] < $m['valuation'];
+	}
+
+	/**
+	 * CMP
+	 *
+	 * @param array $n
+	 * @param array $m
+	 */
+	public function realQuantityCmp($n, $m)
+	{
+		if ($this->context->cookie->{$this->table.'Orderway'} == 'desc')
+			return $n['real_quantity'] > $m['real_quantity'];
+		else
+			return $n['real_quantity'] < $m['real_quantity'];
 	}
 
 	/**

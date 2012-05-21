@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -26,17 +26,14 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name=script}
-
 	$(document).ready(function() {
 		$('#latitude, #longitude').keyup(function() {
 			$(this).val($(this).val().replace(/,/g, '.'));
 		});
 	});
-
 {/block}
 
-{block name="start_field_block"}
-	<div class="margin-form">
+{block name="input"}
 	{if $input.type == 'latitude'}
 		<input type="text"
 			{if isset($input.size)}size="{$input.size}"{/if}
@@ -50,6 +47,8 @@
 			name="longitude"
 			id="longitude"
 			value="{$fields_value['longitude']|htmlentities}" />
+	{else}
+		{$smarty.block.parent}
 	{/if}
 {/block}
 
@@ -78,7 +77,7 @@
 				</tr>
 				<tr>
 					<td>&nbsp;</td>
-					<td style="font-size: 0.85em;">{l s='Sample: 10:00AM - 9:30PM'}</td>
+					<td style="font-size: 0.85em;">{l s='e.g. 10:00AM - 9:30PM'}</td>
 				</tr>
 
 				{foreach $fields_value.days as $k => $value}

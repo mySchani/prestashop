@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9771 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -34,12 +34,6 @@
 						<div>{l s='Add new module'}</div>
 					</a>
 				</li>
-				<li>
-					<a id="desc-module-addon-new" class="toolbar_btn" href="{$addonsUrl}" title="Add new">
-						<span class="process-icon-new-module-addon" ></span>
-						<div>{l s='Add new via Addons'}</div>
-					</a>
-				</li>
 			</ul>
 
 			<div class="pageTitle">
@@ -53,13 +47,13 @@
 	<div id="module_install" style="width:500px;margin-top:5px;{if !isset($smarty.post.downloadflag)}display: none;{/if}">
 		<fieldset>
 			<legend><img src="../img/admin/add.gif" alt="{l s='Add a new module'}" class="middle" /> {l s='Add a new module'}</legend>
-			<p>{'The module must be either a zip file or a tarball.'}</p>
+			<p>{l s='The module must be either a zip file or a tarball.'}</p>
 			<div style="float:left;margin-right:50px">
 				<form action="{$currentIndex}&token={$token}" method="post" enctype="multipart/form-data">
 					<label style="width: 100px">{l s='Module file'}</label>
 					<div class="margin-form" style="padding-left: 140px">
 						<input type="file" name="file" />
-						<p>{l s='Upload the module from your computer.'}</p>
+						<p>{l s='Upload a module from your computer.'}</p>
 					</div>
 					<div class="margin-form" style="padding-left: 140px">
 						<input type="submit" name="download" value="{l s='Upload this module'}" class="button" />

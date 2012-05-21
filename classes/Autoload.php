@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12872 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13996 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,7 +80,7 @@ class Autoload
 		// regenerate the class index if the requested class is not found in the index or if the requested file doesn't exists
 		if (!isset($this->index[$classname])
 			|| ($this->index[$classname] && !is_file($this->root_dir.$this->index[$classname]))
-			|| (isset($this->index[$classname.'Core']) && $this->index[$classname.'Core'] && !is_file($this->root_dir.$this->index[$classname])))
+			|| (isset($this->index[$classname.'Core']) && $this->index[$classname.'Core'] && !is_file($this->root_dir.$this->index[$classname.'Core'])))
 			$this->generateIndex();
 
 		// If $classname has not core suffix (E.g. Shop, Product)
@@ -133,7 +133,9 @@ class Autoload
 
 		// Write classes index on disc to cache it
 		$filename = $this->root_dir.Autoload::INDEX_FILE;
-		if ((file_exists($filename) && is_writable($filename)) || is_writable(dirname($filename)))
+		if ((file_exists($filename) && !is_writable($filename)) || !is_writable(dirname($filename)))
+			throw new PrestaShopException($filename.' is not writable, please give write permissions (chmod 666) on this file.');
+		else
 		{
 			// Let's write index content in cache file
 			// In order to be sure that this file is correctly written, a check is done on the file content
@@ -157,8 +159,6 @@ class Autoload
 				throw new PrestaShopException('Your file '.$filename.' is corrupted. Please remove this file, a new one will be regenerated automatically');
 			}
 		}
-		else
-			throw new PrestaShopException($filename.' is not writable!');
 
 		$this->index = $classes;
 	}

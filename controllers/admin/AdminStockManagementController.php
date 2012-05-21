@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -36,10 +36,11 @@ class AdminStockManagementControllerCore extends AdminController
 		$this->table = 'product';
 		$this->className = 'Product';
 		$this->lang = true;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->fieldsDisplay = array(
 			'reference' => array(
-				'title' => $this->l('Reference'),
+				'title' => $this->l('Product reference'),
 				'align' => 'center',
 				'filter_key' => 'a!reference',
 				'width' => 200
@@ -75,7 +76,7 @@ class AdminStockManagementControllerCore extends AdminController
 		$this->_conf = array(
 			1 => $this->l('The product was successfully added to stock'),
 			2 => $this->l('The product was successfully removed from the stock'),
-			3 => $this->l('The transfer was successfully done'),
+			3 => $this->l('The transfer was successfully completed'),
 		);
 	}
 
@@ -101,15 +102,15 @@ class AdminStockManagementControllerCore extends AdminController
 		$this->_select = 'a.id_product as id, COUNT(pa.id_product_attribute) as variations';
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product_attribute` pa ON (pa.id_product = a.id_product)';
 		$this->_where = 'AND a.cache_is_pack = 0 AND a.is_virtual = 0';
+		$this->_group = 'GROUP BY a.id_product';
 
 		// displays informations
 		$this->displayInformation($this->l('This interface allows you to manage the stocks of each of your products and their variations.').'<br />');
 		$this->displayInformation($this->l('Through this interface, you can increase quantities (add) and decrease quantities (delete) of products for a given warehouse.'));
-		$this->displayInformation($this->l('Furthermore, you can move quantities (transfer) of products between warehouses, or within one warehouse.').'<br />');
+		$this->displayInformation($this->l('Furthermore, you can move quantities of (transfer) products between warehouses, or within one warehouse.').'<br />');
 		$this->displayInformation($this->l('Note that if you want to increase quantities of multiple products at once, you can use the supply orders tab.').'<br />');
-
-		$this->displayInformation($this->l('Finally, you will be asked to specify the state of the quantity you will add : '));
-		$this->displayInformation($this->l('usable for sale means that this quantity will be available in shop(s),'));
+		$this->displayInformation($this->l('Finally, you will be asked to specify the state of the quantity you will add:'));
+		$this->displayInformation($this->l('usable for sale means that this quantity will be available in your shop(s),'));
 		$this->displayInformation($this->l('otherwise it will be considered reserved (i.e. for other purposes).'));
 
 		return parent::renderList();
@@ -145,6 +146,8 @@ class AdminStockManagementControllerCore extends AdminController
 				$last_sm_quantity = 0;
 				$last_sm_quantity_is_usable = -1;
 				$last_sm = StockMvt::getLastPositiveStockMvt($id_product, $id_product_attribute);
+
+				// if there is a stock mvt
 				if ($last_sm != false)
 				{
 					$last_sm_currency = new Currency((int)$last_sm['id_currency']);
@@ -181,15 +184,8 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Reference:'),
+							'label' => $this->l('Product reference:'),
 							'name' => 'reference',
-							'size' => 30,
-							'disabled' => true,
-						),
-						array(
-							'type' => 'text',
-							'label' => $this->l('Manufacturer reference:'),
-							'name' => 'manufacturer_reference',
 							'size' => 30,
 							'disabled' => true,
 						),
@@ -209,7 +205,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Name :'),
+							'label' => $this->l('Name:'),
 							'name' => 'name',
 							'size' => 75,
 							'disabled' => true,
@@ -229,7 +225,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'radio',
-							'label' => $this->l('Usable for sale?:'),
+							'label' => $this->l('Usable for sale?'),
 							'name' => 'usable',
 							'required' => true,
 							'class' => 't',
@@ -262,13 +258,13 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Unit price (TE):'),
+							'label' => $this->l('Unit price (tax excl.):'),
 							'name' => 'price',
 							'required' => true,
 							'size' => 10,
 							'maxlength' => 10,
-							'desc' => $this->l('Unit purchase price or unit manufacturing cost for this product, tax excluded'),
-							'hint' => sprintf($this->l('Last unit price (te) : %s'), $last_sm_unit_price_te),
+							'desc' => $this->l('Unit purchase price or unit manufacturing cost for this product (tax excl.)'),
+							'hint' => sprintf($this->l('Last unit price (tax excl.): %s'), $last_sm_unit_price_te),
 						),
 						array(
 							'type' => 'select',
@@ -284,7 +280,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'select',
-							'label' => $this->l('Label :'),
+							'label' => $this->l('Label:'),
 							'name' => 'id_stock_mvt_reason',
 							'required' => true,
 							'options' => array(
@@ -298,7 +294,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 					),
 					'submit' => array(
-						'title' => $this->l('   Add to stock   '),
+						'title' => $this->l('Add to stock'),
 						'class' => 'button'
 					)
 				);
@@ -330,15 +326,8 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Reference:'),
+							'label' => $this->l('Product reference:'),
 							'name' => 'reference',
-							'size' => 30,
-							'disabled' => true,
-						),
-						array(
-							'type' => 'text',
-							'label' => $this->l('Manufacturer reference:'),
-							'name' => 'manufacturer_reference',
 							'size' => 30,
 							'disabled' => true,
 						),
@@ -351,7 +340,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Name :'),
+							'label' => $this->l('Name:'),
 							'name' => 'name',
 							'size' => 75,
 							'disabled' => true,
@@ -384,7 +373,7 @@ class AdminStockManagementControllerCore extends AdminController
 									'label' => $this->l('Disabled')
 								)
 							),
-							'desc' => $this->l('Do you want to remove this quantity from the usable quantity(yes) or the physical quantity(no)?')
+							'desc' => $this->l('Do you want to remove this quantity from the usable quantity (yes) or the physical quantity (no)?')
 						),
 						array(
 							'type' => 'select',
@@ -400,7 +389,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'select',
-							'label' => $this->l('Label :'),
+							'label' => $this->l('Label:'),
 							'name' => 'id_stock_mvt_reason',
 							'required' => true,
 							'options' => array(
@@ -414,7 +403,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 					),
 					'submit' => array(
-						'title' => $this->l('   Remove from stock   '),
+						'title' => $this->l('Remove from stock'),
 						'class' => 'button'
 					)
 				);
@@ -423,7 +412,7 @@ class AdminStockManagementControllerCore extends AdminController
 			case 'transferstock' :
 				$this->fields_form[]['form'] = array(
 					'legend' => array(
-						'title' => $this->l('Transfert product from warehouse to another'),
+						'title' => $this->l('Transfer product from one warehouse to another'),
 						'image' => '../img/admin/transfer_stock.png'
 					),
 					'input' => array(
@@ -445,15 +434,8 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Reference:'),
+							'label' => $this->l('Product reference:'),
 							'name' => 'reference',
-							'size' => 30,
-							'disabled' => true,
-						),
-						array(
-							'type' => 'text',
-							'label' => $this->l('Manufacturer reference:'),
-							'name' => 'manufacturer_reference',
 							'size' => 30,
 							'disabled' => true,
 						),
@@ -466,7 +448,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 						array(
 							'type' => 'text',
-							'label' => $this->l('Name :'),
+							'label' => $this->l('Name:'),
 							'name' => 'name',
 							'size' => 75,
 							'disabled' => true,
@@ -478,7 +460,7 @@ class AdminStockManagementControllerCore extends AdminController
 							'size' => 10,
 							'maxlength' => 6,
 							'required' => true,
-							'desc' => $this->l('Physical quantity to transfer.')
+							'desc' => $this->l('Quantity to transfer:')
 						),
 						array(
 							'type' => 'select',
@@ -490,11 +472,11 @@ class AdminStockManagementControllerCore extends AdminController
 								'id' => 'id_warehouse',
 								'name' => 'name'
 							),
-							'desc' => $this->l('Select the warehouse want to transfer the product from.')
+							'desc' => $this->l('Select the warehouse from which you want to transfer the product.')
 						),
 						array(
 							'type' => 'radio',
-							'label' => $this->l('Usable for sale in source warehouse ?'),
+							'label' => $this->l('Usable for sale in source warehouse?'),
 							'name' => 'usable_from',
 							'required' => true,
 							'class' => 't',
@@ -523,11 +505,11 @@ class AdminStockManagementControllerCore extends AdminController
 								'id' => 'id_warehouse',
 								'name' => 'name'
 							),
-							'desc' => $this->l('Select the warehouse to transfer the product to.')
+							'desc' => $this->l('Select the warehouse to which to transfer the product.')
 						),
 						array(
 							'type' => 'radio',
-							'label' => $this->l('Usable for sale in destination warehouse ?'),
+							'label' => $this->l('Usable for sale in destination warehouse?'),
 							'name' => 'usable_to',
 							'required' => true,
 							'class' => 't',
@@ -548,7 +530,7 @@ class AdminStockManagementControllerCore extends AdminController
 						),
 					),
 					'submit' => array(
-						'title' => $this->l('   Transfer   '),
+						'title' => $this->l('Transfer'),
 						'class' => 'button'
 					)
 				);
@@ -595,7 +577,7 @@ class AdminStockManagementControllerCore extends AdminController
 				$this->errors[] = Tools::displayError('The selected product is not valid.');
 
 			// get quantity and check that the post value is really an integer
-			// If it's not, we have to do nothing.
+			// If it's not, we have nothing to do
 			$quantity = Tools::getValue('quantity', 0);
 			if (!is_numeric($quantity) || (int)$quantity <= 0)
 				$this->errors[] = Tools::displayError('The quantity value is not valid.');
@@ -669,7 +651,7 @@ class AdminStockManagementControllerCore extends AdminController
 					Tools::redirectAdmin($redirect.'&conf=1');
 				}
 				else
-					$this->errors[] = Tools::displayError('An error occured. No stock was added.');
+					$this->errors[] = Tools::displayError('An error occurred. No stock was added.');
 			}
 		}
 
@@ -690,7 +672,7 @@ class AdminStockManagementControllerCore extends AdminController
 					Tools::redirectAdmin($redirect.'&conf=2');
 				}
 				else
-					$this->errors[] = Tools::displayError('It is not possible to remove the specified quantity or an error occured. No stock was removed.');
+					$this->errors[] = Tools::displayError('It is not possible to remove the specified quantity or an error occurred. No stock was removed.');
 			}
 		}
 
@@ -718,7 +700,7 @@ class AdminStockManagementControllerCore extends AdminController
 				$this->errors[] = Tools::displayError('You have to specify if the product quantity is usable for sale on shops in destination warehouse.');
 			$usable_to = (bool)$usable_to;
 
-			// if all is ok, transfer stock
+			// if we can process stock transfers
 			if (count($this->errors) == 0)
 			{
 				// transfer stock
@@ -737,7 +719,7 @@ class AdminStockManagementControllerCore extends AdminController
 				if ($is_transfer)
 					Tools::redirectAdmin($redirect.'&conf=3');
 				else
-					$this->errors[] = Tools::displayError('It is not possible to transfer the specified quantity, or an error occured. No stock was transfered.');
+					$this->errors[] = Tools::displayError('It is not possible to transfer the specified quantity, or an error occurred. No stock was transferred.');
 			}
 		}
 	}
@@ -791,19 +773,19 @@ class AdminStockManagementControllerCore extends AdminController
 		if (Tools::isSubmit('addstock'))
 		{
 			$this->display = 'addstock';
-			$this->toolbar_title = $this->l('Stock : Add product');
+			$this->toolbar_title = $this->l('Stock: Add product');
 		}
 
 		if (Tools::isSubmit('removestock'))
 		{
 			$this->display = 'removestock';
-			$this->toolbar_title = $this->l('Stock : Remove product');
+			$this->toolbar_title = $this->l('Stock: Remove product');
 		}
 
 		if (Tools::isSubmit('transferstock'))
 		{
 			$this->display = 'transferstock';
-			$this->toolbar_title = $this->l('Stock : Transfer product');
+			$this->toolbar_title = $this->l('Stock: Transfer product');
 		}
 	}
 
@@ -845,7 +827,7 @@ class AdminStockManagementControllerCore extends AdminController
 			// Render list
 			$helper = new HelperList();
 			$helper->bulk_actions = array();
-			$helper->toolbar_fix = $this->toolbar_fix;
+			$helper->toolbar_scroll = $this->toolbar_scroll;
 			$helper->show_toolbar = false;
 			$helper->actions = $this->actions;
 			$helper->list_skip_actions = $this->list_skip_actions;
@@ -1051,6 +1033,9 @@ class AdminStockManagementControllerCore extends AdminController
 						'id_stock_mvt_reason' => Tools::getValue('id_stock_mvt_reason', ''),
 						'is_post' => 1,
 					);
+
+					if ($this->display == 'addstock')
+						$_POST['id_product'] = (int)$id_product;
 
 					if ($this->display == 'transferstock')
 					{

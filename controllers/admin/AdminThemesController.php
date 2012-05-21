@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7346 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -91,12 +91,27 @@ class AdminThemesControllerCore extends AdminController
 	
 	public $className = 'Theme';
 	public $table = 'theme';
+	protected $toolbar_scroll = false;
 
 	public function init()
 	{
 		parent::init();
 
+		$this->can_display_themes = (!Shop::isFeatureActive() || Shop::getContext() == Shop::CONTEXT_SHOP) ? true : false;
+
 		$this->options = array(
+			'theme' => array(
+				'title' => sprintf($this->l('Select theme for shop %s'), $this->context->shop->name),
+				'description' => (!$this->can_display_themes) ? $this->l('You must select a shop from the above list if you want to select a theme') : '',
+				'fields' => array(
+					'theme_for_shop' => array(
+						'type' => 'theme',
+						'themes' => Theme::getThemes(),
+						'id_theme' => $this->context->shop->id_theme,
+						'can_display_themes' => $this->can_display_themes,
+					),
+				),
+			),
 			'appearance' => array(
 				'title' =>	$this->l('Appearance'),
 				'icon' =>	'email',
@@ -110,8 +125,8 @@ class AdminThemesControllerCore extends AdminController
 					'PS_LOGO_MAIL' => array(
 						'title' => $this->l('Mail logo:'),
 						'desc' => 
-							((Configuration::get('PS_LOGO_MAIL') === false) ? '<span class="light-warning">'.$this->l('Warning: No email logo defined, the header logo is used instead.').'</span><br />' : '').
-							$this->l('Will appear on e-mail headers, if undefined the Header logo will be used'),
+							((Configuration::get('PS_LOGO_MAIL') === false) ? '<span class="light-warning">'.$this->l('Warning: No e-mail logo defined, the header logo is used instead.').'</span><br />' : '').
+							$this->l('Will appear on e-mail headers. If undefined, the Header logo will be used'),
 						'type' => 'file',
 						'thumb' => (Configuration::get('PS_LOGO_MAIL') !== false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO_MAIL'))) ? _PS_IMG_.Configuration::get('PS_LOGO_MAIL').'?date='.time() : _PS_IMG_.Configuration::get('PS_LOGO').'?date='.time()
 					),
@@ -119,7 +134,7 @@ class AdminThemesControllerCore extends AdminController
 						'title' => $this->l('Invoice logo:'),
 						'desc' => 
 							((Configuration::get('PS_LOGO_INVOICE') === false) ? '<span class="light-warning">'.$this->l('Warning: No invoice logo defined, the header logo is used instead.').'</span><br />' : '').
-							$this->l('Will appear on invoices headers, if undefined the Header logo will be used'),
+							$this->l('Will appear on invoice headers. If undefined, the Header logo will be used'),
 						'type' => 'file',
 						'thumb' => (Configuration::get('PS_LOGO_INVOICE') !== false && file_exists(_PS_IMG_DIR_.Configuration::get('PS_LOGO_INVOICE'))) ? _PS_IMG_.Configuration::get('PS_LOGO_INVOICE').'?date='.time() : _PS_IMG_.Configuration::get('PS_LOGO').'?date='.time()
 					),
@@ -145,7 +160,7 @@ class AdminThemesControllerCore extends AdminController
 						'size' => 20
 					),
 				),
-				'submit' => array('title' => $this->l('   Save   '), 'class' => 'button')
+				'submit' => array('title' => $this->l('Save'), 'class' => 'button')
 			),
 		);
 
@@ -186,7 +201,7 @@ class AdminThemesControllerCore extends AdminController
 			'tinymce' => false,
 			'legend' => array(
 				'title' => $this->l('Theme'),
-				'image' => '../img/admin/tab-themes.gif'
+				'image' => '../img/admin/themes.gif'
 			),
 			'input' => array(
 				array(
@@ -199,7 +214,7 @@ class AdminThemesControllerCore extends AdminController
 				),
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
@@ -219,7 +234,7 @@ class AdminThemesControllerCore extends AdminController
 				'type' => 'select',
 				'name' => 'based_on',
 				'label' => $this->l('Copy missing files from existing theme:'),
-				'desc' => $this->l('If you create a new theme, it\'s recommended to use  default theme files for basic.'),
+				'desc' => $this->l('If you create a new theme, it\'s recommended to use default theme files.'),
 				'options' => array(
 					'id' => 'id', 'name' => 'name', 
 					'default' => array('value' => 0, 'label' => '&nbsp;-&nbsp;'),
@@ -310,7 +325,7 @@ class AdminThemesControllerCore extends AdminController
 		$obj = $this->loadObject();
 		if ($obj && $obj->isUsed())
 		{
-			$this->errors[] = $this->l('This theme is used by at least one shop. Please choose another theme first.');
+			$this->errors[] = $this->l('This theme is already used by at least one shop. Please choose another theme first.');
 			return false;
 		}
 
@@ -339,7 +354,6 @@ class AdminThemesControllerCore extends AdminController
 		// notice : readfile should be replaced by something else
 		if (@fsockopen('addons.prestashop.com', 80, $errno, $errst, 3))
 			readfile('http://addons.prestashop.com/adminmodules.php?lang='.$this->context->language->iso_code);
-		$this->content = '';
 	}
 
 	/**
@@ -467,7 +481,7 @@ class AdminThemesControllerCore extends AdminController
 	 */
 	public function updateOptionPsLogo()
 	{
-		$id_shop = Context::getContext()->shop->getID();
+		$id_shop = Context::getContext()->shop->id;
 		if (isset($_FILES['PS_LOGO']['tmp_name']) && $_FILES['PS_LOGO']['tmp_name'])
 		{
 			if ($error = ImageManager::validateUpload($_FILES['PS_LOGO'], 300000))
@@ -494,7 +508,7 @@ class AdminThemesControllerCore extends AdminController
 	 */
 	public function updateOptionPsLogoMail()
 	{
-		$id_shop = Context::getContext()->shop->getID();
+		$id_shop = Context::getContext()->shop->id;
 		if (isset($_FILES['PS_LOGO_MAIL']['tmp_name']) && $_FILES['PS_LOGO_MAIL']['tmp_name'])
 		{
 			if ($error = ImageManager::validateUpload($_FILES['PS_LOGO_MAIL'], 300000))
@@ -520,7 +534,7 @@ class AdminThemesControllerCore extends AdminController
 	 */
 	public function updateOptionPsLogoInvoice()
 	{
-		$id_shop = Context::getContext()->shop->getID();
+		$id_shop = Context::getContext()->shop->id;
 		if (isset($_FILES['PS_LOGO_INVOICE']['tmp_name']) && $_FILES['PS_LOGO_INVOICE']['tmp_name'])
 		{
 			if ($error = ImageManager::validateUpload($_FILES['PS_LOGO_INVOICE'], 300000))
@@ -546,7 +560,7 @@ class AdminThemesControllerCore extends AdminController
 	 */
 	public function updateOptionPsStoresIcon()
 	{
-		$id_shop = Context::getContext()->shop->getID();
+		$id_shop = Context::getContext()->shop->id;
 		if (isset($_FILES['PS_STORES_ICON']['tmp_name']) && $_FILES['PS_STORES_ICON']['tmp_name'])
 		{
 			if ($error = ImageManager::validateUpload($_FILES['PS_STORES_ICON'], 300000))
@@ -572,13 +586,30 @@ class AdminThemesControllerCore extends AdminController
 	 */
 	public function updateOptionPsFavicon()
 	{
-		$id_shop = Context::getContext()->shop->getID();
+		$id_shop = Context::getContext()->shop->id;
 		if ($id_shop == Configuration::get('PS_SHOP_DEFAULT'))
 			$this->uploadIco('PS_FAVICON', _PS_IMG_DIR_.'favicon.ico');
 		if ($this->uploadIco('PS_FAVICON', _PS_IMG_DIR_.'favicon-'.(int)$id_shop.'.ico'))
 			Configuration::updateValue('PS_FAVICON', 'favicon-'.(int)$id_shop.'.ico');
 		
 		Configuration::updateGlobalValue('PS_FAVICON', 'favicon.ico');
+	}
+
+	/**
+	 * Update theme for current shop
+	 */
+	public function updateOptionThemeForShop()
+	{
+		if (!$this->can_display_themes)
+			return;
+
+		$id_theme = (int)Tools::getValue('id_theme');
+		if ($id_theme && $this->context->shop->id_theme != $id_theme)
+		{
+			$this->context->shop->id_theme = $id_theme;
+			$this->context->shop->update();
+			$this->redirect_after = self::$currentIndex.'&token='.$this->token;
+		}
 	}
 
 	protected function uploadIco($name, $dest)
@@ -594,5 +625,36 @@ class AdminThemesControllerCore extends AdminController
 				$this->errors[] = sprintf(Tools::displayError('An error occurred while uploading favicon: %s to %s'), $_FILES[$name]['tmp_name'], $dest);
 		}
 		return !count($this->errors) ? true : false;
+	}
+
+	public function initProcess()
+	{
+		parent::initProcess();
+		// This is a composite page, we don't want the "options" display mode
+		if ($this->display == 'options')
+			$this->display = '';
+	}
+
+	/**
+	 * Function used to render the options for this controller
+	 */
+	public function renderOptions()
+	{
+		if ($this->options && is_array($this->options))
+		{
+			$helper = new HelperOptions($this);
+			$this->setHelperDisplay($helper);
+			$helper->toolbar_scroll = true;
+			$helper->title = $this->l('Theme appearance');
+			$helper->toolbar_btn = array('save' => array(
+								'href' => '#',
+								'desc' => $this->l('Save')
+							));
+			$helper->id = $this->id;
+			$helper->tpl_vars = $this->tpl_option_vars;
+			$options = $helper->generateOptions($this->options);
+
+			return $options;
+		}
 	}
 }

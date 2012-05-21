@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -118,6 +118,10 @@ class SceneCore extends ObjectModel
 
 	public function deleteImage()
 	{
+		// Hack to prevent the main scene image from being deleted in AdminController::uploadImage() when a thumb image is uploaded
+		if (isset($_FILES['thumb']) && (!isset($_FILES['image']) || empty($_FILES['image']['name'])))
+			return true;
+
 		if (parent::deleteImage())
 		{
 			if (file_exists($this->image_dir.'thumbs/'.$this->id.'-thumb_scene.'.$this->image_format)
@@ -209,7 +213,7 @@ class SceneCore extends ObjectModel
 		$sql = 'SELECT s.*
 				FROM `'._DB_PREFIX_.'scene_category` sc
 				LEFT JOIN `'._DB_PREFIX_.'scene` s ON (sc.id_scene = s.id_scene)
-				'.$context->shop->addSqlAssociation('scene', 's').'
+				'.Shop::addSqlAssociation('scene', 's').'
 				LEFT JOIN `'._DB_PREFIX_.'scene_lang` sl ON (sl.id_scene = s.id_scene)
 				WHERE sc.id_category = '.(int)$id_category.'
 					AND sl.id_lang = '.(int)$id_lang

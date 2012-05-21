@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -91,7 +91,7 @@ class CMSCore extends ObjectModel
 		SELECT c.id_cms, cl.link_rewrite, cl.meta_title
 		FROM '._DB_PREFIX_.'cms c
 		LEFT JOIN '._DB_PREFIX_.'cms_lang cl ON (c.id_cms = cl.id_cms AND cl.id_lang = '.(int)$id_lang.')
-		'.Context::getContext()->shop->addSqlAssociation('cms', 'c').'
+		'.Shop::addSqlAssociation('cms', 'c').'
 		WHERE 1
 		'.(($selection !== null) ? ' AND c.id_cms IN ('.implode(',', array_map('intval', $selection)).')' : '').
 		($active ? ' AND c.`active` = 1 ' : '').
@@ -117,7 +117,7 @@ class CMSCore extends ObjectModel
 		SELECT c.id_cms, l.meta_title
 		FROM  '._DB_PREFIX_.'cms c
 		JOIN '._DB_PREFIX_.'cms_lang l ON (c.id_cms = l.id_cms)
-		'.Context::getContext()->shop->addSqlAssociation('cms', 'c').'
+		'.Shop::addSqlAssociation('cms', 'c').'
 		'.(($id_block) ? 'JOIN '._DB_PREFIX_.'block_cms b ON (c.id_cms = b.id_cms)' : '').'
 		WHERE l.id_lang = '.(int)$id_lang.(($id_block) ? ' AND b.id_block = '.(int)$id_block : '').($active ? ' AND c.`active` = 1 ' : '').'
 		GROUP BY c.id_cms
@@ -160,11 +160,14 @@ class CMSCore extends ObjectModel
 
 	public static function cleanPositions($id_category)
 	{
-		$result = Db::getInstance()->executeS('
+		$sql = '
 		SELECT `id_cms`
 		FROM `'._DB_PREFIX_.'cms`
 		WHERE `id_cms_category` = '.(int)$id_category.'
-		ORDER BY `position`');
+		ORDER BY `position`';
+
+		$result = Db::getInstance()->executeS($sql);
+
 		for ($i = 0, $total = count($result); $i < $total; ++$i)
 		{
 			$sql = 'UPDATE `'._DB_PREFIX_.'cms`
@@ -178,7 +181,12 @@ class CMSCore extends ObjectModel
 
 	public static function getLastPosition($id_category)
 	{
-		return (Db::getInstance()->getValue('SELECT MAX(position)+1 FROM `'._DB_PREFIX_.'cms` WHERE `id_cms_category` = '.(int)$id_category));
+		$sql = '
+		SELECT MAX(position) + 1
+		FROM `'._DB_PREFIX_.'cms`
+		WHERE `id_cms_category` = '.(int)$id_category;
+
+		return (Db::getInstance()->getValue($sql));
 	}
 
 	public static function getCMSPages($id_lang = null, $id_cms_category = null, $active = true)
@@ -207,6 +215,7 @@ class CMSCore extends ObjectModel
 				LEFT JOIN  `'._DB_PREFIX_.'lang` AS l ON c.`id_lang` = l.`id_lang`
 				WHERE c.`id_cms` = '.(int)$id_cms.'
 				AND l.`active` = 1';
+
 		return Db::getInstance()->executeS($sql);
 	}
 }

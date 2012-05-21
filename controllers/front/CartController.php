@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -34,6 +34,8 @@ class CartControllerCore extends FrontController
 	protected $id_address_delivery;
 	protected $customization_id;
 	protected $qty;
+	
+	protected $ajax_refresh = false;
 
 	/**
 	 * This is not a public page, so the canonical redirection is disabled
@@ -111,7 +113,9 @@ class CartControllerCore extends FrontController
 				$this->context->cart->update();
 			}
 		}
-		CartRule::autoRemoveFromCart();
+		$removed = CartRule::autoRemoveFromCart();
+		if (count($removed) && (int)Tools::getValue('allow_refresh'))
+			$this->ajax_refresh = true;
 	}
 
 	protected function processChangeProductAddressDelivery()
@@ -215,18 +219,28 @@ class CartControllerCore extends FrontController
 
 			if (!$this->errors)
 			{
+				$cart_rules = $this->context->cart->getCartRules();
 				$updateQuantity = $this->context->cart->updateQty($this->qty, $this->id_product, $this->id_product_attribute, $this->customization_id, $this->id_address_delivery, Tools::getValue('op', 'up'));
 				if ($updateQuantity < 0)
 				{
 					// If product has attribute, minimal quantity is set with minimal quantity of attribute
 					$minimal_quantity = ($this->id_product_attribute) ? Attribute::getAttributeMinimalQty($this->id_product_attribute) : $product->minimal_quantity;
-					$this->errors[] = Tools::displayError('You must add').' '.$minimal_quantity.' '.Tools::displayError('Minimum quantity');
+					$this->errors[] = Tools::displayError('You must add', false).' '.$minimal_quantity.' '.Tools::displayError('Minimum quantity', false);
 				}
 				else if (!$updateQuantity)
 					$this->errors[] = Tools::displayError('You already have the maximum quantity available for this product.', false);
+				else
+				{
+					$cart_rules2 = $this->context->cart->getCartRules();
+					if (count($cart_rules2) != count($cart_rules) && (int)Tools::getValue('allow_refresh'))
+						$this->ajax_refresh = true;
+				}
 			}
 		}
-		CartRule::autoRemoveFromCart();
+		
+		$removed = CartRule::autoRemoveFromCart();
+		if (count($removed) && (int)Tools::getValue('allow_refresh'))
+			$this->ajax_refresh = true;
 	}
 
 	/**
@@ -255,6 +269,8 @@ class CartControllerCore extends FrontController
 	{
 		if ($this->errors)
 			die(Tools::jsonEncode(array('hasError' => true, 'errors' => $this->errors)));
+		if ($this->ajax_refresh)
+			die(Tools::jsonEncode(array('refresh' => true)));
 
 		if (Tools::getIsset('summary'))
 		{

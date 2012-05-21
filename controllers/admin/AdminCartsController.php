@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -51,7 +51,7 @@ class AdminCartsControllerCore extends AdminController
 				'width' => 25
 			),
 			'id_order' => array(
-				'title' => $this->l('ID Order'),
+				'title' => $this->l('Order ID'),
 				'align' => 'center', 'width' => 25
 			),
 			'customer' => array(
@@ -229,8 +229,10 @@ class AdminCartsControllerCore extends AdminController
 		if ($this->tabAccess['edit'] === '1')
 		{
 			$errors = array();
-			if (!($id_product = (int)Tools::getValue('id_product')) || !($id_product_attribute = (int)Tools::getValue('id_product_attribute')))
+			if ((!$id_product = (int)Tools::getValue('id_product')) || !Validate::isInt($id_product))
 				$errors[] = Tools::displayError('Invalid product');
+			if (($id_product_attribute = (int)Tools::getValue('id_product_attribute')) && !Validate::isInt($id_product_attribute))
+				$errors[] = Tools::displayError('Invalid combination');
 			if (count($errors))
 				die(Tools::jsonEncode($errors));
 
@@ -247,7 +249,7 @@ class AdminCartsControllerCore extends AdminController
 			if (!$this->context->cart->id)
 				return;
 			if ($this->context->cart->OrderExists())
-				$errors[] = Tools::displayError('An order already placed with this cart');
+				$errors[] = Tools::displayError('An order has already been placed with this cart');
 			elseif (!($id_product = (int)Tools::getValue('id_product')) || !($product = new Product((int)$id_product, true, $this->context->language->id)))
 				$errors[] = Tools::displayError('Invalid product');
 			elseif (!($qty = Tools::getValue('qty')) || $qty == 0)
@@ -296,6 +298,31 @@ class AdminCartsControllerCore extends AdminController
 			if (Validate::isMessage(($gift_message = pSQL(Tools::getValue('gift_message')))))
 				$this->context->cart->gift_message = $gift_message;
 			$this->context->cart->save();
+			echo Tools::jsonEncode($this->ajaxReturnVars());
+		}
+	}
+	
+	public function ajaxProcessUpdateOrderMessage()
+	{
+		if ($this->tabAccess['edit'] === '1')
+		{
+			$id_message = false;
+			if ($old_message = Message::getMessageByCartId((int)$this->context->cart->id))
+				$id_message = $old_message['id_message'];
+			$message = new Message((int)$id_message);
+			if ($message_content = Tools::getValue('message'))
+			{
+				if (Validate::isMessage($message_content))
+				{
+					$message->message = htmlentities($message_content, ENT_COMPAT, 'UTF-8');
+					$message->id_cart = (int)$this->context->cart->id;
+					$message->id_customer = (int)$this->context->cart->id_customer;
+					$message->save();
+				}
+			}
+			else
+				if (Validate::isLoadedObject($message))
+					$message->delete();
 			echo Tools::jsonEncode($this->ajaxReturnVars());
 		}
 	}
@@ -502,12 +529,18 @@ class AdminCartsControllerCore extends AdminController
 
 	public function ajaxReturnVars()
 	{
-		$id_cart = (int)$this->context->cart->id;
+		$id_cart = (int)$this->context->cart->id;	
+
+		$message_content = '';
+		if ($message = Message::getMessageByCartId((int)$this->context->cart->id))
+			$message_content = $message['message'];
+	
 		return array('summary' => $this->getCartSummary(),
 						'delivery_option_list' => $this->getDeliveryOptionList(),
 						'cart' => $this->context->cart,
 						'addresses' => $this->context->customer->getAddresses((int)$this->context->cart->id_lang),
 						'id_cart' => $id_cart,
+						'order_message' => $message_content,
 						'link_order' => $this->context->link->getPageLink(
 							'order', false,
 							(int)$this->context->cart->id_lang,

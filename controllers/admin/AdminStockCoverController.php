@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13131 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13933 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,6 +40,7 @@ class AdminStockCoverControllerCore extends AdminController
 		$this->className = 'Product';
 		$this->lang = true;
 		$this->colorOnBackground = true;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->fieldsDisplay = array(
 			'reference' => array(
@@ -189,8 +190,16 @@ class AdminStockCoverControllerCore extends AdminController
 		$this->_select = 'a.id_product as id, COUNT(pa.id_product_attribute) as variations, SUM(s.usable_quantity) as stock';
 		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product_attribute` pa ON (pa.id_product = a.id_product)
 						INNER JOIN `'._DB_PREFIX_.'stock` s ON (s.id_product = a.id_product)';
+
+		self::$currentIndex .= '&coverage_period='.(int)$this->getCurrentCoveragePeriod().'&warn_days='.(int)$this->getCurrentWarning();
 		if ($this->getCurrentCoverageWarehouse() != -1)
-			$this->_where .= ' AND s.id_warehouse = '.$this->getCurrentCoverageWarehouse();
+		{
+			$this->_where .= ' AND s.id_warehouse = '.(int)$this->getCurrentCoverageWarehouse();
+			self::$currentIndex .= '&id_warehouse='.(int)$this->getCurrentCoverageWarehouse();
+		}
+
+		// Hack for multi shop ..
+		$this->_where .= ' AND b.id_shop = 1';
 
 		$this->tpl_list_vars['stock_cover_periods'] = $this->stock_cover_periods;
 		$this->tpl_list_vars['stock_cover_cur_period'] = $this->getCurrentCoveragePeriod();
@@ -254,7 +263,7 @@ class AdminStockCoverControllerCore extends AdminController
 			}
 			else
 			{
-				$item['stock'] = 'See details';
+				$item['stock'] = $this->l('See details');
 				$item['reference'] = '--';
 				$item['ean13'] = '--';
 				$item['upc'] = '--';

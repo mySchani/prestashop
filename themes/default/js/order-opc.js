@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -33,7 +33,7 @@ function updateCarrierList(json)
 	//	html += json.HOOK_EXTRACARRIER;
 	
 	$('#carrier_area').replaceWith(html);
-	
+	bindInputs();
 	/* update hooks for carrier module */
 	$('#HOOK_BEFORECARRIER').html(json.HOOK_BEFORECARRIER);
 }
@@ -578,6 +578,20 @@ $(function() {
 		});
 	}
 	
+	bindInputs();
+	
+	$('#opc_account_form input,select,textarea').change(function() {
+		if ($(this).is(':visible'))
+		{
+			$('#opc_account_saved').fadeOut('slow');
+			$('#submitAccount').show();
+		}
+	});
+	
+});
+
+function bindInputs()
+{
 	// Order message update
 	$('#message').blur(function() {
 		$('#opc_delivery_methods-overlay').fadeIn('slow');
@@ -627,9 +641,9 @@ $(function() {
 		$('p#gift_div').show();
 	else
 		$('p#gift_div').hide();
-	
+
 	// Gift message update
-	$('textarea#gift_message').blur(function() {
+	$('textarea#gift_message').change(function() {
 		updateCarrierSelectionAndGift();
 	});
 	
@@ -656,16 +670,7 @@ $(function() {
 			}
 		});
 	});
-	
-	$('#opc_account_form input,select,textarea').change(function() {
-		if ($(this).is(':visible'))
-		{
-			$('#opc_account_saved').fadeOut('slow');
-			$('#submitAccount').show();
-		}
-	});
-	
-});
+}
 
 function multishippingMode(it)
 {
@@ -678,6 +683,7 @@ function multishippingMode(it)
 		$('#address_invoice_form').show();
 		
 		$('#link_multishipping_form').click(function() {return false;});
+		$('.address_add a').attr('href', addressMultishippingUrl);
 		
 		$('#link_multishipping_form').fancybox({
 			'transitionIn': 'elastic',
@@ -740,6 +746,7 @@ function multishippingMode(it)
 		} else {
 			$('#address_invoice_form').show();
 		}
+		$('.address_add a').attr('href', addressUrl);
 		
 		// Disable multi address shipping
 		$.ajax({
@@ -772,4 +779,7 @@ $(document).ready(function() {
 		$('.addressesAreEquals').hide();
 		$('.addressesAreEquals').find('input').attr('checked', false);
 	}
+	
+	if (typeof(open_multishipping_fancybox) != 'undefined' && open_multishipping_fancybox)
+		$('#link_multishipping_form').click();
 });

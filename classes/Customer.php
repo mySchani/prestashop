@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -133,6 +133,8 @@ class CustomerCore extends ObjectModel
 
 	public $groupBox;
 
+	public $account_number = '';
+
 	protected $webserviceParameters = array(
 		'fields' => array(
 			'id_default_group' => array('xlink_resource' => 'groups'),
@@ -143,6 +145,9 @@ class CustomerCore extends ObjectModel
 			'deleted' => array(),
 			'passwd' => array('setter' => 'setWsPasswd'),
 		),
+		'associations' => array(
+				'groups' => array('resource' => 'group'),
+		)
 	);
 
 	/**
@@ -152,35 +157,36 @@ class CustomerCore extends ObjectModel
 		'table' => 'customer',
 		'primary' => 'id_customer',
 		'fields' => array(
-			'secure_key' => 				array('type' => self::TYPE_STRING, 'validate' => 'isMd5', 'copy_from_front' => false),
-			'lastname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32, 'copy_from_front' => true),
-			'firstname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32, 'copy_from_front' => true),
-			'email' => 						array('type' => self::TYPE_STRING, 'validate' => 'isEmail', 'required' => true, 'size' => 128, 'copy_from_front' => true),
-			'passwd' => 					array('type' => self::TYPE_STRING, 'validate' => 'isPasswd', 'required' => true, 'size' => 32, 'copy_from_front' => true),
-			'last_passwd_gen' =>			array('type' => self::TYPE_STRING, 'copy_from_front' => false),
-			'id_gender' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'copy_from_front' => true),
-			'birthday' => 					array('type' => self::TYPE_DATE, 'validate' => 'isBirthDate', 'copy_from_front' => true),
-			'newsletter' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => true),
-			'newsletter_date_add' =>		array('type' => self::TYPE_DATE,'copy_from_front' => false),
-			'ip_registration_newsletter' =>	array('type' => self::TYPE_STRING, 'copy_from_front' => false),
-			'optin' => 						array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => true),
-			'website' =>					array('type' => self::TYPE_STRING, 'validate' => 'isUrl', 'copy_from_front' => true),
-			'company' =>					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'copy_from_front' => true),
-			'siret' =>						array('type' => self::TYPE_STRING, 'validate' => 'isSiret', 'copy_from_front' => true),
-			'ape' =>						array('type' => self::TYPE_STRING, 'validate' => 'isApe', 'copy_from_front' => true),
-			'outstanding_allow_amount' =>	array('type' => self::TYPE_INT, 'validate' => 'isFloat', 'copy_from_front' => false),
-			'show_public_prices' =>			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => false),
-			'id_risk' =>					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'copy_from_front' => false),
-			'max_payment_days' =>			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'copy_from_front' => false),
-			'active' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => false),
-			'deleted' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => false),
-			'note' => 						array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65000, 'copy_from_front' => false),
-			'is_guest' =>					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_from_front' => false),
-			'id_shop' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'copy_from_front' => false),
-			'id_group_shop' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'copy_from_front' => false),
-			'id_default_group' => 			array('type' => self::TYPE_INT, 'copy_from_front' => false),
-			'date_add' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'copy_from_front' => false),
-			'date_upd' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'copy_from_front' => false),
+			'secure_key' => 				array('type' => self::TYPE_STRING, 'validate' => 'isMd5', 'copy_post' => false),
+			'lastname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'firstname' => 					array('type' => self::TYPE_STRING, 'validate' => 'isName', 'required' => true, 'size' => 32),
+			'email' => 						array('type' => self::TYPE_STRING, 'validate' => 'isEmail', 'required' => true, 'size' => 128),
+			'passwd' => 					array('type' => self::TYPE_STRING, 'validate' => 'isPasswd', 'required' => true, 'size' => 32),
+			'last_passwd_gen' =>			array('type' => self::TYPE_STRING, 'copy_post' => false),
+			'id_gender' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId'),
+			'birthday' => 					array('type' => self::TYPE_DATE, 'validate' => 'isBirthDate'),
+			'newsletter' => 				array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'newsletter_date_add' =>		array('type' => self::TYPE_DATE,'copy_post' => false),
+			'ip_registration_newsletter' =>	array('type' => self::TYPE_STRING, 'copy_post' => false),
+			'optin' => 						array('type' => self::TYPE_BOOL, 'validate' => 'isBool'),
+			'website' =>					array('type' => self::TYPE_STRING, 'validate' => 'isUrl'),
+			'company' =>					array('type' => self::TYPE_STRING, 'validate' => 'isGenericName'),
+			'account_number' => 						array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65000, 'copy_from_front' => false),
+			'siret' =>						array('type' => self::TYPE_STRING, 'validate' => 'isSiret'),
+			'ape' =>						array('type' => self::TYPE_STRING, 'validate' => 'isApe'),
+			'outstanding_allow_amount' =>	array('type' => self::TYPE_INT, 'validate' => 'isFloat', 'copy_post' => false),
+			'show_public_prices' =>			array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_post' => false),
+			'id_risk' =>					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'copy_post' => false),
+			'max_payment_days' =>			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'copy_post' => false),
+			'active' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_post' => false),
+			'deleted' => 					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_post' => false),
+			'note' => 						array('type' => self::TYPE_STRING, 'validate' => 'isCleanHtml', 'size' => 65000, 'copy_post' => false),
+			'is_guest' =>					array('type' => self::TYPE_BOOL, 'validate' => 'isBool', 'copy_post' => false),
+			'id_shop' => 					array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'copy_post' => false),
+			'id_group_shop' => 				array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'copy_post' => false),
+			'id_default_group' => 			array('type' => self::TYPE_INT, 'copy_post' => false),
+			'date_add' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'copy_post' => false),
+			'date_upd' => 					array('type' => self::TYPE_DATE, 'validate' => 'isDate', 'copy_post' => false),
 		),
 	);
 
@@ -190,8 +196,8 @@ class CustomerCore extends ObjectModel
 
 	public function add($autodate = true, $null_values = true)
 	{
-		$this->id_shop = ($this->id_shop) ? $this->id_shop : Context::getContext()->shop->getID();
-		$this->id_group_shop = ($this->id_group_shop) ? $this->id_group_shop : Context::getContext()->shop->getGroupID();
+		$this->id_shop = ($this->id_shop) ? $this->id_shop : Context::getContext()->shop->id;
+		$this->id_group_shop = ($this->id_group_shop) ? $this->id_group_shop : Context::getContext()->shop->id_group_shop;
 		$this->birthday = (empty($this->years) ? $this->birthday : (int)$this->years.'-'.(int)$this->months.'-'.(int)$this->days);
 		$this->secure_key = md5(uniqid(rand(), true));
 		$this->last_passwd_gen = date('Y-m-d H:i:s', strtotime('-'.Configuration::get('PS_PASSWD_TIME_FRONT').'minutes'));
@@ -237,14 +243,11 @@ class CustomerCore extends ObjectModel
 	 *
 	 * @return array Customers
 	 */
-	public static function getCustomers(Shop $shop = null)
+	public static function getCustomers()
 	{
-		if (!$shop)
-			$shop = Context::getContext()->shop;
-
 		$sql = 'SELECT `id_customer`, `email`, `firstname`, `lastname`
 				FROM `'._DB_PREFIX_.'customer`
-				WHERE 1 '.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER).'
+				WHERE 1 '.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 				ORDER BY `id_customer` ASC';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 	}
@@ -256,19 +259,16 @@ class CustomerCore extends ObjectModel
 	 * @param string $passwd Password is also checked if specified
 	 * @return Customer instance
 	 */
-	public function getByEmail($email, $passwd = null, Shop $shop = null)
+	public function getByEmail($email, $passwd = null)
 	{
 		if (!Validate::isEmail($email) || ($passwd && !Validate::isPasswd($passwd)))
 			die (Tools::displayError());
-
-		if (!$shop)
-			$shop = Context::getContext()->shop;
 
 		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `active` = 1
 					AND `email` = \''.pSQL($email).'\'
-					'.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER).'
+					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 					'.(isset($passwd) ? 'AND `passwd` = \''.Tools::encrypt($passwd).'\'' : '').'
 					AND `deleted` = 0
 					AND `is_guest` = 0';
@@ -312,18 +312,15 @@ class CustomerCore extends ObjectModel
 	 * @param $ignore_guest boolean, to exclude guest customer
 	 * @return Customer ID if found, false otherwise
 	 */
-	public static function customerExists($email, $return_id = false, $ignore_guest = true, Shop $shop = null)
+	public static function customerExists($email, $return_id = false, $ignore_guest = true)
 	{
 		if (!Validate::isEmail($email))
 			die (Tools::displayError());
 
-		if (!$shop)
-			$shop = Context::getContext()->shop;
-
 		$sql = 'SELECT `id_customer`
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `email` = \''.pSQL($email).'\'
-					'.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER).
+					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).
 					($ignore_guest ? ' AND `is_guest` = 0' : '');
 		$result = Db::getInstance()->getRow($sql);
 
@@ -416,11 +413,8 @@ class CustomerCore extends ObjectModel
 	 * @param string $query Searched string
 	 * @return array Corresponding customers
 	 */
-	public static function searchByName($query, Shop $shop = null)
+	public static function searchByName($query)
 	{
-		if (!$shop)
-			$shop = Context::getContext()->shop;
-
 		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE (
@@ -428,7 +422,7 @@ class CustomerCore extends ObjectModel
 						OR `id_customer` LIKE \'%'.pSQL($query).'%\'
 						OR `lastname` LIKE \'%'.pSQL($query).'%\'
 						OR `firstname` LIKE \'%'.pSQL($query).'%\'
-					)'.$shop->addSqlRestriction(Shop::SHARE_CUSTOMER);
+					)'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER);
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 	}
 
@@ -746,5 +740,23 @@ class CustomerCore extends ObjectModel
 		$total_rest = (float)Db::getInstance()->getValue($query->build());
 
 		return $total_paid - $total_rest;
+	}
+
+	public function getWsGroups()
+	{
+		return Db::getInstance()->executeS('
+				SELECT cg.`id_group` as id
+				FROM '._DB_PREFIX_.'customer_group cg
+				WHERE cg.`id_customer` = '.(int)$this->id);
+	}
+
+	public function setWsGroups($result)
+	{
+		$groups = array();
+		foreach ($result as $row)
+			$groups[] = $row['id'];
+		$this->cleanGroups();
+		$this->addGroups($groups);
+		return true;
 	}
 }

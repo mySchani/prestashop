@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -41,7 +41,7 @@
 				<input type="radio" name="tracking_dt" id="tracking_dt_off" value="0" {if !$tracking_dt}checked="checked"{/if}/>
 				<label class="t" for="tracking_dt_off"> {l s='No'}</label>
 			</div>
-			<p>{l s='Direct traffic can be quite consuming. You should consider enabling it only if you have a strong database server and a strong need for it.'}</p>
+			<p>{l s='Direct traffic can be quite resource-intensive. You should consider enabling it only if you have a strong database server and a strong need for it.'}</p>
 			<input type="submit" class="button" value="{l s='   Save   '}" name="submitSettings" id="submitSettings" />
 		</form>
 		<div class="separation"></div>

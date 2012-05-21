@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12872 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14128 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,8 +36,13 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 	{
 		parent::__construct();
 
+        $this->context = Context::getContext();
+
 		include_once($this->module->getLocalPath().'LoyaltyModule.php');
 		include_once($this->module->getLocalPath().'LoyaltyStateModule.php');
+		
+		// Declare smarty function to render pagination link
+		smartyRegisterFunction($this->context->smarty, 'function', 'summarypaginationlink', array('LoyaltyDefaultModuleFrontController', 'getSummaryPaginationLink'));
 	}
 
 	/**
@@ -66,8 +71,8 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 			// Voucher creation and affectation to the customer
 			$cartRule = new CartRule();
 			$cartRule->code = $voucherCode;
-			$cartRule->id_customer = (int)$this->context->cookie->id_customer;
-			$cartRule->id_currency = (int)$this->context->cookie->id_currency;
+			$cartRule->id_customer = (int)$this->context->customer->id;
+			$cartRule->reduction_currency = (int)$this->context->currency->id;
 			$cartRule->reduction_amount = LoyaltyModule::getVoucherValue((int)$customerPoints);
 			$cartRule->quantity = 1;
 			$cartRule->quantity_per_user = 1;
@@ -83,7 +88,7 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 				$dateFrom += 60 * 60 * 24 * (int)Configuration::get('PS_ORDER_RETURN_NB_DAYS');
 		
 			$cartRule->date_from = date('Y-m-d H:i:s', $dateFrom);
-			$cartRule->date_to = date('Y-m-d H:i:s', $dateFrom + 31536000); // + 1 year
+			$cartRule->date_to = date('Y-m-d H:i:s', strtotime($cartRule->date_from.' +1 year'));
 		
 			$cartRule->minimum_amount = (float)Configuration::get('PS_LOYALTY_MINIMAL');
 			$cartRule->active = 1;
@@ -111,7 +116,7 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 			// Register order(s) which contributed to create this voucher
 			LoyaltyModule::registerDiscount($cartRule);
 			
-			Tools::redirect($this->context->link->getModuleLink('loyalty', 'default'));
+			Tools::redirect($this->context->link->getModuleLink('loyalty', 'default', array('process' => 'summary')));
 		}
 	}
 
@@ -128,6 +133,35 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 	}
 	
 	/**
+	 * Render pagination link for summary
+	 *
+	 * @param (array) $params Array with to parameters p (for page number) and n (for nb of items per page)
+	 * @return string link
+	 */
+	public static function getSummaryPaginationLink($params, &$smarty)
+	{
+		if (!isset($params['p']))
+			$p = 1;
+		else
+			$p = $params['p'];
+			
+		if (!isset($params['n']))
+			$n = 10;
+		else
+			$n = $params['n'];
+		
+		return Context::getContext()->link->getModuleLink(
+			'loyalty',
+			'default',
+			array(
+				'process' => 'summary',
+				'p' => $p,
+				'n' => $n,
+			)
+		);
+	}
+	
+	/**
 	 * Assign summary template
 	 */
 	public function assignSummaryExecution()
@@ -138,7 +172,6 @@ class LoyaltyDefaultModuleFrontController extends ModuleFrontController
 		$this->context->smarty->assign(array(
 			'orders' => $orders,
 			'displayorders' => $displayorders,
-			'pagination_link' => $this->context->link->getModuleLink('loyalty', 'default'),
 			'totalPoints' => (int)$customerPoints,
 			'voucher' => LoyaltyModule::getVoucherValue($customerPoints, (int)($this->context->cookie->id_currency)),
 			'validation_id' => LoyaltyStateModule::getValidationId(),

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8673 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -96,6 +96,8 @@ class GuestTrackingControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		/* Handle brute force attacks */
 		if (count($this->errors))
 			sleep(1);
@@ -105,7 +107,6 @@ class GuestTrackingControllerCore extends FrontController
 			'errors' => $this->errors,
 		));
 		$this->setTemplate(_PS_THEME_DIR_.'guest-tracking.tpl');
-		parent::initContent();
 	}
 
 	/**

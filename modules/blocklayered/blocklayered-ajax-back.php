@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11083 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
@@ -34,10 +34,12 @@ if (substr(Tools::encrypt('blocklayered/index'),0,10) != Tools::getValue('layere
 
 include(dirname(__FILE__).'/blocklayered.php');
 
+$category_box = Tools::getValue('categoryBox');
+
 /* Clean categoryBox before use */
-if (isset($_GET['categoryBox']) AND is_array($_GET['categoryBox']))
-	foreach ($_GET['categoryBox'] AS &$value)
+if (is_array($category_box))
+	foreach ($category_box AS &$value)
 		$value = (int)$value;
 
 $blockLayered = new BlockLayered();
-echo $blockLayered->ajaxCallBackOffice(Tools::getValue('categoryBox'), Tools::getValue('id_layered_filter'));
+echo $blockLayered->ajaxCallBackOffice($category_box, Tools::getValue('id_layered_filter'));

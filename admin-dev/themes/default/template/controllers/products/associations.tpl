@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12565 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,7 +28,7 @@
 	<h4>{l s='Associations'}</h4>
 	<div class="separation"></div>
 		<div id="no_default_category" class="hint">
-		{l s='Please check a category in order to select the default category.'}
+		{l s='Please select a default category.'}
 	</div>
 	<table>
 		<tr>
@@ -58,10 +58,10 @@
 			<td class="col-right">
 				<select id="id_category_default" name="id_category_default">
 					{foreach from=$selected_cat item=cat}
-						<option value="{$cat.id_category}" {if $product->id_category_default == $cat.id_category}selected="selected"{/if} >{$cat.name}</option>
+						<option value="{$cat.id_category}" {if $id_category_default == $cat.id_category}selected="selected"{/if} >{$cat.name}</option>
 					{/foreach}
 				</select>
-                <div class="hint" style="display:block;">{l s='The default category is the category who is displayed by default.'}</div>
+				<div class="hint" style="display:block;">{l s='The default category is the category which is displayed by default.'}</div>
 			</td>
 		</tr>
 	</table>
@@ -85,7 +85,7 @@
 						<input type="text" value="" id="product_autocomplete_input" />
 						{l s='Begin typing the first letters of the product name, then select the product from the drop-down list'}
 					</p>
-					<p class="preference_description">{l s='(Do not forget to Save the product afterward)'}</p>
+					<p class="preference_description">{l s='(Do not forget to save the product afterward)'}</p>
 					<!--<img onclick="$(this).prev().search();" style="cursor: pointer;" src="../img/admin/add.gif" alt="{l s='Add an accessory'}" title="{l s='Add an accessory'}" />-->
 				</div>
 				<div id="divAccessories">

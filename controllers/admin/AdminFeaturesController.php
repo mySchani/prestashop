@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 class AdminFeaturesControllerCore extends AdminController
 {
+	protected $position_identifier = 'id_feature';
+
 	public function __construct()
 	{
 	 	$this->table = 'feature';
@@ -51,7 +53,7 @@ class AdminFeaturesControllerCore extends AdminController
 			'position' => array(
 				'title' => $this->l('Position'),
 				'width' => 40,
-				'filter_key' => 'cp!position',
+				'filter_key' => 'a!position',
 				'align' => 'center',
 				'position' => 'position'
 			)
@@ -131,7 +133,7 @@ class AdminFeaturesControllerCore extends AdminController
 			$helper->no_link = true;
 			$helper->shopLinkType = '';
 			$helper->identifier = $this->identifier;
-			$helper->toolbar_fix = false;
+			$helper->toolbar_scroll = false;
 			$helper->orderBy = 'position';
 			$helper->orderWay = 'ASC';
 			$helper->currentIndex = self::$currentIndex;
@@ -178,7 +180,6 @@ class AdminFeaturesControllerCore extends AdminController
 				'type' => 'group_shop',
 				'label' => $this->l('GroupShop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -206,20 +207,22 @@ class AdminFeaturesControllerCore extends AdminController
 					'desc' => $this->l('Save')
 				);
 
-				$this->toolbar_btn['save-and-stay'] = array(
-					'short' => 'SaveAndStay',
-					'href' => '#',
-					'desc' => $this->l('Save and stay'),
-				);
+				if ($this->display == 'editFeatureValue')
+					$this->toolbar_btn['save-and-stay'] = array(
+						'short' => 'SaveAndStay',
+						'href' => '#',
+						'desc' => $this->l('Save and add'),
+						'force_desc' => true,
+					);
 
 				// Default cancel button - like old back link
 				$back = Tools::safeOutput(Tools::getValue('back', ''));
 				if (empty($back))
 					$back = self::$currentIndex.'&token='.$this->token;
 
-				$this->toolbar_btn['cancel'] = array(
+				$this->toolbar_btn['back'] = array(
 					'href' => $back,
-					'desc' => $this->l('Cancel')
+					'desc' => $this->l('Back to list')
 				);
 			break;
 
@@ -286,7 +289,7 @@ class AdminFeaturesControllerCore extends AdminController
 		$helper->identifier = 'id_feature_value';
 		$helper->override_folder = 'feature_value/';
 		$helper->id = $feature_value->id;
-		$helper->toolbar_fix = false;
+		$helper->toolbar_scroll = false;
 		$helper->tpl_vars = $this->tpl_vars;
 		$helper->languages = $this->_languages;
 		$helper->default_form_language = $this->default_form_language;
@@ -346,7 +349,7 @@ class AdminFeaturesControllerCore extends AdminController
 			}
 		}
 		else
-			$this->displayWarning($this->l('This feature has been disabled, you can active this feature at this page:').'<a href="index.php?tab=AdminPerformance&token='.Tools::getAdminTokenLite('AdminPerformance').'#featuresDetachables">'.$this->l('Performances').'</a>');
+			$this->displayWarning($this->l('This feature has been disabled, you can activate it at:').'<a href="index.php?tab=AdminPerformance&token='.Tools::getAdminTokenLite('AdminPerformance').'#featuresDetachables">'.$this->l('Performance').'</a>');
 
 		$this->context->smarty->assign(array(
 			'content' => $this->content,
@@ -407,7 +410,7 @@ class AdminFeaturesControllerCore extends AdminController
 				{
 					// Update
 					if (!$feature_value->update())
-						$this->errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+						$this->errors[] = Tools::displayError('An error has occurred: Can\'t save the current feature value');
 					else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
 						Tools::redirectAdmin(self::$currentIndex.'&'.$this->identifier.'=&id_feature='.(int)Tools::getValue('id_feature').'&conf=3&update'.$this->table.'&token='.$this->token);
 					else
@@ -417,7 +420,7 @@ class AdminFeaturesControllerCore extends AdminController
 				{
 					// Create
 					if (!$feature_value->add())
-						$this->errors[] = Tools::displayError('An error has occured: Can\'t save the current feature value');
+						$this->errors[] = Tools::displayError('An error has occurred: Can\'t save the current feature value');
 					else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') && !count($this->errors))
 						Tools::redirectAdmin(self::$currentIndex.'&'.$this->identifier.'=&id_feature='.(int)Tools::getValue('id_feature').'&conf=3&update'.$this->table.'&token='.$this->token);
 					else

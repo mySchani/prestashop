@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -234,6 +234,17 @@ class ValidateCore
 	}
 
 	/**
+	* Check for price validity (including negative price)
+	*
+	* @param string $price Price to validate
+	* @return boolean Validity is ok or not
+	*/
+	public static function isNegativePrice($price)
+	{
+		return preg_match('/^[-]?[0-9]{1,10}(\.[0-9]{1,9})?$/', $price);
+	}
+
+	/**
 	 * Check for language code (ISO) validity
 	 *
 	 * @param string $iso_code Language code (ISO) to validate
@@ -366,8 +377,13 @@ class ValidateCore
 	 */
 	public static function isCleanHtml($html)
 	{
-		$events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
-		$events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror';
+		$events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange
+						|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend
+						|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove
+						|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel
+						|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart
+						|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange
+						|onselectstart|onstart|onstop';
 		return (!preg_match('/<[ \t\n]*script/i', $html) && !preg_match('/<?.*('.$events.')[ \t\n]*=/i', $html) && !preg_match('/.*script\:/i', $html));
 	}
 
@@ -590,6 +606,17 @@ class ValidateCore
 	public static function isTagsList($list)
 	{
 		return preg_match('/^[^!<>;?=+#"°{}_$%]*$/u', $list);
+	}
+
+	/**
+	 * Check for product visibility
+	 *
+	 * @param string $s visibility to check
+	 * @return boolean Validity is ok or not
+	 */
+	public static function isProductVisibility($s)
+	{
+		return preg_match('/^both|catalog|search|none$/i', $s);
 	}
 
 	/**

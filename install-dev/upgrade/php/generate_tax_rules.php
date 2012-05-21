@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -44,7 +44,7 @@ function generate_tax_rules()
 		$id_tax_rules_group = Db::getInstance()->insert_id;
 
 
-		$countries = Db::getInstance()->ExecuteS('
+		$countries = Db::getInstance()->executeS('
 		SELECT * FROM `'._DB_PREFIX_.'country` c
 		LEFT JOIN `'._DB_PREFIX_.'zone` z ON (c.`id_zone` = z.`id_zone`)
 		LEFT JOIN `'._DB_PREFIX_.'tax_zone` tz ON (tz.`id_zone` = z.`id_zone`)
@@ -54,7 +54,7 @@ function generate_tax_rules()
 		{
 			foreach ($countries AS $country)
 			{
-					 $res = Db::getInstance()->Execute('
+					 $res = Db::getInstance()->execute('
 					 INSERT INTO `'._DB_PREFIX_.'tax_rule` (`id_tax_rules_group`, `id_country`, `id_state`, `state_behavior`, `id_tax`)
 					 VALUES (
 					 '.(int)$id_tax_rules_group.',
@@ -67,7 +67,7 @@ function generate_tax_rules()
 			}
 		}
 
-		$states = Db::getInstance()->ExecuteS('
+		$states = Db::getInstance()->executeS('
 		SELECT * FROM `'._DB_PREFIX_.'states s
 		LEFT JOIN `'._DB_PREFIX_.'tax_state ts ON (ts.`id_state` = s.`id_state`)
 		WHERE `id_tax` = '.(int)$id_tax

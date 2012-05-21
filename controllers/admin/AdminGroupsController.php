@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7332 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -150,9 +150,10 @@ class AdminGroupsControllerCore extends AdminController
 		$customer_list = $group->getCustomers(false);
 
 		$helper = new HelperList();
-		$helper->currentIndex = self::$currentIndex;
-		$helper->token = $this->token;
+		$helper->currentIndex = Context::getContext()->link->getAdminLink('AdminCustomers', false);
+		$helper->token = Tools::getAdminTokenLite('AdminCustomers');
 		$helper->shopLinkType = '';
+		$helper->table = 'customer';
 		$helper->identifier = 'id_customer';
 		$helper->actions = array('edit', 'view');
 		$helper->show_toolbar = false;
@@ -189,13 +190,13 @@ class AdminGroupsControllerCore extends AdminController
 					'label' => $this->l('Discount (%):'),
 					'name' => 'reduction',
 					'size' => 33,
-					'desc' => $this->l('Will automatically apply this value as a discount on ALL shop\'s products for this group\'s members.')
+					'desc' => $this->l('Will automatically apply this value as a discount on all products for members of this customer group.')
 				),
 				array(
 					'type' => 'select',
 					'label' => $this->l('Price display method:'),
 					'name' => 'price_display_method',
-					'desc' => $this->l('How the prices are displayed on order summary for this customer group (tax included or excluded).'),
+					'desc' => $this->l('How prices are displayed in the order summary for this customer group.'),
 					'options' => array(
 						'query' => array(
 							array(
@@ -241,12 +242,21 @@ class AdminGroupsControllerCore extends AdminController
 				),
 				array(
 					'type' => 'modules',
-					'label' => array('auth_modules' => $this->l('Authorized modules :'), 'unauth_modules' => $this->l('Unauthorized modules :')),
+					'label' => array('auth_modules' => $this->l('Authorized modules:'), 'unauth_modules' => $this->l('Unauthorized modules:')),
 					'name' => 'auth_modules',
 					'values' => $this->formatModuleListAuth($group->id)
 				)
 			)
 		);
+
+		if (Shop::isFeatureActive())
+		{
+			$this->fields_form['input'][] = array(
+				'type' => 'group_shop',
+				'label' => $this->l('Group Shop association:'),
+				'name' => 'checkBoxShopAsso',
+			);
+		}
 
 		$this->fields_value['reduction'] = isset($group->reduction) ? $group->reduction : 0;
 
@@ -399,6 +409,14 @@ class AdminGroupsControllerCore extends AdminController
 	protected function updateCategoryReduction()
 	{
 		$category_reduction = Tools::getValue('category_reduction');
+		Db::getInstance()->execute('
+			DELETE FROM `'._DB_PREFIX_.'group_reduction`
+			WHERE `id_group` = '.(int)Tools::getValue('id_group')
+		);
+		Db::getInstance()->execute('
+			DELETE FROM `'._DB_PREFIX_.'product_group_reduction_cache`
+			WHERE `id_group` = '.(int)Tools::getValue('id_group')
+		);
 		if (is_array($category_reduction))
 		{
 			foreach ($category_reduction as $cat => $reduction)
@@ -407,15 +425,6 @@ class AdminGroupsControllerCore extends AdminController
 					$this->errors[] = Tools::displayError('Discount value is incorrect');
 				else
 				{
-					Db::getInstance()->execute('
-						DELETE FROM `'._DB_PREFIX_.'group_reduction`
-						WHERE `id_group` = '.(int)Tools::getValue('id_group').'
-							AND `id_category` = '.(int)$cat
-					);
-					Db::getInstance()->execute('
-						DELETE FROM `'._DB_PREFIX_.'product_group_reduction_cache`
-						WHERE `id_group` = '.(int)Tools::getValue('id_group')
-					);
 					$category = new Category((int)$cat);
 					$category->addGroupsIfNoExist((int)Tools::getValue('id_group'));
 					$group_reduction = new GroupReduction();

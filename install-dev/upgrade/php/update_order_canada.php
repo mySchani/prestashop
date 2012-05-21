@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12970 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13991 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -46,7 +46,7 @@ function update_order_canada()
 			WHERE name="PS_TAX_ADDRESS_TYPE"');
 		$address_field = str_replace('`','\`', $address_field);
 
-		$sql = 'SELECT `id_order`
+		$sql = 'SELECT `id_order`, `price_display_method`
 					FROM `'._DB_PREFIX_.'orders` o
 					LEFT JOIN `'._DB_PREFIX_.'customer` cus ON (o.id_customer = cus.id_customer)
 					LEFT JOIN `'._DB_PREFIX_.'group` g ON (g.id_group = cus.id_default_group)
@@ -66,7 +66,7 @@ function update_order_canada()
 			// 	returns Group::getDefaultPriceDisplayMethod
 			$tax_calculation_method = $order['price_display_method'];
 
-			$products = Db::getInstance()->ExecuteS('
+			$products = Db::getInstance()->executeS('
 				SELECT * FROM `'._DB_PREFIX_.'order_detail` od
 				WHERE od.`id_order` = '.(int)$id_order);
 
@@ -75,7 +75,8 @@ function update_order_canada()
 				if (!array_key_exists($product['tax_name'], $amount))
 					$amount[$product['tax_name']] = array('amount' => 0, 'rate' => $product['tax_rate']);
 
-				if ($tax_calculation_method == PS_TAX_EXC)
+				// PS_TAX_EXC = 1, PS_TAX_INC = 0
+				if ($tax_calculation_method == 1)
 				{
 					$total_product = $product['product_price'] * $product['product_quantity'];
 					$amount_tmp = update_order_canada_ps_round($total_product * ($product['tax_rate'] / 100), 2);
@@ -98,7 +99,7 @@ function update_order_canada()
 		{
 			$values = rtrim($values, ",");
 
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'order_tax` (id_order, tax_name, tax_rate, amount)
 			VALUES '.$values);
 		}
@@ -116,9 +117,9 @@ function update_order_canada_ps_round($val){
 
 	switch ($ps_price_round_mode)
 	{
-		case PS_ROUND_UP:
+		case 0:
 			return ceil($val * 100)/100;
-		case PS_ROUND_DOWN:
+		case 1:
 			return floor($val * 100)/100;
 		default:
 			return round($val, 2);

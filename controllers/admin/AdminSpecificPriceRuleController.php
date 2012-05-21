@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -61,22 +61,27 @@ class AdminSpecificPriceRuleControllerCore extends AdminController
 			),
 			'name' => array(
 				'title' => $this->l('Name'),
+				'filter_key' => 'a!name',
 				'width' => 200
 			),
 			'shop_name' => array(
-				'title' => $this->l('Shop')
+				'title' => $this->l('Shop'),
+				'filter_key' => 's!name'
 			),
 			'currency_name' => array(
 				'title' => $this->l('Currency'),
 				'align' => 'center',
+				'filter_key' => 'cu!name'
 			),
 			'country_name' => array(
 				'title' => $this->l('Country'),
 				'align' => 'center',
+				'filter_key' => 'cl!name'
 			),
 			'group_name' => array(
 				'title' => $this->l('Group'),
 				'align' => 'center',
+				'filter_key' => 'gl!name'
 			),
 			'from_quantity' => array(
 				'title' => $this->l('From quantity'),
@@ -95,12 +100,14 @@ class AdminSpecificPriceRuleControllerCore extends AdminController
 				'type' => 'decimal'
 			),
 			'from' => array(
-				'title' => $this->l('From'),
-				'align' => 'center',
+				'title' => $this->l('Beginning'),
+				'align' => 'right',
+				'type' => 'date',
 			),
 			'to' => array(
-				'title' => $this->l('To'),
-				'align' => 'center',
+				'title' => $this->l('End'),
+				'align' => 'right',
+				'type' => 'date'
 			),
 		);
 
@@ -222,14 +229,14 @@ class AdminSpecificPriceRuleControllerCore extends AdminController
 				),
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			),
 		);
 		$this->fields_value = array(
 										'price' => number_format((($value = $this->getFieldValue($this->object, 'price')) ? $value : 0), 2),
 										'from_quantity' => (($value = $this->getFieldValue($this->object, 'from_quantity')) ? $value : 1),
-										'reduction' => number_format((($value = $this->getFieldValue($this->object, 'from_quantity')) ? $value : 0), 2),
+										'reduction' => number_format((($value = $this->getFieldValue($this->object, 'reduction')) ? $value : 0), 2),
 									);
 		$attribute_groups = array();
 		$attributes = Attribute::getAttributes((int)$this->context->language->id);

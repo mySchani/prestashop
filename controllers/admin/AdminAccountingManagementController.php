@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9841 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -39,14 +39,14 @@ class AdminAccountingManagementControllerCore extends AdminController
 		$shop = array();
 		$error = '';
 		
-		if (count($this->context->shop->getListOfID()) > 1)
+		if (count(Shop::getContextListShopID()) > 1)
 			$error = $this->l('Please select the shop you want to configure');
 		else
 		{
 			$this->initToolbar();
 
 			$zones = Zone::getZones();
-			$id_shop = $this->context->shop->getID();
+			$id_shop = $this->context->shop->id;
 
 			// Set default zone value to the shop	and sort it
 			foreach ($zones as $zone)
@@ -59,11 +59,11 @@ class AdminAccountingManagementControllerCore extends AdminController
 			$shop['default_account_number'] = Configuration::get('default_account_number', null, null, $id_shop);
 			ksort($shop['zones']);
 			
-			$zoneShopList = Accounting::getAccountNumberZoneShop($id_shop);
+			$zone_shop_list = Accounting::getAccountNumberZoneShop($id_shop);
 	
 			// Set Account number to the id_zone for the id_shop if exist
-			foreach ($zoneShopList as $zoneShop)
-				$shop['zones'][$zoneShop['id_zone']]['account_number'] = $zoneShop['account_number'];
+			foreach ($zone_shop_list as $zone_shop)
+				$shop['zones'][$zone_shop['id_zone']]['account_number'] = $zone_shop['account_number'];
 		}
 		
 		$this->context->smarty->assign(array(
@@ -73,9 +73,9 @@ class AdminAccountingManagementControllerCore extends AdminController
 			'title' => $this->l('Accounting Management'),
 			'table' => 'accounting'
 		));
-		parent::initContent();
+		parent::initContent();	
 	}
-	
+
 	/**
 	 * AdminController::init() override
 	 * @see AdminController::postProcess()
@@ -105,7 +105,7 @@ class AdminAccountingManagementControllerCore extends AdminController
 	 */
 	protected function updateAccountNumber()
 	{
-		$id_shop = $this->context->shop->getID();
+		$id_shop = $this->context->shop->id;
 
 		// Update the current default shop account number
 		Configuration::updateValue(
@@ -130,8 +130,6 @@ class AdminAccountingManagementControllerCore extends AdminController
 				$this->confirmations[] = $this->l('Account numbers have been updated');
 			else
 				$this->errors[] = $this->l('Account Numbers could not be updated or added in the database');
-				//$token = Tools::getValue('token') ? Tools::getValue('token') : $this->token;
-				//Tools::redirectAdmin(self::$currentIndex.'&token='.$token);
 		}
 	}
 	

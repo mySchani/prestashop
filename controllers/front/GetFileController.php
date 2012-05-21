@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7104 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -95,7 +95,7 @@ class GetFileControllerCore extends FrontController
 
 			$customer_deadline = strtotime($info['date_expiration']);
 			if ($now > $customer_deadline && $info['date_expiration'] != '0000-00-00 00:00:00')
-				$this->displayCustomError('Expiration date exceeded');
+				$this->displayCustomError('Expiration date has passed, you cannot download this product');
 
 			if ($info['download_nb'] >= $info['nb_downloadable'] && $info['nb_downloadable'])
 				$this->displayCustomError('You have reached the maximum number of allowed downloads.');

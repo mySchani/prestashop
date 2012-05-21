@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -75,7 +75,7 @@ class ParentOrderControllerCore extends FrontController
 			if (!$duplication || !Validate::isLoadedObject($duplication['cart']))
 				$this->errors[] = Tools::displayError('Sorry, we cannot renew your order.');
 			else if (!$duplication['success'])
-				$this->errors[] = Tools::displayError('Missing items - we are unable to renew your order');
+				$this->errors[] = Tools::displayError('Some items are not available, we are unable to renew your order');
 			else
 			{
 				$this->context->cookie->id_cart = $duplication['cart']->id;
@@ -212,7 +212,7 @@ class ParentOrderControllerCore extends FrontController
 		{
 			$address = new Address((int)($this->context->cart->id_address_delivery));
 			if (!($id_zone = Address::getZoneById($address->id)))
-				$this->errors[] = Tools::displayError('No zone match with your address');
+				$this->errors[] = Tools::displayError('No zone matches your address');
 		}
 		else
 			$id_zone = Country::getIdZone((int)Configuration::get('PS_COUNTRY_DEFAULT'));
@@ -409,7 +409,7 @@ class ParentOrderControllerCore extends FrontController
 			'delivery_option_list' => $delivery_option_list,
 			'carriers' => $carriers,
 			'checked' => $checked,
-			'delivery_option' => $this->context->cart->getDeliveryOption()
+			'delivery_option' => $this->context->cart->getDeliveryOption(null, true)
 		));
 		
 		$vars = array(
@@ -417,7 +417,7 @@ class ParentOrderControllerCore extends FrontController
 				'carriers' => $carriers,
 				'checked' => $checked,
 				'delivery_option_list' => $delivery_option_list,
-				'delivery_option' => $this->context->cart->getDeliveryOption()
+				'delivery_option' => $this->context->cart->getDeliveryOption(null, true)
 			))
 		);
 		
@@ -453,7 +453,7 @@ class ParentOrderControllerCore extends FrontController
 			'carriers' => $this->context->cart->simulateCarriersOutput(),
 			'checked' => $this->context->cart->simulateCarrierSelectedOutput(),
 			'address_collection' => $this->context->cart->getAddressCollection(),
-			'delivery_option' => $this->context->cart->getDeliveryOption(),
+			'delivery_option' => $this->context->cart->getDeliveryOption(null, true),
 			'gift_wrapping_price' => (float)(Configuration::get('PS_GIFT_WRAPPING_PRICE')),
 			'total_wrapping_cost' => Tools::convertPrice($wrapping_fees_tax_inc, $this->context->currency),
 			'total_wrapping_tax_exc_cost' => Tools::convertPrice($wrapping_fees, $this->context->currency)));

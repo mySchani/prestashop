@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -27,19 +27,35 @@
 
 class ProductControllerCore extends FrontController
 {
+	/**
+	 * @var Product
+	 */
 	protected $product;
+
+	/**
+	 * @var Category
+	 */
+	protected $category;
 
 	public function setMedia()
 	{
 		parent::setMedia();
 
-		$this->addCSS(_THEME_CSS_DIR_.'product.css');
-		$this->addCSS(_PS_CSS_DIR_.'jquery.fancybox-1.3.4.css', 'screen');
-		$this->addJqueryPlugin(array('fancybox', 'idTabs', 'scrollTo', 'serialScroll'));
-		$this->addJS(array(
-						_THEME_JS_DIR_.'tools.js',
-						_THEME_JS_DIR_.'product.js')
-						);
+		if ($this->context->getMobileDevice() == false)
+		{
+			$this->addCSS(_THEME_CSS_DIR_.'product.css');
+			$this->addCSS(_PS_CSS_DIR_.'jquery.fancybox-1.3.4.css', 'screen');
+			$this->addJqueryPlugin(array('fancybox', 'idTabs', 'scrollTo', 'serialScroll'));
+			$this->addJS(array(
+				_THEME_JS_DIR_.'tools.js',
+				_THEME_JS_DIR_.'product.js'
+			));
+		}
+		else
+			$this->addJS(array(
+				_THEME_JS_DIR_.'tools.js',
+				_THEME_MOBILE_JS_DIR_.'product.js'
+			));
 
 		if (Configuration::get('PS_DISPLAY_JQZOOM') == 1)
 			$this->addJqueryPlugin('jqzoom');
@@ -60,7 +76,7 @@ class ProductControllerCore extends FrontController
 		parent::init();
 
 		if ($id_product = (int)Tools::getValue('id_product'))
-			$this->product = new Product($id_product, true, $this->context->language->id);
+			$this->product = new Product($id_product, true, $this->context->language->id, $this->context->shop->id);
 
 		if (!Validate::isLoadedObject($this->product))
 		{
@@ -94,6 +110,27 @@ class ProductControllerCore extends FrontController
 			}
 			else if (!$this->product->checkAccess(isset($this->context->customer) ? $this->context->customer->id : 0))
 				$this->errors[] = Tools::displayError('You do not have access to this product.');
+
+			// Load category
+			if (isset($_SERVER['HTTP_REFERER'])
+				&& !strstr($_SERVER['HTTP_REFERER'], Tools::getHttpHost()) // Assure us the previous page was one of the shop
+				&& preg_match('!^(.*)\/([0-9]+)\-(.*[^\.])|(.*)id_category=([0-9]+)(.*)$!', $_SERVER['HTTP_REFERER'], $regs))
+			{
+				// If the previous page was a category and is a parent category of the product use this category as parent category
+				if (isset($regs[2]) && is_numeric($regs[2]))
+				{
+					if (Product::idIsOnCategoryId((int)$this->product->id, array('0' => array('id_category' => (int)$regs[2]))))
+						$this->category = new Category($regs[2], (int)$this->context->cookie->id_lang);
+				}
+				else if (isset($regs[5]) && is_numeric($regs[5]))
+				{
+					if (Product::idIsOnCategoryId((int)$this->product->id, array('0' => array('id_category' => (int)$regs[5]))))
+						$this->category = new Category($regs[5], (int)$this->context->cookie->id_lang);
+				}
+			}
+			else
+				// Set default product category
+				$this->category = new Category($this->product->id_category_default, (int)$this->context->cookie->id_lang);
 		}
 	}
 
@@ -103,6 +140,8 @@ class ProductControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		if (!$this->errors)
 		{
 			// Assign to the template the id of the virtual product. "0" if the product is not downloadable.
@@ -163,8 +202,8 @@ class ProductControllerCore extends FrontController
 			$this->context->smarty->assign('packItems', $pack_items);
 			$this->context->smarty->assign('packs', Pack::getPacksTable($this->product->id, $this->context->language->id, true, 1));
 
-			if (isset($category->id) && $category->id)
-				$return_link = Tools::safeOutput($this->context->link->getCategoryLink($category));
+			if (isset($this->category->id) && $this->category->id)
+				$return_link = Tools::safeOutput($this->context->link->getCategoryLink($this->category));
 			else
 				$return_link = 'javascript: history.back();';
 			$this->context->smarty->assign(array(
@@ -199,7 +238,6 @@ class ProductControllerCore extends FrontController
 		$this->context->smarty->assign('errors', $this->errors);
 
 		$this->setTemplate(_PS_THEME_DIR_.'product.tpl');
-		parent::initContent();
 	}
 
 	/**
@@ -231,7 +269,7 @@ class ProductControllerCore extends FrontController
 
 		$id_currency = (int)$this->context->cookie->id_currency;
 		$id_product = (int)$this->product->id;
-		$id_shop = $this->context->shop->getID(true);
+		$id_shop = $this->context->shop->id;
 
 		$quantity_discounts = SpecificPrice::getQuantityDiscounts($id_product, $id_shop, $id_currency, $id_country, $id_group, null, true);
 		foreach ($quantity_discounts as &$quantity_discount)
@@ -400,44 +438,23 @@ class ProductControllerCore extends FrontController
 	 */
 	protected function assignCategory()
 	{
-		$category = false;
-		if (isset($_SERVER['HTTP_REFERER'])
-		&& !strstr($_SERVER['HTTP_REFERER'], Tools::getHttpHost()) // Assure us the previous page was one of the shop
-		&& preg_match('!^(.*)\/([0-9]+)\-(.*[^\.])|(.*)id_category=([0-9]+)(.*)$!', $_SERVER['HTTP_REFERER'], $regs))
-		{
-			// If the previous page was a category and is a parent category of the product use this category as parent category
-			if (isset($regs[2]) && is_numeric($regs[2]))
-			{
-				if (Product::idIsOnCategoryId((int)$this->product->id, array('0' => array('id_category' => (int)$regs[2]))))
-					$category = new Category($regs[2], (int)$this->context->cookie->id_lang);
-			}
-			else if (isset($regs[5]) && is_numeric($regs[5]))
-			{
-				if (Product::idIsOnCategoryId((int)$this->product->id, array('0' => array('id_category' => (int)$regs[5]))))
-					$category = new Category($regs[5], (int)$this->context->cookie->id_lang);
-			}
-		}
-		else
-			// Set default product category
-			$category = new Category($this->product->id_category_default, (int)$this->context->cookie->id_lang);
-
 		// Assign category to the template
-		if ($category !== false && Validate::isLoadedObject($category))
+		if ($this->category !== false && Validate::isLoadedObject($this->category))
 		{
 			$this->context->smarty->assign(array(
-				'path' => Tools::getPath($category->id, $this->product->name, true),
-				'category' => $category,
-				'subCategories' => $category->getSubCategories($this->context->language->id, true),
-				'id_category_current' => (int)$category->id,
-				'id_category_parent' => (int)$category->id_parent,
-				'return_category_name' => Tools::safeOutput($category->name)
+				'path' => Tools::getPath($this->category->id, $this->product->name, true),
+				'category' => $this->category,
+				'subCategories' => $this->category->getSubCategories($this->context->language->id, true),
+				'id_category_current' => (int)$this->category->id,
+				'id_category_parent' => (int)$this->category->id_parent,
+				'return_category_name' => Tools::safeOutput($this->category->name)
 			));
 		}
 		else
 			$this->context->smarty->assign('path', Tools::getPath((int)$this->product->id_category_default, $this->product->name));
 
 		$this->context->smarty->assign('categories', Category::getHomeCategories($this->context->language->id));
-		$this->context->smarty->assign(array('HOOK_PRODUCT_FOOTER' => Hook::exec('displayFooterProduct', array('product' => $this->product, 'category' => $category))));
+		$this->context->smarty->assign(array('HOOK_PRODUCT_FOOTER' => Hook::exec('displayFooterProduct', array('product' => $this->product, 'category' => $this->category))));
 	}
 
 	public function transformDescriptionWithImg($desc)
@@ -471,15 +488,16 @@ class ProductControllerCore extends FrontController
 
 				$product_picture_width = (int)Configuration::get('PS_PRODUCT_PICTURE_WIDTH');
 				$product_picture_height = (int)Configuration::get('PS_PRODUCT_PICTURE_HEIGHT');
-				if ($error || (!$tmp_name = tempnam(_PS_TMP_IMG_DIR_, 'PS') || !move_uploaded_file($file['tmp_name'], $tmp_name)))
+				$tmp_name = tempnam(_PS_TMP_IMG_DIR_, 'PS');
+				if ($error || (!$tmp_name || !move_uploaded_file($file['tmp_name'], $tmp_name)))
 					return false;
 				/* Original file */
-				else if (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name))
+				if (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
 				/* A smaller one */
-				else if (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name.'_small', $product_picture_width, $product_picture_height))
+				elseif (!ImageManager::resize($tmp_name, _PS_UPLOAD_DIR_.$file_name.'_small', $product_picture_width, $product_picture_height))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
-				else if (!chmod(_PS_UPLOAD_DIR_.$file_name, 0777) || !chmod(_PS_UPLOAD_DIR_.$file_name.'_small', 0777))
+				elseif (!chmod(_PS_UPLOAD_DIR_.$file_name, 0777) || !chmod(_PS_UPLOAD_DIR_.$file_name.'_small', 0777))
 					$this->errors[] = Tools::displayError('An error occurred during the image upload.');
 				else
 				{

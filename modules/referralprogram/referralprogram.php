@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -507,7 +507,7 @@ class ReferralProgram extends Module
 
 		$customer = new Customer((int)$params['id_customer']);
 		if (!Validate::isLoadedObject($customer))
-			die (Tools::displayError('Incorrect object Customer.'));
+			die (Tools::displayError('Incorrect Customer object.'));
 
 		$friends = ReferralProgramModule::getSponsorFriend((int)$customer->id);
 		if ($id_referralprogram = ReferralProgramModule::isSponsorised((int)$customer->id, true))
@@ -564,7 +564,7 @@ class ReferralProgram extends Module
 	public function hookOrderConfirmation($params)
 	{
 		if ($params['objOrder'] AND !Validate::isLoadedObject($params['objOrder']))
-			return die(Tools::displayError('Incorrect object Order.'));
+			return die(Tools::displayError('Incorrect Order object.'));
 
 		include_once(dirname(__FILE__).'/ReferralProgramModule.php');
 
@@ -597,7 +597,7 @@ class ReferralProgram extends Module
 		$orderState = $params['newOrderStatus'];
 		$order = new Order((int)($params['id_order']));
 		if ($order AND !Validate::isLoadedObject($order))
-			die(Tools::displayError('Incorrect object Order.'));
+			die(Tools::displayError('Incorrect Order object.'));
 
 		include_once(dirname(__FILE__).'/ReferralProgramModule.php');
 

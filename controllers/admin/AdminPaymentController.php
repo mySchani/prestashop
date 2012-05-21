@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -31,7 +31,9 @@ class AdminPaymentControllerCore extends AdminController
 
 	public function __construct()
 	{
-		$shop_id = Context::getContext()->shop->getID(true);
+		parent::__construct();
+
+		$shop_id = Context::getContext()->shop->id;
 
 		/* Get all modules then select only payment ones */
 		$modules = Module::getModulesOnDisk(true);
@@ -80,8 +82,6 @@ class AdminPaymentControllerCore extends AdminController
 
 				$this->payment_modules[] = $module;
 			}
-
-		parent::__construct();
 	}
 
 	public function postProcess()
@@ -108,11 +108,11 @@ class AdminPaymentControllerCore extends AdminController
 
 	protected function saveRestrictions($type)
 	{
-		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'module_'.bqSQL($type).'` WHERE id_shop = '.Context::getContext()->shop->getID(true));
+		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'module_'.bqSQL($type).'` WHERE id_shop = '.Context::getContext()->shop->id);
 		foreach ($this->payment_modules as $module)
 			if ($module->active && isset($_POST[$module->name.'_'.$type.'']))
 				foreach ($_POST[$module->name.'_'.$type.''] as $selected)
-					$values[] = '('.(int)$module->id.', '.Context::getContext()->shop->getID(true).', '.(int)$selected.')';
+					$values[] = '('.(int)$module->id.', '.Context::getContext()->shop->id.', '.(int)$selected.')';
 
 		if (count($values))
 			Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'module_'.$type.' (`id_module`, `id_shop`, `id_'.$type.'`) VALUES '.implode(',', $values));
@@ -126,7 +126,17 @@ class AdminPaymentControllerCore extends AdminController
 	}
 
 	public function renderView()
-	{	
+	{
+		$this->toolbar_title = $this->l('Payment');
+		unset($this->toolbar_btn['back']);
+		
+		$shop_context = (!Shop::isFeatureActive() || Shop::getContext() == Shop::CONTEXT_SHOP);
+		if (!$shop_context)
+		{
+			$this->tpl_view_vars = array('shop_context' => $shop_context);
+			return parent::renderView();
+		}
+	
 		// link to modules page
 		if (isset($this->payment_modules[0]))
 			$token_modules = Tools::getAdminToken('AdminModules'.(int)Tab::getIdFromClassName('AdminModules').(int)$this->context->employee->id);
@@ -141,21 +151,21 @@ class AdminPaymentControllerCore extends AdminController
 
 		$lists = array('currencies' =>
 					array('items' => Currency::getCurrencies(),
-						  'title' => $this->l('Currencies restrictions'),
+						  'title' => $this->l('Currency restrictions'),
 						  'desc' => $this->l('Please mark the checkbox(es) for the currency or currencies for which you want the payment module(s) to be available.'),
 						  'name_id' => 'currency',
 						  'identifier' => 'id_currency',
 						  'icon' => 'dollar',
 					),
 					array('items' => Group::getGroups($this->context->language->id),
-						  'title' => $this->l('Groups restrictions'),
+						  'title' => $this->l('Group restrictions'),
 						  'desc' => $this->l('Please mark the checkbox(es) for the groups for which you want the payment module(s) available.'),
 						  'name_id' => 'group',
 						  'identifier' => 'id_group',
 						  'icon' => 'group',
 					),
 					array('items' =>Country::getCountries($this->context->language->id),
-						  'title' => $this->l('Countries restrictions'),
+						  'title' => $this->l('Country restrictions'),
 						  'desc' => $this->l('Please mark the checkbox(es) for the country or countries for which you want the payment module(s) to be available.'),
 						  'name_id' => 'country',
 						  'identifier' => 'id_country',
@@ -188,7 +198,6 @@ class AdminPaymentControllerCore extends AdminController
 			$lists[$key_list] = $list;
 		}
 
-		$shop_context = (!Shop::isFeatureActive() || $this->context->shop->getContextType() == Shop::CONTEXT_SHOP);
 		$this->tpl_view_vars = array(
 			'url_modules' => isset($token_modules) ? 'index.php?tab=AdminModules&token='.$token_modules.'&&filterCategory=payments_gateways' : null,
 			'display_restrictions' => $display_restrictions,
@@ -199,8 +208,6 @@ class AdminPaymentControllerCore extends AdminController
 			'shop_context' => $shop_context
 		);
 
-		$this->toolbar_title = $this->l('Paiement');
-		unset($this->toolbar_btn['back']);
 		return parent::renderView();
 	}
 }

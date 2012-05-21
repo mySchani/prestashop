@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -162,7 +162,7 @@ abstract class ObjectModelCore
 		}
 
 		if ($this->isLangMultishop() && !$this->id_shop)
-			$this->id_shop = Context::getContext()->shop->getID(true);
+			$this->id_shop = Context::getContext()->shop->id;
 
 	 	if (!Validate::isTableOrIdentifier($this->def['primary']) || !Validate::isTableOrIdentifier($this->def['table']))
 			throw new PrestaShopException('Identifier or table format not valid for class '.get_class($this));
@@ -423,11 +423,11 @@ abstract class ObjectModelCore
 		if (!Shop::isFeatureActive())
 		{
 			if (isset($assos[$this->def['table']]) && $assos[$this->def['table']]['type'] == 'shop')
-				$result &= $this->associateTo(Context::getContext()->shop->getID(true), 'shop');
+				$result &= $this->associateTo(Context::getContext()->shop->id, 'shop');
 
 			$assos = GroupShop::getAssoTables();
 			if (isset($assos[$this->def['table']]) && $assos[$this->def['table']]['type'] == 'group_shop')
-				$result &= $this->associateTo(Context::getContext()->shop->getGroupID(), 'group_shop');
+				$result &= $this->associateTo(Context::getContext()->shop->id_group_shop, 'group_shop');
 		}
 
 		// @hook actionObject*AddAfter
@@ -478,7 +478,7 @@ abstract class ObjectModelCore
 					// If this table is linked to multishop system, update / insert for all shops from context
 					if ($this->isLangMultishop())
 					{
-						$list_shops = ($this->id_shop && !$this->get_shop_from_context) ? array($this->id_shop) : Context::getContext()->shop->getListOfID();
+						$list_shops = ($this->id_shop && !$this->get_shop_from_context) ? array($this->id_shop) : Shop::getContextListShopID();
 						foreach ($list_shops as $shop)
 						{
 							$field['id_shop'] = $shop;
@@ -527,21 +527,21 @@ abstract class ObjectModelCore
 		$this->clearCache();
 
 		// Database deletion
-		$result = Db::getInstance()->delete(_DB_PREFIX_.$this->def['table'], '`'.pSQL($this->def['primary']).'` = '.(int)$this->id);
+		$result = Db::getInstance()->delete($this->def['table'], '`'.pSQL($this->def['primary']).'` = '.(int)$this->id);
 		if (!$result)
 			return false;
 
 		// Database deletion for multilingual fields related to the object
 		if (isset($this->def['multilang']) && $this->def['multilang'])
-			Db::getInstance()->delete(_DB_PREFIX_.$this->def['table'].'_lang', '`'.pSQL($this->def['primary']).'` = '.(int)$this->id);
+			Db::getInstance()->delete($this->def['table'].'_lang', '`'.pSQL($this->def['primary']).'` = '.(int)$this->id);
 
 		$assos = Shop::getAssoTables();
 		if (isset($assos[$this->def['table']]) && $assos[$this->def['table']]['type'] == 'shop')
-			Db::getInstance()->delete(_DB_PREFIX_.$this->def['table'].'_shop', '`'.$this->def['primary'].'`='.(int)$this->id);
+			Db::getInstance()->delete($this->def['table'].'_shop', '`'.$this->def['primary'].'`='.(int)$this->id);
 
 		$assos = GroupShop::getAssoTables();
 		if (isset($assos[$this->def['table']]) && $assos[$this->def['table']]['type'] == 'group_shop')
-			Db::getInstance()->delete(_DB_PREFIX_.$this->def['table'].'_group_shop', '`'.$this->def['primary'].'`='.(int)$this->id);
+			Db::getInstance()->delete($this->def['table'].'_group_shop', '`'.$this->def['primary'].'`='.(int)$this->id);
 
 		// @hook actionObject*DeleteAfter
 		Hook::exec('actionObjectDeleteAfter', array('object' => $this));
@@ -798,7 +798,7 @@ abstract class ObjectModelCore
 					$errors[] = '<b>'.self::displayFieldName($field, get_class($this), $htmlentities).'</b> '.Tools::displayError('is invalid.');
 				else
 				{
-					if (!isset($data['copy_from_front']) || !$data['copy_from_front'])
+					if (isset($data['copy_post']) && !$data['copy_post'])
 						continue;
 					if ($field == 'passwd')
 					{
@@ -954,7 +954,7 @@ abstract class ObjectModelCore
 	public function isAssociatedToShop($id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID();
+			$id_shop = Context::getContext()->shop->id;
 
 		$sql = 'SELECT id_shop
 				FROM `'.pSQL(_DB_PREFIX_.$this->def['table']).'_shop`
@@ -1003,7 +1003,7 @@ abstract class ObjectModelCore
 	public function isAssociatedToGroupShop($id_group_shop = null)
 	{
 		if (is_null($id_group_shop))
-			$id_group_shop = Context::getContext()->shop->getGroupID();
+			$id_group_shop = Context::getContext()->shop->id_group_shop;
 
 		$sql = 'SELECT id_group_shop
 				FROM `'.pSQL(_DB_PREFIX_.$this->def['table']).'_group_shop`

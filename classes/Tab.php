@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -429,6 +429,9 @@ class TabCore extends ObjectModel
 	{
 		static $tabAccesses = null;
 
+		if (Context::getContext()->employee->id_profile == _PS_ADMIN_PROFILE_)
+			return true;
+
 		if ($tabAccesses === null)
 			$tabAccesses = Profile::getProfileAccesses(Context::getContext()->employee->id_profile);
 
@@ -444,5 +447,21 @@ class TabCore extends ObjectModel
 		if ($admin_tab['id_parent'] > 0)
 			$tabs = Tab::recursiveTab($admin_tab['id_parent'], $tabs);
 		return $tabs;
+	}
+
+	/**
+	 * Overrides update to set position to last when changing parent tab
+	 *
+	 * @see ObjectModel::update
+	 * @param bool $null_values
+	 * @return bool
+	 */
+	public function update($null_values = false)
+	{
+		$current_tab = new Tab($this->id);
+		if ($current_tab->id_parent != $this->id_parent)
+			$this->position = Tab::getNewLastPosition($this->id_parent);
+
+		return parent::update($null_values);
 	}
 }

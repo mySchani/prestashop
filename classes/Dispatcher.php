@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -184,12 +184,15 @@ class DispatcherCore
 	 */
 	protected function __construct()
 	{
+		$this->use_routes = (bool)Configuration::get('PS_REWRITING_SETTINGS');
+
 		// Select right front controller
 		if (defined('_PS_ADMIN_DIR_'))
 		{
 			$this->front_controller = self::FC_ADMIN;
 			$this->controller_not_found = 'adminnotfound';
 			$this->default_controller = 'adminhome';
+			$this->use_routes = false;
 		}
 		else if (Tools::getValue('fc') == 'module')
 		{
@@ -204,7 +207,6 @@ class DispatcherCore
 			$this->default_controller = 'index';
 		}
 
-		$this->use_routes = (bool)Configuration::get('PS_REWRITING_SETTINGS');
 		$this->loadRoutes();
 
 		// Get request uri (HTTP_X_REWRITE_URL is used by IIS)
@@ -247,9 +249,11 @@ class DispatcherCore
 					$controllers['authentication'] = $controllers['auth'];
 				if (isset($controllers['compare']))
 					$controllers['productscomparison'] = $controllers['compare'];
+                if (isset($controllers['contact']))
+                    $controllers['contactform'] = $controllers['contact'];
 
 				if (!isset($controllers[$this->controller]))
-					$this->controller = 'pagenotfound';
+					$this->controller = $this->controller_not_found;
 				$controller_class = $controllers[$this->controller];
 			break;
 
@@ -282,13 +286,14 @@ class DispatcherCore
 						$controllers = Dispatcher::getControllers(_PS_MODULE_DIR_.$tab->module.'/controllers/admin/');
 						if (!isset($controllers[$this->controller]))
 						{
-							$this->controller = 'adminnotfound';
+							$this->controller = $this->controller_not_found;
 							$controller_class = 'AdminNotFoundController';
 						}
 						else
 						{
-							include_once(_PS_MODULE_DIR_.$tab->module.'/controllers/admin/'.$this->controller.'.php');
-							$controller_class = $controllers[$this->controller].'Controller';
+							// Controllers in modules can be named AdminXXX.php or AdminXXXController.php
+							include_once(_PS_MODULE_DIR_.$tab->module.'/controllers/admin/'.$controllers[$this->controller].'.php');
+							$controller_class = $controllers[$this->controller].(strpos($controllers[$this->controller], 'Controller') ? '' : 'Controller');
 						}
 					}
 				}
@@ -296,7 +301,7 @@ class DispatcherCore
 				{
 					$controllers = Dispatcher::getControllers(array(_PS_ADMIN_DIR_.'/tabs/', _PS_ADMIN_CONTROLLER_DIR_));
 					if (!isset($controllers[$this->controller]))
-						$this->controller = 'adminnotfound';
+						$this->controller = $this->controller_not_found;
 					$controller_class = $controllers[$this->controller];
 
 					if (file_exists(_PS_ADMIN_DIR_.'/tabs/'.$controller_class.'.php'))
@@ -348,7 +353,7 @@ class DispatcherCore
 			// Load routes from meta table
 			$sql = 'SELECT m.page, ml.url_rewrite
 					FROM `'._DB_PREFIX_.'meta` m
-					LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON (m.id_meta = ml.id_meta'.$context->shop->addSqlRestrictionOnLang('ml').')
+					LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON (m.id_meta = ml.id_meta'.Shop::addSqlRestrictionOnLang('ml').')
 					WHERE id_lang = '.(int)$context->language->id.'
 					ORDER BY LENGTH(ml.url_rewrite) DESC';
 			if ($results = Db::getInstance()->executeS($sql))
@@ -545,8 +550,10 @@ class DispatcherCore
 			else if (isset($_POST['controller']))
 				$_POST[$m[2]] = $m[3];
 		}
+
 		if (!Validate::isControllerName($controller))
 			$controller = false;
+
 		// Use routes ? (for url rewriting)
 		if ($this->use_routes && !$controller)
 		{
@@ -576,7 +583,7 @@ class DispatcherCore
 					break;
 				}
 
-			if ($controller == 'index')
+			if ($controller == 'index' || $this->request_uri == '/index.php')
 				$controller = $this->default_controller;
 			$this->controller = $controller;
 		}
@@ -627,7 +634,7 @@ class DispatcherCore
 					$controllers += Dispatcher::getControllersInDirectory($dir.$controller_filename.DIRECTORY_SEPARATOR);
 				else if ($controller_filename != 'index.php')
 				{
-					$key = str_replace(array('controller.php', '.php'), array('', ''), strtolower($controller_filename));
+					$key = str_replace(array('controller.php', '.php'), '', strtolower($controller_filename));
 					$controllers[$key] = basename($controller_filename, '.php');
 				}
 			}

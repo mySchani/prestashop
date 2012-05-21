@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -30,20 +30,24 @@
 	{if $input.type == 'color'}
 		<div id="colorAttributeProperties" style="display:{if $colorAttributeProperties}block{else}none{/if}";>
 	{/if}
-	{if isset($input.label)}
-		<label>{$input.label} </label>
-	{/if}
+	{$smarty.block.parent}
 {/block}
 
-
-{block name="end_field_block"}
-		{if $input.type == 'text' && $input.name == 'texture'}
-			</div>
-		{/if}
-	</div>
-		{if $input.name == 'name'}
-			{hook h="displayAttributeForm" id_attribute=$form_id}
-		{/if}
+{block name="field"}
+	{if $input.name == 'current_texture'}
+		<div class="margin-form">
+			{if isset($imageTextureExists) && $imageTextureExists}
+				<img src="{$imageTexture}" alt="{l s='Texture'}" />
+			{else}
+				{l s='None'}
+			{/if}
+		</div>
+	{else}
+		{$smarty.block.parent}
+	{/if}
+	{if $input.name == 'name'}
+		{hook h="displayAttributeForm" id_attribute=$form_id}
+	{/if}
 {/block}
 
 {block name="script"}
@@ -60,5 +64,20 @@
 	displayColorFieldsOption();
 	
 	$('#id_attribute_group').change(displayColorFieldsOption);
-	
+
+	var shop_associations = {$fields[0]['form']['shop_associations']};
+	var changeAssociationGroup = function()
+	{
+		var id_attribute_group = $('#id_attribute_group').val();
+		$('.input_group_shop').each(function(k, item)
+		{
+			var id_group_shop = $(item).val();
+			if (shop_associations[id_attribute_group] != 'undefined' && $.inArray(id_group_shop, shop_associations[id_attribute_group]) > -1)
+				$(item).attr('disabled', false);
+			else
+				$(item).attr('disabled', true);
+		});
+	};
+	$('#id_attribute_group').change(changeAssociationGroup);
+	changeAssociationGroup();
 {/block}

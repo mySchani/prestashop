@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -33,6 +33,7 @@ class AdminLanguagesControllerCore extends AdminController
 		$this->className = 'Language';
 	 	$this->lang = false;
 		$this->deleted = false;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->requiredDatabase = true;
 
@@ -91,24 +92,8 @@ class AdminLanguagesControllerCore extends AdminController
 		);
 
 	 	$this->bulk_actions = array('delete' => array('text' => $this->l('Delete selected'), 'confirm' => $this->l('Delete selected items?')));
-	 	$this->specificConfirmDelete = $this->l('When you delete a language, ALL RELATED TRANSLATIONS IN THE DATABASE WILL BE DELETED, are you sure you want to delete this language?');
+	 	$this->specificConfirmDelete = $this->l('When you delete a language, all related translations in the database will be deleted. Are you sure you want to delete this language?');
 
-		$this->options = array(
-			'general' => array(
-				'title' =>	$this->l('Languages options'),
-				'fields' =>	array(
-					'PS_LANG_DEFAULT' => array(
-						'title' => $this->l('Default language:'),
-						'desc' => $this->l('The default language used in shop'),
-						'cast' => 'intval',
-						'type' => 'select',
-						'identifier' => 'id_lang',
-						'list' => Language::getlanguages(false)
-					)
-				),
-				'submit' => array()
-			)
-		);
 		parent::__construct();
 	}
 
@@ -137,7 +122,7 @@ class AdminLanguagesControllerCore extends AdminController
 					'type' => 'text',
 					'label' => $this->l('Name:'),
 					'name' => 'name',
-					'size' => 8,
+					'size' => 32,
 					'maxlength' => 32,
 					'required' => true
 				),
@@ -146,18 +131,18 @@ class AdminLanguagesControllerCore extends AdminController
 					'label' => $this->l('ISO code:'),
 					'name' => 'iso_code',
 					'required' => true,
-					'size' => 4,
+					'size' => 2,
 					'maxlength' => 2,
-					'desc' => $this->l('2-letter ISO code (e.g., fr, en, de)')
+					'desc' => $this->l('2-letter ISO code (e.g. fr, en, de)')
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Language code:'),
 					'name' => 'language_code',
 					'required' => true,
-					'size' => 10,
+					'size' => 2,
 					'maxlength' => 5,
-					'desc' => $this->l('Full language code (e.g., en-us, pt-br)')
+					'desc' => $this->l('Full language code (e.g. en-us, pt-br)')
 				),
 				array(
 					'type' => 'text',
@@ -165,7 +150,7 @@ class AdminLanguagesControllerCore extends AdminController
 					'name' => 'date_format_lite',
 					'required' => true,
 					'size' => 15,
-					'desc' => $this->l('Date format, lite (e.g., Y-m-d, d/m/Y)')
+					'desc' => $this->l('Short date format (e.g. Y-m-d, d/m/Y)')
 				),
 				array(
 					'type' => 'text',
@@ -173,7 +158,7 @@ class AdminLanguagesControllerCore extends AdminController
 					'name' => 'date_format_full',
 					'required' => true,
 					'size' => 25,
-					'desc' => $this->l('Date format, full (e.g., Y-m-d H:i:s, d/m/Y H:i)')
+					'desc' => $this->l('Full date format (e.g., Y-m-d H:i:s, d/m/Y H:i)')
 				),
 				array(
 					'type' => 'file',
@@ -208,8 +193,8 @@ class AdminLanguagesControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('To active if this language is a right to left language').' '.
-							$this->l('(Experimental: your theme must be compliant with RTL language)')
+					'desc' => $this->l('Enable if this language is read from right to left').' '.
+							$this->l('(Experimental: your theme must be compliant with RTL languages)')
 				),
 				array(
 					'type' => 'radio',
@@ -247,7 +232,6 @@ class AdminLanguagesControllerCore extends AdminController
 				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -268,7 +252,7 @@ class AdminLanguagesControllerCore extends AdminController
 				),
 				'list_files' => array(
 					array(
-						'label' => $this->l('Translations files:'),
+						'label' => $this->l('Translation files:'),
 						'files' => Language::getFilesList($obj->iso_code, _THEME_NAME_, false, false, 'tr', true)
 					),
 					array(
@@ -302,9 +286,9 @@ class AdminLanguagesControllerCore extends AdminController
 				{
 					// English is needed by the system (ex. translations)
 					if ($object->id == Language::getIdByIso('en'))
-						$this->errors[] = $this->l('You cannot delete the English language as it is a system requirement, you can only deactivate it.');
+						$this->errors[] = $this->l('You cannot delete the English language because it is a system requirement, you can only deactivate it.');
 					if ($object->id == Configuration::get('PS_LANG_DEFAULT'))
-						$this->errors[] = $this->l('you cannot delete the default language');
+						$this->errors[] = $this->l('You cannot delete the default language');
 					else if ($object->id == $this->context->language->id)
 						$this->errors[] = $this->l('You cannot delete the language currently in use. Please change languages before deleting.');
 					else if ($this->deleteNoPictureImages((int)Tools::getValue('id_lang')) && $object->delete())
@@ -322,7 +306,7 @@ class AdminLanguagesControllerCore extends AdminController
 		 	if ($this->tabAccess['delete'] === '1')
 			{
 				if (in_array(Configuration::get('PS_LANG_DEFAULT'), $_POST[$this->table.'Box']))
-					$this->errors[] = $this->l('you cannot delete the default language');
+					$this->errors[] = $this->l('You cannot delete the default language');
 				else if (in_array($this->context->language->id, $_POST[$this->table.'Box']))
 					$this->errors[] = $this->l('you cannot delete the language currently in use, please change languages before deleting');
 				else
@@ -355,7 +339,7 @@ class AdminLanguagesControllerCore extends AdminController
 					else
 					{
 						$this->validateRules();
-						$this->errors[] = Tools::displayError('Flag and No-Picture image fields are required.');
+						$this->errors[] = Tools::displayError('Flag and "No picture" image fields are required.');
 					}
 				}
 				else
@@ -424,21 +408,20 @@ class AdminLanguagesControllerCore extends AdminController
 				if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'p/'.$language.'.jpg'))
 					$this->errors[] = Tools::displayError('An error occurred while copying no-picture image to your product folder.');
 				if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'c/'.$language.'.jpg'))
-					$this->errors[] = Tools::displayError('An error occurred while copying no-picture image to your category folder.');
+					$this->errors[] = Tools::displayError('An error occurred while copying "No picture" image to your category folder.');
 				if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'m/'.$language.'.jpg'))
-					$this->errors[] = Tools::displayError('An error occurred while copying no-picture image to your manufacturer folder');
+					$this->errors[] = Tools::displayError('An error occurred while copying "No picture" image to your manufacturer folder');
 				else
 				{
 					$images_types = ImageType::getImagesTypes('products');
 					foreach ($images_types as $k => $image_type)
 					{
-						$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
-						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
-							$this->errors[] = Tools::displayError('An error occurred while resizing no-picture image to your product directory.');
-						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
-							$this->errors[] = Tools::displayError('An error occurred while resizing no-picture image to your category directory.');
-						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']))
-							$this->errors[] = Tools::displayError('An error occurred while resizing no-picture image to your manufacturer directory.');
+						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+							$this->errors[] = Tools::displayError('An error occurred while resizing "No picture" image to your product directory.');
+						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+							$this->errors[] = Tools::displayError('An error occurred while resizing "No picture" image to your category directory.');
+						if (!ImageManager::resize($tmp_name, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']))
+							$this->errors[] = Tools::displayError('An error occurred while resizing "No picture" image to your manufacturer directory.');
 					}
 				}
 				unlink($tmp_name);
@@ -479,13 +462,6 @@ class AdminLanguagesControllerCore extends AdminController
 		parent::copyFromPost($object, $table);
 	}
 
-	public function beforeUpdateOptions()
-	{
-		$lang = new Language((int)Tools::getValue('PS_LANG_DEFAULT'));
-		if (!$lang->active)
-			$this->errors[] = Tools::displayError('You cannot set this language as default language because it\'s disabled');
-	}
-
 	public function ajaxProcessCheckLangPack()
 	{
 		$this->json = true;
@@ -499,7 +475,7 @@ class AdminLanguagesControllerCore extends AdminController
 			$this->status = 'error';
 			$this->errors[] = '[TECHNICAL ERROR] ps_version not set or empty';
 		}
-		if (@fsockopen('api.prestashop.com', 80))
+		if (@fsockopen('www.prestashop.com', 80))
 		{
 			// Get all iso code available
 			$lang_packs = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='.(string)$_GET['ps_version'].'&iso_lang='.(string)$_GET['iso_lang']);
@@ -512,7 +488,7 @@ class AdminLanguagesControllerCore extends AdminController
 			else
 			{
 				$this->status = 'error';
-				$this->errors[] = $this->l('wrong ISO code or lang pack unavailable');
+				$this->errors[] = $this->l('wrong ISO code or language pack unavailable');
 			}
 		}
 		else

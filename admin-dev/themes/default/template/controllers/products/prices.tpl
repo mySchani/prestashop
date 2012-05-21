@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12711 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14177 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -121,7 +121,8 @@ jQuery(document).ready(Customer.init);
 	<tr>
 		<td class="col-left"><label>{l s='Pre-tax retail price:'}</label></td>
 		<td style="padding-bottom:5px;">
-			{$currency->prefix}<input size="11" maxlength="14" id="priceTE" name="price" type="text" value="{$product->price|string_format:'%.2f'}" onchange="this.value = this.value.replace(/,/g, '.');" onkeyup="$('#priceType').val('TE');if (isArrowKey(event)) return; calcPriceTI();" />{$currency->suffix}
+			<input type="hidden"  id="priceTEReal" name="price" value="{$product->price}" />
+			{$currency->prefix}<input size="11" maxlength="14" id="priceTE" name="price_displayed" type="text" value="{$product->price|string_format:'%.2f'}" onchange="noComma('priceTE'); $('#priceTEReal').val(this.value);" onkeyup="$('#priceType').val('TE'); $('#priceTEReal').val(this.value.replace(/,/g, '.')); if (isArrowKey(event)) return; calcPriceTI();" />{$currency->suffix}
 			<p class="preference_description">{l s='The pre-tax retail price to sell this product'}</p>
 		</td>
 	</tr>
@@ -146,7 +147,7 @@ jQuery(document).ready(Customer.init);
 				 <select onChange="javascript:calcPrice(); unitPriceWithTax('unit');" name="id_tax_rules_group" id="id_tax_rules_group" {if $tax_exclude_taxe_option}disabled="disabled"{/if} >
 					<option value="0">{l s='No Tax'}</option>
 					{foreach from=$tax_rules_groups item=tax_rules_group}
-						<option value="{$tax_rules_group.id_tax_rules_group}" {if $product->id_tax_rules_group == $tax_rules_group.id_tax_rules_group}selected="selected"{/if} >
+						<option value="{$tax_rules_group.id_tax_rules_group}" {if $product->getIdTaxRulesGroup() == $tax_rules_group.id_tax_rules_group}selected="selected"{/if} >
 							{$tax_rules_group['name']|htmlentitiesUTF8}
 						</option>
 					{/foreach}
@@ -157,7 +158,7 @@ jQuery(document).ready(Customer.init);
 			</span>
 			{if $tax_exclude_taxe_option}
 				<span style="margin-left:10px; color:red;">{l s='Taxes are currently disabled'}</span> (<b><a href="{$link->getAdminLink('AdminTaxes')}">{l s='Tax options'}</a></b>)
-				<input type="hidden" value="{$product->id_tax_rules_group}" name="id_tax_rules_group" />
+				<input type="hidden" value="{$product->getIdTaxRulesGroup()}" name="id_tax_rules_group" />
 			{/if}
 		</td>
 	</tr>
@@ -194,7 +195,7 @@ jQuery(document).ready(Customer.init);
 					{l s='/'} <span id="unity_second">{$product->unity}</span> {l s='with tax'}
 				</span>
 			{/if}
-			<p>{l s='Eg. $15 per Lb'}</p>
+			<p>{l s='e.g.  per lb'}</p>
 		</td>
 	</tr>
 	<tr>
@@ -223,10 +224,11 @@ jQuery(document).ready(Customer.init);
 {if isset($specificPriceModificationForm)}
 	<h4>{l s='Specific prices'}</h4>
 	<div class="hint" style="display:block;min-height:0;">
-		{l s='You can set specific prices for clients belonging to different groups, different countries...'}
+		{l s='You can set specific prices for clients belonging to different groups, different countries, etc.'}
 	</div>
 	<br />
-	<a class="button bt-icon" href="#" onclick="$('#add_specific_price').slideToggle();return false;"><img src="../img/admin/add.gif" alt="" /><span>{l s='Add a new specific price'}</span></a>
+	<a class="button bt-icon" href="#" id="show_specific_price"><img src="../img/admin/add.gif" alt="" /><span>{l s='Add a new specific price'}</span></a>
+	<a class="button bt-icon" href="#" id="hide_specific_price" style="display:none"><img src="../img/admin/cross.png" alt=""/><span>{l s='Cancel new specific price'}</span></a>
 	<br/>
 	<script type="text/javascript">
 	var product_prices = new Array();
@@ -306,10 +308,23 @@ jQuery(document).ready(Customer.init);
 					$('#sp_current_ht_price').html(product_prices[$('#id_product_attribute option:selected').val()]);
 				});
 
-				$('.datepicker').datepicker({
+				$('.datepicker').datetimepicker({
 					prevText: '',
 					nextText: '',
-					dateFormat: 'yy-mm-dd'
+					dateFormat: 'yy-mm-dd',
+
+					// Define a custom regional settings in order to use PrestaShop translation tools
+					currentText: '{l s='Now'}',
+					closeText: '{l s='Done'}',
+					ampm: false,
+					amNames: ['AM', 'A'],
+					pmNames: ['PM', 'P'],
+					timeFormat: 'hh:mm:ss tt',
+					timeSuffix: '',
+					timeOnlyTitle: '{l s='Choose Time'}',
+					timeText: '{l s='Time'}',
+					hourText: '{l s='Hour'}',
+					minuteText: '{l s='Minute'}',
 				});
 			});
 		</script>
@@ -334,7 +349,7 @@ jQuery(document).ready(Customer.init);
 				)
 			</span>
 			<div class="hint" style="display:block;min-height:0;">
-				{l s='You can set this value at 0 in order to apply the default price'}
+				{l s='You can set this value to 0 in order to apply the default price'}
 			</div>
 		</div>
 
@@ -346,15 +361,11 @@ jQuery(document).ready(Customer.init);
 				<option value="amount">{l s='Amount'}</option>
 				<option value="percentage">{l s='Percentage'}</option>
 			</select>
-			{l s='(if set to "amount", the tax is included)'}
-		</div>
-
-		<div class="margin-form">
-			<input type="submit" name="submitPriceAddition" value="{l s='Add'}" class="button" />
+			{l s='(if set to "amount", tax is included)'}
 		</div>
 	</div>
 
-	<table style="text-align: center;width:100%" class="table" cellpadding="0" cellspacing="0">
+	<table style="text-align: center;width:100%" class="table" cellpadding="0" cellspacing="0" id="specific_prices_list">
 		<thead>
 			<tr>
 				<th class="cell border" style="width: 12%;">{l s='Rule'}</th>
@@ -364,7 +375,7 @@ jQuery(document).ready(Customer.init);
 				<th class="cell border" style="width: 11%;">{l s='Country'}</th>
 				<th class="cell border" style="width: 13%;">{l s='Group'}</th>
 				<th class="cell border" style="width: 13%;">{l s='Customer'}</th>
-				<th class="cell border" style="width: 12%;">{l s='Price'} {if $country_display_tax_label}{l s='(tax excl)'}{/if}</th>
+				<th class="cell border" style="width: 12%;">{l s='Price'} {if $country_display_tax_label}{l s='(tax excl.)'}{/if}</th>
 				<th class="cell border" style="width: 10%;">{l s='Reduction'}</th>
 				<th class="cell border" style="width: 15%;">{l s='Period'}</th>
 				<th class="cell border" style="width: 10%;">{l s='From (quantity)'}</th>

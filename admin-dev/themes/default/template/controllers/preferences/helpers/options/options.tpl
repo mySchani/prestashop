@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,30 +18,17 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9540 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 {extends file="helpers/options/options.tpl"}
-{block name="start_field_block"}
+{block name="input"}
 	{if $field['type'] == 'disabled'}
-		<div class="margin-form">
-			{$field['disabled']}
-	{elseif $field['type'] == 'maintenance_ip'}
-		<div class="margin-form">
-			{$field['script_ip']}
-			<input type="text"{if isset($field['id'])} id="{$field['id']}"{/if} size="{if isset($field['size'])}{$field['size']|intval}{else} 5{/if}" name="{$key}" value="{$field['value']|escape:'htmlall':'UTF-8'|htmlentities}" />
-			{$field['link_remove_ip']}
+		{$field['disabled']}
 	{else}
-		<div class="margin-form">
-	{/if}
-{/block}
-
-{block name="end_field_block"}
-	{if $field['type'] == 'checkbox_table'}
-		<div class="clear"></div>
-		<br />
+		{$smarty.block.parent}
 	{/if}
 {/block}

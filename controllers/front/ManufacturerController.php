@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -70,6 +70,8 @@ class ManufacturerControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		if (Validate::isLoadedObject($this->manufacturer) && $this->manufacturer->active && $this->manufacturer->isAssociatedToGroupShop())
 		{
 			$this->productSort();
@@ -81,7 +83,6 @@ class ManufacturerControllerCore extends FrontController
 			$this->assignAll();
 			$this->setTemplate(_PS_THEME_DIR_.'manufacturer-list.tpl');
 		}
-		parent::initContent();
 	}
 
 	/**
@@ -105,7 +106,7 @@ class ManufacturerControllerCore extends FrontController
 	{
 		if (Configuration::get('PS_DISPLAY_SUPPLIERS'))
 		{
-			$id_current_group_shop = $this->context->shop->getGroupID();
+			$id_current_group_shop = Shop::getContextGroupShopID();
 			$data = Manufacturer::getManufacturers(true, $this->context->language->id, true, false, false, false, $id_current_group_shop);
 			$nbProducts = count($data);
 			$this->pagination($nbProducts);

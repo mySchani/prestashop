@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -66,7 +66,7 @@ class StatsLive extends Module
 				INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
 				INNER JOIN `'._DB_PREFIX_.'customer` u ON u.id_customer = g.id_customer
 				WHERE cp.`time_end` IS NULL
-					'.$this->sqlShopRestriction(false, 'c').'
+					'.Shop::addSqlRestriction(false, 'c').'
 					AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
 				GROUP BY c.id_connections
 				ORDER BY u.firstname, u.lastname';
@@ -90,7 +90,7 @@ class StatsLive extends Module
 					LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.id_page_type = pt.id_page_type
 					INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
 					WHERE (g.id_customer IS NULL OR g.id_customer = 0)
-						'.$this->sqlShopRestriction(false, 'c').'
+						'.Shop::addSqlRestriction(false, 'c').'
 						AND cp.`time_end` IS NULL
 			AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
 					GROUP BY c.id_connections
@@ -102,7 +102,7 @@ class StatsLive extends Module
 					FROM `'._DB_PREFIX_.'connections` c
 					INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
 					WHERE (g.id_customer IS NULL OR g.id_customer = 0)
-						'.$this->sqlShopRestriction(false, 'c').'
+						'.Shop::addSqlRestriction(false, 'c').'
 						AND TIME_TO_SEC(TIMEDIFF(NOW(), c.`date_add`)) < 900
 					ORDER BY c.date_add DESC';
 		}

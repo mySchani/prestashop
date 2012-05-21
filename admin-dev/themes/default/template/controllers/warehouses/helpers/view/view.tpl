@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13052 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -61,10 +61,10 @@
 					</tr>
 					<tr>
 						<td>{l s='Products:'}</td>
-						<td>{$warehouse_num_products} {l s='references'}</td>
+						<td>{$warehouse_num_products} {l s='References:'}</td>
 					</tr>
 					<tr>
-						<td>{l s='Products physical quantities:'}</td>
+						<td>{l s='Physical product quantities:'}</td>
 						<td>{$warehouse_quantities}</td>
 					</tr>
 					<tr>
@@ -77,7 +77,7 @@
 		<div style="margin-top: 30px">
 			<fieldset>
 				<legend><img src="/img/t/AdminShop.gif" alt="" /> {l s='Shops'}</legend>
-				{l s='The following are the shops associated to this warehouse.'}
+				{l s='The following are the shops associated with this warehouse.'}
 				<table style="width: 400px; margin-top:20px" classe="table">
 					<tr>
 						<th>{l s='ID'}</th>

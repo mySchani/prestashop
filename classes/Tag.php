@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -137,7 +137,7 @@ class TagCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'product_tag` pt
 		LEFT JOIN `'._DB_PREFIX_.'tag` t ON (t.id_tag = pt.id_tag)
 		LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.id_product = pt.id_product)
-		'.Context::getContext()->shop->addSqlAssociation('product', 'p').'
+		'.Shop::addSqlAssociation('product', 'p').'
 		WHERE t.`id_lang` = '.(int)$id_lang.'
 		AND p.`active` = 1
 		AND p.`id_product` IN (
@@ -178,7 +178,7 @@ class TagCore extends ObjectModel
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT pl.name, pl.id_product
 		FROM `'._DB_PREFIX_.'product` p
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.id_product = pl.id_product'.$context->shop->addSqlRestrictionOnLang('pl').'
+		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.id_product = pl.id_product'.Shop::addSqlRestrictionOnLang('pl').'
 		WHERE pl.id_lang = '.(int)$id_lang.'
 		AND p.active = 1
 		'.($this->id ? ('AND p.id_product '.$in.' (SELECT pt.id_product FROM `'._DB_PREFIX_.'product_tag` pt WHERE pt.id_tag = '.(int)$this->id.')') : '').'

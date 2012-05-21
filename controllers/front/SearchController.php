@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -40,7 +40,14 @@ class SearchControllerCore extends FrontController
 		parent::init();
 
 		$this->instant_search = Tools::getValue('instantSearch');
+
 		$this->ajax_search = Tools::getValue('ajaxSearch');
+
+		if ($this->instant_search || $this->ajax_search)
+		{
+			$this->display_header = false;
+			$this->display_footer = false;
+		}
 	}
 
 	/**
@@ -49,6 +56,8 @@ class SearchControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		$query = urldecode(Tools::getValue('q'));
 		if ($this->ajax_search)
 		{
@@ -115,7 +124,6 @@ class SearchControllerCore extends FrontController
 		$this->context->smarty->assign('add_prod_display', Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'));
 
 		$this->setTemplate(_PS_THEME_DIR_.'search.tpl');
-		parent::initContent();
 	}
 
 	public function displayHeader($display = true)

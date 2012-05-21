@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 10056 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -95,14 +95,6 @@ class InstallLanguage
 			$this->data = file_exists($this->path.'install.php') ? include($this->path.'install.php') : array();
 
 		return isset($this->data[$type][$key]) ? $this->data[$type][$key] : null;
-	}
-
-	public function getFixtureTranslation($key)
-	{
-		if (!is_array($this->fixtures_data))
-			$this->fixtures_data = file_exists(_PS_INSTALL_FIXTURES_PATH_.'apple/langs/'.$this->iso.'/fixtures.php') ? include(_PS_INSTALL_FIXTURES_PATH_.'apple/langs/'.$this->iso.'/fixtures.php') : array();
-
-		return isset($this->fixtures_data[$key]) ? $this->fixtures_data[$key] : null;
 	}
 
 	public function getCountries()

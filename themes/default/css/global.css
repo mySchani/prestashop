@@ -89,6 +89,13 @@ p {padding-bottom:20px}
 	font-size:13px;
 	background:#ffffe0
 }
+.success {
+	margin:0 0 10px 0;
+	padding:10px;
+	border:1px solid #5cff74;
+	font-size:13px;
+	background: #d3ffab
+}
 .error {
 	margin:0 0 10px 0;
 	padding:10px;
@@ -238,6 +245,7 @@ table.table_block th {
 	padding:14px 12px;
 	font-size:12px;
 	color:#fff;
+    font-weight:bold;
 	text-transform:uppercase;
 	text-shadow:0 1px 0 #000;
 	background:url(../img/bg_table_th.png) repeat-x 0 0 #999
@@ -623,8 +631,8 @@ ul.idTabs li {
 ************************************************************************************************ */
 
 /* nav bottom ********************************************************************************** */
-#order #left_column {display:none}
-#order #center_column{width:757px}
+#order #left_column , #order-confirmation #left_column {display:none}
+#order #center_column, #order-confirmation #center_column{width:757px}
 
 .cart_navigation {margin:20px 0}
 .cart_navigation .exclusive,
@@ -648,9 +656,10 @@ ul.idTabs li {
 table#cart_summary th {
 	padding:14px 12px;
 	color:#fff;
+    font-weight:bold;
 	text-transform:uppercase;
-	text-shadow:0 1px 0 #000;
-	background:url(../img/bg_table_th.png) repeat-x 0 0 #999
+    text-shadow:0 1px 0 #666;
+	background:url(../img/bg_table_th.png) repeat-x 0 -15px #999
 }
 table#cart_summary  th.cart_product {text-align:center}
 table#cart_summary  td {
@@ -684,7 +693,6 @@ table#cart_summary  .cart_product {
 table#cart_summary  .cart_product  img {border:1px solid #ccc}
 table#cart_summary  .cart_description {
 	width:230px;
-	font-weight:normal
 }
 table#cart_summary  .cart_unit {width:130px}
 table#cart_summary  .cart_quantity {width:130px}
@@ -697,7 +705,7 @@ table#cart_summary  .cart_quantity {width:130px}
 .cart_quantity .cart_quantity_button {
 	float:left;
 	position: relative;
-   top: -5px
+	top: -5px
 }
 table#cart_summary .cart_total {width:120px}
 table#cart_summary .cart_delete {
@@ -722,11 +730,15 @@ a.price_discount_delete {
 	border-right:none;
 }
 
-
 table#cart_summary .cart_total_price td.cart_voucher {
 	border-bottom:1px solid #999;
 	vertical-align:middle
 }
+
+table#cart_summary #total_price_container {
+	border-bottom:1px solid #999;
+}
+
 .cart_voucher h4,
 .cart_voucher p {float:left;}
 .cart_voucher h4 {
@@ -805,8 +817,9 @@ table#cart_summary .cart_total_price .total_price_container {
    font-weight: bold;
    line-height:29px;
    color:#fff;
+    font-weight:bold;
 	text-transform:uppercase;
-   background:url(../img/bg_address_title.png) repeat-x 0 0 #989898
+   background:url(../img/bg_table_th.png) repeat-x 0 -10px #999
 }
 #order_carrier span {
 	display:block;
@@ -818,7 +831,6 @@ table#cart_summary .cart_total_price .total_price_container {
 
 .multishipping_close_container {
 	text-align: center;
-	margin-top: -30px;
 }
 
 /* step 2 - authentification ******************************************************************* */
@@ -1061,7 +1073,7 @@ margin: 10px 0 0 0;*/
 	line-height:29px;
 	color:#fff;
 	text-transform:uppercase;
-	background:url(../img/bg_address_title.png) repeat-x 0 0 #989898
+	background:url(../img/bg_table_th.png) repeat-x 0 -10px #999
 }
 #carrierTable  td {
 	padding:15px;
@@ -1479,6 +1491,28 @@ ul#manufacturers_list li .description {
 }
 ul#manufacturers_list li .right_side {float:right;}
 
+.description_box {
+	border: 1px solid #CCCCCC;
+	border-radius: 3px 3px 3px 3px;
+	box-shadow: 0 1px 1px #E2E2E2;
+	padding: 5px;
+	margin-bottom: 20px;
+	font-size: 12px;
+	line-height: 18px;
+}
+.description_box p {
+	margin: 0;
+	padding: 0 10px 5px;
+}
+.description_box .hide_desc {
+	display: none;
+}
+.description_box .lnk_more {
+	background: url("../img/arrow_right_1.png") no-repeat scroll 100% 4px transparent;
+	color: #0088CC;
+	padding: 0 10px;
+}
+
 
 /* ************************************************************************************************
       PAGE SUPPLIER
@@ -1690,7 +1724,8 @@ ul#suppliers_list li .right_side {float:right;}
 #product p#loyalty {
 	padding:10px 0 0 20px;
 	border-top:1px solid #ccc;
-	background:url(../img/icon/info.png) no-repeat 0 8px
+	background:url(../img/icon/info.png) no-repeat 0 8px;
+	margin-top: 10px;
 }
 
 #footer .myaccount li.loyalty img {display:none}
@@ -1781,3 +1816,14 @@ div.star_hover a, div.star a:hover { background-position: 0 -12px }
       xxxxx
 ************************************************************************************************ */
 
+
+/* ************************************************************************************************
+      guest tracking
+************************************************************************************************ */
+
+#guest-tracking fieldset p:first-child {
+	padding-top: 10px;
+}
+#guest-tracking fieldset p:last-child {
+	padding-bottom: 10px;
+}

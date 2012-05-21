@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7445 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -56,7 +56,7 @@ class MetaCore extends ObjectModel
 	public static function getPages($exclude_filled = false, $add_page = false)
 	{
 		$selected_pages = array();
-		if (!$files = scandir(_PS_ROOT_DIR_.'/controllers'))
+		if (!$files = scandir(_PS_ROOT_DIR_.'/controllers/front/'))
 			die(Tools::displayError('Cannot scan root directory'));
 
 		// Exclude pages forbidden
@@ -93,16 +93,13 @@ class MetaCore extends ObjectModel
 		ORDER BY page ASC');
 	}
 
-	public static function getMetasByIdLang($id_lang, Shop $shop = null)
+	public static function getMetasByIdLang($id_lang)
 	{
-		if (!$shop)
-			$shop = Context::getContext()->shop;
-
 		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'meta` m
 				LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON m.`id_meta` = ml.`id_meta`
 				WHERE ml.`id_lang` = '.(int)$id_lang
-					.$shop->addSqlRestrictionOnLang('ml').
+					.Shop::addSqlRestrictionOnLang('ml').
 				'ORDER BY page ASC';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
@@ -118,7 +115,7 @@ class MetaCore extends ObjectModel
 				LEFT JOIN '._DB_PREFIX_.'meta_lang ml on (m.id_meta = ml.id_meta)
 				WHERE m.page = \''.pSQL($page).'\'
 					AND ml.id_lang = '.(int)$id_lang
-					.$context->shop->addSqlRestrictionOnLang('ml');
+					.Shop::addSqlRestrictionOnLang('ml');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 	}
 
@@ -161,10 +158,10 @@ class MetaCore extends ObjectModel
 			SELECT id_meta
 			FROM `'._DB_PREFIX_.'meta_lang`
 			WHERE url_rewrite = \''.pSQL($url_rewrite).'\' AND id_lang = '.(int)$id_lang.'
-			AND id_shop = '.Context::getContext()->shop->getID(true).'
+			AND id_shop = '.Context::getContext()->shop->id.'
 		)
 		AND id_lang = '.(int)$new_id_lang.'
-		AND id_shop = '.Context::getContext()->shop->getID(true));
+		AND id_shop = '.Context::getContext()->shop->id);
 	}
 }
 

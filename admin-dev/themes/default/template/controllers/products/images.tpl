@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13012 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -40,7 +40,7 @@
 				<div id="progressBarImage" class="progressBarImage"></div>
 				<div id="showCounter" style="display:none;"><span id="imageUpload">0</span><span id="imageTotal">0</span></div>
 					<p class="preference_description" style="clear: both;">
-						{l s='Format:'} JPG, GIF, PNG. {l s='Filesize:'} {$max_image_size|string_format:"%.2f"}{l s='Kb max.'}
+						{l s='Format:'} JPG, GIF, PNG. {l s='Filesize:'} {$max_image_size|string_format:"%.2f"}{l s='kB max.'}
 					</p>
 			</td>
 		</tr>
@@ -123,6 +123,7 @@
 				{
 					assoc = assoc.slice(0, -1);
 					assoc += {literal}"}"{/literal};
+					assoc = jQuery.parseJSON(assoc);
 				}
 				else
 					assoc = false;
@@ -188,7 +189,7 @@
 						cover = "forbbiden";
 						if (responseJSON.cover == "1")
 							cover = "enabled";
-						imageLine(responseJSON.id, responseJSON.path, responseJSON.position, cover, false)
+						imageLine(responseJSON.id, responseJSON.path, responseJSON.position, cover, responseJSON.shops)
 						$("#imageTable tr:last").after(responseJSON.html);
 						$("#countImage").html(parseInt($("#countImage").html()) + 1);
 						$("#img" + id).remove();
@@ -318,8 +319,7 @@
 				line = line.replace("</tbody>", "");
 				if (shops != false)
 				{
-					tmp = jQuery.parseJSON(shops);
-					$.each(tmp, function(key, value){
+					$.each(shops, function(key, value){
 						if (value == 1)
 							line = line.replace('id="' + key + '' + id + '"','id="' + key + '' + id + '" checked=checked');
 					});

@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12731 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -85,22 +85,30 @@
 	<table cellpadding="5" style="width: 40%; float: left; margin-left: 10px;">
 	<tr>
 		<td class="col-left">
-		
-
-		<label class="text">{l s='Status:'}</label></td>
+			<label class="text">{l s='Status:'}</label>
+		</td>
 		<td style="padding-bottom:5px;">
 			<ul class="listForm">
 				<li>
 					<input onclick="toggleDraftWarning(false);showOptions(true);" type="radio" name="active" id="active_on" value="1" {if $product->active}checked="checked" {/if} />
-			<label for="active_on" class="radioCheck">
-			{l s='Enabled'}</label>
-			</li>
-
+					<label for="active_on" class="radioCheck">{l s='Enabled'}</label>
+				</li>
 				<li>
 					<input onclick="toggleDraftWarning(true);showOptions(false);"  type="radio" name="active" id="active_off" value="0" {if !$product->active}checked="checked"{/if} />
-			<label for="active_off" class="radioCheck">{l s='Disabled'} </label>
+					<label for="active_off" class="radioCheck">{l s='Disabled'}</label>
 				</li>
 			</ul>
+		</td>
+	</tr>
+	<tr>
+		<td class="col-left"><label>{l s='Visibility:'}</label></td>
+		<td style="padding-bottom:5px;">
+			<select name="visibility" id="visibility">
+				<option value="both" {if $product->visibility == 'both'}selected="selected"{/if} >{l s='Everywhere'}</option>
+				<option value="catalog" {if $product->visibility == 'catalog'}selected="selected"{/if} >{l s='Catalog only'}</option>
+				<option value="search" {if $product->visibility == 'search'}selected="selected"{/if} >{l s='Search only'}</option>
+				<option value="none" {if $product->visibility == 'none'}selected="selected"{/if}>{l s='Nowhere'}</option>
+			</select>
 		</td>
 	</tr>
 	<tr id="product_options" {if !$product->active}style="display:none"{/if} >
@@ -234,7 +242,7 @@
 						<td class="col-left"><label>{l s='Image tag to insert:'}</label></td>
 						<td style="padding-bottom:5px;">
 							<input type="text" id="resultImage" name="resultImage" />
-							<p class="preference_description">{l s='The tag is to copy / paste in the description.'}</p>
+							<p class="preference_description">{l s='The tag is to copy/paste in the description.'}</p>
 						</td>
 					</tr>
 					<tr>
@@ -286,7 +294,7 @@
 						<span class="hint" name="help_box">{l s='Forbidden characters:'} !&lt;;&gt;;?=+#&quot;&deg;{}_$%<span class="hint-pointer">&nbsp;</span></span>
 					</div>
 				{/foreach}
-				<p class="preference_description clear">{l s='Tags separated by commas (e.g., dvd, dvd player, hifi)'}</p>
+				<p class="preference_description clear">{l s='Tags separated by commas (e.g. dvd, dvd player, hifi)'}</p>
 			</td>
 		</tr>
 		</table>

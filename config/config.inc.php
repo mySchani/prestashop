@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -49,7 +49,7 @@ if (!headers_sent())
 /* No settings file? goto installer... */
 if (!file_exists(dirname(__FILE__).'/settings.inc.php'))
 {
-	$dir = ((is_dir($_SERVER['REQUEST_URI']) || substr($_SERVER['REQUEST_URI'], -1) == '/') ? $_SERVER['REQUEST_URI'] : dirname($_SERVER['REQUEST_URI']).'/');
+	$dir = ((substr($_SERVER['REQUEST_URI'], -1) == '/' || is_dir($_SERVER['REQUEST_URI'])) ? $_SERVER['REQUEST_URI'] : dirname($_SERVER['REQUEST_URI']).'/');
 	if (!file_exists(dirname(__FILE__).'/../install'))
 		die('Error: "install" directory is missing');
 	header('Location: install/');
@@ -62,9 +62,10 @@ require_once(dirname(__FILE__).'/autoload.php');
 
 if (_PS_DEBUG_PROFILING_)
 {
-	include_once(_PS_ROOT_DIR_.'/override/classes/_Controller.php');
+	include_once(_PS_ROOT_DIR_.'/override/classes/controller/_Controller.php');
 	include_once(_PS_ROOT_DIR_.'/override/classes/_Module.php');
 	include_once(_PS_ROOT_DIR_.'/override/classes/_ObjectModel.php');
+	include_once(_PS_ROOT_DIR_.'/override/classes/_Hook.php');
 	include_once(_PS_ROOT_DIR_.'/override/classes/db/_Db.php');
 }
 
@@ -87,6 +88,7 @@ if (!isset($_SERVER['HTTP_HOST']) || empty($_SERVER['HTTP_HOST']))
 
 /* Initialize the current Shop */
 Context::getContext()->shop = Shop::initialize();
+Shop::setContext(Shop::CONTEXT_SHOP, Context::getContext()->shop->id);
 define('_THEME_NAME_', Context::getContext()->shop->getTheme());
 define('__PS_BASE_URI__', Context::getContext()->shop->getBaseURI());
 
@@ -114,7 +116,7 @@ $cookieLifetime = (time() + (((int)Configuration::get('PS_COOKIE_LIFETIME_BO') >
 if (defined('_PS_ADMIN_DIR_'))
 	$cookie = new Cookie('psAdmin', '', $cookieLifetime);
 else
-	$cookie = new Cookie('ps'.Context::getContext()->shop->getID(), '', $cookieLifetime);
+	$cookie = new Cookie('ps'.Context::getContext()->shop->id, '', $cookieLifetime);
 Context::getContext()->cookie = $cookie;
 
 /* Create employee if in BO, customer else */
@@ -122,6 +124,10 @@ if (defined('_PS_ADMIN_DIR_'))
 {
 	$employee = new Employee($cookie->id_employee);
 	Context::getContext()->employee = $employee;
+
+	/* Auth on shops are recached after employee assignation */
+	if ($employee->id_profile != _PS_ADMIN_PROFILE_)
+		Shop::cacheShops(true);
 
 	$cookie->id_lang = (int)$employee->id_lang;
 }
@@ -134,7 +140,7 @@ else
 
 		if (!isset($cookie->id_cart))
 		{
-			$shops_share = Context::getContext()->shop->getListOfID(Shop::SHARE_ORDER);
+			$shops_share = Shop::getContextListShopID(Shop::SHARE_ORDER);
 			$id_cart = Db::getInstance()->getValue('SELECT `id_cart` FROM `'._DB_PREFIX_.'cart` WHERE `id_customer` = "'.(int)$customer->id.'" AND `id_shop` IN ("'.implode('","', $shops_share).'") ORDER BY `id_cart` DESC');
 			if ($id_cart != false)
 				$cookie->id_cart = $id_cart;

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9216 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13866 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,6 +32,27 @@ define('_THEME_DIR_',      _THEMES_DIR_._THEME_NAME_.'/');
 define('_THEME_IMG_DIR_',  _THEME_DIR_.'img/');
 define('_THEME_CSS_DIR_',  _THEME_DIR_.'css/');
 define('_THEME_JS_DIR_',   _THEME_DIR_.'js/');
+
+/* For mobile devices */
+if (file_exists(_PS_THEME_DIR_.'mobile/'))
+{
+	define('_PS_THEME_MOBILE_DIR_', _PS_THEME_DIR_.'mobile/');
+	define('_THEME_MOBILE_DIR_', _THEMES_DIR_._THEME_NAME_.'/mobile/');
+}
+else
+{
+	define('_PS_THEME_MOBILE_DIR_', _PS_ROOT_DIR_.'/themes/default/mobile/');
+	define('_THEME_MOBILE_DIR_', __PS_BASE_URI__.'themes/default/mobile/');
+}
+define('_THEME_MOBILE_IMG_DIR_', _THEME_MOBILE_DIR_.'img/');
+define('_THEME_MOBILE_CSS_DIR_', _THEME_MOBILE_DIR_.'css/');
+define('_THEME_MOBILE_JS_DIR_', _THEME_MOBILE_DIR_.'js/');
+
+/* For touch pad devices */
+define('_PS_THEME_TOUCHPAD_DIR_', _PS_THEME_DIR_.'touchpad/');
+define('_THEME_TOUCHPAD_DIR_', _THEMES_DIR_._THEME_NAME_.'/touchpad/');
+define('_THEME_TOUCHPAD_CSS_DIR_', _THEME_MOBILE_DIR_.'css/');
+define('_THEME_TOUCHPAD_JS_DIR_', _THEME_MOBILE_DIR_.'js/');
 
 /* Image URLs */
 define('_PS_IMG_',         __PS_BASE_URI__.'img/');

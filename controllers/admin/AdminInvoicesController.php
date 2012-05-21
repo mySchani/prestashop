@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -31,19 +31,21 @@ class AdminInvoicesControllerCore extends AdminController
 	{
 		$this->table = 'invoice';
 
+		parent::__construct();
+
 		$this->options = array(
 			'general' => array(
 				'title' =>	$this->l('Invoice options'),
 				'fields' =>	array(
 					'PS_INVOICE' => array(
 						'title' => $this->l('Enable invoices:'),
-						'desc' => $this->l('Select whether or not to activate invoices for your shop'),
+						'desc' => $this->l('If enabled, your customers will be able to receive an invoice for their purchases'),
 						'cast' => 'intval',
 						'type' => 'bool'
 					),
 					'PS_INVOICE_PREFIX' => array(
 						'title' => $this->l('Invoice prefix:'),
-						'desc' => $this->l('Prefix used for invoices'),
+						'desc' => $this->l('Prefix used for invoice name (e.g. IN00001)'),
 						'size' => 6,
 						'type' => 'textLang'
 					),
@@ -55,7 +57,7 @@ class AdminInvoicesControllerCore extends AdminController
 						'cast' => 'intval'
 					),
 					'PS_INVOICE_FREE_TEXT' => array(
-						'title' => $this->l('Free Text:'),
+						'title' => $this->l('Footer Text:'),
 						'desc' => $this->l('This text will appear at the bottom of the invoice'),
 						'size' => 6,
 						'type' => 'textareaLang',
@@ -68,13 +70,18 @@ class AdminInvoicesControllerCore extends AdminController
 						'type' => 'select',
 						'identifier' => 'value',
 						'list' => $this->getInvoicesModels()
+					),
+					'PS_PDF_USE_CACHE' => array(
+						'title' => $this->l('Use disk as cache for PDF invoices'),
+						'desc' => $this->l('Saves memory but slows down the rendering process.'),
+						'validation' => 'isBool',
+						'cast' => 'intval',
+						'type' => 'bool'
 					)
 				),
 				'submit' => array()
-			),
+			)
 		);
-
-		parent::__construct();
 	}
 
 	public function initFormByDate()
@@ -92,7 +99,7 @@ class AdminInvoicesControllerCore extends AdminController
 					'size' => 20,
 					'maxlength' => 10,
 					'required' => true,
-					'desc' => $this->l('Format: 2007-12-31 (inclusive)')
+					'desc' => $this->l('Format: 2011-12-31 (inclusive)')
 				),
 				array(
 					'type' => 'date',
@@ -101,7 +108,7 @@ class AdminInvoicesControllerCore extends AdminController
 					'size' => 20,
 					'maxlength' => 10,
 					'required' => true,
-					'desc' => $this->l('Format: 2008-12-31 (inclusive)')
+					'desc' => $this->l('Format: 2012-12-31 (inclusive)')
 				)
 			),
 			'submit' => array(
@@ -125,7 +132,7 @@ class AdminInvoicesControllerCore extends AdminController
 	{
 		$this->fields_form = array(
 			'legend' => array(
-				'title' => $this->l('By statuses'),
+				'title' => $this->l('By order status'),
 				'image' => '../img/admin/pdf.gif'
 			),
 			'input' => array(
@@ -158,7 +165,7 @@ class AdminInvoicesControllerCore extends AdminController
 			) id_order_state
 			FROM '._DB_PREFIX_.'order_invoice oi
 			LEFT JOIN '._DB_PREFIX_.'orders o ON (oi.id_order = o.id_order)
-			WHERE o.id_shop IN('.implode(', ', $this->context->shop->getListOfID()).')
+			WHERE o.id_shop IN('.implode(', ', Shop::getContextListShopID()).')
 			GROUP BY id_order_state
 		');
 
@@ -209,10 +216,10 @@ class AdminInvoicesControllerCore extends AdminController
 		if (Tools::getValue('submitAddinvoice_date'))
 		{
 			if (!Validate::isDate(Tools::getValue('date_from')))
-				$this->errors[] = $this->l('Invalid from date');
+				$this->errors[] = $this->l('Invalid "From:" date');
 
 			if (!Validate::isDate(Tools::getValue('date_to')))
-				$this->errors[] = $this->l('Invalid end date');
+				$this->errors[] = $this->l('Invalid "To:" date');
 
 			if (!count($this->errors))
 			{

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9202 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -205,16 +205,16 @@ class StockManagerCore implements StockManagerInterface
 		$context = Context::getContext();
 
 		// Special case of a pack
-		if (Pack::isPack($id_product))
+		if (Pack::isPack((int)$id_product))
 		{
 			// Gets items
-			$products_pack = Pack::getItems($id_product, (int)Configuration::get('PS_LANG_DEFAULT'));
+			$products_pack = Pack::getItems((int)$id_product, (int)Configuration::get('PS_LANG_DEFAULT'));
 			// Foreach item
 			foreach ($products_pack as $product_pack)
 			{
-				//TODO $pack_id_product_attribute = Product::getDefaultAttribute($id_product_attribute, 1);
+				$pack_id_product_attribute = Product::getDefaultAttribute($product_pack->id, 1);
 				if ($product_pack->advanced_stock_management == 1)
-					$this->removeProduct($product_pack->id, 0, $warehouse, $product_pack->pack_quantity * $quantity, $id_stock_mvt_reason, $is_usable, $id_order);
+					$this->removeProduct($product_pack->id, $pack_id_product_attribute, $warehouse, $product_pack->pack_quantity * $quantity, $id_stock_mvt_reason, $is_usable, $id_order);
 			}
 		}
 		else
@@ -405,6 +405,16 @@ class StockManagerCore implements StockManagerInterface
 				break;
 			}
 		}
+
+		// if we remove a usable quantity, exec hook
+		if ($is_usable)
+			Hook::exec('actionProductCoverage',
+					   	array(
+		   					'id_product' => $id_product,
+		   					'id_product_attribute' => $id_product_attribute,
+		   					'warehouse' => $warehouse
+					   	)
+			);
 
 		return $return;
 	}

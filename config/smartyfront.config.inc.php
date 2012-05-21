@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -29,7 +29,8 @@ $smarty->setTemplateDir(_PS_THEME_DIR_.'tpl');
 
 function smartyTranslate($params, &$smarty)
 {
-	global $_LANG, $_MODULES, $cookie, $_MODULE, $_LANGPDF;
+	global $_LANG;
+
 	if (!isset($params['js'])) $params['js'] = 0;
 	if (!isset($params['pdf'])) $params['pdf'] = false;
 	if (!isset($params['mod'])) $params['mod'] = false;
@@ -39,46 +40,13 @@ function smartyTranslate($params, &$smarty)
 	$key = Tools::substr(basename($filename), 0, -4).'_'.md5($string);
 	$lang_array = $_LANG;
 	if ($params['mod'])
-	{
-		$iso = Language::getIsoById($cookie->id_lang);
-
-		if (Tools::file_exists_cache(_PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php'))
-		{
-			$translationsFile = _PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php';
-			$key = '<{'.$params['mod'].'}'._THEME_NAME_.'>'.$key;
-		}
-		else
-		{
-			// @retrocompatibility with translations files in module root
-			if (Tools::file_exists_cache(_PS_MODULE_DIR_.$params['mod'].'/translations'))
-				$translationsFile = _PS_MODULE_DIR_.$params['mod'].'/translations/'.$iso.'.php';
-			else
-				$translationsFile = _PS_MODULE_DIR_.$params['mod'].'/'.$iso.'.php';
-			$key = '<{'.$params['mod'].'}prestashop>'.$key;
-		}
-
-		if (!is_array($_MODULES))
-			$_MODULES = array();
-		if (@include_once($translationsFile))
-			if(is_array($_MODULE))
-				$_MODULES = array_merge($_MODULES, $_MODULE);
-		$lang_array = $_MODULES;
-	}
+		return Translate::getModuleTranslation($params['mod'], $params['s'], Tools::substr(basename($filename), 0, -4));
 	else if ($params['pdf']) 
-	{
-		$iso = Language::getIsoById($cookie->id_lang);
-		$translationsFile = _PS_THEME_DIR_.'pdf/lang/'.$iso.'.php';
+		return Translate::getPdfTranslation($params['s']);
 
-		if (Tools::file_exists_cache($translationsFile))
-			@include_once($translationsFile);
-		
-		$key = 'PDF'.md5($string);
-		$lang_array = $_LANGPDF;
-	}
-
-	if (is_array($lang_array) && key_exists($key, $lang_array))
+	if ($lang_array != null && isset($lang_array[$key]))
 		$msg = $lang_array[$key];
-	elseif (is_array($lang_array) && key_exists(Tools::strtolower($key), $lang_array))
+	elseif ($lang_array != null && isset($lang_array[Tools::strtolower($key)]))
 		$msg = $lang_array[Tools::strtolower($key)];
 	else
 		$msg = $params['s'];

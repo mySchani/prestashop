@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7503 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -65,6 +65,7 @@ class CurrencyCore extends ObjectModel
 	public static $definition = array(
 		'table' => 'currency',
 		'primary' => 'id_currency',
+        'multishop' => true,
 		'fields' => array(
 			'name' => 			array('type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 32),
 			'iso_code' => 		array('type' => self::TYPE_STRING, 'validate' => 'isLanguageIsoCode', 'required' => true, 'size' => 3),
@@ -114,7 +115,7 @@ class CurrencyCore extends ObjectModel
 	 */
 	public function add($autodate = true, $nullValues = false)
 	{
-		return Currency::exists($this->iso_code) ? false : parent::add();
+		return Currency::exists($this->iso_code, $this->iso_code_num) ? false : parent::add();
 	}
 
 	/**
@@ -123,12 +124,12 @@ class CurrencyCore extends ObjectModel
 	 * @param int|string $iso_code int for iso code number string for iso code
 	 * @return boolean
 	 */
-	public static function exists($iso_code)
+	public static function exists($iso_code, $iso_code_num, $id_shop = 0)
 	{
 		if (is_int($iso_code))
-			$id_currency_exists = Currency::getIdByIsoCodeNum($iso_code);
+			$id_currency_exists = Currency::getIdByIsoCodeNum((int)$iso_code_num, (int)$id_shop);
 		else
-			$id_currency_exists = Currency::getIdByIsoCode($iso_code);
+			$id_currency_exists = Currency::getIdByIsoCode($iso_code, (int)$id_shop);
 
 		if ($id_currency_exists)
 			return true;
@@ -194,16 +195,14 @@ class CurrencyCore extends ObjectModel
 	 *
 	 * @return array Currencies
 	 */
-	public static function getCurrencies($object = false, $active = 1, Shop $shop = null)
+	public static function getCurrencies($object = false, $active = 1)
 	{
-		if (!$shop)
-			$shop = Context::getContext()->shop;
-
 		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'currency` c
-				'.$shop->addSqlAssociation('currency', 'c').'
+				'.Shop::addSqlAssociation('currency', 'c').'
 				WHERE `deleted` = 0'
 					.($active == 1 ? ' AND c.`active` = 1' : '').'
+				GROUP BY c.id_currency
 				ORDER BY `name` ASC';
 		$tab = Db::getInstance()->executeS($sql);
 		if ($object)
@@ -215,7 +214,7 @@ class CurrencyCore extends ObjectModel
 	public static function getPaymentCurrenciesSpecial($id_module, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID();
+			$id_shop = Context::getContext()->shop->id;
 
 		$sql = 'SELECT *
 				FROM '._DB_PREFIX_.'module_currency
@@ -227,7 +226,7 @@ class CurrencyCore extends ObjectModel
 	public static function getPaymentCurrencies($id_module, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID();
+			$id_shop = Context::getContext()->shop->id;
 
 		$sql = 'SELECT c.*
 				FROM `'._DB_PREFIX_.'module_currency` mc
@@ -242,8 +241,11 @@ class CurrencyCore extends ObjectModel
 
 	public static function checkPaymentCurrencies($id_module, $id_shop = null)
 	{
+        if (empty($id_module))
+            return false;
+
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		$sql = 'SELECT *
 				FROM `'._DB_PREFIX_.'module_currency`
@@ -261,25 +263,57 @@ class CurrencyCore extends ObjectModel
 		AND `id_currency` = '.(int)($id_currency));
 	}
 
-	public static function getIdByIsoCode($iso_code)
+    /**
+     * @static
+     * @param $iso_code
+     * @param int $id_shop
+     * @return int
+     */
+	public static function getIdByIsoCode($iso_code, $id_shop = 0)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `id_currency`
-		FROM `'._DB_PREFIX_.'currency`
-		WHERE `deleted` = 0
-		AND `iso_code` = \''.pSQL($iso_code).'\'');
-		return $result['id_currency'];
-	}
+        $query = Currency::getIdByQuery($id_shop);
+        $query->where('iso_code = \''.pSQL($iso_code).'\'');
 
-	public static function getIdByIsoCodeNum($iso_code)
-	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `id_currency`
-		FROM `'._DB_PREFIX_.'currency`
-		WHERE `deleted` = 0
-		AND `iso_code_num` = \''.pSQL($iso_code).'\'');
+        $result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query->build());
+
 		return (int)$result['id_currency'];
 	}
+
+    /**
+     * @static
+     * @param $iso_code
+     * @param int $id_shop
+     * @return int
+     */
+	public static function getIdByIsoCodeNum($iso_code_num, $id_shop = 0)
+	{
+        $query = Currency::getIdByQuery($id_shop);
+        $query->where('iso_code_num = \''.pSQL($iso_code_num).'\'');
+
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query->build());
+
+		return (int)$result['id_currency'];
+	}
+
+    /**
+     * @static
+     * @param int $id_shop
+     * @return DbQuery
+     */
+    public static function getIdByQuery($id_shop = 0)
+    {
+        $query = new DbQuery();
+        $query->select('c.id_currency');
+        $query->from('currency', 'c');
+        $query->where('deleted = 0');
+
+        if (Shop::isFeatureActive() && $id_shop > 0)
+        {
+            $query->leftJoin('currency_shop', 'cs', 'cs.id_currency = c.id_currency');
+            $query->where('id_shop = '.(int)$id_shop);
+        }
+        return $query;
+    }
 
 	/**
 	 * Refresh the currency conversion rate

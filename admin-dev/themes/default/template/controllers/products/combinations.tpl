@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12565 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14177 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -93,7 +93,7 @@
 				<input style="width: 140px; margin-bottom: 10px;" type="button" value="{l s='Add'}" class="button" onclick="add_attr();"/><br />
 				<input style="width: 140px;" type="button" value="{l s='Delete'}" class="button" onclick="del_attr()"/></td>
 				<td align="left">
-					<select id="product_att_list" name="attribute_combinaison_list[]" multiple="multiple" size="4" style="width: 320px;"></select>
+					<select id="product_att_list" name="attribute_combination_list[]" multiple="multiple" size="4" style="width: 320px;"></select>
 				</td>
 			</tr>
 			<tr>
@@ -139,7 +139,7 @@
 						<p class="block">
 							<label for="virtual_product_name_attribute" class="t">{l s='Filename'}</label>
 							<input id="virtual_product_name_attribute" name="virtual_product_name_attribute" style="width:200px" value="" type="text">
-							<span class="hint" name="help_box" style="display:none;">{l s='The full filename with its extension (e.g., Book.pdf)'}</span>
+							<span class="hint" name="help_box" style="display:none;">{l s='The full filename with its extension (e.g. Book.pdf)'}</span>
 						</p>
 					</div>
 					<div id="virtual_good_more_attribute" style="padding:5px;width:40%;float:left;margin-left:10px">
@@ -151,12 +151,12 @@
 						<p class="block">
 							<label for="virtual_product_expiration_date_attribute" class="t">{l s='Expiration date'}</label>
 							<input class="datepicker" type="text" id="virtual_product_expiration_date_attribute" name="virtual_product_expiration_date_attribute" value="" size="11" maxlength="10" autocomplete="off" /> {l s='Format: YYYY-MM-DD'}
-							<span class="hint" name="help_box" style="display:none">{l s='No expiration date if you leave this blank'}</span>
+							<span class="hint" name="help_box" style="display:none">{l s='Leave this blank for no expiration date'}</span>
 						</p>
 						<p class="block">
 							<label for="virtual_product_nb_days" class="t">{l s='Number of days'}</label>
 							<input type="text" id="virtual_product_nb_days_attribute" name="virtual_product_nb_days_attribute" value="" class="" size="4" /><sup> *</sup>
-							<span class="hint" name="help_box" style="display:none">{l s='How many days this file can be accessed by customers'} - <em>({l s='set to zero for unlimited access'} ) </em></span>
+							<span class="hint" name="help_box" style="display:none">{l s='How many days this file can be accessed by customers'} - <em>({l s='Set to zero for unlimited access'} ) </em></span>
 						</p>
 						<p class="block">
 							<label for="virtual_product_is_shareable_attribute" class="t">{l s='is shareable'}</label>
@@ -181,7 +181,7 @@
 					{if $currency->format % 2 != 0}{$currency->sign}{/if}
 					<input type="text" size="6"  name="attribute_wholesale_price" id="attribute_wholesale_price" value="" onKeyUp="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.');" />
 					{if $currency->format % 2 == 0} {$currency->sign} {/if}<span id="attribute_wholesale_price_blank">({l s='leave blank if the price does not change'})</span>
-					<span style="display:none" id="attribute_wholesale_price_full">({l s='overrides Wholesale price on Information tab'})</span>
+					<span style="display:none" id="attribute_wholesale_price_full">({l s='Overrides wholesale price on "Information" tab'})</span>
 				</td>
 			</tr>
 			<tr>
@@ -193,12 +193,13 @@
 						<option value="-1">{l s='Reduction'}</option>
 					</select>
 					<span id="span_impact">&nbsp;&nbsp;{l s='of'}&nbsp;&nbsp;{if $currency->format % 2 != 0}{$currency->sign} {/if}
-						<input type="text" size="6" name="attribute_price" id="attribute_price" value="0.00" onKeyUp="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.'); calcImpactPriceTI();"/>{if $currency->format % 2 == 0} {$currency->sign}{/if}
+						<input type="hidden"  id="attribute_priceTEReal" name="attribute_price" value="0.00" />
+						<input type="text" size="6" id="attribute_price" value="0.00" onkeyup="$('#attribute_priceTEReal').val(this.value.replace(/,/g, '.')); if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.'); calcImpactPriceTI();"/>{if $currency->format % 2 == 0} {$currency->sign}{/if}
 						{if $country_display_tax_label}
 							{l s='(tax excl.)'}
 							<span {if $tax_exclude_option}style="display:none"{/if}> {l s='or'}
 							{if $currency->format % 2 != 0}{$currency->sign} {/if}
-							<input type="text" size="6" name="attribute_priceTI" id="attribute_priceTI" value="0.00" onKeyUp="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.'); calcImpactPriceTE();"/>
+							<input type="text" size="6" name="attribute_priceTI" id="attribute_priceTI" value="0.00" onkeyup="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.'); calcImpactPriceTE();"/>
 							{if $currency->format % 2 == 0} {$currency->sign}{/if} {l s='(tax incl.)'}
 							</span> {l s='final product price will be set to'}
 							{if $currency->format % 2 != 0}{$currency->sign} {/if}
@@ -244,7 +245,7 @@
 					<td style="padding-bottom:5px;">{if $currency->format % 2 != 0}{$currency->sign}{/if}
 						<input type="text" size="3" name="attribute_ecotax" id="attribute_ecotax" value="0.00" onKeyUp="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, '.');" />
 						{if $currency->format % 2 == 0} {$currency->sign}{/if} 
-						({l s='overrides Eco-tax on Information tab'})
+						({l s='overrides Eco-tax on "Information" tab'})
 					</td>
 				</tr>
 			{/if}
@@ -253,7 +254,7 @@
 					<label>{l s='Minimum quantity:'}</label>
 				</td>
 				<td style="padding-bottom:5px;">
-					<input size="3" maxlength="6" name="minimal_quantity" id="minimal_quantity" type="text" value="{$minimal_quantity}" />
+					<input size="3" maxlength="6" name="attribute_minimal_quantity" id="attribute_minimal_quantity" type="text" value="{$minimal_quantity}" />
 					<p>{l s='The minimum quantity to buy this product (set to 1 to disable this feature)'}</p>
 				</td>
 			</tr>

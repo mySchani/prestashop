@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12635 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13991 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,7 +40,7 @@ function set_payment_module_group()
 		$content = fread($fd, filesize($file));
 		if (preg_match_all('/extends PaymentModule/U', $content, $matches))
 		{
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'module_group` (id_module, id_group)
 			SELECT '.(int)($module['id_module']).', id_group FROM `'._DB_PREFIX_.'group`');
 		}

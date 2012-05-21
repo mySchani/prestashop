@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -147,9 +147,9 @@ echo '
 			';
 			if (Shop::isFeatureActive())
 			{
-				if (Context::shop() == Shop::CONTEXT_ALL)
+				if (Shop::getContext() == Shop::CONTEXT_ALL)
 					$youEditFieldFor = translate('A modification of this field will be applied for all shops');
-				else if (Context::shop() == Shop::CONTEXT_GROUP)
+				else if (Shop::getContext() == Shop::CONTEXT_GROUP)
 					$youEditFieldFor = sprintf(translate('A modification of this field will be applied for all shops of group %s'), '<b>'.Context::getContext()->shop->getGroup()->name.'</b>');
 				else
 					$youEditFieldFor = sprintf(translate('A modification of this field will be applied for the shop %s'), '<b>'.Context::getContext()->shop->name.'</b>');
@@ -280,7 +280,7 @@ echo '			</select>
 			</div>';
 
 		if (Shop::isFeatureActive())
-			echo '<div id="header_shoplist">'.translate('Select your shop:').' '.generateShopList().'</div>';
+			echo '<div id="header_shoplist">'.translate('Select your shop:').' '.Helper::renderShopList().'</div>';
 
 		echo '</div>';
 			echo Hook::exec('displayBackOfficeTop');
@@ -310,10 +310,6 @@ foreach ($tabs AS $t)
 			</span>
 			<ul class="submenu">';
 		$subTabs = Tab::getTabs(Context::getContext()->language->id, (int)$t['id_tab']);
-
-		// @todo need a better way than using noTabLink property, keeping the fact to avoid db modification
-		if (!in_array($t['class_name'], $noTabLink))
-			array_unshift($subTabs, $t);
 
 		foreach ($subTabs AS $t2)
 			if (checkTabRights($t2['id_tab']) === true AND (bool)$t2['active'])

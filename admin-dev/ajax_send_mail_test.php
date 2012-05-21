@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -33,6 +33,7 @@ require_once(dirname(__FILE__).'/init.php');
 $smtpChecked = (trim($_POST['mailMethod']) ==  'smtp');
 $smtpServer = $_POST['smtpSrv'];
 $content = urldecode($_POST['testMsg']);
+$content = utf8_encode(html_entity_decode($content));
 $subject = urldecode($_POST['testSubject']);
 $type = 'text/html';
 $to =  $_POST['testEmail'];

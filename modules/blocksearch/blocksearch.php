@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -34,7 +34,7 @@ class BlockSearch extends Module
 	{
 		$this->name = 'blocksearch';
 		$this->tab = 'search_filter';
-		$this->version = 1.0;
+		$this->version = 1.1;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -51,6 +51,19 @@ class BlockSearch extends Module
 		return true;
 	}
 
+	public function hookDisplayMobileTop($params)
+	{
+		$this->smarty->assign('hook_mobile', true);
+		return $this->hookTop($params);
+	}
+
+	public function hookDisplayMobileHeader($params)
+	{
+		if (Configuration::get('PS_SEARCH_AJAX'))
+			$this->context->controller->addJqueryPlugin('autocomplete');
+		$this->context->controller->addCSS(_THEME_CSS_DIR_.'product_list.css');
+	}
+	
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_SEARCH_AJAX'))

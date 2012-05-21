@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -28,7 +28,7 @@
 class AdminCustomersControllerCore extends AdminController
 {
 	protected $delete_mode;
-	
+
 	protected $_defaultOrderBy = 'date_add';
 	protected $_defaultOrderWay = 'DESC';
 
@@ -50,8 +50,8 @@ class AdminCustomersControllerCore extends AdminController
 
 		$this->default_form_language = $this->context->language->id;
 
-		$genders_icon = array('default' => 'unknown.gif');
-		$genders = array(0 => $this->l('?'));
+		$genders_icon = array();
+		$genders = array();
 		foreach (Gender::getGenders() as $gender)
 		{
 			$gender_file = 'genders/'.$gender->id.'.jpg';
@@ -127,33 +127,16 @@ class AdminCustomersControllerCore extends AdminController
 				'align' => 'right'
 			),
 			'connect' => array(
-				'title' => $this->l('Connection'),
+				'title' => $this->l('Last visit'),
 				'width' => 100,
 				'type' => 'datetime',
-				'search' => false
+				'search' => false,
+				'havingFilter' => true
 			)
 		);
 
 		$this->shopLinkType = 'shop';
 		$this->shopShareDatas = Shop::SHARE_CUSTOMER;
-
-		$this->options = array(
-			'general' => array(
-				'title' =>	$this->l('Customers options'),
-				'fields' =>	array(
-					'PS_PASSWD_TIME_FRONT' => array(
-						'title' => $this->l('Regenerate password:'),
-						'desc' => $this->l('Security minimum time to wait to regenerate the password'),
-						'validation' => 'isUnsignedInt',
-						'cast' => 'intval',
-						'size' => 5,
-						'type' => 'text',
-						'suffix' => ' '.$this->l('minutes')
-					)
-				),
-				'submit' => array()
-			)
-		);
 
 		parent::__construct();
 	}
@@ -237,10 +220,6 @@ class AdminCustomersControllerCore extends AdminController
 			$list_genders[$key]['value'] = $gender->id;
 			$list_genders[$key]['label'] = $gender->name;
 		}
-		$key++;
-		$list_genders[$key]['id'] = 'gender_unknown';
-		$list_genders[$key]['value'] = 0;
-		$list_genders[$key]['label'] = $this->l('Unknown');
 
 		$years = Tools::dateYears();
 		$months = Tools::dateMonths();
@@ -292,6 +271,15 @@ class AdminCustomersControllerCore extends AdminController
 					'size' => 33,
 					'required' => ($obj->id ? false : true),
 					'desc' => ($obj->id ? $this->l('Leave blank if no change') : $this->l('5 characters min., only letters, numbers, or').' -_')
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Accounting number:'),
+					'name' => 'account_number',
+					'size' => 33,
+					'required' => false,
+					'desc' => $this->l('Used for the accounting export. If this field is empty, the accounting export will use this number ').
+						Accounting::getDisplayedCustomerAccount($this->getFieldValue($obj, 'id_customer'), true)
 				),
 				array(
 					'type' => 'birthday',
@@ -379,7 +367,7 @@ class AdminCustomersControllerCore extends AdminController
 					unset($groups[$key]);
 		}
 
-		$this->fields_form['input'] = array_merge($this->fields_form['input'], 
+		$this->fields_form['input'] = array_merge($this->fields_form['input'],
 				array(
 					array(
 								'type' => 'group',
@@ -387,11 +375,11 @@ class AdminCustomersControllerCore extends AdminController
 								'name' => 'groupBox',
 								'values' => $groups,
 								'required' => true,
-								'desc' => $this->l('Check all the box(es) of groups of which the customer is to be a member')
+								'desc' => $this->l('Select all customer groups you would like to apply to this customer')
 							),
 					array(
 						'type' => 'select',
-						'label' => $this->l('Default group:'),
+						'label' => $this->l('Default customer group:'),
 						'name' => 'id_default_group',
 						'options' => array(
 							'query' => $groups,
@@ -410,20 +398,6 @@ class AdminCustomersControllerCore extends AdminController
 			foreach ($this->fields_form['input'] as $k => $field)
 				if ($field['type'] == 'password')
 					array_splice($this->fields_form['input'], $k, 1);
-		}
-
-		if (Shop::isFeatureActive())
-		{
-			$this->fields_form['input'][] = array(
-				'type' => 'select',
-				'label' => $this->l('Shop:'),
-				'name' => 'id_shop',
-				'options' => array(
-					'query' => Shop::getShops(),
-					'id' => 'id_shop',
-					'name' => 'name'
-				),
-			);
 		}
 
 		if (Configuration::get('PS_B2B_ENABLE'))
@@ -463,7 +437,7 @@ class AdminCustomersControllerCore extends AdminController
 			);
 			$this->fields_form['input'][] = array(
 				'type' => 'text',
-				'label' => $this->l('Outstanding allow:'),
+				'label' => $this->l('Outstanding allowed:'),
 				'name' => 'outstanding_allow_amount',
 				'size' => 10,
 				'hint' => $this->l('Valid characters:').' 0-9',
@@ -501,7 +475,6 @@ class AdminCustomersControllerCore extends AdminController
 			'years' => $this->getFieldValue($obj, 'birthday') ? $birthday[0] : 0,
 			'months' => $this->getFieldValue($obj, 'birthday') ? $birthday[1] : 0,
 			'days' => $this->getFieldValue($obj, 'birthday') ? $birthday[2] : 0,
-			'id_shop' => (int)Configuration::get('PS_SHOP_DEFAULT')
 		);
 
 		// Added values of object Group
@@ -523,6 +496,11 @@ class AdminCustomersControllerCore extends AdminController
 				Tools::getValue('groupBox_'.$group['id_group'], in_array($group['id_group'], $customer_groups_ids));
 
 		return parent::renderForm();
+	}
+
+	public function beforeAdd($customer)
+	{
+		$customer->id_shop = $this->context->shop->id;
 	}
 
 	public function renderView()
@@ -550,6 +528,7 @@ class AdminCustomersControllerCore extends AdminController
 		for ($i = 0; $i < $total_orders; $i++)
 		{
 			$orders[$i]['date_add'] = Tools::displayDate($orders[$i]['date_add'], $this->context->language->id);
+			$orders[$i]['total_paid_real_not_formated'] = $orders[$i]['total_paid_real'];
 			$orders[$i]['total_paid_real'] = Tools::displayPrice($orders[$i]['total_paid_real'], new Currency((int)$orders[$i]['id_currency']));
 		}
 
@@ -582,7 +561,7 @@ class AdminCustomersControllerCore extends AdminController
 			if ($order['valid'])
 			{
 				$orders_ok[] = $order;
-				$total_ok += $order['total_paid_real'];
+				$total_ok += $order['total_paid_real_not_formated'];
 			}
 			else
 				$orders_ko[] = $order;
@@ -728,6 +707,8 @@ class AdminCustomersControllerCore extends AdminController
 
 	public function processAdd($token)
 	{
+		if (Tools::getValue('submitFormAjax'))
+			$this->redirect_after = false;
 		// Check that the new email is not already in use
 		$customer_email = strval(Tools::getValue('email'));
 		$customer = new Customer();
@@ -736,8 +717,15 @@ class AdminCustomersControllerCore extends AdminController
 		if ($customer->id)
 			$this->errors[] = Tools::displayError('An account already exists for this e-mail address:').' '.$customer_email;
 		else
-			return parent::processAdd($token);
-
+		{
+			if ($customer = parent::processAdd($token))
+			{
+				$this->context->smarty->assign('new_customer', $customer);
+				return true;
+			}
+			else
+				return false;
+		}
 	}
 
 	public function processUpdate($token)
@@ -794,11 +782,11 @@ class AdminCustomersControllerCore extends AdminController
 		if (!Validate::isLoadedObject($customer))
 			$this->errors[] = Tools::displayError('This customer does not exist.');
 		if (Customer::customerExists($customer->email))
-			$this->errors[] = Tools::displayError('This customer already exist as non-guest.');
+			$this->errors[] = Tools::displayError('This customer already exists as a non-guest.');
 		else if ($customer->transformToCustomer(Tools::getValue('id_lang', $this->context->language->id)))
 			Tools::redirectAdmin(self::$currentIndex.'&'.$this->identifier.'='.$customer->id.'&conf=3&token='.$this->token);
 		else
-			$this->errors[] = Tools::displayError('An error occurred while updating customer.');
+			$this->errors[] = Tools::displayError('An error occurred while updating the customer.');
 	}
 
 	/**
@@ -810,10 +798,10 @@ class AdminCustomersControllerCore extends AdminController
 	{
 		$customer = new Customer($this->id_object);
 		if (!Validate::isLoadedObject($customer))
-			$this->errors[] = Tools::displayError('An error occurred while updating customer.');
+			$this->errors[] = Tools::displayError('An error occurred while updating the customer.');
 		$customer->newsletter = $customer->newsletter ? 0 : 1;
 		if (!$customer->update())
-			$this->errors[] = Tools::displayError('An error occurred while updating customer.');
+			$this->errors[] = Tools::displayError('An error occurred while updating the customer.');
 		Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token);
 	}
 
@@ -826,10 +814,10 @@ class AdminCustomersControllerCore extends AdminController
 	{
 		$customer = new Customer($this->id_object);
 		if (!Validate::isLoadedObject($customer))
-			$this->errors[] = Tools::displayError('An error occurred while updating customer.');
+			$this->errors[] = Tools::displayError('An error occurred while updating the customer.');
 		$customer->optin = $customer->optin ? 0 : 1;
 		if (!$customer->update())
-			$this->errors[] = Tools::displayError('An error occurred while updating customer.');
+			$this->errors[] = Tools::displayError('An error occurred while updating the customer.');
 		Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token);
 	}
 
@@ -865,18 +853,18 @@ class AdminCustomersControllerCore extends AdminController
 
 		$tpl->assign(array(
 			'href' => self::$currentIndex.'&'.$this->identifier.'='.$id.'&delete'.$this->table.'&token='.($token != null ? $token : $this->token),
-			'confirm' => $this->l('Delete selected item ?').$name,
+			'confirm' => $this->l('Delete selected item?').$name,
 			'action' => $this->l('Delete'),
 			'id' => $id,
 		));
 
 		return $tpl->fetch();
 	}
-	
+
 	/**
-	 * add to $this->content the result of Customer::SearchByName 
+	 * add to $this->content the result of Customer::SearchByName
 	 * (encoded in json)
-	 * 
+	 *
 	 * @return void
 	 */
 	public function ajaxProcessSearchCustomers()

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7158 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -142,7 +142,7 @@ class SpecificPriceCore extends ObjectModel
 
 	public static function deleteByIdCart($id_cart, $id_product = false, $id_product_attribute = false)
 	{
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		    DELETE FROM `'._DB_PREFIX_.'specific_price`
             WHERE id_cart='.(int)$id_cart.
             ($id_product ? ' AND id_product='.(int)$id_product.' AND id_product_attribute='.(int)$id_product_attribute : ''));
@@ -341,13 +341,13 @@ class SpecificPriceCore extends ObjectModel
 		');
 	}
 
-	public static function getProductIdByDate($id_shop, $id_currency, $id_country, $id_group, $beginning, $ending, $id_customer = 0)
+	public static function getProductIdByDate($id_shop, $id_currency, $id_country, $id_group, $beginning, $ending, $id_customer = 0, $with_combination_id = false)
 	{
 		if (!SpecificPrice::isFeatureActive())
 			return array();
 
 		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
-			SELECT `id_product`
+			SELECT `id_product`, `id_product_attribute`
 			FROM `'._DB_PREFIX_.'specific_price`
 			WHERE	`id_shop` IN(0, '.(int)$id_shop.') AND
 					`id_currency` IN(0, '.(int)$id_currency.') AND
@@ -365,7 +365,7 @@ class SpecificPriceCore extends ObjectModel
 		');
 		$ids_product = array();
 		foreach ($results as $row)
-			$ids_product[] = (int)$row['id_product'];
+			$ids_product[] = $with_combination_id ? array('id_product' => (int)$row['id_product'], 'id_product_attribute' => (int)$row['id_product_attribute']) : (int)$row['id_product'];
 		return $ids_product;
 	}
 
@@ -396,6 +396,22 @@ class SpecificPriceCore extends ObjectModel
 	public static function isFeatureActive()
 	{
 		return Configuration::get('PS_SPECIFIC_PRICE_FEATURE_ACTIVE');
+	}
+	
+	public static function exists($id_product, $id_product_attribute, $id_shop, $id_group, $id_country, $id_currency, $id_customer, $from_quantity, $from, $to)
+	{
+		return (int)Db::getInstance()->getValue('SELECT `id_specific_price`
+																FROM '._DB_PREFIX_.'specific_price
+																WHERE `id_product`='.(int)$id_product.' AND
+																	`id_product_attribute`='.(int)$id_product_attribute.' AND
+																	`id_shop`='.(int)$id_shop.' AND
+																	`id_group`='.(int)$id_group.' AND
+																	`id_country`='.(int)$id_country.' AND
+																	`id_currency`='.(int)$id_currency.' AND
+																	`id_customer`='.(int)$id_customer.' AND
+																	`from_quantity`='.(int)$from_quantity.' AND
+																	`from` >= \''.pSQL($from).'\' AND
+																	 `to` <= \''.pSQL($to).'\'');
 	}
 }
 

@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -30,6 +30,7 @@
 			e.preventDefault();
 			var form_datas = new Object;
 			form_datas['liteDisplaying'] = 1;
+			form_datas['submitFormAjax'] = 1;
 			var form_inputs = $('#{$table}_form input, #{$table}_form textarea, #{$table}_form button');
 			var form_selects = $('#{$table}_form select');
 			$.each(form_inputs, function() {
@@ -39,7 +40,8 @@
 				form_datas[this.name] = this.value;
 			});
 			$.each(form_selects, function() {
-				form_datas[this.name] = this.options.selectedIndex;
+				if	(this.options != undefined && this.options.selectedIndex != undefined && this[this.options.selectedIndex] != undefined)
+					form_datas[this.name] = this[this.options.selectedIndex].value;
 			});
 			$.ajax({
 				type: this.method,
@@ -49,7 +51,7 @@
 				data : form_datas,
 				success : function(res)
 				{
-					$('#fancybox-content').html(res);
+					$('html').html(res);
 				}
 			});
 		});

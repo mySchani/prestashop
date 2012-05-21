@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -39,7 +39,7 @@ class StoresControllerCore extends FrontController
 
 		if (!extension_loaded('Dom'))
 		{
-			$this->errors[] = Tools::displayError('Dom extension is not loaded.');
+			$this->errors[] = Tools::displayError('PHP "Dom" extension is not loaded.');
 			$this->context->smarty->assign('errors', $this->errors);
 		}
 	}
@@ -54,7 +54,6 @@ class StoresControllerCore extends FrontController
 			'lastname'
 		);
 
-		$out = '';
 		$out_datas = array();
 
 		$address_datas = AddressFormat::getOrderedAddressFields($store['id_country'], false, true);
@@ -92,7 +91,7 @@ class StoresControllerCore extends FrontController
 		$stores = Db::getInstance()->executeS('
 		SELECT s.*, cl.name country, st.iso_code state
 		FROM '._DB_PREFIX_.'store s
-		'.$this->context->shop->addSqlAssociation('shop', 's').'
+		'.Shop::addSqlAssociation('store', 's').'
 		LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 		LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
 		WHERE s.active = 1 AND cl.id_lang = '.(int)$this->context->language->id);
@@ -118,7 +117,7 @@ class StoresControllerCore extends FrontController
 			$stores = Db::getInstance()->executeS('
 			SELECT s.*, cl.name country, st.iso_code state
 			FROM '._DB_PREFIX_.'store s
-			'.$this->context->shop->addSqlAssociation('shop', 's').'
+			'.Shop::addSqlAssociation('store', 's').'
 			LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 			LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
 			WHERE s.active = 1 AND cl.id_lang = '.(int)$this->context->language->id);
@@ -141,7 +140,7 @@ class StoresControllerCore extends FrontController
 			) distance,
 			cl.id_country id_country
 			FROM '._DB_PREFIX_.'store s
-			'.$this->context->shop->addSqlAssociation('shop', 's').'
+			'.Shop::addSqlAssociation('store', 's').'
 			LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 			LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
 			WHERE s.active = 1 AND cl.id_lang = '.(int)$this->context->language->id.'
@@ -158,7 +157,7 @@ class StoresControllerCore extends FrontController
 	 */
 	protected function assignStores()
 	{
-		$this->context->smarty->assign('hasStoreIcon', file_exists(dirname(__FILE__).'/../img/'.Configuration::get('PS_STORES_ICON')));
+		$this->context->smarty->assign('hasStoreIcon', file_exists(_PS_IMG_DIR_.Configuration::get('PS_STORES_ICON')));
 
 		$distanceUnit = Configuration::get('PS_DISTANCE_UNIT');
 		if (!in_array($distanceUnit, array('km', 'mi')))
@@ -176,8 +175,18 @@ class StoresControllerCore extends FrontController
 	 */
 	protected function displayAjax()
 	{
-		$stores = $this->getStores();
+		if ($this->context->getMobileDevice() == true)
+		{
+			$stores = $this->getStores();
+			foreach ($stores as &$store)
+			{
+				if (file_exists(_PS_STORE_IMG_DIR_.(int)$store['id_store'].'.jpg'))
+					$store['picture'] = (int)$store['id_store'].'.jpg';
+			}
+			die(Tools::jsonEncode($stores));
+		}
 
+		$stores = $this->getStores();
 		$dom = new DOMDocument('1.0');
 		$node = $dom->createElement('markers');
 		$parnode = $dom->appendChild($node);
@@ -199,6 +208,7 @@ class StoresControllerCore extends FrontController
 			$address = $this->processStoreAddress($store);
 
 			$other = '';
+
 			if (!empty($store['hours']))
 			{
 				$hours = unserialize($store['hours']);
@@ -239,10 +249,12 @@ class StoresControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		if (Configuration::get('PS_STORES_SIMPLIFIED'))
-			$stores = $this->assignStoresSimplified();
+			$this->assignStoresSimplified();
 		else
-			$stores = $this->assignStores();
+			$this->assignStores();
 
 		$this->context->smarty->assign(array(
 			'mediumSize' => Image::getSize('medium'),
@@ -252,15 +264,22 @@ class StoresControllerCore extends FrontController
 		));
 
 		$this->setTemplate(_PS_THEME_DIR_.'stores.tpl');
-		parent::initContent();
 	}
 
 	public function setMedia()
 	{
 		parent::setMedia();
-		$this->addCSS(_THEME_CSS_DIR_.'stores.css');
-		if (!Configuration::get('PS_STORES_SIMPLIFIED'))
-			$this->addJS(_THEME_JS_DIR_.'stores.js');
+
 		$this->addJS('http://maps.google.com/maps/api/js?sensor=true');
+		if ($this->context->getMobileDevice() == false)
+		{
+			$this->addCSS(_THEME_CSS_DIR_.'stores.css');
+			if (!Configuration::get('PS_STORES_SIMPLIFIED'))
+				$this->addJS(_THEME_JS_DIR_.'stores.js');
+		}
+		else // mobile device
+			$this->addJS(array(
+				_THEME_MOBILE_JS_DIR_.'stores.js'
+			));
 	}
 }

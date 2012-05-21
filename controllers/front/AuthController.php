@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -77,6 +77,8 @@ class AuthControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		$this->context->smarty->assign('genders', Gender::getGenders());
 
 		$this->assignDate();
@@ -146,7 +148,6 @@ class AuthControllerCore extends FrontController
 			die(Tools::jsonEncode($return));
 		}
 		$this->setTemplate(_PS_THEME_DIR_.'authentication.tpl');
-		parent::initContent();
 	}
 
 	/**
@@ -287,6 +288,8 @@ class AuthControllerCore extends FrontController
 					$this->create_account = true;
 					$this->context->smarty->assign('email_create', Tools::safeOutput($email));
 					$_POST['email'] = $email;
+					if ($this->ajax)
+						$this->errors[] = Tools::displayError('Authentication failed');
 				}
 				else
 					$this->errors[] = Tools::displayError('Authentication failed');
@@ -399,7 +402,7 @@ class AuthControllerCore extends FrontController
 							// we add the customer in the default customer group
 							$customer->addGroups(array((int)Configuration::get('PS_CUSTOMER_GROUP')));
 							if (!$this->sendConfirmationMail($customer))
-								$this->errors[] = Tools::displayError('Cannot send email');
+								$this->errors[] = Tools::displayError('Cannot send e-mail');
 						}
 						else
 						{
@@ -470,12 +473,12 @@ class AuthControllerCore extends FrontController
 					$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
 					$zip_regexp = str_replace('C', Country::getIsoById((int)(Tools::getValue('id_country'))), $zip_regexp);
 					if (!preg_match($zip_regexp, $postcode))
-						$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '.Tools::displayError('is invalid.').'<br />'.Tools::displayError('Must be typed as follows:').' '.str_replace('C', Country::getIsoById((int)(Tools::getValue('id_country'))), str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
+						$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '.Tools::displayError('is invalid.').'<br />'.Tools::displayError('Must be typed as follows:').' '.str_replace('C', Country::getIsoById((int)(Tools::getValue('id_country'))), str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
 				}
 				elseif ($zip_code_format)
-					$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '.Tools::displayError('is required.');
+					$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '.Tools::displayError('is required.');
 				elseif ($postcode && !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-					$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '.Tools::displayError('is invalid.');
+					$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '.Tools::displayError('is invalid.');
 			}
 
 			if (Country::isNeedDniByCountryId($address->id_country) && (!Tools::getValue('dni') || !Validate::isDniLite(Tools::getValue('dni'))))
@@ -490,7 +493,7 @@ class AuthControllerCore extends FrontController
 		if (!count($this->errors))
 		{
 			if (Customer::customerExists(Tools::getValue('email')))
-				$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.', false);
+				$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please enter your password or request a new one.', false);
 			if (Tools::isSubmit('newsletter'))
 			{
 				$customer->ip_registration_newsletter = pSQL(Tools::getRemoteAddr());
@@ -532,7 +535,7 @@ class AuthControllerCore extends FrontController
 								// we add the guest customer in the default customer group
 								$customer->addGroups(array((int)Configuration::get('PS_CUSTOMER_GROUP')));
 								if (!$this->sendConfirmationMail($customer))
-									$this->errors[] = Tools::displayError('Cannot send email');
+									$this->errors[] = Tools::displayError('Cannot send e-mail');
 							}
 							else
 							{
@@ -608,7 +611,7 @@ class AuthControllerCore extends FrontController
 			$this->errors[] = Tools::displayError('Invalid e-mail address');
 		elseif (Customer::customerExists($email))
 		{
-			$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.', false);
+			$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please enter your password or request a new one.', false);
 			$_POST['email'] = $_POST['email_create'];
 			unset($_POST['email_create']);
 		}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -73,7 +73,7 @@ class Pagesnotfound extends Module
 		$sql = 'SELECT http_referer, request_uri, COUNT(*) as nb
 				FROM `'._DB_PREFIX_.'pagenotfound`
 				WHERE date_add BETWEEN '.ModuleGraph::getDateBetween()
-					.$this->sqlShopRestriction().
+					.Shop::addSqlRestriction().
 				'GROUP BY http_referer, request_uri';
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
@@ -174,7 +174,7 @@ class Pagesnotfound extends Module
 			if (empty($http_referer) || Validate::isAbsoluteUrl($http_referer))
 				Db::getInstance()->execute('
 					INSERT INTO `'._DB_PREFIX_.'pagenotfound` (`request_uri`, `http_referer`, `date_add`, `id_shop`, `id_group_shop`)
-					VALUES (\''.pSQL($request_uri).'\', \''.pSQL($http_referer).'\', NOW(), '.$this->context->shop->getID().', '.$this->context->shop->getGroupID().')
+					VALUES (\''.pSQL($request_uri).'\', \''.pSQL($http_referer).'\', NOW(), '.(int)$this->context->shop->id.', '.(int)$this->context->shop->id_group_shop.')
 				');
 		}
 	}

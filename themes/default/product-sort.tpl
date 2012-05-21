@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,22 +18,26 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6594 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 {if isset($orderby) AND isset($orderway)}
-<!-- Sort products -->
-{if isset($smarty.get.id_category) && $smarty.get.id_category}
-	{assign var='request' value=$link->getPaginationLink('category', $category, false, true)}
-{elseif isset($smarty.get.id_manufacturer) && $smarty.get.id_manufacturer}
-	{assign var='request' value=$link->getPaginationLink('manufacturer', $manufacturer, false, true)}
-{elseif isset($smarty.get.id_supplier) && $smarty.get.id_supplier}
-	{assign var='request' value=$link->getPaginationLink('supplier', $supplier, false, true)}
-{else}
-	{assign var='request' value=$link->getPaginationLink(false, false, false, true)}
+
+{* On 1.5 the var request is setted on the front controller. The next lines assure the retrocompatibility with some modules *}
+{if !isset($request)}
+	<!-- Sort products -->
+	{if isset($smarty.get.id_category) && $smarty.get.id_category}
+		{assign var='request' value=$link->getPaginationLink('category', $category, false, true)}
+	{elseif isset($smarty.get.id_manufacturer) && $smarty.get.id_manufacturer}
+		{assign var='request' value=$link->getPaginationLink('manufacturer', $manufacturer, false, true)}
+	{elseif isset($smarty.get.id_supplier) && $smarty.get.id_supplier}
+		{assign var='request' value=$link->getPaginationLink('supplier', $supplier, false, true)}
+	{else}
+		{assign var='request' value=$link->getPaginationLink(false, false, false, true)}
+	{/if}
 {/if}
 
 <script type="text/javascript">
@@ -44,7 +48,7 @@ $(document).ready(function()
 	{
 		var requestSortProducts = '{$request}';
 		var splitData = $(this).val().split(':');
-			document.location.href = requestSortProducts + ((requestSortProducts.indexOf('?') < 0) ? '?' : '&') + 'orderby=' + splitData[0] + '&orderway=' + splitData[1];
+		document.location.href = requestSortProducts + ((requestSortProducts.indexOf('?') < 0) ? '?' : '&') + 'orderby=' + splitData[0] + '&orderway=' + splitData[1];
 	});
 });
 //]]>

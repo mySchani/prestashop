@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -158,14 +158,14 @@ class AddressControllerCore extends FrontController
 				$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
 				$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
 				if (!preg_match($zip_regexp, $postcode))
-					$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '
+					$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '
 											.Tools::displayError('is invalid.').'<br />'.Tools::displayError('Must be typed as follows:')
 											.' '.str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
 			}
 			else if ($zip_code_format)
-				$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '.Tools::displayError('is required.');
+				$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '.Tools::displayError('is required.');
 			else if ($postcode && !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-				$this->errors[] = '<strong>'.Tools::displayError('Zip/ Postal code').'</strong> '.Tools::displayError('is invalid.')
+				$this->errors[] = '<strong>'.Tools::displayError('Zip / Postal code').'</strong> '.Tools::displayError('is invalid.')
 										.'<br />'.Tools::displayError('Must be typed as follows:').' '
 										.str_replace('C', $country->iso_code, str_replace('N', '0', str_replace('L', 'A', $zip_code_format)));
 		}
@@ -175,6 +175,18 @@ class AddressControllerCore extends FrontController
 			$this->errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
 		else if (!$country->isNeedDni())
 			$address->dni = null;
+		
+		// Check if the alias exists
+		if (!empty($_POST['alias'])
+			&& (int)$this->context->customer->id > 0
+			&& Db::getInstance()->getValue('
+				SELECT count(*)
+				FROM '._DB_PREFIX_.'address
+				WHERE `alias` = \''.pSql($_POST['alias']).'\'
+				AND id_address != '.(int)Tools::getValue('id_address').'
+				AND id_customer = '.(int)$this->context->customer->id.'
+				AND deleted = 0') > 0)
+			$this->errors[] = sprintf(Tools::displayError('The alias "%s" is already used, please chose another one.'), Tools::safeOutput($_POST['alias']));
 
 		// Don't continue this process if we have errors !
 		if ($this->errors && !Tools::isSubmit('ajax'))
@@ -256,6 +268,8 @@ class AddressControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		/* Secure restriction for guest */
 		if ($this->context->customer->is_guest)
 			Tools::redirect('index.php?controller=addresses');
@@ -285,7 +299,6 @@ class AddressControllerCore extends FrontController
 		}
 
 		$this->setTemplate(_PS_THEME_DIR_.'address.tpl');
-		parent::initContent();
 	}
 
 	/**

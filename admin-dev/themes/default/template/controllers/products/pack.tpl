@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 11204 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -26,8 +26,8 @@
 
 <script type="text/javascript">
 
-	var msg_select_one = '{l s='Thanks to select at least one product.' js=1}';
-	var msg_set_quantity = '{l s='Thanks to set a quantity to add a product.' js=1}';
+	var msg_select_one = '{l s='Please select at least one product.' js=1}';
+	var msg_set_quantity = '{l s='Please set a quantity to add a product.' js=1}';
 
 	$(document).ready(function() {
 		if ($('#ppack').attr('checked'))
@@ -103,7 +103,8 @@
 			}
 		});
 		// show / hide save buttons
-		handleSaveForPack();
+		// if product has a name
+		handleSaveButtons();
 	}
 
 	function delPackItem(id)
@@ -143,7 +144,7 @@
 		});
 
 		// if no item left in the pack, disable save buttons
-		handleSaveForPack();
+		handleSaveButtons();
 	}
 
 	function getSelectedIds()
@@ -183,7 +184,7 @@
 				<input type="hidden" size="2" id="curPackItemId" />
 
 				<span onclick="addPackItem();" class="button" style="cursor: pointer;">
-					{l s='Add this product in the pack'}
+					{l s='Add this product to the pack'}
 				</span>
 
 				<p class="product_description listOfPack" style="display:{if count($product->packItems) > 0}block{else}none{/if};text-align: left;">

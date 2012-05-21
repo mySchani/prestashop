@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -159,12 +159,10 @@ class CMSCategoryCore extends ObjectModel
 		);
 	}
 
-	public static function getRecurseCategory($id_lang = null, $current = 1, $active = 1, $links = 0, Link $link = null, Shop $shop = null)
+	public static function getRecurseCategory($id_lang = null, $current = 1, $active = 1, $links = 0, Link $link = null)
 	{
 		if (!$link)
 			$link = Context::getContext()->link;
-		if (!$shop)
-			$shop = Context::getContext()->shop;
 		if (is_null($id_lang))
 			$id_lang = Context::getContext()->language->id;
 
@@ -185,7 +183,7 @@ class CMSCategoryCore extends ObjectModel
 
 		$sql = 'SELECT c.`id_cms`, cl.`meta_title`, cl.`link_rewrite`
 				FROM `'._DB_PREFIX_.'cms` c
-				'.$shop->addSqlAssociation('cms', 'c', false).'
+				'.Shop::addSqlAssociation('cms', 'c').'
 				JOIN `'._DB_PREFIX_.'cms_lang` cl ON c.`id_cms` = cl.`id_cms`
 				WHERE `id_cms_category` = '.(int)$current.'
 				AND cl.`id_lang` = '.(int)$id_lang.($active ? ' AND c.`active` = 1' : '').'

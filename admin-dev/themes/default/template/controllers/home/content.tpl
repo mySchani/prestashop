@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12932 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -35,28 +35,28 @@
 		{if $upgrade}
 		<div id="blockNewVersionCheck">
 		{if $upgrade->need_upgrade}
-			<div class="warning warn" style="margin-bottom:10px;"><h3>{l s ='New PrestaShop version available'} : <a style="text-decoration: underline;" href="{$upgrade->link}" target="_blank">{l s ='Download'} {$upgrade->version_name}</a> !</h3></div>
+			<div class="warning warn" style="margin-bottom:10px;"><h3>{l s='New version of PrestaShop is available'} : <a style="text-decoration: underline;" href="{$upgrade->link}" target="_blank">{l s='Download'} {$upgrade->version_name}</a> !</h3></div>
 		{/if}
 		</div>
 	{else}
-		<p>{l s ='Update notification unavailable'}</p>
+		<p>{l s='Update notification unavailable'}</p>
 		<p>&nbsp;</p>
-		<p>{l s ='To receive PrestaShop update warnings, you need to activate '} <b>allow_url_fopen</b> [<a href="http://www.php.net/manual/{$isoUser}/ref.filesystem.php">{l s ='more info on php.net'}</a>]</p>
-		<p>{l s ='If you don\'t know how to do that, please contact your host administrator !'}</p><br />
+		<p>{l s='To receive PrestaShop update warnings, you need to activate'} <b>allow_url_fopen</b> [<a href="http://www.php.net/manual/{$isoUser}/ref.filesystem.php">{l s='more info on php.net'}</a>]</p>
+		<p>{l s='If you don\'t know how to do this, please contact your hosting provider!'}</p><br />
 	{/if}
 {if $employee->bo_show_screencast}
 <div id="adminpresentation" style="display:block;">
-<h2>{l s ='Video'}</h2>
+<h2>{l s='Video'}</h2>
 		<div id="video">
-			<a href="{$protocol}://screencasts.prestashop.com/screencast.php?iso_lang={$isoUser}" id="screencast_fancybox"><img height="128" width="220" src="../img/admin/preview_fr.jpg" /><span class="mask-player"></span></a>
+			<a href="{$protocol}://screencasts.prestashop.com/v1.5/screencast.php?iso_lang={$isoUser}" id="screencast_fancybox"><img height="128" width="220" src="../img/admin/preview_fr.jpg" /><span class="mask-player"></span></a>
 		</div>
 			<div id="video-content">
-			<p>{l s ='Start now with PrestaShop and all new features to help you sell more and simplify management of your shop'}</p>
+			<p>{l s='Take part in the e-commerce adventure with PrestaShop, the fast, powerful, and customizable e-commerce solution. With more than 275 features, PrestaShop will help you create a world of opportunities without limits. Discover the solution that has already conquered more than 100,000 merchants worldwide!'}</p>
 			</div>
 	<div id="footer_iframe_home">
-		<!--<a href="#">{l s ='View more video tutorials'}</a>-->
+		<!--<a href="#">{l s='View more video tutorials'}</a>-->
 		<input type="checkbox" id="screencast_dont_show_again">
-		<label for="screencast_dont_show_again">{l s='don\'t show again'}</label>
+		<label for="screencast_dont_show_again">{l s='Do not show again'}</label>
 	</div>
 				<div class="separation"></div>
 </div>
@@ -96,7 +96,7 @@ $(document).ready(function() {
 </script>
 {/if}
 
-<h2>{l s='Quick link'}</h2>
+<h2>{l s='Quick links'}</h2>
 		<ul class="F_list clearfix">
 		{foreach from=$quick_links key=k item=link}
 		<li id="{$k}_block">
@@ -108,10 +108,13 @@ $(document).ready(function() {
 		{/foreach}
 		{hook h="displayAdminHomeQuickLinks"}
 		</ul>
-	<div class="separation"></div>
-	<div id="partner_preactivation"><h2>{l s='Your Required'}</h2><p class="center"><img src="../img/loader.gif" alt="" /></p>
-		<div class="separation"></div>
+
+	<div id="partner_preactivation">
+		<p class="center"><img src="../img/loader.gif" alt="" /></p>
 	</div>
+
+	<div class="separation"></div>
+
 
 	{$tips_optimization}
 	<div id="discover_prestashop"><p class="center"><img src="../img/loader.gif" alt="" />{l s='Loading...'}</p></div>
@@ -122,7 +125,7 @@ $(document).ready(function() {
 
 
 	<div id="column_right">
-	<h2>{l s='Your Indicators'}</h2>
+	<h2>{l s='Your Information'}</h2>
 		{$monthly_statistics}
 		{$customers_service}
 		{$stats_sales}

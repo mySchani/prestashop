@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -88,12 +88,15 @@ class CategoryControllerCore extends FrontController
 
 	public function initContent()
 	{
+		parent::initContent();
+
 		if (isset($this->context->cookie->id_compare))
 			$this->context->smarty->assign('compareProducts', CompareProduct::getCompareProducts((int)$this->context->cookie->id_compare));
 
 		$this->productSort(); // Product sort must be called before assignProductList()
 		
 		$this->assignScenes();
+		$this->assignSubcategories();
 		if ($this->category->id != 1)
 			$this->assignProductList();
 
@@ -116,7 +119,6 @@ class CategoryControllerCore extends FrontController
 
 
 		$this->setTemplate(_PS_THEME_DIR_.'category.tpl');
-		parent::initContent();
 	}
 
 	/**
@@ -185,7 +187,6 @@ class CategoryControllerCore extends FrontController
 		else
 			// Pagination must be call after "getProducts"
 			$this->pagination($this->nbProducts);
-			self::$smarty->assign('categoryNameComplement', '');
 		$this->context->smarty->assign('nb_products', $this->nbProducts);
 	}
 }

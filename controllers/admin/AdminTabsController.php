@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -27,6 +27,8 @@
 
 class AdminTabsControllerCore extends AdminController
 {
+	protected $position_identifier = 'id_tab';
+
 	public function __construct()
 	{
 		$this->context = Context::getContext();
@@ -71,7 +73,7 @@ class AdminTabsControllerCore extends AdminController
 			'position' => array(
 				'title' => $this->l('Position'),
 				'width' => 40,
-				'filter_key' => 'cp!position',
+				'filter_key' => 'a!position',
 				'position' => 'position'
 			)
 		);
@@ -159,11 +161,7 @@ class AdminTabsControllerCore extends AdminController
 					'options' => array(
 						'query' => $tabs,
 						'id' => 'id_tab',
-						'name' => 'name',
-						'default' => array(
-							'value' => -1,
-							'label' => $this->l('None')
-						)
+						'name' => 'name'
 					)
 				)
 			),
@@ -223,13 +221,14 @@ class AdminTabsControllerCore extends AdminController
 			$helper->shopLinkType = '';
 			$helper->identifier = $this->identifier;
 			$helper->imageType = $this->imageType;
-			$helper->toolbar_fix = false;
+			$helper->toolbar_scroll = false;
 			$helper->show_toolbar = false;
 			$helper->orderBy = 'position';
 			$helper->orderWay = 'ASC';
 			$helper->currentIndex = self::$currentIndex;
 			$helper->token = $this->token;
 			$helper->table = $this->table;
+			$helper->position_identifier = $this->position_identifier;
 			// Force render - no filter, form, js, sorting ...
 			$helper->simple_header = true;
 			$content = $helper->generateList($this->_list, $this->fieldsDisplay);
@@ -245,7 +244,7 @@ class AdminTabsControllerCore extends AdminController
 		/* PrestaShop demo mode */
 		if (_PS_MODE_DEMO_)
 		{
-			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionality has been disabled.');
 			return;
 		}
 		/* PrestaShop demo mode*/
@@ -274,11 +273,6 @@ class AdminTabsControllerCore extends AdminController
 				$_POST['position'] = Tab::getNbTabs(Tools::getValue('id_parent'));
 			parent::postProcess();
 		}
-	}
-
-	public function getList($id_lang, $order_by = null, $order_way = null, $start = 0, $limit = null, $id_lang_shop = false)
-	{
-		parent::getList($id_lang, 'position', $order_way, $start, $limit, $id_lang_shop);
 	}
 
 	protected function afterImageUpload()

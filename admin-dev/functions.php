@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7383 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -147,11 +147,12 @@ function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryT
 		{
 			$sql = 'SELECT c.id_category, cl.name, cl.link_rewrite
 					FROM '._DB_PREFIX_.'category c
-					LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.$context->shop->addSqlRestrictionOnLang('cl').')
+					LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.Shop::addSqlRestrictionOnLang('cl').')
 					WHERE c.nleft <= '.(int)$category['nleft'].'
 						AND c.nright >= '.(int)$category['nright'].'
 						AND cl.id_lang = '.(int)$context->language->id.
 						($home ? ' AND c.id_category='.$id_category : '').'
+						AND c.id_category != '.(int)Category::getTopCategory()->id.'
 					GROUP BY c.id_category
 					ORDER BY c.level_depth ASC
 					LIMIT '.(!$home ? (int)($category['level_depth'] + 1) : 1);
@@ -161,7 +162,8 @@ function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryT
 			$nCategories = (int)sizeof($categories);
 			foreach ($categories AS $category)
 			{
-				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'updatecategory').'&token='.Tools::getAdminToken('AdminCategories'.(int)(Tab::getIdFromClassName('AdminCategories')).(int)$context->employee->id).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
+				$link = Context::getContext()->link->getAdminLink('AdminCategories');
+				$edit = '<a href="'.$link.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'updatecategory').'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
 				$fullPath .= $edit.
 				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCategories'.(int)(Tab::getIdFromClassName('AdminCategories')).(int)$context->employee->id).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
 				(!empty($highlight) ? str_ireplace($highlight, '<span class="highlight">'.htmlentities($highlight, ENT_NOQUOTES, 'UTF-8').'</span>', $category['name']) : $category['name']).
@@ -389,47 +391,6 @@ function simpleXMLToArray ($xml, $flattenValues = true, $flattenAttributes = tru
 }
 
 /**
- * Generate a sweet HTML list for shop selection
- *
- * @todo move in adminTab
- * @return string
- */
-function generateShopList()
-{
-	$tree = Shop::getTree();
-	$context = Context::getContext();
-
-	// Get default value
-	list($shopID, $shopGroupID) = Shop::getContext();
-	if ($shopID)
-		$value = 's-'.$shopID;
-	else if ($shopGroupID)
-		$value = 'g-'.$shopGroupID;
-	else
-		$value = '';
-
-	// Generate HTML
-	$url = $_SERVER['REQUEST_URI'].(($_SERVER['QUERY_STRING']) ? '&' : '?').'setShopContext=';
-	$html = '<select class="shopList" onchange="location.href = \''.$url.'\'+$(this).val();">';
-
-	if ($context->employee->id_profile == _PS_ADMIN_PROFILE_ ||
-					$context->shop->getTotalShopsWhoExists() == Employee::getTotalEmployeeShopById($context->employee->id))
-		$html .= '<option value="" class="first">'.translate('All shops').'</option>';
-	/*$html .= (Context::getContext()->employee->id_profile == _PS_ADMIN_PROFILE_) ? '<option value="" class="first">'.translate('All shops').'</option>' : '';*/
-	foreach ($tree as $gID => $group_data)
-	{
-		$disabled = ($group_data['totalShops'] != count($group_data['shops'])) ? 'disabled="disabled"' : '';
-		$html .= '<option class="group" value="g-'.$gID.'" '.(($value == 'g-'.$gID) ? 'selected="selected"' : '').' '.$disabled.'>'.htmlspecialchars($group_data['name']).'</option>';
-		foreach ($group_data['shops'] as $sID => $shopData)
-			if ($shopData['active'])
-				$html .= '<option value="s-'.$sID.'" class="shop" '.(($value == 's-'.$sID || $context->shop->id == $sID) ? 'selected="selected"' : '').'>&raquo; '.$shopData['name'].'</option>';
-	}
-	$html .= '</select>';
-
-	return $html;
-}
-
-/**
  * for retrocompatibility with old AdminTab, old index.php
  *
  * @return void
@@ -449,7 +410,6 @@ function runAdminTab($tab, $ajaxMode = false)
 	// $tab = $_REQUEST['tab'];
 	if ($adminObj = checkingTab($tab))
 	{
-		$noTabLink = $adminObj->noTabLink;
 		// init is different for new tabs (AdminController) and old tabs (AdminTab)
 		if ($adminObj instanceof AdminController)
 		{
@@ -502,12 +462,12 @@ function runAdminTab($tab, $ajaxMode = false)
 				<a href="?token='.Tools::getAdminToken($tab.intval(Tab::getIdFromClassName($tab)).(int)Context::getContext()->employee->id).'">'.translate('Back Office').'</a>
 				'.$bread.'</div>';
 
-			if (!$ajaxMode && Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL)
+			if (!$ajaxMode && Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL)
 			{
 				echo '<div class="multishop_info">';
-				if (Context::shop() == Shop::CONTEXT_GROUP)
+				if (Shop::getContext() == Shop::CONTEXT_GROUP)
 					printf(translate('You are configuring your store for group shop %s'), '<b>'.Context::getContext()->shop->getGroup()->name.'</b>');
-				elseif (Context::shop() == Shop::CONTEXT_SHOP)
+				elseif (Shop::getContext() == Shop::CONTEXT_SHOP)
 					printf(translate('You are configuring your store for shop %s'), '<b>'.Context::getContext()->shop->name.'</b>');
 				echo '</div>';
 			}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -276,6 +276,10 @@ class ManufacturerCore extends ObjectModel
 		if (!$context)
 			$context = Context::getContext();
 
+		$front = true;
+		if (!in_array($context->controller->controller_type, array('front', 'modulefront')))
+			$front = false;
+			
 		if ($p < 1)
 			$p = 1;
 
@@ -296,9 +300,10 @@ class ManufacturerCore extends ObjectModel
 			$sql = '
 				SELECT p.`id_product`
 				FROM `'._DB_PREFIX_.'product` p
-				'.$context->shop->addSqlAssociation('product', 'p').'
+				'.Shop::addSqlAssociation('product', 'p').'
 				WHERE p.id_manufacturer = '.(int)$id_manufacturer
 				.($active ? ' AND p.`active` = 1' : '').'
+				'.($front ? ' AND p.`visibility` IN ("both", "catalog")' : '').'
 				AND p.`id_product` IN (
 					SELECT cp.`id_product`
 					FROM `'._DB_PREFIX_.'category_group` cg
@@ -327,17 +332,19 @@ class ManufacturerCore extends ObjectModel
 					) > 0 AS new,
 					(p.`price` * ((100 + (t.`rate`))/100)) AS orderprice
 				FROM `'._DB_PREFIX_.'product` p
-				'.$context->shop->addSqlAssociation('product', 'p').'
+				'.Shop::addSqlAssociation('product', 'p').'
 				LEFT JOIN `'._DB_PREFIX_.'product_attribute` pa
 					ON (p.`id_product` = pa.`id_product` AND default_on = 1)
 				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl
-					ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').')
+					ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.Shop::addSqlRestrictionOnLang('pl').')
 				LEFT JOIN `'._DB_PREFIX_.'image` i
 					ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
 				LEFT JOIN `'._DB_PREFIX_.'image_lang` il
 					ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
+				LEFT JOIN `'._DB_PREFIX_.'product_tax_rules_group_shop` ptrgs ON (p.`id_product` = ptrgs.`id_product` 
+					AND ptrgs.id_shop='.(int)$context->shop->id.')
 				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr
-					ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
+					ON (ptrgs.`id_tax_rules_group` = tr.`id_tax_rules_group`
 						AND tr.`id_country` = '.(int)$context->country->id.'
 						AND tr.`id_state` = 0
 						AND tr.`zipcode_from` = 0)
@@ -348,8 +355,9 @@ class ManufacturerCore extends ObjectModel
 				LEFT JOIN `'._DB_PREFIX_.'manufacturer` m
 					ON (m.`id_manufacturer` = p.`id_manufacturer`)
 				'.Product::sqlStock('p', 0).'
-				WHERE p.`id_manufacturer` = '.(int)$id_manufacturer.($active ? '
-					AND p.`active` = 1' : '').'
+				WHERE p.`id_manufacturer` = '.(int)$id_manufacturer.'
+				'.($active ? ' AND p.`active` = 1' : '').'
+				'.($front ? ' AND p.`visibility` IN ("both", "catalog")' : '').'
 					AND p.`id_product` IN (
 						SELECT cp.`id_product`
 						FROM `'._DB_PREFIX_.'category_group` cg
@@ -374,15 +382,20 @@ class ManufacturerCore extends ObjectModel
 
 	public function getProductsLite($id_lang)
 	{
-		$sql = 'SELECT p.`id_product`,  pl.`name`
-				FROM `'._DB_PREFIX_.'product` p
-				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
-					p.`id_product` = pl.`id_product`
-					AND pl.`id_lang` = '.(int)$id_lang.Context::getContext()->shop->addSqlRestrictionOnLang('pl').'
-				)
-				WHERE p.`id_manufacturer` = '.(int)$this->id;
-
-		return Db::getInstance()->executeS($sql);
+		$context = Context::getContext();
+		$front = true;
+		if (!in_array($context->controller->controller_type, array('front', 'modulefront')))
+			$front = false;
+			
+		return Db::getInstance()->executeS('
+		SELECT p.`id_product`,  pl.`name`
+		FROM `'._DB_PREFIX_.'product` p
+		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
+			p.`id_product` = pl.`id_product`
+			AND pl.`id_lang` = '.(int)$id_lang.$context->shop->addSqlRestrictionOnLang('pl').'
+		)
+		WHERE p.`id_manufacturer` = '.(int)$this->id.
+		($front ? ' AND p.`visibility` IN ("both", "catalog")' : ''));
 	}
 
 	/*

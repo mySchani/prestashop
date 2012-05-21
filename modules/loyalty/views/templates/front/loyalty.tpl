@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8084 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -69,13 +69,13 @@
 		<ul class="pagination">
 		{if $page != 1}
 			{assign var='p_previous' value=$page-1}
-			<li id="pagination_previous"><a href="{$pagination_link}?p={$p_previous}&n={$nbpagination}">
+			<li id="pagination_previous"><a href="{summarypaginationlink p=$p_previous n=$nbpagination}">
 			&laquo;&nbsp;{l s='Previous' mod='loyalty'}</a></li>
 		{else}
 			<li id="pagination_previous" class="disabled"><span>&laquo;&nbsp;{l s='Previous' mod='loyalty'}</span></li>
 		{/if}
 		{if $page > 2}
-			<li><a href="{$pagination_link}?p=1&n={$nbpagination}">1</a></li>
+			<li><a href="{summarypaginationlink p='1' n=$nbpagination}">1</a></li>
 			{if $page > 3}
 				<li class="truncate">...</li>
 			{/if}
@@ -84,18 +84,18 @@
 			{if $page == $smarty.section.pagination.index}
 				<li class="current"><span>{$page|escape:'htmlall':'UTF-8'}</span></li>
 			{elseif $smarty.section.pagination.index > 0 && $orders|@count+$nbpagination > ($smarty.section.pagination.index)*($nbpagination)}
-				<li><a href="{$pagination_link}?p={$smarty.section.pagination.index}&n={$nbpagination}">{$smarty.section.pagination.index|escape:'htmlall':'UTF-8'}</a></li>
+				<li><a href="{summarypaginationlink p=$smarty.section.pagination.index n=$nbpagination}">{$smarty.section.pagination.index|escape:'htmlall':'UTF-8'}</a></li>
 			{/if}
 		{/section}
 		{if $max_page-$page > 1}
 			{if $max_page-$page > 2}
 				<li class="truncate">...</li>
 			{/if}
-			<li><a href="{$pagination_link}?p={$max_page}&n={$nbpagination}">{$max_page}</a></li>
+			<li><a href="{summarypaginationlink p=$max_page n=$nbpagination}">{$max_page}</a></li>
 		{/if}
 		{if $orders|@count > $page * $nbpagination}
 			{assign var='p_next' value=$page+1}
-			<li id="pagination_next"><a href="{$pagination_link}?p={$p_next}&n={$nbpagination}">{l s='Next' mod='loyalty'}&nbsp;&raquo;</a></li>
+			<li id="pagination_next"><a href="{summarypaginationlink p=$p_next n=$nbpagination}">{l s='Next' mod='loyalty'}&nbsp;&raquo;</a></li>
 		{else}
 			<li id="pagination_next" class="disabled"><span>{l s='Next' mod='loyalty'}&nbsp;&raquo;</span></li>
 		{/if}
@@ -129,6 +129,9 @@
 {/if}
 
 <br />
+<br />
+<br />
+
 <h2>{l s='My vouchers from loyalty points' mod='loyalty'}</h2>
 
 {if $nbDiscounts}

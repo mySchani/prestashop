@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -78,9 +78,11 @@
 				$(this).html(txt_show_carts);
 				$('#old_carts_orders').slideUp('slow');
 			}
+			return false;
 		});
 		$('#send_email_to_customer').click(function(){
 			sendMailToCustomer();
+			return false;
 		});
 		$('#show_old_carts').click();
 		$.ajaxSetup({ type:"post" });
@@ -162,6 +164,7 @@
 		$('.use_cart').live('click', function(e) {
 			e.preventDefault();
 			useCart($(this).attr('rel'));
+			return false;
 		});
 
 		$('.duplicate_order').live('click', function(e) {
@@ -201,6 +204,28 @@
 			var product = $(this).attr('rel').split('_');
 			updateProductPrice(product[0], product[1], $(this).val());
 		});
+		$('#order_message').live('change', function(e) {
+			e.preventDefault();
+			$.ajax({
+				type:"POST",
+				url: "{$link->getAdminLink('AdminCarts')}",
+				async: true,
+				dataType: "json",
+				data : {
+					ajax: "1",
+					token: "{getAdminToken tab='AdminCarts'}",
+					tab: "AdminCarts",
+					action: "updateOrderMessage",
+					id_cart: id_cart,
+					id_customer: id_customer,
+					message: $(this).val()
+					},
+				success : function(res)
+				{
+					displaySummary(res);
+				}
+			});
+		});
 		/*$('.fancybox').live('click', function(e) {
 			$(this).fancybox().trigger('click');
 			return false;
@@ -210,7 +235,11 @@
 
 	function resetBind()
 	{
-		$('.fancybox').fancybox();
+		$('.fancybox').fancybox({
+			'type': 'iframe',
+			'width': '60%',
+			'height': '100%'
+		});
 		/*$("#new_address").fancybox({
 			onClosed: useCart(id_cart)
 		});*/
@@ -300,7 +329,12 @@
 			}
 		});
 	}
-
+	
+	function getSummary()
+	{
+		useCart(id_cart);
+	}
+	
 	function deleteVoucher(id_cart_rule)
 	{
 		$.ajax({
@@ -369,7 +403,7 @@
 					$.each(res.customers, function() {
 						html += '<li class="customerCard"><div class="customerName"><a class="fancybox" href="{$link->getAdminLink('AdminCustomers')}&id_customer='+this.id_customer+'&viewcustomer&liteDisplaying=1">'+this.firstname+' '+this.lastname+'</a><span class="customerBirthday"> '+((this.birthday) ? this.birthday : '')+'</span></div>';
 						html += '<div class="customerEmail"><a href="mailto:'+this.email+'">'+this.email+'</div>';
-						html += '<a onclick="setupCustomer('+ this.id_customer+');" href="#" class="id_customer button">{l s='Choose'}</a></li>';
+						html += '<a onclick="setupCustomer('+ this.id_customer+');return false;" href="#" class="id_customer button">{l s='Choose'}</a></li>';
 					});
 					html += '</ul>';
 				}
@@ -602,6 +636,7 @@
 		$('#id_lang option[value="'+id_lang+'"]').attr('selected', 'selected');
 		$('#send_email_to_customer').attr('rel', jsonSummary.link_order);
 		$('#go_order_process').attr('href', jsonSummary.link_order);
+		$('#order_message').val(jsonSummary.order_message);
 		resetBind();
 	}
 
@@ -804,7 +839,7 @@
 </script>
 {if $show_toolbar}
 	<div class="toolbar-placeholder">
-		<div class="toolbarBox {if $toolbar_fix}toolbarHead{/if}">
+		<div class="toolbarBox {if $toolbar_scroll}toolbarHead{/if}">
 				{include file="toolbar.tpl"}
 				<div class="pageTitle">
 				<h3>
@@ -834,7 +869,7 @@
 			</div>
 			<div id="attributes_list">
 			</div>
-			<p><label for="qty">{l s='Quantity:'}</label><input type="text" name="qty" id="qty"/>&nbsp;<b>{l s='In stock:'}</b>&nbsp;<span id="qty_in_stock"></span></p>
+			<p><label for="qty">{l s='Quantity:'}</label><input type="text" name="qty" id="qty" value="1" />&nbsp;<b>{l s='In stock:'}</b>&nbsp;<span id="qty_in_stock"></span></p>
 			<div class="margin-form">
 				<p><input type="submit" onclick="addProduct();return false;" class="button" id="submitAddProduct" value="{l s='Add to cart'}"/></p>
 			</div>
@@ -928,7 +963,7 @@
 						<tr>
 							<th height=39px" class="left">{l s='ID'}</th>
 							<th class="left">{l s='Date'}</th>
-							<th class="left">{l s='Produits'}</th>
+							<th class="left">{l s='Products'}</th>
 							<th class="left">{l s='Total paid'}</th>
 							<th class="left">{l s='Payment'}</th>
 							<th class="left">{l s='Status'}</th>
@@ -998,7 +1033,7 @@
 				</p>
 				<p>
 					<label for="shipping_price">{l s='Shipping price:'}</label> <input type="text" id="shipping_price"  name="shipping_price" size="7" />&nbsp;<span class="currency_sign"></span>&nbsp;
-					<a class="button" href="#" onclick="resetShippingPrice()">{l s='Reset shipping price'}</a>
+					<a class="button" href="#" onclick="resetShippingPrice();return false;">{l s='Reset shipping price'}</a>
 				</p>
 			</div>
 			<div id="float:left;">
@@ -1022,8 +1057,8 @@
 			<li><span class="total_cart">{l s='Total products:'}</span><span id="total_products"></span><span class="currency_sign"></span></li>
 			<li><span class="total_cart">{l s='Total vouchers:'}</span><span id="total_vouchers"></span><span class="currency_sign"></span></li>
 			<li><span class="total_cart">{l s='Total shipping:'}</span><span id="total_shipping"></span><span class="currency_sign"></span></li>
-			<li><span class="total_cart">{l s='Total without taxes:'}</span><span id="total_without_taxes"></span><span class="currency_sign"></span></li>
 			<li><span class="total_cart">{l s='Total taxes:'}</span><span id="total_taxes"></span><span class="currency_sign"></span></li>
+			<li><span class="total_cart">{l s='Total without taxes:'}</span><span id="total_without_taxes"></span><span class="currency_sign"></span></li>
 			<li><span class="total_cart">{l s='Total with taxes:'}</span><span id="total_with_taxes"></span><span class="currency_sign"></span></li>
 		</ul>
 	</div>
@@ -1033,7 +1068,7 @@
 			<textarea name="order_message" id="order_message" rows="3" cols="45"></textarea>
 		</div>
 		<div class="margin-form">
-			<a href="#" id="send_email_to_customer" class="button">{l s='Send an email to the customer with the link to process the payment.'}</a>
+			<a href="#" id="send_email_to_customer" class="button">{l s='Send an e-mail to the customer with the link to process the payment.'}</a>
 		</div>
 		<div class="margin-form">
 			<a target="_blank" id="go_order_process" href="" class="button">{l s='Go on payment page to process the payment.'}</a>

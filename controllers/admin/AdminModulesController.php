@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9790 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -35,6 +35,7 @@ class AdminModulesControllerCore extends AdminController
 		'install' => 'install',
 		'uninstall' => 'uninstall',
 		'configure' => 'getContent',
+		'update' => 'update',
 		'delete' => 'delete'
 	);
 
@@ -84,7 +85,7 @@ class AdminModulesControllerCore extends AdminController
 		$this->list_modules_categories['export']['name'] = $this->l('Export');
 		$this->list_modules_categories['emailing']['name'] = $this->l('E-mailing');
 		$this->list_modules_categories['front_office_features']['name'] = $this->l('Front Office Features');
-		$this->list_modules_categories['i18n_localization']['name'] = $this->l('I18n & Localization');
+		$this->list_modules_categories['i18n_localization']['name'] = $this->l('Internationalization & Localization');
 		$this->list_modules_categories['merchandizing']['name'] = $this->l('Merchandizing');
 		$this->list_modules_categories['migration_tools']['name'] = $this->l('Migration Tools');
 		$this->list_modules_categories['payments_gateways']['name'] = $this->l('Payments & Gateways');
@@ -96,7 +97,7 @@ class AdminModulesControllerCore extends AdminController
 		$this->list_modules_categories['shipping_logistics']['name'] = $this->l('Shipping & Logistics');
 		$this->list_modules_categories['slideshows']['name'] = $this->l('Slideshows');
 		$this->list_modules_categories['smart_shopping']['name'] = $this->l('Smart Shopping');
-		$this->list_modules_categories['market_place']['name'] = $this->l('Market Place');
+		$this->list_modules_categories['market_place']['name'] = $this->l('Marketplace');
 		$this->list_modules_categories['social_networks']['name'] = $this->l('Social Networks');
 		$this->list_modules_categories['others']['name'] = $this->l('Other Modules');
 
@@ -143,7 +144,11 @@ class AdminModulesControllerCore extends AdminController
 	public function isFresh($file, $timeout = 604800000)
 	{
 		if (file_exists(_PS_ROOT_DIR_.$file))
+		{
+			if (filesize(_PS_ROOT_DIR_.$file) < 1)
+				return false;
 			return ((time() - filemtime(_PS_ROOT_DIR_.$file)) < $timeout);
+		}
 		else
 			return false;
 	}
@@ -163,19 +168,19 @@ class AdminModulesControllerCore extends AdminController
 		{
 			// Define protocol accepted and post data values for this request
 			$protocolsList = array('https://' => 443, 'http://' => 80);
-			$postData = 'version=151&method=listing&action=native&iso_code='.strtolower(Configuration::get('PS_LOCALE_COUNTRY'));
+			$postData = 'version='._PS_VERSION_.'&method=listing&action=native&iso_code='.strtolower(Configuration::get('PS_LOCALE_COUNTRY')).'&iso_lang='.strtolower(Context::getContext()->language->iso_code);
 		}
 		if ($request == 'customer')
 		{
 			// Define protocol accepted and post data values for this request
 			$protocolsList = array('https://' => 443);
-			$postData = 'version=151&method=listing&action=customer&username='.pSQL(trim($this->context->cookie->username_addons)).'&password='.pSQL(trim($this->context->cookie->password_addons));
+			$postData = 'version='._PS_VERSION_.'&method=listing&action=customer&username='.pSQL(trim($this->context->cookie->username_addons)).'&password='.pSQL(trim($this->context->cookie->password_addons)).'&iso_lang='.strtolower(Context::getContext()->language->iso_code);
 		}
 		if ($request == 'check_customer')
 		{
 			// Define protocol accepted and post data values for this request
 			$protocolsList = array('https://' => 443);
-			$postData = 'version=151&method=check_customer&username='.pSQL($params['username_addons']).'&password='.pSQL($params['password_addons']);
+			$postData = 'version='._PS_VERSION_.'&method=check_customer&username='.pSQL($params['username_addons']).'&password='.pSQL($params['password_addons']);
 		}
 		if ($request == 'module')
 		{
@@ -183,12 +188,12 @@ class AdminModulesControllerCore extends AdminController
 			if (isset($params['username_addons']) && isset($params['password_addons']))
 			{
 				$protocolsList = array('https://' => 443);
-				$postData = 'version=151&method=module&id_module='.pSQL($params['id_module']).'&username='.pSQL($params['username_addons']).'&password='.pSQL($params['password_addons']);
+				$postData = 'version='._PS_VERSION_.'&method=module&id_module='.pSQL($params['id_module']).'&username='.pSQL($params['username_addons']).'&password='.pSQL($params['password_addons']);
 			}
 			else
 			{
 				$protocolsList = array('https://' => 443, 'http://' => 80);
-				$postData = 'version=151&method=module&id_module='.pSQL($params['id_module']);
+				$postData = 'version='._PS_VERSION_.'&method=module&id_module='.pSQL($params['id_module']);
 			}
 		}
 
@@ -205,7 +210,7 @@ class AdminModulesControllerCore extends AdminController
 		$context = stream_context_create($opts);
 		foreach ($protocolsList as $protocol => $port)
 		{
-			$content = file_get_contents($protocol.$this->addons_url, false, $context);
+			$content = @file_get_contents($protocol.$this->addons_url, false, $context);
 
 			// If content returned, we cache it
 			if ($content)
@@ -282,6 +287,13 @@ class AdminModulesControllerCore extends AdminController
 			$this->context->cookie->password_addons = pSQL(trim(Tools::getValue('password_addons')));
 		}
 		die($result);
+	}
+
+	public function ajaxProcessLogOutAddonsWebservices()
+	{
+		$this->context->cookie->username_addons = '';
+		$this->context->cookie->password_addons = '';
+		die('OK');
 	}
 
 	public function ajaxProcessReloadModulesList()
@@ -500,7 +512,7 @@ class AdminModulesControllerCore extends AdminController
 	 	// PrestaShop demo mode
 		if (_PS_MODE_DEMO_)
 		{
-			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionality has been disabled.');
 			return;
 		}
 
@@ -574,13 +586,19 @@ class AdminModulesControllerCore extends AdminController
 		{
 			$modules = Tools::getValue($key);
 			if (strpos($modules, '|'))
+			{
+				$modules_list_save = $modules;
 				$modules = explode('|', $modules);
+			}
 			else
 				$modules = empty($modules) ? false : array($modules);
 			$module_errors = array();
 			if ($modules)
 				foreach ($modules as $name)
 				{
+					if ($key == 'update')
+						Tools::deleteDirectory('../modules/'.$name.'/');
+
 					// If Addons module, download and unzip it before installing it
 					if (!is_dir('../modules/'.$name.'/'))
 					{
@@ -620,31 +638,31 @@ class AdminModulesControllerCore extends AdminController
 						$this->errors[] = Tools::displayError('This module is already installed:').' '.$module->name;
 					elseif ($key == 'uninstall' && !Module::isInstalled($module->name))
 						$this->errors[] = Tools::displayError('This module is already uninstalled:').' '.$module->name;
+					else if ($key == 'update' && !Module::isInstalled($module->name))
+						$this->errors[] = Tools::displayError('This module need to be installed to be updated:').' '.$module->name;
 					else
 					{
 						// If we install a module, force temporary global context for multishop
-						if (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL)
+						if (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL && $method != 'getContent')
 						{
-
-							// If we install a module, force temporary global context for multishop
-							if (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL && $method != 'getContent')
-							{
-								Context::getContext()->tmpOldShop = clone(Context::getContext()->shop);
-								Context::getContext()->shop = new Shop();
-								Configuration::updateValue('RSS_FEED_TITLE', 'lol');
-							}
+							Context::getContext()->tmpOldShop = clone(Context::getContext()->shop);
+							Context::getContext()->shop = new Shop();
 						}
 
 						//retrocompatibility
 						if (Tools::getValue('controller') != '')
 							$_POST['tab'] = Tools::safeOutput(Tools::getValue('controller'));
 
+						$echo = '';
+						if ($key != 'update')
+						{
 						// We check if method of module exists
-						if (!method_exists($module, $method))
-							throw new PrestaShopException('Method of module can\'t be found');
-						
-						// Get the return value of current method
-						$echo = $module->{$method}();
+							if (!method_exists($module, $method))
+								throw new PrestaShopException('Method of module can\'t be found');
+
+							// Get the return value of current method
+							$echo = $module->{$method}();
+						}
 						
 						// If the method called is "configure" (getContent method), we show the html code of configure page
 						if ($key == 'configure' && Module::isInstalled($module->name))
@@ -669,9 +687,9 @@ class AdminModulesControllerCore extends AdminController
 								$toolbar .= '<tr>
 										<th colspan="4">
 											<input type="checkbox" name="activateModule" value="1" '.(($module->active) ? 'checked="checked"' : '').' '.$activateOnclick.' /> '.$this->l('Activate module for').' ';
-								if ($this->context->shop->getContextType() == Shop::CONTEXT_SHOP)
+								if (Shop::getContext() == Shop::CONTEXT_SHOP)
 									$toolbar .= 'shop <b>'.$this->context->shop->name.'</b>';
-								elseif ($this->context->shop->getContextType() == Shop::CONTEXT_GROUP)
+								elseif (Shop::getContext() == Shop::CONTEXT_GROUP)
 									$toolbar .= 'all shops of group shop <b>'.$this->context->shop->getGroup()->name.'</b>';
 								else
 									$toolbar .= 'all shops';
@@ -693,7 +711,7 @@ class AdminModulesControllerCore extends AdminController
 							$return = ($method == 'install' ? 12 : 13);
 						elseif ($echo === false)
 							$module_errors[] = array('name' => $name, 'message' => $module->getErrors());
-						if (Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL && isset(Context::getContext()->tmpOldShop))
+						if (Shop::isFeatureActive() && Shop::getContext() != Shop::CONTEXT_ALL && isset(Context::getContext()->tmpOldShop))
 						{
 							Context::getContext()->shop = clone(Context::getContext()->tmpOldShop);
 							unset(Context::getContext()->tmpOldShop);
@@ -706,17 +724,26 @@ class AdminModulesControllerCore extends AdminController
 			{
 				// If error during module installation, no redirection
 				$html_error = $this->generateHtmlMessage($module_errors);
-				$this->errors[] = sprintf(Tools::displayError('The following module(s) were not installed successfully: %s'), $html_error);
+				$this->errors[] = sprintf(Tools::displayError('The following module(s) were not installed properly: %s'), $html_error);
 			}
 		}
 		if ($return)
-			Tools::redirectAdmin(self::$currentIndex.'&conf='.$return.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'&anchor=anchor'.ucfirst($module->name));
+		{
+			// If redirect parameter is present and module installed with success, we redirect on configuration module page
+			if (Tools::getValue('redirect') == 'config' && Tools::getValue('module_name') != '' && $return == '12' && Module::isInstalled(pSQL(Tools::getValue('module_name'))))
+				Tools::redirectAdmin('index.php?controller=adminmodules&configure='.Tools::getValue('module_name').'&token='.Tools::getValue('token').'&module_name='.Tools::getValue('module_name'));
+			Tools::redirectAdmin(self::$currentIndex.'&conf='.$return.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'&anchor=anchor'.ucfirst($module->name).(isset($modules_list_save) ? '&modules_list='.$modules_list_save : ''));
+		}
 	}
 	
 	public function postProcess()
 	{
 		// Parent Post Process
 		parent::postProcess();
+
+		// If redirect parameter is present and module already installed, we redirect on configuration module page
+		if (Tools::getValue('redirect') == 'config' && Tools::getValue('module_name') != '' && Module::isInstalled(pSQL(Tools::getValue('module_name'))))
+			Tools::redirectAdmin('index.php?controller=adminmodules&configure='.Tools::getValue('module_name').'&token='.Tools::getValue('token').'&module_name='.Tools::getValue('module_name'));
 
 		// Execute filter or callback methods
 		$filterMethods = array('filterModules', 'resetFilterModules', 'filterCategory', 'unfilterCategory');
@@ -777,7 +804,7 @@ class AdminModulesControllerCore extends AdminController
 			$this->translationsTab['Reset'] = $this->l('Reset');
 			$this->translationsTab['Configure'] = $this->l('Configure');
 			$this->translationsTab['Delete'] = $this->l('Delete');
-			$this->translationsTab['This action will permanently remove the module from the server. Are you sure you want to do this ?'] = $this->l('This action will permanently remove the module from the server. Are you sure you want to do this ?');
+			$this->translationsTab['This action will permanently remove the module from the server. Are you sure you want to do this?'] = $this->l('This action will permanently remove the module from the server. Are you sure you want to do this?');
 		}	
 			
 		$return = '';
@@ -788,11 +815,11 @@ class AdminModulesControllerCore extends AdminController
 		if ($module->id && $module->active)
 			$return .= (!empty($result) ? '|' : '').' <span class="reset-module"><a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('reset', $href).'"' : '').' href="'.self::$currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&reset&tab_module='.$module->tab.'">'.$this->translationsTab['Reset'].'</a></span>';
 
-		if ($module->id && (method_exists($module, 'getContent') || (isset($module->is_configurable) && $module->is_configurable)))
+		if ($module->id && isset($module->is_configurable) && $module->is_configurable)
 			$return .= (!empty($result) ? '|' : '').' <span class="configure-module"><a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('configure', $href).'"' : '').' href="'.self::$currentIndex.'&configure='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.urlencode($module->name).'">'.$this->translationsTab['Configure'].'</a></span>';
 
 		$hrefDelete = self::$currentIndex.'&delete='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.urlencode($module->name);
-		$return .= (!empty($result) ? '|' : '').' <span class="delete-module"><a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('delete', $hrefDelete).'"' : '').' onclick="return confirm(\''.$this->translationsTab['This action will permanently remove the module from the server. Are you sure you want to do this ?'].'\');" href="'.$hrefDelete.'">'.$this->translationsTab['Delete'].'</a></span>';
+		$return .= (!empty($result) ? '|' : '').' <span class="delete-module"><a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('delete', $hrefDelete).'"' : '').' onclick="return confirm(\''.$this->translationsTab['This action will permanently remove the module from the server. Are you sure you want to do this?'].'\');" href="'.$hrefDelete.'">'.$this->translationsTab['Delete'].'</a></span>';
 
 		return $return;
 	}
@@ -834,6 +861,11 @@ class AdminModulesControllerCore extends AdminController
 			return true;
 
 
+		// If action on module, we display it
+		if (Tools::getValue('module_name') != '' && Tools::getValue('module_name') == $module->name)
+			return false;
+
+
 		// Filter on module name
 		$filter_name = Tools::getValue('filtername');
 		if (!empty($filter_name))
@@ -852,21 +884,25 @@ class AdminModulesControllerCore extends AdminController
 		// Filter on favorites
 		if (Configuration::get('PS_SHOW_CAT_MODULES_'.(int)$this->id_employee) == 'favorites')
 		{
-			if ((int)Db::getInstance()->getValue('SELECT `id_module_preference` FROM `'._DB_PREFIX_.'module_preference` WHERE `module` = \''.pSQL($module->name).'\' AND `id_employee` = '.(int)$this->id_employee.' AND `favorite` = 1 AND (`interest` = 1 OR `interest` IS NULL)') > 0)
-				return false;
-			return true;
+			if ((int)Db::getInstance()->getValue('SELECT `id_module_preference` FROM `'._DB_PREFIX_.'module_preference` WHERE `module` = \''.pSQL($module->name).'\' AND `id_employee` = '.(int)$this->id_employee.' AND `favorite` = 1 AND (`interest` = 1 OR `interest` IS NULL)') < 1)
+				return true;
 		}
+		else
+		{
+			// Handle "others" category
+			if (!isset($this->list_modules_categories[$module->tab]))
+				$module->tab = 'others';
 
-
-		// Filter on module category
-		$categoryFiltered = array();
-		$filterCategories = explode('|', Configuration::get('PS_SHOW_CAT_MODULES_'.(int)$this->id_employee));
-		if (count($filterCategories) > 0)
-			foreach ($filterCategories as $fc)
-				if (!empty($fc))
-					$categoryFiltered[$fc] = 1;
-		if (count($categoryFiltered) > 0 && !isset($categoryFiltered[$module->tab]))
-			return true;
+			// Filter on module category
+			$categoryFiltered = array();
+			$filterCategories = explode('|', Configuration::get('PS_SHOW_CAT_MODULES_'.(int)$this->id_employee));
+			if (count($filterCategories) > 0)
+				foreach ($filterCategories as $fc)
+					if (!empty($fc))
+						$categoryFiltered[$fc] = 1;
+			if (count($categoryFiltered) > 0 && !isset($categoryFiltered[$module->tab]))
+				return true;
+		}
 
 
 		// Filter on module type and author
@@ -874,6 +910,8 @@ class AdminModulesControllerCore extends AdminController
 		if ($show_type_modules == 'nativeModules' && !in_array($module->name, $this->list_natives_modules))
 			return true;
 		else if ($show_type_modules == 'partnerModules' && !in_array($module->name, $this->list_partners_modules))
+			return true;
+		else if ($show_type_modules == 'addonsModules' && (!isset($module->type) || $module->type != 'addonsBought'))
 			return true;
 		else if ($show_type_modules == 'otherModules' && (in_array($module->name, $this->list_partners_modules) || in_array($module->name, $this->list_natives_modules)))
 			return true;
@@ -966,6 +1004,7 @@ class AdminModulesControllerCore extends AdminController
 		{
 			// Upgrade Module process, init check if a module could be upgraded
 			if (Module::initUpgradeModule($module->name, $module->version))
+			{
 				if ($object = new $module->name())
 				{
 					$object->runUpgradeModule();
@@ -973,7 +1012,20 @@ class AdminModulesControllerCore extends AdminController
 						$module_errors[] = array('name' => $module->name, 'message' => $errors_module_list);
 					else if ((count($conf_module_list = $object->getConfirmations())))
 						$module_success[] = array('name' => $module->name, 'message' => $conf_module_list);
+					unset($object);
 				}
+			}
+			// Module can't be upgraded if not file exist but can change the database version...
+			// User has to be prevented
+			else if (Module::getUpgradeStatus($module->name))
+			{
+				$object = new $module->name();
+				$module_success[] = array('name' => $module->name, 'message' => array(
+					0 => $this->l('Current version:').$object->version,
+					1 => $this->l('No file upgrades applied (none exist)'))
+				);
+				unset($object);
+			}
 
 			// Make modules stats
 			$this->makeModulesStats($module);
@@ -1006,9 +1058,10 @@ class AdminModulesControllerCore extends AdminController
 				$modules[$km]->optionsHtml = $this->displayModuleOptions($module);
 				$modules[$km]->categoryName = (isset($this->list_modules_categories[$module->tab]['name']) ? $this->list_modules_categories[$module->tab]['name'] : $this->list_modules_categories['others']['name']);
 				$modules[$km]->options['install_url'] = self::$currentIndex.'&install='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'&anchor=anchor'.ucfirst($module->name);
+				$modules[$km]->options['update_url'] = self::$currentIndex.'&update='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'&anchor=anchor'.ucfirst($module->name);
 				$modules[$km]->options['uninstall_url'] = self::$currentIndex.'&uninstall='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'&anchor=anchor'.ucfirst($module->name);
 				$modules[$km]->options['uninstall_onclick'] = ((!method_exists($module, 'onclickOption')) ? ((empty($module->confirmUninstall)) ? '' : 'return confirm(\''.addslashes($module->confirmUninstall).'\');') : $module->onclickOption('uninstall', $modules[$km]->options['uninstall_url']));
-				if (Tools::getValue('module_name') == $module->name && (int)Tools::getValue('conf') > 0)
+				if ((Tools::getValue('module_name') == $module->name || in_array($module->name, explode('|', Tools::getValue('modules_list')))) && (int)Tools::getValue('conf') > 0)
 					$modules[$km]->message = $this->_conf[(int)Tools::getValue('conf')];
 				if (isset($modules_preferences[$modules[$km]->name]))
 					$modules[$km]->preferences = $modules_preferences[$modules[$km]->name];
@@ -1061,7 +1114,10 @@ class AdminModulesControllerCore extends AdminController
 		$tpl_vars['check_openssl'] = (extension_loaded('openssl') ? 'ok' : 'ko');
 
 		if ($this->logged_on_addons)
+		{
 			$tpl_vars['logged_on_addons'] = 1;
+			$tpl_vars['username_addons'] = $this->context->cookie->username_addons;
+		}
 		$smarty->assign($tpl_vars);
 	}
 

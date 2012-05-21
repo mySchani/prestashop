@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12688 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13780 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -149,6 +149,14 @@ class StockAvailableCore extends ObjectModel
 					Db::getInstance()->update($query['table'], $query['data'], $query['where']);
 
 					$product_quantity += $quantity;
+
+					Hook::exec('actionUpdateQuantity',
+				   				array(
+				   					'id_product' => $id_product,
+				   					'id_product_attribute' => $id_product_attribute,
+				   					'quantity' => $quantity
+				   				)
+				  	);
 				}
 
 				// updates
@@ -182,7 +190,7 @@ class StockAvailableCore extends ObjectModel
 	public static function setProductDependsOnStock($id_product, $depends_on_stock = true, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		$existing_id = StockAvailable::getStockAvailableIdByProductId((int)$id_product, 0, (int)$id_shop);
 
@@ -223,7 +231,7 @@ class StockAvailableCore extends ObjectModel
 	public static function setProductOutOfStock($id_product, $out_of_stock = false, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		$existing_id = StockAvailable::getStockAvailableIdByProductId((int)$id_product, 0, (int)$id_shop);
 
@@ -261,7 +269,7 @@ class StockAvailableCore extends ObjectModel
 	public static function getQuantityAvailableByProduct($id_product = null, $id_product_attribute = null, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		// if null, it's a product without attributes
 		if (is_null($id_product_attribute))
@@ -357,13 +365,13 @@ class StockAvailableCore extends ObjectModel
 		$stock_available->quantity = $stock_available->quantity + $delta_quantity;
 		$stock_available->update();
 
-		$id_lang = Context::getContext()->language->id;
-		$product = new Product($id_product, true, $id_lang, $id_shop, Context::getContext());
-
-		if ($id_product_attribute != 0)
-			Hook::exec('actionUpdateQuantity', array('product' => $product, 'attribute_id' => $id_product_attribute));
-		else
-			Hook::exec('actionProductUpdate', array('product' => $product));
+		Hook::exec('actionUpdateQuantity',
+				   array(
+				   	'id_product' => $id_product,
+				   	'id_product_attribute' => $id_product_attribute,
+				   	'quantity' => $stock_available->quantity
+				   )
+				  );
 	}
 
 
@@ -381,7 +389,7 @@ class StockAvailableCore extends ObjectModel
 
 		// if there is no $id_shop, gets the context one
 		if (is_null($id_shop))
-			$id_shop = (int)$context->shop->getID(true);
+			$id_shop = (int)$context->shop->id;
 
 		$id_lang = Context::getContext()->language->id;
 		$depends_on_stock = StockAvailable::dependsOnStock($id_product);
@@ -390,9 +398,6 @@ class StockAvailableCore extends ObjectModel
 		if (!$depends_on_stock)
 		{
 			$id_stock_available = (int)StockAvailable::getStockAvailableIdByProductId($id_product, $id_product_attribute, $id_shop);
-			
-			$product = new Product($id_product, true, $id_lang, $id_shop, $context);
-			Hook::exec('actionUpdateQuantity', array('product' => $product, 'attribute_id' => $id_product_attribute));
 
 			if ($id_stock_available)
 			{
@@ -411,7 +416,7 @@ class StockAvailableCore extends ObjectModel
 				$stock_available->quantity = (int)$quantity;
 
 				// if we are in group_shop context
-				if ($context->shop() == Shop::CONTEXT_GROUP)
+				if (Shop::getContext() == Shop::CONTEXT_GROUP)
 				{
 					$group_shop = $context->shop->getGroup();
 
@@ -429,19 +434,16 @@ class StockAvailableCore extends ObjectModel
 				}
 
 				$stock_available->add();
-
 			}
-		}
-		else
-		{
-			$product = new Product($id_product, true, $id_lang, $id_shop, $context);
 
-			if ($id_product_attribute != 0)
-				Hook::exec('actionUpdateQuantity', array('product' => $product, 'attribute_id' => $id_product_attribute));
-			else
-				Hook::exec('actionProductUpdate', array('product' => $product));
+			Hook::exec('actionUpdateQuantity',
+				   array(
+				   	'id_product' => $id_product,
+				   	'id_product_attribute' => $id_product_attribute,
+				   	'quantity' => $stock_available->quantity
+				   )
+				  );
 		}
-		
 	}
 
 	/**
@@ -503,7 +505,7 @@ class StockAvailableCore extends ObjectModel
 	public static function dependsOnStock($id_product, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		$query = new DbQuery();
 		$query->select('depends_on_stock');
@@ -526,7 +528,7 @@ class StockAvailableCore extends ObjectModel
 	public static function outOfStock($id_product, $id_shop = null)
 	{
 		if (is_null($id_shop))
-			$id_shop = Context::getContext()->shop->getID(true);
+			$id_shop = Context::getContext()->shop->id;
 
 		$query = new DbQuery();
 		$query->select('out_of_stock');
@@ -557,7 +559,7 @@ class StockAvailableCore extends ObjectModel
 
 		// if there is no $id_shop, gets the context one
 		if (is_null($id_shop))
-			$id_shop = $context->shop->getID();
+			$id_shop = $context->shop->id;
 
 		// if we are in group_shop context
 		$group_shop = $context->shop->getGroup();
@@ -577,7 +579,7 @@ class StockAvailableCore extends ObjectModel
 			}
 		}
 		// else if we are in group context
-		else if ($context->shop() == Shop::CONTEXT_GROUP)
+		else if (Shop::getContext() == Shop::CONTEXT_GROUP)
 		{
 			if (is_object($sql))
 				$sql->where(pSQL($alias).'id_shop IN ('.implode(', ', Shop::getShops(true, $group_shop->id, true)).')');
@@ -610,7 +612,7 @@ class StockAvailableCore extends ObjectModel
 
 		// if there is no $id_shop, gets the context one
 		if (is_null($id_shop))
-			$id_shop = $context->shop->getID(true);
+			$id_shop = $context->shop->id;
 
 		$group_shop = $context->shop->getGroup();
 
@@ -628,5 +630,37 @@ class StockAvailableCore extends ObjectModel
 		// if no group specific restriction, set simple shop restriction
 		if (!$group_ok)
 			$params['id_shop'] = (int)$id_shop;
+	}
+
+	/**
+	 * Copies stock available content table
+	 *
+	 * @param int $src_shop_id
+	 * @param int $dst_shop_id
+	 * @return bool
+	 */
+	public static function copyStockAvailableFromShopToShop($src_shop_id, $dst_shop_id)
+	{
+		if (!$src_shop_id || !$dst_shop_id)
+			return false;
+
+		$query = '
+			INSERT INTO '._DB_PREFIX_.'stock_available
+			(
+				id_product,
+				id_product_attribute,
+				id_shop,
+				id_group_shop,
+				quantity,
+				depends_on_stock,
+				out_of_stock
+			)
+			(
+				SELECT id_product, id_product_attribute, '.(int)$dst_shop_id.', 0, quantity, depends_on_stock, out_of_stock
+				FROM '._DB_PREFIX_.'stock_available
+				WHERE id_shop = '.(int)$src_shop_id.
+			')';
+
+		return Db::getInstance()->execute($query);
 	}
 }

@@ -17,8 +17,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12963 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13606 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -55,16 +55,12 @@ function addButtonCombination(item)
 	posC = true;
 }
 
-function deleteProductAttribute(ids, token, parent)
+function deleteProductAttribute(url, parent)
 {
-	var id = ids.split('||');
 	$.ajax({
-		url: 'index.php',
+		url: url,
 		data: {
-			id_product: id[0],
-			id_product_attribute: id[1],
-			controller: 'AdminProducts',
-			token: token,
+			id_product: id_product,
 			action: 'deleteProductAttribute',
 			ajax: true
 		},
@@ -76,7 +72,7 @@ function deleteProductAttribute(ids, token, parent)
 			if (data.status == 'ok')
 			{
 				showSuccessMessage(data.message);
-				parent.hide();
+				parent.remove();
 			}
 			else
 				showErrorMessage(data.message);
@@ -84,16 +80,12 @@ function deleteProductAttribute(ids, token, parent)
 	});
 }
 
-function defaultProductAttribute(ids, token, parent)
+function defaultProductAttribute(url, parent)
 {
-	var id = ids.split('||');
 	$.ajax({
-		url: 'index.php',
+		url: url,
 		data: {
-			id_product: id[0],
-			id_product_attribute: id[1],
-			controller: 'AdminProducts',
-			token: token,
+			id_product: id_product,
 			action: 'defaultProductAttribute',
 			ajax: true
 		},
@@ -124,24 +116,24 @@ function defaultProductAttribute(ids, token, parent)
 	});
 }
 
-function editProductAttribute(ids, token)
+function editProductAttribute(url, parent)
 {
-	var id = ids.split('||');
 	$.ajax({
-		url: 'index.php',
+		url: url,
 		data: {
-			id_product: id[0],
-			id_product_attribute: id[1],
-			controller: 'AdminProducts',
-			token: token,
-			action: 'editProductAttribute',
-			ajax: true
+			id_product: id_product,
+			ajax: true,
+			action: 'editProductAttribute'
 		},
 		context: document.body,
 		dataType: 'json',
 		context: this,
 		async: false,
 		success: function(data) {
+			// color the selected line
+			parent.siblings().removeClass('selected-line');
+			parent.addClass('selected-line');
+
 			$('#add_new_combination').show();
 			$('#attribute_quantity').show();
 			$('#product_att_list').html('');
@@ -184,7 +176,7 @@ function editProductAttribute(ids, token)
 				$("#attribute_wholesale_price_full").hide();
 				$("#attribute_wholesale_price_blank").show();
 			}
-			fillCombinaison(
+			fillCombination(
 				wholesale_price,
 				price,
 				weight,
@@ -235,7 +227,6 @@ function displayTabProductById(id, selected, index, stack)
 		url : myurl,
 		async : true,
 		cache: false, // cache needs to be set to false or IE will cache the page with outdated product values
-		data: post_data,
 		type: 'POST',
 		success : function(data)
 		{
@@ -319,30 +310,139 @@ function disableSave()
  */
 function enableSave()
 {
-		// if no item left in the pack, disable save buttons
-		if ($("#disablePackMessage").length)
-			$("#disablePackMessage").remove();
-
 		$('#desc-product-save').show();
 		$('#desc-product-save-and-stay').show();
 }
 
-function handleSaveForPack()
+function handleSaveButtons(e)
 {
-	// if no item left in the pack, disable save buttons
-	$("#disablePackMessage").remove();
-	if ($("#inputPackItems").val() == "")
+	product_type = $("input[name=type_product]:checked").val();
+	msg = [];
+	var i = 0;
+	// relative to type of product
+	if (product_type == product_type_pack)
+		msg[i++] = handleSaveButtonsForPack();
+	else if (product_type == product_type_pack)
+		msg[i++] = handleSaveButtonsForVirtual();
+	else
+		msg[i++] = handleSaveButtonsForSimple();
+	
+	// common for all products
+	// name[defaultlangid]
+	$("#disableSaveMessage").remove();
+	if ($("#name_"+defaultLanguage.id_lang).val() == "")
 	{
-		disableSave();
-		$(".leadin").append('<div id="disablePackMessage" class="warn">' + empty_pack_msg + '</div>');
+		msg[i++] = empty_name_msg;
+	}
+	// check friendly_url_[defaultlangid] only if name is ok
+	else if ($("#link_rewrite_"+defaultLanguage.id_lang).val() == "")
+		msg[i++] = empty_link_rewrite_msg;
+
+	if (msg.length == 0)
+	{
+		$("#disableSaveMessage").remove();
+		enableSave()
 	}
 	else
-		enableSave();
+	{
+		$("#disableSaveMessage").remove();
+		do_not_save = false;
+		for (var key in msg)
+		{
+			if (msg != "")
+			{
+				if (do_not_save == false)
+				{
+					$(".leadin").append('<div id="disableSaveMessage" class="warn"></div>');
+					warnDiv = $("#disableSaveMessage");
+					do_not_save = true;
+				}
+				warnDiv.append('<p id="'+key+'">'+msg[key]+'</p>');
+			}
+		}
+		if (do_not_save)
+			disableSave();
+		else
+			enableSave();
+	}
+}
+
+function handleSaveButtonsForSimple()
+{
+	return "";
+}
+
+function handleSaveButtonsForVirtual()
+{
+	return "";
+}
+
+function handleSaveButtonsForPack()
+{
+	// if no item left in the pack, disable save buttons
+	if ($("#inputPackItems").val() == "")
+		return empty_pack_msg;
+	else
+		return "";
 }
 
 function enableProductName()
 {
 	$('.copy2friendlyUrl').removeAttr('disabled');
+}
+
+function toggleSpecificPrice()
+{
+	$('#show_specific_price').click(function()
+	{
+		$('#add_specific_price').slideToggle();
+
+		$('#add_specific_price').append('<input type="hidden" name="submitPriceAddition"/>');
+
+		$('#hide_specific_price').show();
+		$('#show_specific_price').hide();
+		return false;
+	});
+
+	$('#hide_specific_price').click(function()
+	{
+		$('#add_specific_price').slideToggle();
+		$('#add_specific_price').find('input[name=submitPriceAddition]').remove();
+
+		$('#hide_specific_price').hide();
+		$('#show_specific_price').show();
+		return false;
+	});
+}
+
+/**
+ * Ajax call to delete a specific price
+ *
+ * @param ids
+ * @param token
+ * @param parent
+ */
+function deleteSpecificPrice(url, parent)
+{
+	$.ajax({
+		url: url,
+		data: {
+			ajax: true
+		},
+		context: document.body,
+		dataType: 'json',
+		context: this,
+		async: false,
+		success: function(data) {
+			if (data.status == 'ok')
+			{
+				showSuccessMessage(data.message);
+				parent.remove();
+			}
+			else
+				showErrorMessage(data.message);
+		}
+	});
 }
 
 /**
@@ -367,6 +467,20 @@ urlToCall = null;
 
 $(document).ready(function() {
 	updateCurrentText();
+	$("#name_"+defaultLanguage.id_lang+",#link_rewrite_"+defaultLanguage.id_lang)
+		.live("change", function(e)
+		{
+			if(typeof e == KeyboardEvent)
+				if(isArrowKey(e))
+					return;
+			$(this).trigger("handleSaveButtons");
+		});
+	// bind that custom event
+	$("#name_"+defaultLanguage.id_lang+",#link_rewrite_"+defaultLanguage.id_lang)
+		.live("handleSaveButtons", function(e)
+		{
+			handleSaveButtons()
+		});
 	updateFriendlyURL();
 
 	// Pressing enter in an input field should not submit the form
@@ -378,4 +492,33 @@ $(document).ready(function() {
 
 	// Enable writing of the product name when the friendly url field in tab SEO is loaded
 	onTabLoad('Seo', enableProductName);
+
+	// Bind to show/hide new specific price form
+	onTabLoad('Prices', toggleSpecificPrice);
+
+	// Bind to delete specific price link
+	onTabLoad('Prices', function(){
+		$('#specific_prices_list').delegate('a[name="delete_link"]', 'click', function(e){
+			e.preventDefault();
+			deleteSpecificPrice(this.href, $(this).parents('tr'));
+		})
+	});
+
+	// Bind attribute list ajax actions (edit, default, delete)
+	onTabLoad('Combinations', function(){
+		$('table[name=list_table]').delegate('a.edit', 'click', function(e){
+			e.preventDefault();
+			editProductAttribute(this.href, $(this).closest('tr'));
+		});
+
+		$('table[name=list_table]').delegate('a.delete', 'click', function(e){
+			e.preventDefault();
+			deleteProductAttribute(this.href, $(this).closest('tr'));
+		});
+
+		$('table[name=list_table]').delegate('a.default', 'click', function(e){
+			e.preventDefault();
+			defaultProductAttribute(this.href, $(this).closest('tr'));
+		});
+	});
 });

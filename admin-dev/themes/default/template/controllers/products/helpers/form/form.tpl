@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13052 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14177 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -35,10 +35,10 @@
 				mode :"exact",
 				editor_selector :"autoload_rte",
 				elements : $(this).attr("id"),
-				theme_advanced_buttons1 : "bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull|cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,undo,redo",
-				theme_advanced_buttons2 : "link,unlink,anchor,image,cleanup,code,|,forecolor,backcolor,|,hr,removeformat,visualaid,|,charmap,media,|,ltr,rtl,|,fullscreen",
-				theme_advanced_buttons3 : "",
-				theme_advanced_buttons4 : "",
+				theme_advanced_buttons1 : "newdocument,|,bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,styleselect,formatselect,fontselect,fontsizeselect",
+				theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,,|,forecolor,backcolor",
+				theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,media,|,ltr,rtl,|,fullscreen",
+				theme_advanced_buttons4 : "styleprops,|,cite,abbr,acronym,del,ins,attribs,pagebreak",
 				setup : function(ed) {
 
 					{* Count the total number of the field *}
@@ -53,7 +53,7 @@
 							count = stripHTML(textarea_value).length;
 							rest = max - count;
 							if (rest < 0)
-								textarea.parent('div').find('span.counter').html('<span style="color:red;">{l s='Maximum'} '+max+' {l s=' characters'} : '+rest+'</span>');
+								textarea.parent('div').find('span.counter').html('<span style="color:red;">{l s='Maximum'} '+max+' {l s='characters'} : '+rest+'</span>');
 							else
 								textarea.parent('div').find('span.counter').html(' ');
 						}
@@ -79,13 +79,23 @@
 	<script type="text/javascript">
 		var token = '{$token}';
 		var id_product = {if isset($product->id)}{$product->id}{else}0{/if};
+		var defaultLanguage = {$defaultLanguage};
+
+		var product_type_pack = {Product::PTYPE_PACK};
+		var product_type_virtual = {Product::PTYPE_VIRTUAL};
+		var product_type_simple = {Product::PTYPE_SIMPLE};
+
 		var toload = new Array();
-		var empty_pack_msg = '{l s='Pack is empty. You need to add at least one product to the pack before you can save it.'}';
+		var empty_pack_msg = '{l s='Pack is empty. You need to add at least one product to the pack before you can save the pack.' slashes=1}';
+		var empty_name_msg = '{l s='Product name is empty. You need to enter a name at least for the default language before you can save the product.' slashes=1}';
+		var empty_link_rewrite_msg = '{l s='Friendly URL is empty. You need to enter a friendly URL at least for the default language before you can save the product.' slashes=1}';
 		$('#product-tab-content-wait').show();
 		var post_data = {$post_data};
 
+		var product_type;
 		$(document).ready(function()
 		{
+			product_type = $("input[name=type_product]:checked").val();
 			$('#product-tab-content-wait').show();
 			{if $is_pack}
 				$('#pack_product').attr('checked', 'checked');
@@ -102,8 +112,8 @@
 				$('li.tab-row a[id*="VirtualProduct"]').hide();
 			{/if}
 
-			$('input[name="type_product"]').click(function() {
-
+			$('input[name="type_product"]').click(function()
+			{
 				// Reset settings
 				$('li.tab-row a[id*="Pack"]').hide();
 				$('li.tab-row a[id*="VirtualProduct"]').hide();
@@ -112,8 +122,9 @@
 				$('div.is_virtual_good').hide();
 				$('#is_virtual').val(0);
 				$("#virtual_good_attributes").hide();
-
-				var product_type = $(this).val();
+				
+				// product_type is now global
+				product_type = $(this).val();
 
 				// until a product is added in the pack
 				// if product is PTYPE_PACK, save buttons will be disabled 
@@ -137,12 +148,9 @@
 					$('#condition option[value=new]').removeAttr('selected');
 					$('.stockForVirtualProduct').show();
 					// if pack is enabled, if you choose pack, automatically switch to pack page
-					if ($("#link-Pack:visible").length)
-						handleSaveForPack();
 				}
 				else if (product_type == {Product::PTYPE_VIRTUAL})
 				{
-					enableSave();
 					$('li.tab-row a[id*="VirtualProduct"]').show();
 					$('#is_virtual_good').attr('checked', true);
 					$('#virtual_good').show();
@@ -166,12 +174,13 @@
 				else
 				{
 					// 3rd case : product_type is PTYPE_SIMPLE (0)
-					enableSave();
 					$('li.tab-row a[id*="Shipping"]').show();
 					$('#condition').removeAttr('disabled');
 					$('#condition option[value=new]').removeAttr('selected');
 					$('.stockForVirtualProduct').show();
 				}
+				// this handle the save button displays and warnings
+				handleSaveButtons();
 
 			});
 
@@ -217,16 +226,13 @@
 				}
 				else if (btn_name == "Attachments")
 				{
-					disableSave();
+					handleSaveButtons();
 				}
 				else
 				{
 					$('#desc-product-newCombination').hide();
 					// if pack is enabled, save button are visible only if pack is valid
-					if ($("#link-Pack:visible").length)
-						handleSaveForPack();
-					else
-						enableSave();
+					handleSaveButtons();
 				}
 			});
 
@@ -238,7 +244,7 @@
 
 			$('#product-tab-content-Associations').bind('loaded', function()
 			{
-				enableSave();
+				handleSaveButtons();
 			});
 
 			$('.confirm_leave').live('click', function(){
@@ -294,7 +300,7 @@
 			<div class="warn draft" >
 				<p>
 					<span style="float: left">
-					{l s='Your product will be saved as draft'}</span>
+					{l s='Your product will be saved as a draft'}</span>
 					<span style="float:right"><a href="#" class="button" style="display: block" onclick="submitAddProductAndPreview()" >{l s='Save and preview'}</a></span>
 					<input type="hidden" name="fakeSubmitAddProductAndPreview" id="fakeSubmitAddProductAndPreview" />
 					<br />

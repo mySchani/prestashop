@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,12 +18,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11911 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-<h1>{l s='The controller'} {$controller} {l s='is missing or invalid. '}</h1>
+<h1>{l s='The controller'} {$controller} {l s='is missing or invalid.'}</h1>
 <ul>
 <li><a href="index.php">{l s='Go to Dashboard'}</a></li>
 <li><a href="#" onclick="window.history.back();">{l s='Back to previous page'}</a></li>

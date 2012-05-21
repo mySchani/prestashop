@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12198 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -53,7 +53,7 @@ class InstallModelDatabase extends InstallAbstractModel
 		if (!$login)
 			$errors[] = $this->language->l('You must enter a database login');
 
-		if (!$prefix || !Validate::isTablePrefix($prefix))
+		if ($prefix && !Validate::isTablePrefix($prefix))
 			$errors[] = $this->language->l('Tables prefix is invalid');
 
 		if (!Validate::isMySQLEngine($engine))

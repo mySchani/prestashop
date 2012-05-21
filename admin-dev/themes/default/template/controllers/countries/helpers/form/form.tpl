@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,35 +18,38 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 {extends file="helpers/form/form.tpl"}
 
-{block name="start_field_block"}
-	<div class="margin-form">
-		{if $input.type == 'address_layout'}
+{block name="field"}
+	{if $input.type == 'address_layout'}
+		<div class="margin-form">
 			<div style="float:left">
 				<textarea id="ordered_fields" name="address_layout" style="width: 300px;height: 140px;">{$input.address_layout}</textarea>
 			</div>
 			<div style="float:left; margin-left:20px; width:340px;">
-				{l s='Liable fields for the address information (click to have more details):'} {$input.display_valid_fields}
+				{l s='Required fields for the address (click for more details):'} {$input.display_valid_fields}
 			</div>
 			<div class="clear"></div>
 			<div style="margin:10px 0 10px 0;">
 				<a id="useLastDefaultLayout" style="margin-left:5px;" href="javascript:void(0)" onClick="resetLayout('{$input.encoding_address_layout}', 'lastDefault');" class="button">
-					{l s='Use the last registered layout'}</a>
+					{l s='Use the last registered format'}</a>
 				<a id="useDefaultLayoutSystem" style="margin-left:5px;" href="javascript:void(0)" onClick="resetLayout('{$input.encoding_default_layout}', 'defaultSystem');" class="button">
-					{l s='Use a default layout'}</a>
+					{l s='Use the default format'}</a>
 				<a id="useCurrentLastModifiedLayout" style="margin-left:5px;" href="javascript:void(0)" onClick="resetLayout(lastLayoutModified, 'currentModified')" class="button">
-					{l s='Use my current modified layout'}</a>
+					{l s='Use my current modified format'}</a>
 				<a id="eraseCurrentLayout" style="margin-left:5px;" href="javascript:void(0)" onClick="resetLayout('', 'erase');" class="button">
-					{l s='Clean layout'}</a>
+					{l s='Clear format'}</a>
 				<div style="margin-top:10px; padding-top:5px; height:10px;" id="explanationText"></div>
 			</div>
-		{/if}
+		</div>
+	{else}
+		{$smarty.block.parent}
+	{/if}
 {/block}
 
 {block name=script}
@@ -65,19 +68,19 @@
 		});
 
 		$('#useLastDefaultLayout').mouseover(function() {
-			switchExplanationText("{l s='Will display back your last registered layout'}");
+			switchExplanationText("{l s='This will restore your last registered address format'}");
 		});
 
 		$('#useDefaultLayoutSystem').mouseover(function() {
-			switchExplanationText("{l s='Will display a default layout for this country'}");
+			switchExplanationText("{l s='This will restore the default address format for this country'}");
 		});
 
 		$('#useCurrentLastModifiedLayout').mouseover(function() {
-			switchExplanationText("{l s='Will display back you\'re current editing layout'}");
+			switchExplanationText("{l s='This will restore your current address format'}");
 		});
 
 		$('#eraseCurrentLayout').mouseover(function() {
-			switchExplanationText("{l s='Will delete the current layout'}");
+			switchExplanationText("{l s='This will delete the current address format'}");
 		});
 
 		$('#need_zip_code_on, #need_zip_code_off').change(function() {
@@ -106,7 +109,7 @@
 	}
 
 	function resetLayout(defaultLayout, type) {
-		if (confirm("{l s='Are you sure to apply this selection ?'}"))
+		if (confirm("{l s='Are you sure you want to restore the default address format for this country?'}"))
 		$("#ordered_fields").val(unescape(defaultLayout.replace(/\+/g, " ")));
 	}
 

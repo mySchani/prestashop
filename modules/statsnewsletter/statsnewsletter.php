@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -82,14 +82,14 @@ class StatsNewsletter extends ModuleGraph
 		$sql = 'SELECT COUNT(*) as customers
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE 1
-					'.$this->sqlShopRestriction(Shop::SHARE_CUSTOMER).'
+					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 					AND `newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween();
 		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 
 		$sql = 'SELECT COUNT(*) as visitors
 				FROM '._DB_PREFIX_.'newsletter
 				WHERE 1
-				   '.$this->sqlShopRestriction().'
+				   '.Shop::addSqlRestriction().'
 					AND `newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween();
 		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return array('customers' => $result1['customers'], 'visitors' => $result2['visitors'], 'both' => $result1['customers'] + $result2['visitors']);
@@ -105,13 +105,13 @@ class StatsNewsletter extends ModuleGraph
 		$this->_query = 'SELECT newsletter_date_add
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE 1
-					'.$this->sqlShopRestriction(Shop::SHARE_CUSTOMER).'
+					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 					AND `newsletter_date_add` BETWEEN ';
 
 		$this->_query2 = 'SELECT newsletter_date_add
 				FROM '._DB_PREFIX_.'newsletter
 				WHERE 1
-					'.$this->sqlShopRestriction(Shop::SHARE_CUSTOMER).'
+					'.Shop::addSqlRestriction(Shop::SHARE_CUSTOMER).'
 					AND `newsletter_date_add` BETWEEN ';
 		$this->setDateGraph($layers, true);
 	}

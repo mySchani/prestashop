@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 11757 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13843 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -136,6 +136,7 @@ class StockMvtReasonCore extends ObjectModel
 		$query->from('stock_mvt_reason', 'smr');
 		$query->where('smr.id_stock_mvt_reason = '.(int)$id_stock_mvt_reason);
 		$query->where('smr.deleted = 0');
+
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 	}
 }

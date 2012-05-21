@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -28,7 +28,9 @@
 class AdminCmsCategoriesControllerCore extends AdminController
 {
 	/** @var object CMSCategory() instance for navigation*/
-	private $_CMSCategory;
+	protected $_CMSCategory;
+
+	protected $position_identifier = 'id_cms_category_to_move';
 
 	public function __construct()
 	{
@@ -118,7 +120,6 @@ class AdminCmsCategoriesControllerCore extends AdminController
 						$this->errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
 					else
 					{
-						$this->deleteImage($object->id);
 						if ($this->deleted)
 						{
 							$object->deleted = 1;
@@ -268,7 +269,7 @@ class AdminCmsCategoriesControllerCore extends AdminController
 				),
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);

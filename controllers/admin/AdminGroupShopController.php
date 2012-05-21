@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -33,6 +33,7 @@ class AdminGroupShopControllerCore extends AdminController
 		$this->className = 'GroupShop';
 		$this->lang = false;
 		$this->requiredDatabase = true;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->addRowAction('edit');
 
@@ -53,7 +54,7 @@ class AdminGroupShopControllerCore extends AdminController
 			'name' => array(
 				'title' => $this->l('Group shop'),
 				'width' => 'auto',
-				'filter_key' => 'b!name',
+				'filter_key' => 'a!name',
 			),
 			'active' => array(
 				'title' => $this->l('Enabled'),
@@ -127,7 +128,7 @@ class AdminGroupShopControllerCore extends AdminController
 				),
 				array(
 					'type' => 'radio',
-					'label' => $this->l('Share available quantities to sale:'),
+					'label' => $this->l('Share available quantities to sell:'),
 					'name' => 'share_stock',
 					'required' => true,
 					'class' => 't',
@@ -144,8 +145,7 @@ class AdminGroupShopControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('Share available quantities to sale between shops of this group'),
-					'h' => $this->l('When changing this option, all product available quantities for the current groupof shop will be reseted to 0.')
+					'desc' => $this->l('Share available quantities to sell between shops of this group. When changing this option, all product available quantities for this group will be reset to 0.'),
 				),
 				array(
 					'type' => 'radio',
@@ -170,7 +170,7 @@ class AdminGroupShopControllerCore extends AdminController
 				)
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
@@ -196,7 +196,7 @@ class AdminGroupShopControllerCore extends AdminController
 			'group' => $this->l('Groups'),
 			'manufacturer' => $this->l('Manufacturers'),
 			'supplier' => $this->l('Suppliers'),
-			'tax_rules_group' => $this->l('Tax rules groups'),
+			'tax_rules_group' => $this->l('Tax rule groups'),
 			'zone' => $this->l('Zones'),
 		);
 
@@ -212,7 +212,7 @@ class AdminGroupShopControllerCore extends AdminController
 					'name' => 'useImportData',
 					'value' => 1
 				),
-				'list' => array(
+				'select' => array(
 					'type' => 'select',
 					'name' => 'importFromShop',
 					'options' => array(
@@ -227,11 +227,11 @@ class AdminGroupShopControllerCore extends AdminController
 				'desc' => $this->l('Use this option to associate data (products, modules, etc.) the same way as the selected shop')
 			);
 
-		$default_group_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
+		$default_shop = new Shop(Configuration::get('PS_SHOP_DEFAULT'));
 		$this->tpl_form_vars = array(
 			'disabled' => $disabled,
 			'checked' => (Tools::getValue('addgroup_shop') !== false) ? true : false,
-			'defaultGroup' => $default_group_shop->getGroupID(),
+			'defaultGroup' => $default_shop->id_group_shop,
 		);
 		if (isset($this->fields_import_form))
 			$this->tpl_form_vars = array_merge($this->tpl_form_vars, array('form_import' => $this->fields_import_form));
@@ -264,7 +264,7 @@ class AdminGroupShopControllerCore extends AdminController
 			if (GroupShop::getTotalGroupShops() == 1)
 				$this->errors[] = Tools::displayError('You cannot delete or disable the last groupshop.');
 			else if ($object->haveShops())
-				$this->errors[] = Tools::displayError('You cannot delete or disable a groupshop which have this shops using it.');
+				$this->errors[] = Tools::displayError('You cannot delete or disable a groupshop which has shops using it.');
 
 			if (count($this->errors))
 				return false;

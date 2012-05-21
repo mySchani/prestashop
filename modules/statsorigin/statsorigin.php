@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -57,7 +57,7 @@ class StatsOrigin extends ModuleGraph
 		$sql = 'SELECT http_referer
 				FROM '._DB_PREFIX_.'connections
 				WHERE 1
-					'.$this->sqlShopRestriction().'
+					'.Shop::addSqlRestriction().'
 					AND date_add BETWEEN '.$dateBetween;
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->query($sql);
 		$websites = array($directLink => 0);

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -47,7 +47,7 @@ class OrderControllerCore extends ParentOrderController
 		if (!$this->context->cart->checkQuantities())
 		{
 			$this->step = 0;
-			$this->errors[] = Tools::displayError('An item in your cart is no longer available for this quantity, you cannot proceed with your order.');
+			$this->errors[] = Tools::displayError('An item in your cart is no longer available in this quantity, you cannot proceed with your order.');
 		}
 
 		// Check minimal amount
@@ -92,12 +92,15 @@ class OrderControllerCore extends ParentOrderController
 	{
 		global $isVirtualCart;
 
+		parent::initContent();
+
 		if (Tools::isSubmit('ajax') && Tools::getValue('method') == 'updateExtraCarrier')
 		{
 			// Change virtualy the currents delivery options
 			$delivery_option = $this->context->cart->getDeliveryOption();
 			$delivery_option[(int)Tools::getValue('id_address')] = Tools::getValue('id_delivery_option');
 			$this->context->cart->setDeliveryOption($delivery_option);
+			$this->context->cart->save();
 			$return = array(
 				'content' => Hook::exec(
 					'displayCarrierList',
@@ -108,7 +111,7 @@ class OrderControllerCore extends ParentOrderController
 			);
 			die(Tools::jsonEncode($return));
 		}
-		
+
 		if ($this->nbProducts)
 			$this->context->smarty->assign('virtual_cart', $isVirtualCart);
 
@@ -141,10 +144,17 @@ class OrderControllerCore extends ParentOrderController
 			break;
 
 			case 3:
-				// Test that the conditions (so active) were accepted by the customer
+				// Check that the conditions (so active) were accepted by the customer
 				$cgv = Tools::getValue('cgv');
 				if (Configuration::get('PS_CONDITIONS') && (!Validate::isBool($cgv) || $cgv == false))
 					Tools::redirect('index.php?controller=order&step=2');
+
+				// Check the delivery option is setted
+                if (!Tools::getValue('delivery_option'))
+ 	               Tools::redirect('index.php?controller=order&step=2');
+                foreach (Tools::getValue('delivery_option') as $delivery_option)
+    	            if (empty($delivery_option))
+        	            Tools::redirect('index.php?controller=order&step=2');
 
 				$this->autoStep();
 
@@ -178,7 +188,6 @@ class OrderControllerCore extends ParentOrderController
 			'currencyFormat' => $this->context->currency->format,
 			'currencyBlank' => $this->context->currency->blank,
 		));
-		parent::initContent();
 	}
 
 	protected function processAddressFormat()
@@ -203,10 +212,10 @@ class OrderControllerCore extends ParentOrderController
 
 		if ($this->step >= 2 && (!$this->context->cart->id_address_delivery || !$this->context->cart->id_address_invoice))
 			Tools::redirect('index.php?controller=order&step=1');
-		
+
 		if ($this->step > 2 && !$isVirtualCart && count($this->context->cart->getDeliveryOptionList()) == 0)
 			Tools::redirect('index.php?controller=order&step=2');
-		
+
 		$delivery = new Address((int)$this->context->cart->id_address_delivery);
 		$invoice = new Address((int)$this->context->cart->id_address_invoice);
 
@@ -238,6 +247,9 @@ class OrderControllerCore extends ParentOrderController
 			$this->context->cart->id_address_invoice = Tools::isSubmit('same') ? $this->context->cart->id_address_delivery : (int)Tools::getValue('id_address_invoice');
 			if (!$this->context->cart->update())
 				$this->errors[] = Tools::displayError('An error occurred while updating your cart.');
+
+			if (!$this->context->cart->isMultiAddressDelivery())
+				$this->context->cart->setNoMultishipping(); // As the cart is no multishipping, set each delivery address lines with the main delivery address
 
 			if (Tools::isSubmit('message'))
 				$this->_updateMessage(Tools::getValue('message'));

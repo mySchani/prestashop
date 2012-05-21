@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -47,7 +47,7 @@ class StatsSearch extends ModuleGraph
 		$this->_query = 'SELECT `keywords`, COUNT(TRIM(`keywords`)) as occurences, MAX(results) as total
 				FROM `'._DB_PREFIX_.'statssearch`
 				WHERE 1
-					'.$this->sqlShopRestriction().'
+					'.Shop::addSqlRestriction().'
 					AND `date_add` BETWEEN ';
 
 		$this->_query2 = 'GROUP BY `keywords`
@@ -87,7 +87,7 @@ class StatsSearch extends ModuleGraph
 	public function hookSearch($params)
 	{
 		$sql = 'INSERT INTO `'._DB_PREFIX_.'statssearch` (`id_shop`, `id_group_shop`, `keywords`, `results`, `date_add`)
-				VALUES ('.$this->context->shop->getID(true).', '.$this->context->shop->getGroupID().', \''.pSQL($params['expr']).'\', '.(int)$params['total'].', NOW())';
+				VALUES ('.(int)$this->context->shop->id.', '.(int)$this->context->shop->id_group_shop.', \''.pSQL($params['expr']).'\', '.(int)$params['total'].', NOW())';
 		Db::getInstance()->execute($sql);
 	}
 

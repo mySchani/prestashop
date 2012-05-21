@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -194,7 +194,7 @@ class AdminStatusesControllerCore extends AdminController
 					'size' => 40,
 					'required' => true,
 					'hint' => $this->l('Invalid characters: numbers and').' !<>,;?=+()@#"�{}_$%:',
-					'desc' => $this->l('Order status (e.g., \'Pending\')')
+					'desc' => $this->l('Order status (e.g. \'Pending\')')
 				),
 				array(
 					'type' => 'file',
@@ -207,7 +207,7 @@ class AdminStatusesControllerCore extends AdminController
 					'label' => $this->l('Color:'),
 					'name' => 'color',
 					'size' => 30,
-					'desc' => $this->l('Status will be highlighted in this color. HTML colors only (e.g.,').' "lightblue", "#CC6600")'
+					'desc' => $this->l('Status will be highlighted in this color. HTML colors only (e.g.').' "lightblue", "#CC6600")'
 				),
 				array(
 					'type' => 'checkbox',
@@ -261,7 +261,7 @@ class AdminStatusesControllerCore extends AdminController
 						'query' => array(
 							array(
 								'id' => 'on',
-								'name' => $this->l('Send e-mail to customer when order is changed to this status'),
+								'name' => $this->l('Send e-mail to customer when order status is changed'),
 								'val' => '1'
 							),
 						),
@@ -314,7 +314,7 @@ class AdminStatusesControllerCore extends AdminController
 				)
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
@@ -360,7 +360,7 @@ class AdminStatusesControllerCore extends AdminController
 				)
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
@@ -373,7 +373,7 @@ class AdminStatusesControllerCore extends AdminController
 		$helper->table = 'order_return_state';
 		$helper->identifier = 'id_order_return_state';
 		$helper->id = $order_return_state->id;
-		$helper->toolbar_fix = false;
+		$helper->toolbar_scroll = false;
 		$helper->languages = $this->_languages;
 		$helper->default_form_language = $this->default_form_language;
 		$helper->allow_employee_form_lang = $this->allow_employee_form_lang;
@@ -496,7 +496,7 @@ class AdminStatusesControllerCore extends AdminController
 
 			// Update object
 			if (!$order_return_state->save())
-				$this->errors[] = Tools::displayError('An error has occured: Can\'t save the current order return state');
+				$this->errors[] = Tools::displayError('An error has occurred: Can\'t save the current order return state');
 			else
 				Tools::redirectAdmin(self::$currentIndex.'&conf=4&token='.$this->token);
 		}

@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9795 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -39,7 +39,7 @@
 			{l s='Manage the products you want to order from your supplier'}
 		</legend>
 
-		<p class="clear">{l s='To add a product to the order, type the first letters of the product name, then select the it from the drop-down list:'}</p>
+		<p class="clear">{l s='To add a product to the order, type the first letters of the product name, then select it from the drop-down list:'}</p>
 		<input type="text" size="100" id="cur_product_name" />
 		<span onclick="addProduct();" style="cursor: pointer;"><img src="../img/admin/add.gif" alt="{l s='Add a product to the supply order'}" title="{l s='Add a product to the supply order'}" /></span>
 
@@ -61,7 +61,7 @@
 								<th style="width: 50px">{l s='UPC'}</th>
 								<th style="width: 150px">{l s='Supplier Reference'}</th>
 								<th>{l s='Name'}</th>
-								<th style="width: 100px">{l s='Unit Price TE'}</th>
+								<th style="width: 100px">{l s='Unit Price (tax excl.)'}</th>
 								<th style="width: 100px">{l s='Quantity'}</th>
 								<th style="width: 100px">{l s='Discount rate'}</th>
 								<th style="width: 100px">{l s='Tax rate'}</th>
@@ -139,7 +139,7 @@
 			// check if it's possible to add the product
 			if (product_infos == null || $('#cur_product_name').val() == '')
 			{
-				jAlert('{l s='Thanks to select at least one product.'}');
+				jAlert('{l s='Please select at least one product.'}');
 				return false;
 			}
 

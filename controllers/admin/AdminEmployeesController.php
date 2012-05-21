@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -32,6 +32,9 @@ class AdminEmployeesControllerCore extends AdminController
 
 	/** @var array themes list*/
 	private $themes = array();
+
+	/** @var array tabs list*/
+	private $tabs_list = array();
 
 	public function __construct()
 	{
@@ -79,11 +82,11 @@ class AdminEmployeesControllerCore extends AdminController
 
 		$this->options = array(
 			'general' => array(
-				'title' =>	$this->l('Employees options'),
+				'title' =>	$this->l('Employee options'),
 				'fields' =>	array(
 					'PS_PASSWD_TIME_BACK' => array(
-						'title' => $this->l('Password regenerate:'),
-						'desc' => $this->l('Security minimum time to wait to regenerate a new password'),
+						'title' => $this->l('Password regeneration:'),
+						'desc' => $this->l('Security: minimum time to wait between two password changes'),
 						'cast' => 'intval',
 						'size' => 5,
 						'type' => 'text',
@@ -91,8 +94,8 @@ class AdminEmployeesControllerCore extends AdminController
 						'visibility' => Shop::CONTEXT_ALL
 					),
 					'PS_BO_ALLOW_EMPLOYEE_FORM_LANG' => array(
-						'title' => $this->l('Memorize form language:'),
-						'desc' => $this->l('Allow employees to save their own default form language'),
+						'title' => $this->l('Memorize language used in Admin panel forms:'),
+						'desc' => $this->l('Allow employees to select a specific language for Admin panel forms'),
 						'cast' => 'intval',
 						'type' => 'select',
 						'identifier' => 'value',
@@ -105,12 +108,27 @@ class AdminEmployeesControllerCore extends AdminController
 				'submit' => array()
 			)
 		);
-		
+
 		$path = _PS_ADMIN_DIR_.'/themes/';
 		foreach (scandir($path) as $theme)
 			if (file_exists($path.$theme.'/css/admin.css'))
 				$this->themes[] = $theme;
 
+		$home_tab = Tab::getInstanceFromClassName('adminHome');
+		$this->tabs_list[$home_tab->id] = array(
+				'name' => $home_tab->name[$this->context->language->id],
+				'id_tab' => $home_tab->id,
+				'children' => array(array('id_tab' =>$home_tab->id, 'name' => $home_tab->name[$this->context->language->id])));
+		foreach (Tab::getTabs($this->context->language->id, 0) as $tab)
+		{
+			if (Tab::checkTabRights($tab['id_tab']))
+			{
+				$this->tabs_list[$tab['id_tab']] = $tab;
+				foreach (Tab::getTabs($this->context->language->id, $tab['id_tab']) as $children)
+					if (Tab::checkTabRights($children['id_tab']))
+						$this->tabs_list[$tab['id_tab']]['children'][] = $children;
+			}
+		}
 		parent::__construct();
 
 		// An employee can edit its own profile
@@ -136,13 +154,13 @@ class AdminEmployeesControllerCore extends AdminController
 			return;
 
 		$available_profiles = Profile::getProfiles($this->context->language->id);
-		
+
 		if ($obj->id_profile == _PS_ADMIN_PROFILE_ && $this->context->employee->id_profile != _PS_ADMIN_PROFILE_)
 		{
 			$this->errors[] = Tools::displayError('You cannot edit SuperAdmin profile.');
 			return parent::renderForm();
 		}
-		
+
 		$this->fields_form = array(
 			'legend' => array(
 				'title' => $this->l('Employees'),
@@ -182,11 +200,25 @@ class AdminEmployeesControllerCore extends AdminController
 				),
 				array(
 					'type' => 'color',
-					'label' => $this->l('Back office color:'),
+					'label' => $this->l('Admin panel color:'),
 					'name' => 'bo_color',
 					'class' => 'color mColorPickerInput',
 					'size' => 20,
-					'desc' => $this->l('Back office background will be displayed in this color. HTML colors only (e.g.,').' "lightblue", "#CC6600")'
+					'desc' => $this->l('Admin panel background will be displayed in this color. HTML colors only (e.g.').' "lightblue", "#CC6600")'
+				),
+				array(
+					'type' => 'default_tab',
+					'label' => $this->l('Default tab'),
+					'name' => 'default_tab',
+					'desc' => $this->l('This tab will be displayed just after login'),
+					'options' => $this->tabs_list
+				),
+				array(
+					'type' => 'text',
+					'label' => $this->l('Back Office width'),
+					'name' => 'bo_width',
+					'size' => 10,
+					'desc' => $this->l('Back Office width, in pixels. The value "0" means that the Back Office width will be flexible.')
 				),
 				array(
 					'type' => 'select',
@@ -204,7 +236,7 @@ class AdminEmployeesControllerCore extends AdminController
 					'label' => $this->l('Theme:'),
 					'name' => 'bo_theme',
 					'options' => array('query' => $this->themes),
-					'desc' => $this->l('Out-of-range behavior when none is defined (e.g., when a customer\'s cart weight is greater than the highest range limit)')
+					'desc' => $this->l('Back Office theme')
 				)
 			)
 		);
@@ -213,7 +245,7 @@ class AdminEmployeesControllerCore extends AdminController
 		{
 			$this->fields_form['input'][] = array(
 				'type' => 'radio',
-				'label' => $this->l('Show screencast:'),
+				'label' => $this->l('Show screencast at log in:'),
 				'name' => 'bo_show_screencast',
 				'required' => false,
 				'class' => 't',
@@ -230,7 +262,7 @@ class AdminEmployeesControllerCore extends AdminController
 						'label' => $this->l('Disabled')
 					)
 				),
-				'desc' => $this->l('Show the welcome video on the dashbord of the back office')
+				'desc' => $this->l('Display the welcome video in the Admin panel dashboard at log in')
 			);
 
 			$this->fields_form['input'][] = array(
@@ -252,7 +284,7 @@ class AdminEmployeesControllerCore extends AdminController
 						'label' => $this->l('Disabled')
 					)
 				),
-				'desc' => $this->l('Allow or disallow this employee to log into this Back Office')
+				'desc' => $this->l('Allow or disallow this employee to log into the Admin panel')
 			);
 
 			// if employee is not SuperAdmin (id_profile = 1), don't make it possible to select the admin profile
@@ -285,8 +317,8 @@ class AdminEmployeesControllerCore extends AdminController
 				$this->fields_form['input'][] = array(
 					'type' => 'shop',
 					'label' => $this->l('Shop association:'),
+					'desc' => $this->l('Select the shops the employee is allowed to access'),
 					'name' => 'checkBoxShopAsso',
-					'values' => Shop::getTree()
 				);
 			}
 		}
@@ -297,6 +329,7 @@ class AdminEmployeesControllerCore extends AdminController
 		);
 
 		$this->fields_value['passwd'] = false;
+		$this->fields_value['id_lang'] = $this->context->language->id;
 
 		return parent::renderForm();
 	}
@@ -319,7 +352,7 @@ class AdminEmployeesControllerCore extends AdminController
 			/* PrestaShop demo mode */
 			if (_PS_MODE_DEMO_ && $id_employee = Tools::getValue('id_employee') && (int)$id_employee == _PS_DEMO_MAIN_BO_ACCOUNT_)
 			{
-				$this->errors[] = Tools::displayError('This functionnality has been disabled.');
+				$this->errors[] = Tools::displayError('This functionality has been disabled.');
 				return;
 			}
 			/* PrestaShop demo mode*/
@@ -341,7 +374,7 @@ class AdminEmployeesControllerCore extends AdminController
 			$warehouses = Warehouse::getWarehousesByEmployee((int)Tools::getValue('id_employee'));
 			if (Tools::isSubmit('deleteemployee') && count($warehouses) > 0)
 			{
-				$this->errors[] = Tools::displayError('You cannot delete this account since it manages warehouses. Check your warehouses first.');
+				$this->errors[] = Tools::displayError('You cannot delete this account because it manages warehouses. Check your warehouses first.');
 				return false;
 			}
 		}
@@ -365,14 +398,14 @@ class AdminEmployeesControllerCore extends AdminController
 					return false;
 				}
 			}
-			
+
 			if (!in_array(Tools::getValue('bo_theme'), $this->themes))
 			{
 				$this->errors[] = Tools::displayError('Invalid theme.');
 					return false;
 			}
-			
-			$assos = AdminEmployeesController::getAssoShop($this->table);
+
+			$assos = $this->getAssoShop($this->table);
 
 			if (count($assos[0]) == 0 && $this->table = 'employee')
 				if (Shop::isFeatureActive() && _PS_ADMIN_PROFILE_ != $_POST['id_profile'])

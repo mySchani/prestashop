@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -61,7 +61,7 @@ class AdminContactsControllerCore extends AdminController
 					'size' => 33,
 					'required' => true,
 					'lang' => true,
-					'desc' => $this->l('Contact name, e.g., Technical Support'),
+					'desc' => $this->l('Contact name (e.g. Technical Support)'),
 				),
 				array(
 					'type' => 'text',
@@ -73,12 +73,12 @@ class AdminContactsControllerCore extends AdminController
 				),
 				array(
 					'type' => 'radio',
-					'label' => $this->l('Save in Customer Service?'),
+					'label' => $this->l('Save messages?'),
 					'name' => 'customer_service',
 					'required' => false,
 					'class' => 't',
 					'is_bool' => true,
-					'desc' => $this->l('The messages will be saved in the Customer Service tab'),
+					'desc' => $this->l('If enabled, all messages will be saved in the "Customer Service" tab'),
 					'values' => array(
 						array(
 							'id' => 'customer_service_on',
@@ -108,6 +108,15 @@ class AdminContactsControllerCore extends AdminController
 				'class' => 'button'
 			)
 		);
+		
+		if (Shop::isFeatureActive())
+		{
+			$this->fields_form['input'][] = array(
+				'type' => 'shop',
+				'label' => $this->l('Shop association:'),
+				'name' => 'checkBoxShopAsso',
+			);
+		}
 
 		return parent::renderForm();
 	}

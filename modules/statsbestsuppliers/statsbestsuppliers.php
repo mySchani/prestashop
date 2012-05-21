@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -119,7 +119,7 @@ class StatsBestSuppliers extends ModuleGrid
 				LEFT JOIN '._DB_PREFIX_.'orders o ON o.id_order = od.id_order
 				LEFT JOIN '._DB_PREFIX_.'supplier s ON s.id_supplier = p.id_supplier
 				WHERE o.invoice_date BETWEEN '.$this->getDate().'
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND s.id_supplier IS NOT NULL';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
@@ -135,7 +135,7 @@ class StatsBestSuppliers extends ModuleGrid
 				LEFT JOIN '._DB_PREFIX_.'orders o ON o.id_order = od.id_order
 				LEFT JOIN '._DB_PREFIX_.'supplier s ON s.id_supplier = p.id_supplier
 				WHERE o.invoice_date BETWEEN '.$this->getDate().'
-					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+					'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND s.id_supplier IS NOT NULL
 				GROUP BY p.id_supplier';

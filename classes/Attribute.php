@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -159,10 +159,10 @@ class AttributeCore extends ObjectModel
 	}
 
 	/**
-	 * Get quantity for a given attribute combinaison
+	 * Get quantity for a given attribute combination
 	 * Check if quantity is enough to deserve customer
 	 *
-	 * @param integer $id_product_attribute Product attribute combinaison id
+	 * @param integer $id_product_attribute Product attribute combination id
 	 * @param integer $qty Quantity needed
 	 * @return boolean Quantity is available or not
 	 */
@@ -171,7 +171,7 @@ class AttributeCore extends ObjectModel
 		if (!$shop)
 			$shop = Context::getContext()->shop;
 
-		$result = StockAvailable::getQuantityAvailableByProduct(null, (int)$id_product_attribute, $shop->getID());
+		$result = StockAvailable::getQuantityAvailableByProduct(null, (int)$id_product_attribute, $shop->id);
 
 		return ($result && $qty <= $result);
 	}

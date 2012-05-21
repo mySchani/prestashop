@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 9532 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13512 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
@@ -37,10 +37,10 @@ $(document).ready(function()
 	// Click on color
 	$('#layered_form input[type=button], #layered_form label.layered_color').live('click', function()
 	{
-		if (!$('\'input[name='+$(this).attr('name')+']:hidden\'').length)
+		if (!$('input[name='+$(this).attr('name')+'][type=hidden]').length)
 			$('<input />').attr('type', 'hidden').attr('name', $(this).attr('name')).val($(this).attr('rel')).appendTo('#layered_form');
 		else
-			$('\'input[name='+$(this).attr('name')+']:hidden\'').remove();
+			$('input[name='+$(this).attr('name')+'][type=hidden]').remove();
 		reloadContent();
 	});
 	
@@ -115,14 +115,35 @@ $(document).ready(function()
 		hideFilterValueAction(this);
 	});
 
-	// Unbind event change on #selectPrductSort
-	$('#selectPrductSort').unbind('change');
-
 	// To be sure there is no other events attached to the selectPrductSort, change the ID
-	$('#selectPrductSort').attr('onchange', '');
-	$('#selectPrductSort').attr('id', 'selectPrductSort2');
-	$('label[for=selectPrductSort]').attr('for', 'selectPrductSort2');
-	$('#selectPrductSort2').live('change', function(event) {
+	var id = 1;
+	while ($('#selectPrductSort').length) { // Because ids are duplicated
+		// Unbind event change on #selectPrductSort
+		$('#selectPrductSort').unbind('change');
+		$('#selectPrductSort').attr('onchange', '');
+		$('#selectPrductSort').addClass('selectPrductSort');
+		$('#selectPrductSort').attr('id', 'selectPrductSort'+id);
+		$('label[for=selectPrductSort]').attr('for', 'selectPrductSort'+id);
+		id++;
+	}
+	$('.selectPrductSort').live('change', function(event) {
+		$('.selectPrductSort').val($(this).val());
+		reloadContent();
+	});
+	
+	// To be sure there is no other events attached to the nb_item, change the ID
+	var id = 1;
+	while ($('#nb_item').length) { // Because ids are duplicated
+		// Unbind event change on #nb_item
+		$('#nb_item').unbind('change');
+		$('#nb_item').attr('onchange', '');
+		$('#nb_item').addClass('nb_item');
+		$('#nb_item').attr('id', 'nb_item'+id);
+		$('label[for=nb_item]').attr('for', 'nb_item'+id);
+		id++;
+	}
+	$('.nb_item').live('change', function(event) {
+		$('.nb_item').val($(this).val());
 		reloadContent();
 	});
 	
@@ -235,7 +256,7 @@ function cancelFilter()
 			{
 				$('#'+$(this).attr('rel')).attr('checked', false);
 				$('.'+$(this).attr('rel')).attr('checked', false);
-				$('#layered_form input[name='+$(this).attr('rel')+']').remove();
+				$('#layered_form input[type=hidden][name='+$(this).attr('rel')+']').remove();
 			}
 		}
 		reloadContent();
@@ -306,22 +327,26 @@ function reloadContent(params_plus)
 		}
 	});
 	
-	if ($('#selectPrductSort2').length)
+	if ($('.selectPrductSort').length)
 	{
-		if ($('#selectPrductSort2').val().search(/orderby=/) > 0)
+		if ($('.selectPrductSort').val().search(/orderby=/) > 0)
 		{
 			// Old ordering working
 			var splitData = [
-				$('#selectPrductSort2').val().match(/orderby=(\w*)/)[1],
-				$('#selectPrductSort2').val().match(/orderway=(\w*)/)[1]
+				$('.selectPrductSort').val().match(/orderby=(\w*)/)[1],
+				$('.selectPrductSort').val().match(/orderway=(\w*)/)[1]
 			];
 		}
 		else
 		{
 			// New working for default theme 1.4 and theme 1.5
-			var splitData = $('#selectPrductSort2').val().split(':');
+			var splitData = $('.selectPrductSort').val().split(':');
 		}
 		data += '&orderby='+splitData[0]+'&orderway='+splitData[1];
+	}
+	if ($('.nb_item').length)
+	{
+		data += '&n='+$('.nb_item').val();
 	}
 	
 	var slideUp = true;
@@ -356,7 +381,14 @@ function reloadContent(params_plus)
 				$('#product_list').html('');
 
 			$('#product_list').css('opacity', '1');
-			$('div#pagination').html(result.pagination);
+			if ($.browser.msie) // Fix bug with IE8 and aliasing
+				$('#product_list').css('filter', '');
+
+			if ($(result.pagination).find('ul.pagination').length)
+				$('ul.pagination').replaceWith($(result.pagination).find('ul.pagination'));
+			else
+				$('div#pagination').html($(result.pagination));
+			
 			paginationButton();
 			ajaxLoaderOn = 0;
 			
@@ -452,9 +484,14 @@ function getUrlParams()
 function updateProductUrl()
 {
 	// Adding the filters to URL product
-	$.each($('ul#product_list li.ajax_block_product .product_img_link, ul#product_list li.ajax_block_product h3 a, ul#product_list li.ajax_block_product .product_desc a'), function() {
-		$(this).attr('href', $(this).attr('href') + param_product_url);
-	});
+	if (typeof(param_product_url) != 'undefined') {
+		$.each($('ul#product_list li.ajax_block_product .product_img_link,'+
+				'ul#product_list li.ajax_block_product h3 a,'+
+				'ul#product_list li.ajax_block_product .product_desc a,'+
+				'ul#product_list li.ajax_block_product .lnk_view'), function() {
+			$(this).attr('href', $(this).attr('href') + param_product_url);
+		});
+	}
 }
 /**
  * Copy of the php function utf8_decode()

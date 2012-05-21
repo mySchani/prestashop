@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13064 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13681 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -43,7 +43,7 @@ require_once(_PS_INSTALL_PATH_ . 'install_version.php');
 // we check if theses constants are defined
 // in order to use init.php in upgrade.php script
 if (!defined('__PS_BASE_URI__'))
-	define('__PS_BASE_URI__', str_replace('//', '/', '/'.trim(preg_replace('#/(install(-dev)?)$#', '/', str_replace('\\', '/', dirname($_SERVER['REQUEST_URI']))), '/').'/'));
+	define('__PS_BASE_URI__', substr($_SERVER['REQUEST_URI'], 0, -1 * (strlen($_SERVER['REQUEST_URI']) - strrpos($_SERVER['REQUEST_URI'], '/')) - strlen(substr(dirname($_SERVER['REQUEST_URI']), strrpos(dirname($_SERVER['REQUEST_URI']), '/') + 1))));
 
 if (!defined('_THEME_NAME_'))
 	define('_THEME_NAME_', 'default');
@@ -64,57 +64,13 @@ require_once(_PS_INSTALL_PATH_.'classes/sqlLoader.php');
 require_once(_PS_INSTALL_PATH_.'classes/xmlLoader.php');
 require_once(_PS_INSTALL_PATH_.'classes/simplexml.php');
 
-@set_time_limit(300);
+@set_time_limit(0);
+if (!@ini_get('date.timezone'))
+	@date_default_timezone_set('UTC');
 
-class InstallLog
-{
-	/**
-	 * @return InstallLog
-	 */
-	public function getInstance()
-	{
-		static $instance = null;
+// Try to improve memory limit if it's under 32M
+if (Tools::getMemoryLimit() < Tools::getOctets('32M'))
+	ini_set('memory_limit', '32M');
 
-		if (!$instance)
-			$instance = new InstallLog();
-		return $instance;
-	}
-
-	protected $fd;
-	protected $data = array();
-	protected $last_time;
-	protected $depth = 0;
-
-	public function __construct()
-	{
-		$this->fd = fopen(_PS_INSTALL_PATH_.'log.txt', 'w');
-		$this->last_time = microtime(true);
-	}
-
-	public function write($id)
-	{
-		$str = str_pad("[$id]", 35, ' ');
-		if (isset($this->data[$id]['start']))
-			$str .= str_pad(round(microtime(true) - $this->data[$id]['start'], 4).'ms', 10, ' ');
-		$str .= str_pad(round(microtime(true) - $this->last_time, 4).'ms', 10, ' ');
-		$this->data[$id]['str'] = str_repeat("\t", $this->depth - 1)."$str\n";
-		$this->depth--;
-	}
-
-	public function start($id)
-	{
-		$this->data[$id] = array('start' => microtime(true));
-		$this->depth++;
-	}
-
-	public function __destruct()
-	{
-		foreach ($this->data as $k => $info)
-			if (!isset($info['str']))
-				$this->write($k);
-
-		foreach ($this->data as $info)
-			fwrite($this->fd, $info['str']);
-		fclose($this->fd);
-	}
-}
+if (Tools::getMemoryLimit() < Tools::getOctets('16M'))
+	die('PrestaShop requires at least 16M of memory to run, please check the memory_limit directive in php.ini or contact your host provider');

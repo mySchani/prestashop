@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9795 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -50,11 +50,11 @@
 					</li>
 					<br />
 					<li>
-						{l s='The fields `include` indicate what has to be included in the URL.'}
+						{l s='The `include` fields indicate what has to be included in the URL.'}
 					</li>
 					<br />
 					<li>
-						{l s='The fields `exclude` indicate what has to be excluded from the URL.'}
+						{l s='The `exclude` fields indicate what has to be excluded from the URL.'}
 					</li>
 					<br />
 					<li>
@@ -67,7 +67,7 @@
 					<br />
 					<li>
 						{l s='The simple mode uses the MySQL "LIKE", but for a higher potency you can use MySQL regular expressions.'}
-						<a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html" target="_blank" style="font-style: italic;">{l s='Take a look at the document for more details...'}</a>
+						<a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html" target="_blank" style="font-style: italic;">{l s='Take a look at our documentation for more details...'}</a>
 					</li>
 				</ul>
 			</div>
@@ -101,13 +101,11 @@
 
 {/block}
 
-{block name="end_field_block"}
-	</div>
-
+{block name="field"}
+	{$smarty.block.parent}
 	{if $input.name == 'request_uri_regexp_not'}
 		</div>
 	{/if}
-
 {/block}
 
 {block name="script"}

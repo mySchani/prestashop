@@ -4,18 +4,28 @@ $(document).ready(function() {
 
 function displayForgotPassword() {
 	$('#error').hide();
-	$("#login").flip({
-		direction: 'tb',
-		color: '#FFF',
-		content: $('#forgot_password')
-	})
+	$('#login_form').fadeOut('fast', function () {
+		$("#forgot_password").fadeIn('fast');
+	});
+
 }
+
 function displayLogin() {
 	$('#error').hide();
-	$('#login').revertFlip();
+
+	$('#forgot_password').fadeOut('fast', function () {
+		$("#login_form").fadeIn('fast');
+	});
+
 	return false;
 }
-function doAjaxLogin() {
+
+/**
+ * Check user credentials
+ *
+ * @param string redirect name of the controller to redirect to after login (or null)
+ */
+function doAjaxLogin(redirect) {
 	$('#error').hide();
 	$('#ajax-loader').fadeIn('slow', function() {
 		$.ajax({
@@ -29,7 +39,8 @@ function doAjaxLogin() {
 				controller: "AdminLogin",
 				submitLogin: "1",
 				passwd: $('#passwd').val(),
-				email: $('#email').val()
+				email: $('#email').val(),
+				redirect: redirect
 			},
 			success: function(jsonData) {
 				if (jsonData.hasErrors) {

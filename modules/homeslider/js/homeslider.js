@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12045 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14185 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,13 +31,17 @@ $(function(){
 	if (!homeslider_pause == undefined)
 		var homeslider_pause = 6000;
 	
-	  $('#homeslider').bxSlider({
-	    infiniteLoop: true,
-	    hideControlOnEnd: true,
-	    pager: true,
-	    autoHover: true,
-	    auto: true,
-	    speed: homeslider_speed,
-	    pause: homeslider_pause
-	  });
+	if (typeof(homeslider_loop) == 'undefined') 
+		homeslider_loop = true;
+	
+	$('#homeslider').bxSlider({
+		infiniteLoop: homeslider_loop,
+		hideControlOnEnd: true,
+		pager: true,
+		autoHover: true,
+		auto: homeslider_loop,
+		speed: homeslider_speed,
+		pause: homeslider_pause,
+		controls: false
+	});
 });

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -49,17 +49,11 @@ class BlockLanguages extends Module
 		return (parent::install() && $this->registerHook('top') && $this->registerHook('header'));
 	}
 
-	/**
-	* Returns module content for header
-	*
-	* @param array $params Parameters
-	* @return string Content
-	*/
-	public function hookTop($params)
+	private function _prepareHook($params)
 	{
-		$languages = Language::getLanguages(true, $this->context->shop->getID());
+		$languages = Language::getLanguages(true, $this->context->shop->id);
 		if (!count($languages))
-			return;
+			return false;
 		$link = new Link();
 
 		if ((int)Configuration::get('PS_REWRITING_SETTINGS'))
@@ -93,13 +87,32 @@ class BlockLanguages extends Module
 			if (count($default_rewrite))
 				$this->smarty->assign('lang_rewrite_urls', $default_rewrite);
 		}
+		return true;
+	}
 
+	/**
+	* Returns module content for header
+	*
+	* @param array $params Parameters
+	* @return string Content
+	*/
+	public function hookTop($params)
+	{
+		if (!$this->_prepareHook($params))
+			return;
 		return $this->display(__FILE__, 'blocklanguages.tpl');
 	}
 
 	public function hookHeader($params)
 	{
 		$this->context->controller->addCSS($this->_path.'blocklanguages.css', 'all');
+	}
+
+	public function hookDisplayMobileFooterChoice($params)
+	{
+		if (!$this->_prepareHook($params))
+			return;
+		return $this->display(__FILE__, 'blockmobilelanguages.tpl');
 	}
 }
 

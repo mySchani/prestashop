@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13149 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -66,7 +66,7 @@ class HelperListCore extends Helper
 
 	protected $is_cms = false;
 
-	protected $is_dnd_identifier = false;
+	public $position_identifier;
 
 	/**
 	 * @var string Customize list display
@@ -100,18 +100,6 @@ class HelperListCore extends Helper
 	/** @var bool If true, activates color on hover */
 	public $row_hover = true;
 
-	protected $identifiersDnd = array(
-		'id_product' => 'id_product',
-		'id_category' => 'id_category_to_move',
-		'id_cms_category' => 'id_cms_category_to_move',
-		'id_cms' => 'id_cms',
-		'id_attribute' => 'id_attribute',
-		'id_attribute_group' => 'id_attribute_group',
-		'id_carrier' => 'id_carrier',
-		'id_tab' => 'id_tab',
-		'id_feature' => 'id_feature'
-	);
-
 	/** @var if not null, a title will be added on that list */
 	public $title = null;
 
@@ -137,9 +125,6 @@ class HelperListCore extends Helper
 	 */
 	public function generateList($list, $fields_display)
 	{
-		/*if ($this->edit && (!isset($this->noAdd) || !$this->noAdd))
-			$this->displayAddButton();*/
-
 		// Append when we get a syntax error in SQL query
 		if ($list === false)
 		{
@@ -192,10 +177,10 @@ class HelperListCore extends Helper
 
 	public function displayListContent()
 	{
-		if ($this->is_dnd_identifier)
+		if ($this->position_identifier)
 			$id_category = (int)Tools::getValue('id_'.($this->is_cms ? 'cms_' : '').'category', '1');
 		else
-			$id_category = Category::getRootCategory();
+			$id_category = Category::getRootCategory()->id;
 
 		if (isset($this->fieldsDisplay['position']))
 		{
@@ -203,8 +188,10 @@ class HelperListCore extends Helper
 			sort($positions);
 		}
 
+		// key_to_get is used to display the correct product category or cms category after a position change
 		$identifier = in_array($this->identifier, array('id_category', 'id_cms_category')) ? '_parent' : '';
-		$key_to_get = 'id_'.($this->is_cms ? 'cms_' : '').'category'.$identifier;
+		if ($identifier)
+			$key_to_get = 'id_'.($this->is_cms ? 'cms_' : '').'category'.$identifier;
 
 		foreach ($this->_list as $index => $tr)
 		{
@@ -258,10 +245,12 @@ class HelperListCore extends Helper
 					$this->_list[$index][$key] = array(
 						'position' => $tr[$key],
 						'position_url_down' => $this->currentIndex.
-							'&'.$key_to_get.'='.(int)$id_category.'&'.$this->identifiersDnd[$this->identifier].'='.$id.
+							(isset($key_to_get) ? '&'.$key_to_get.'='.(int)$id_category : '').
+							'&'.$this->position_identifier.'='.$id.
 							'&way=1&position='.((int)$tr['position'] + 1).'&token='.$this->token,
 						'position_url_up' => $this->currentIndex.
-							'&'.$key_to_get.'='.(int)$id_category.'&'.$this->identifiersDnd[$this->identifier].'='.$id.
+							(isset($key_to_get) ? '&'.$key_to_get.'='.(int)$id_category : '').
+							'&'.$this->position_identifier.'='.$id.
 							'&way=0&position='.((int)$tr['position'] - 1).'&token='.$this->token
 					);
 				}
@@ -281,7 +270,18 @@ class HelperListCore extends Helper
 					$this->_list[$index][$key] = ImageManager::thumbnail($path_to_image, $this->table.'_mini_'.$item_id.'.'.$this->imageType, 45, $this->imageType);
 				}
 				else if (isset($params['icon']) && (isset($params['icon'][$tr[$key]]) || isset($params['icon']['default'])))
-					$this->_list[$index][$key] = isset($params['icon'][$tr[$key]]) ? $params['icon'][$tr[$key]] : $params['icon']['default'];
+				{
+					if (isset($params['icon'][$tr[$key]]) && is_array($params['icon'][$tr[$key]]))
+						$this->_list[$index][$key] = array(
+							'src' => $params['icon'][$tr[$key]]['src'],
+							'alt' => $params['icon'][$tr[$key]]['alt'],
+						);
+					else
+						$this->_list[$index][$key] = array(
+							'src' =>  isset($params['icon'][$tr[$key]]) ? $params['icon'][$tr[$key]] : $params['icon']['default'],
+							'alt' =>  isset($params['icon'][$tr[$key]]) ? $params['icon'][$tr[$key]] : $params['icon']['default'],
+						);
+				}
 				else if (isset($params['float']))
 					$this->_list[$index][$key] = rtrim(rtrim($tr[$key], '0'), '.');
 				else if (isset($params['type']) && $params['type'] == 'price')
@@ -310,14 +310,13 @@ class HelperListCore extends Helper
 		$this->content_tpl->assign(array_merge($this->tpl_vars, array(
 			'shop_link_type' => $this->shopLinkType,
 			'name' => isset($name) ? $name : null,
-			'is_dnd_identifier' => $this->is_dnd_identifier,
+			'position_identifier' => $this->position_identifier,
 			'identifier' => $this->identifier,
 			'table' => $this->table,
 			'token' => $this->token,
 			'color_on_bg' => $this->colorOnBackground,
 			'id_category' => $id_category,
 			'bulk_actions' => $this->bulk_actions,
-			'key_to_get' => $key_to_get,
 			'positions' => isset($positions) ? $positions : null,
 			'order_by' => $this->orderBy,
 			'order_way' => $this->orderWay,
@@ -343,7 +342,7 @@ class HelperListCore extends Helper
 	protected function displayDuplicateLink($token = null, $id, $name = null)
 	{
 		$tpl = $this->createTemplate('list_action_duplicate.tpl');
-		if (!array_key_exists('Duplicate', self::$cache_lang))
+		if (!array_key_exists('Bad SQL query', self::$cache_lang))
 			self::$cache_lang['Duplicate'] = $this->l('Duplicate', 'Helper');
 
 		if (!array_key_exists('Copy images too?', self::$cache_lang))
@@ -450,7 +449,7 @@ class HelperListCore extends Helper
 			self::$cache_lang['Delete'] = $this->l('Delete', 'Helper');
 
 		if (!array_key_exists('DeleteItem', self::$cache_lang))
-			self::$cache_lang['DeleteItem'] = $this->l('Delete selected item ?', 'Helper');
+			self::$cache_lang['DeleteItem'] = $this->l('Delete selected item?', 'Helper');
 
 		if (!array_key_exists('Name', self::$cache_lang))
 			self::$cache_lang['Name'] = $this->l('Name:', 'Helper');
@@ -528,27 +527,14 @@ class HelperListCore extends Helper
 			isset($this->context->cookie->{$this->table.'_pagination'}) ? $this->context->cookie->{$this->table.'_pagination'} : null
 		);
 
-		$this->is_dnd_identifier = array_key_exists($this->identifier, $this->identifiersDnd);
-/*
-		if ($is_dnd_identifier)
-		{
-			' id="'.
-			if(((int)(Tools::getValue($this->identifiersDnd[$this->identifier], 1)))
-				substr($this->identifier,3,strlen($this->identifier)))
-		}
-		.' class="table'.(
-		if ($is_dnd_identifier AND ($this->orderBy != 'position 'AND $this->orderWay != 'DESC'))
-			' tableDnD'
-		.'" cellpadding="0" cellspacing="0">*/
-
 		// Cleaning links
 		if (Tools::getValue($this->table.'Orderby') && Tools::getValue($this->table.'Orderway'))
 			$this->currentIndex = preg_replace('/&'.$this->table.'Orderby=([a-z _]*)&'.$this->table.'Orderway=([a-z]*)/i', '', $this->currentIndex);
 
-		if (array_key_exists($this->identifier, $this->identifiersDnd) && (int)Tools::getValue($this->identifiersDnd[$this->identifier], 1))
+		if ($this->position_identifier && (int)Tools::getValue($this->position_identifier, 1))
 			$table_id = substr($this->identifier, 3, strlen($this->identifier));
 
-		if (array_key_exists($this->identifier, $this->identifiersDnd) && ($this->orderBy == 'position' && $this->orderWay != 'DESC'))
+		if ($this->position_identifier && ($this->orderBy == 'position' && $this->orderWay != 'DESC'))
 			$table_dnd = true;
 
 		foreach ($this->fieldsDisplay as $key => $params)
@@ -571,6 +557,10 @@ class HelperListCore extends Helper
 						$value = '';
 					$name = $this->table.'Filter_'.(isset($params['filter_key']) ? $params['filter_key'] : $key);
 					$name_id = str_replace('!', '__', $name);
+
+					$params['id_date'] = $name_id;
+					$params['name_date'] = $name;
+
 					$this->context->controller->addJqueryUI('ui.datepicker');
 					break;
 
@@ -595,7 +585,7 @@ class HelperListCore extends Helper
 		$this->header_tpl->assign(array_merge($this->tpl_vars, array(
 			'title' => $this->title,
 			'show_toolbar' => $this->show_toolbar,
-			'toolbar_fix' => $this->toolbar_fix,
+			'toolbar_scroll' => $this->toolbar_scroll,
 			'toolbar_btn' => $this->toolbar_btn,
 			'table' => $this->table,
 			'currentIndex' => $this->currentIndex,
@@ -606,7 +596,7 @@ class HelperListCore extends Helper
 			'selected_pagination' => $selected_pagination,
 			'pagination' => $this->_pagination,
 			'list_total' => $this->listTotal,
-			'is_order_position' => array_key_exists($this->identifier, $this->identifiersDnd) && $this->orderBy == 'position',
+			'is_order_position' => $this->position_identifier && $this->orderBy == 'position',
 			'order_way' => $this->orderWay,
 			'order_by' => $this->orderBy,
 			'token' => $this->token,
@@ -638,6 +628,7 @@ class HelperListCore extends Helper
 			'table' => $this->table,
 			'current' => $this->currentIndex,
 			'bulk_actions' => $this->bulk_actions,
+			'simple_header' => $this->simple_header
 		)));
 		return $this->footer_tpl->fetch();
 	}

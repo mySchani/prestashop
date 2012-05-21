@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -53,6 +53,7 @@ class LocalizationPackCore
 			$res &= $this->installConfiguration($xml);
 			$res &= $this->installModules($xml);
 			$res &= $this->updateDefaultGroupDisplayMethod($xml);
+			$res &= $this->installAccounting($xml);
 
 			if (!defined('_PS_MODE_DEV_') || !_PS_MODE_DEV_)
 				$res &= $this->_installLanguages($xml, $install_mode);
@@ -72,6 +73,30 @@ class LocalizationPackCore
 			if (!Validate::isLocalizationPackSelection($selected) || !$this->{'_install'.ucfirst($selected)}($xml))
 				return false;
 
+		return true;
+	}
+
+	/**
+	 * Install the default value for accounting
+	 *
+	 * @param $xml
+	 * @return true
+	 */
+	protected function installAccounting($xml)
+	{
+		if (isset($xml->accounting->conf))
+		{
+			$acc_conf = Accounting::getConfiguration();
+			foreach ($xml->accounting->conf as $conf)
+			{
+				$attributes = $conf->attributes();
+				if (isset($attributes['name']) &&
+						isset($attributes['value']) &&
+						isset($acc_conf[(string)$attributes['name']]))
+					$acc_conf[(string)$attributes['name']] = (string)$attributes['value'];
+			}
+			Accounting::updateConfiguration($acc_conf);
+		}
 		return true;
 	}
 
@@ -151,6 +176,7 @@ class LocalizationPackCore
 				$tax = new Tax();
 				$tax->name[(int)Configuration::get('PS_LANG_DEFAULT')] = (string)$attributes['name'];
 				$tax->rate = (float)$attributes['rate'];
+				$tax->account_number = isset($attributes['account_number']) ? (string)$attributes['account_number'] : '';
 				$tax->active = 1;
 
 				if (!$tax->validateFields())
@@ -243,7 +269,7 @@ class LocalizationPackCore
 			foreach ($xml->currencies->currency as $data)
 			{
 				$attributes = $data->attributes();
-				if (Currency::exists($attributes['iso_code']))
+				if (Currency::exists($attributes['iso_code'], (int)$attributes['iso_code_num']))
 					continue;
 				$currency = new Currency();
 				$currency->name = (string)$attributes['name'];
@@ -260,7 +286,7 @@ class LocalizationPackCore
 					$this->_errors[] = Tools::displayError('Invalid currency properties.');
 					return false;
 				}
-				if (!Currency::exists($currency->iso_code))
+				if (!Currency::exists($currency->iso_code, $currency->iso_code_num))
 				{
 					if (!$currency->add())
 					{
@@ -313,7 +339,7 @@ class LocalizationPackCore
 
 									if (!$gz->extract(_PS_TRANSLATIONS_DIR_.'../', false))
 									{
-										$this->_errors[] = Tools::displayError('Cannot decompress the translation file of the language: ').(string)$attributes['iso_code'];
+										$this->_errors[] = Tools::displayError('Cannot decompress the translation file for the following language: ').(string)$attributes['iso_code'];
 										return false;
 									}
 
@@ -352,7 +378,7 @@ class LocalizationPackCore
 				$attributes = $data->attributes();
 				if (!isset($varNames[strval($attributes['type'])]))
 				{
-					$this->_errors[] = Tools::displayError('Pack corrupted: wrong unit type.');
+					$this->_errors[] = Tools::displayError('Localization pack corrupted: wrong unit type.');
 					return false;
 				}
 				if (!Configuration::updateValue($varNames[strval($attributes['type'])], strval($attributes['value'])))
@@ -384,17 +410,17 @@ class LocalizationPackCore
 					{
 						if (!Module::isInstalled($name))
 							if (!$module->install())
-								$this->_errors[] = Tools::displayError('An error has occured during the module installation: ').$name;
+								$this->_errors[] = Tools::displayError('An error occurred while installing the module:').$name;
 					}
 					else
 						if (Module::isInstalled($name))
 							if (!$module->uninstall())
-								$this->_errors[] = Tools::displayError('An error has occured during the module uninstall: ').$name;
+								$this->_errors[] = Tools::displayError('An error occurred while uninstalling the module:').$name;
 
 					unset($module);
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error has occured, this module doesnt exists: ').$name;
+					$this->_errors[] = Tools::displayError('An error has occurred, this module does not exist:').$name;
 			}
 
 		return true;
@@ -431,10 +457,10 @@ class LocalizationPackCore
 				$group = new Group((int)_PS_DEFAULT_CUSTOMER_GROUP_);
 				$group->price_display_method = (int)$attributes['price_display_method'];
 				if (!$group->save())
-					$this->_errors[] = Tools::displayError('An error has occured during the default group update');
+					$this->_errors[] = Tools::displayError('An error has occurred during the default group update');
 			}
 			else
-				$this->_errors[] = Tools::displayError('An error has occured during the default group update');
+				$this->_errors[] = Tools::displayError('An error has occurred during the default group update');
 		}
 
 		return true;

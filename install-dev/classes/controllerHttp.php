@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12954 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13714 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -112,7 +112,8 @@ abstract class InstallControllerHttp
 			$session->last_step = self::$steps[0];
 
 		// Set timezone
-		@date_default_timezone_set($session->shop_timezone ? $session->shop_timezone : 'UTC');
+		if ($session->shop_timezone)
+			@date_default_timezone_set($session->shop_timezone);
 
 		// Get current step (check first if step is changed, then take it from session)
 		if (Tools::getValue('step'))
@@ -174,7 +175,12 @@ abstract class InstallControllerHttp
 
 		// Set current language
 		$this->language = InstallLanguages::getInstance();
-		$lang = (isset($this->session->lang)) ? $this->session->lang : 'en';
+		$detect_language = $this->language->detectLanguage();
+		if (isset($this->session->lang))
+			$lang = $this->session->lang;
+		else
+			$lang = (isset($detect_language['primarytag'])) ? $detect_language['primarytag'] : false;
+
 		if (!in_array($lang, $this->language->getIsoList()))
 			$lang = 'en';
 		$this->language->setLanguage($lang);

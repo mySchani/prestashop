@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12991 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13714 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -179,11 +179,27 @@ class InstallLanguages
 		return $countries;
 	}
 
-	public function getFixtureTranslation($iso, $key)
+	/**
+	 * Parse HTTP_ACCEPT_LANGUAGE and get first data matching list of available languages
+	 *
+	 * @return bool|array
+	 */
+	public function detectLanguage()
 	{
-		$translation = $this->getLanguage($iso)->getFixtureTranslation($key);
-		if (is_null($translation))
-			$translation = $this->getLanguage(self::DEFAULT_ISO)->getFixtureTranslation($key);
-		return $translation;
+		// This code is from a php.net comment : http://www.php.net/manual/fr/reserved.variables.server.php#94237
+		$split_languages = explode(',', $_SERVER['HTTP_ACCEPT_LANGUAGE']);
+		if (!is_array($split_languages))
+			return false;
+
+		foreach ($split_languages as $lang)
+		{
+			$pattern = '/^(?P<primarytag>[a-zA-Z]{2,8})'.
+				'(?:-(?P<subtag>[a-zA-Z]{2,8}))?(?:(?:;q=)'.
+				'(?P<quantifier>\d\.\d))?$/';
+			if (preg_match($pattern, $lang, $m))
+				if (in_array($m['primarytag'], $this->getIsoList()))
+					return $m;
+		}
+		return false;
 	}
 }

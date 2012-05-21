@@ -195,7 +195,7 @@ background: -moz-linear-gradient(center top , #F9F9F9, #ECECEC) repeat-x scroll 
 }
 
 .margin-form {
-	padding: 0 0 1em 210px;
+	padding: 0 0 1em 260px;
 	color: #7F7F7F;
 	font-size: 0.85em;
 }
@@ -211,7 +211,7 @@ fieldset img {
 
 label {
 	float: left;
-	width: 200px;
+	width: 250px;
 	padding: 0.2em 0.5em 0 0;
 	text-align: right;
 	font-weight: bold;
@@ -309,7 +309,7 @@ select optgroup option {
 	padding: 0;
 	cursor: pointer;
 	display: block;
-	width: 425px;
+	width: 500px;
 }
 
 .lab_modules {
@@ -319,7 +319,7 @@ select optgroup option {
 	padding-left: 10px;
 	cursor: pointer;
 	display: block;
-	width: 350px;
+	width: 500px;
 }
 
 .lab_modules_positions img {
@@ -742,7 +742,7 @@ tr.deleted td {
 }
 
 .center {
-	text-align: center;
+	text-align: center !important;
 }
 
 .right {
@@ -983,7 +983,7 @@ p.fail{
 	font-weight:bold;
 	color:red;
 }
-#resultCheckLangPack{
+#lang_pack_msg {
 	border: 1px solid #DFD5C3;
 	padding:10px;
 	margin-bottom:10px;
@@ -1239,7 +1239,7 @@ html[xmlns] .clearfix {
 }
 
 #eighth_block a{
-	background-image: url('../img/admin/advertising.png');
+	background-image: url('../img/admin/abandonedcart.png');
 }
 
 .F_list li{
@@ -1255,7 +1255,7 @@ html[xmlns] .clearfix {
 	font-weight:normal;
 	margin-top: 55px;
 	margin-bottom: 0;
-	line-height: 16px;
+	line-height: 15px;
 }
 
 .F_list a{
@@ -1792,7 +1792,7 @@ font-family:Georgia, Arial, 'sans-serif';
 }
 
 p.preference_description{
-	font-family:Arial, 'sans-serif';
+	font-family:Georgia, Arial, 'sans-serif';
 	font-style:italic;
     clear: both;
     text-align: left;
@@ -1822,7 +1822,7 @@ p.preference_description .light-warning {
 	font-style: italic;
 }
 
-.multishop_warning{
+.multishop_warning, .warning_mod_rewrite{
     background-image: url("../img/admin/warning.gif");
     background-repeat: no-repeat;
     color: #FE2744;
@@ -1832,8 +1832,6 @@ p.preference_description .light-warning {
 }
 
 .isDisabled{
-	color: #3F3F3F;
-	font-style: italic;
 }
 
 input.disable_me[disabled=disabled]{
@@ -2173,7 +2171,7 @@ div#scrollTop a:hover{
 .container-command-top-spacing {margin-top: 25px;}
 .bloc-command {background-color:#EBEDF4; border:1px solid #CCCED7; margin-bottom:10px;}
 .button-command {float:right; padding:10px;}
-
+.button-command-prev-next {float:right;margin-bottom: 10px; margin-right: 10px}
 /*history status*/
 .history-status { border-radius:0;}
 .history-status tr th {

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -117,17 +117,18 @@ class AdminStatesControllerCore extends AdminController
 					'maxlength' => 4,
 					'required' => true,
 					'class' => 'uppercase',
-					'desc' => $this->l('1 to 4 letter ISO code (search on Wikipedia if you don\'t know)')
+					'desc' => $this->l('1 to 4 letter ISO code')
 				),
 				array(
 					'type' => 'select',
 					'label' => $this->l('Country:'),
 					'name' => 'id_country',
 					'required' => false,
+					'default_value' => (int)$this->context->country->id,
 					'options' => array(
 						'query' => Country::getCountries($this->context->language->id, false, true),
 						'id' => 'id_country',
-						'name' => 'name'
+						'name' => 'name',
 					),
 					'desc' => $this->l('Country where state, region or city is located')
 				),

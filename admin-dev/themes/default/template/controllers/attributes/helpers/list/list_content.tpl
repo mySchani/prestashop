@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9608 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -27,7 +27,7 @@
 {if count($list)}
 {foreach $list AS $index => $tr}
 	<tr
-	{if $is_dnd_identifier}id="tr_{$tr.id_attribute_group}_{$tr.$identifier}_{if isset($tr.position['position'])}{$tr.position['position']}{else}0{/if}"{/if}
+	{if $position_identifier}id="tr_{$tr.id_attribute_group}_{$tr.$identifier}_{if isset($tr.position['position'])}{$tr.position['position']}{else}0{/if}"{/if}
 	{if $index is odd}class="alt_row"{/if}
 	{if isset($tr.color) && $color_on_bg}style="background-color: {$tr.color}"{/if}
 	>
@@ -95,7 +95,11 @@
 			{elseif isset($params.callback)}
 				{$tr.$key}
 			{elseif isset($tr.$key) && $key == 'color'}
-				<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; background-color: {$tr.$key}; margin-right: 4px;"></div>
+				{if isset($tr.$key['texture']) && $tr.$key['texture']|count_characters > 1}
+					<img src="{$tr.$key.texture}" alt="" />
+				{else}
+					<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; background-color: {$tr.$key}; margin-right: 4px;"></div>
+				{/if}
 			{elseif isset($tr.$key)}
 				{$tr.$key|escape:'htmlall':'UTF-8'}
 			{else}

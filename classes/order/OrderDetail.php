@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -196,8 +196,13 @@ class OrderDetailCore extends ObjectModel
 			'discount_quantity_applied' => array(),
 			'download_hash' => array(),
 			'download_deadline' => array()
-		)
-	);
+		),
+		'hidden_fields' => array('tax_rate', 'tax_name'),
+		'associations' => array(
+				'taxes'  => array('resource' => 'tax', 'getter' => 'getWsTaxes', 'setter' => false,
+						'fields' => array('id' =>  array(), ),
+						),
+		));
 
 	/** @var bool */
 	protected $outOfStock = false;
@@ -222,8 +227,8 @@ class OrderDetailCore extends ObjectModel
 		$this->context = $context;
 		$id_shop = null;
 		if ($this->context != null && isset($this->context->shop))
-			$id_shop = $this->context->shop->getID();
-		return parent::__construct($id, $id_lang, $id_shop);
+			$id_shop = $this->context->shop->id;
+		parent::__construct($id, $id_lang, $id_shop);
 	}
 
 	public static function getDownloadFromHash($hash)
@@ -453,7 +458,7 @@ class OrderDetailCore extends ObjectModel
 		$this->group_reduction = (float)(Group::getReduction((int)($order->id_customer)));
 
 		if (isset($this->context->shop))
-			$shop_id = $this->context->shop->getID();
+			$shop_id = $this->context->shop->id;
 		else
 			$shop_id = $cart->id_shop;
 
@@ -577,5 +582,14 @@ class OrderDetailCore extends ObjectModel
         $this->total_shipping_price_tax_incl = (float)($this->total_shipping_price_tax_excl * (1 + ($tax_rate / 100)));
         $this->total_shipping_price_tax_incl = Tools::ps_round($this->total_shipping_price_tax_incl, 2);
     }
-}
 
+    public function getWsTaxes()
+    {
+    	$query = new DbQuery();
+    	$query->select('id_tax as id');
+    	$query->from('order_detail_tax', 'tax');
+    	$query->join('LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON (tax.`id_order_detail` = od.`id_order_detail`)');
+    	$query->where('od.`id_order_detail` = '.(int)$this->id_order_detail);
+    	return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+    }
+}

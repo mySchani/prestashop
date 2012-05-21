@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,14 +18,22 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 10891 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 {extends file="helpers/list/list_header.tpl"}
-
+{block name='override_header'}
+{if $submit_form_ajax}
+	<script type="text/javascript">
+		$('#customer', window.parent.document).val('{$new_customer->email|escape:htmlall}');
+		parent.setupCustomer({$new_customer->id|intval});
+		parent.$.fancybox.close();
+	</script>
+{/if}
+{/block}
 {block name=leadin}
 	{if isset($delete_customer) && $delete_customer}
 		<form action="{$REQUEST_URI}" method="post">
@@ -35,7 +43,7 @@
 				<ul class="listForm">
 				<li>
 					<input type="radio" name="deleteMode" value="real" id="deleteMode_real" />
-					<label for="deleteMode_real" style="float:none;">{l s='I want to delete my customer(s) for real, all data will be removed from the database. A customer with the same e-mail address will be able to register again.'}</label>
+					<label for="deleteMode_real" style="float:none;">{l s='I want to delete my customer(s) for real. All data will be removed from the database. A customer with the same e-mail address will be able to register again.'}</label>
 				</li>
 				<li>
 					<input type="radio" name="deleteMode" value="deleted" id="deleteMode_deleted" />
@@ -51,7 +59,7 @@
 						<input type="hidden" name="{$key}" value="{$value}" />
 					{/if}
 				{/foreach}
-				<br /><input type="submit" class="button" value="{l s='   Delete   '}" />
+				<br /><input type="submit" class="button" value="{l s='Delete'}" />
 			</div>
 		</form>
 		<div class="clear">&nbsp;</div>

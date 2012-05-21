@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,15 +18,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 {extends file="helpers/form/form.tpl"}
 
-{block name="start_field_block"}
-	<div class="margin-form">
+{block name="input"}
 	{if $input.type == 'select_theme'}
 		<select name="{$input.name}" id="{$input.name}" {if isset($input.multiple)}multiple="multiple" {/if}{if isset($input.onchange)}onchange="{$input.onchange}"{/if}>
 			{foreach $input.options.query AS $option}
@@ -42,7 +41,17 @@
 				>{$option|escape:'htmlall':'UTF-8'}</option>
 			{/foreach}
 		</select>
-		{if isset($input.hint)}<span class="hint" name="help_box">{$input.hint}<span class="hint-pointer">&nbsp;</span></span>{/if}
+	{elseif $input.type == 'default_tab'}
+	<select name="{$input.name}" id="{$input.name}">
+		{foreach $input.options AS $option}
+			<optgroup label="{$option.name|escape:'htmlall':'UTF-8'}"></optgroup>
+			{foreach $option.children AS $children}
+				<option value="{$children.id_tab}" {if $fields_value[$input.name] == $children.id_tab}selected="selected"{/if}>&nbsp;&nbsp;{$children.name|escape:'htmlall':'UTF-8'}</option>
+			{/foreach}
+		{/foreach}
+	</select>
+	{else}
+		{$smarty.block.parent}
 	{/if}
 {/block}
 

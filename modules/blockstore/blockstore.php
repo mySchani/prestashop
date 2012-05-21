@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -64,7 +64,13 @@ class BlockStore extends Module
 	function hookRightColumn($params)
 	{
 		$this->smarty->assign('store_img', Configuration::get('BLOCKSTORE_IMG'));
-		return $this->display(__FILE__, 'blockstore.tpl');
+		$sql = 'SELECT COUNT(*)
+				FROM '._DB_PREFIX_.'store s'
+				.Shop::addSqlAssociation('store', 's');
+		$total = Db::getInstance()->getValue($sql);
+
+		if ($total > 0)
+			return $this->display(__FILE__, 'blockstore.tpl');
 	}
 
 	function hookHeader($params)
@@ -86,7 +92,7 @@ class BlockStore extends Module
 						return $this->displayError($this->l('an error occurred on uploading file'));
 					else
 					{
-						if (Configuration::hasContext('BLOCKSTORE_IMG', null, $this->context->shop->getContextType()) && Configuration::get('BLOCKSTORE_IMG') != $_FILES['store_img']['name'])
+						if (Configuration::hasContext('BLOCKSTORE_IMG', null, Shop::getContext()) && Configuration::get('BLOCKSTORE_IMG') != $_FILES['store_img']['name'])
 							@unlink(dirname(__FILE__).'/'.Configuration::get('BLOCKSTORE_IMG'));
 						Configuration::updateValue('BLOCKSTORE_IMG', $_FILES['store_img']['name']);
 						return $this->displayConfirmation($this->l('Settings are updated'));

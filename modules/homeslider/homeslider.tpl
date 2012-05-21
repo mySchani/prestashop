@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12042 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14164 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,7 +27,15 @@
 <!-- Module HomeSlider --> 
 {if isset($homeslider)}
 <script type="text/javascript">
+{if isset($homeslider_slides) && $homeslider_slides|@count > 1}
+{if $homeslider.loop == 1}
 	var homeslider_loop = true;
+{else}
+	var homeslider_loop = false;
+{/if}		
+{else}
+	var homeslider_loop = false;
+{/if}
 	var homeslider_speed = {$homeslider.speed};
 	var homeslider_pause = {$homeslider.pause};
 </script>

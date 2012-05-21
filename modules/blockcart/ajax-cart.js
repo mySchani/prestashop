@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7009 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -223,7 +223,7 @@ var ajaxCart = {
 				if (cartBlockOffset != undefined && $picture.size())
 				{
 					$picture.appendTo('body');
-					$picture.css({ 'position': 'absolute', 'top': $picture.css('top'), 'left': $picture.css('left') })
+					$picture.css({ 'position': 'absolute', 'top': $picture.css('top'), 'left': $picture.css('left'), 'z-index': 4242 })
 					.animate({ 'width': $element.attr('width')*0.66, 'height': $element.attr('height')*0.66, 'opacity': 0.2, 'top': cartBlockOffset.top + 30, 'left': cartBlockOffset.left + 15 }, 1000)
 					.fadeOut(100, function() {
 						ajaxCart.updateCartInformation(jsonData, addedFromProductPage);
@@ -366,30 +366,29 @@ var ajaxCart = {
 
 	//refresh display of vouchers (needed for vouchers in % of the total)
 	refreshVouchers : function (jsonData) {
-		if (jsonData.discounts.length == 0)
-			$('#vouchers').remove();
+		if (typeof(jsonData.discounts) == 'undefined' || jsonData.discounts.length == 0)
+			$('#vouchers').hide();
 		else
 		{
-			$('.bloc_cart_voucher').each(function(){
-				var idElmt = $(this).attr('id').replace('bloc_cart_voucher_','');
-				var toDelete = true;
-				for (i=0;i<jsonData.discounts.length;i++)
+			$('#vouchers tbody').html('');
+		
+			for (i=0;i<jsonData.discounts.length;i++)
+			{
+				if (parseFloat(jsonData.discounts[i].price_float) > 0)
 				{
-					if (jsonData.discounts[i].id == idElmt)
-					{
-						$('#bloc_cart_voucher_' + idElmt + ' td.price').text(jsonData.discounts[i].price);
-						toDelete = false;
-					}
+					$('#vouchers tbody').append($(
+						'<tr class="bloc_cart_voucher" id="bloc_cart_voucher_'+jsonData.discounts[i].id+'">'
+						+'	<td class="quantity">1x</td>'
+						+'	<td class="name" title="'+jsonData.discounts[i].description+'">'+jsonData.discounts[i].name+'</td>'
+						+'	<td class="price">-'+jsonData.discounts[i].price+'</td>'
+						+'	<td class="delete"><a class="delete_voucher" href="'+jsonData.discounts[i].link+'" title="'+delete_txt+'"><img src="'+img_dir+'icon/delete.gif" alt="'+delete_txt+'" class="icon" /></a></td>'
+						+'</tr>'
+					));
 				}
-				if (toDelete)
-				{
-					$('#bloc_cart_voucher_' + idElmt).fadeTo('fast', 0, function(){
-							$(this).remove();
-					});
-				}
-			});
-		}
+			}
 
+			$('#vouchers').show();
+		}
 
 	},
 
@@ -429,7 +428,7 @@ var ajaxCart = {
 				var domIdProduct = this.id + '_' + (this.idCombination ? this.idCombination : '0') + '_' + (this.idAddressDelivery ? this.idAddressDelivery : '0');
 
 				var domIdProductAttribute = this.id + '_' + (this.idCombination ? this.idCombination : '0');
-				if($('#cart_block dt#cart_block_product_'+ domIdProduct ).length == 0)
+				if ($('#cart_block dt#cart_block_product_'+ domIdProduct ).length == 0)
 				{
 					var productId = parseInt(this.id);
 					var productAttributeId = (this.hasAttributes ? parseInt(this.attributes) : 0);
@@ -438,7 +437,7 @@ var ajaxCart = {
 						 var name = (this.name.length > 12 ? this.name.substring(0, 10) + '...' : this.name);
 						  content += '<a href="' + this.link + '" title="' + this.name + '">' + name + '</a>';
 						  content += '<span class="remove_link"><a rel="nofollow" class="ajax_cart_block_remove_link" href="' + baseDir + 'index.php?controller=cart&amp;delete&amp;id_product=' + productId + '&amp;token=' + static_token + (this.hasAttributes ? '&amp;ipa=' + parseInt(this.idCombination) : '') + '"> </a></span>';
-						  content += '<span class="price">' + this.priceByLine + '</span>';
+						  content += '<span class="price">' + (parseFloat(this.price_float) > 0 ? this.priceByLine : freeProductTranslation) + '</span>';
 						  content += '</dt>';
 					if (this.hasAttributes)
 						  content += '<dd id="cart_block_combination_of_' + domIdProduct + '" class="hidden"><a href="' + this.link + '" title="' + this.name + '">' + this.attributes + '</a>';
@@ -449,12 +448,16 @@ var ajaxCart = {
 					$('#cart_block dl.products').append(content);
 				}
 				//else update the product's line
-				else{
+				else
+				{
 					var jsonProduct = this;
 					if($('dt#cart_block_product_' + domIdProduct + ' .quantity').text() != jsonProduct.quantity || $('dt#cart_block_product_' + domIdProduct + ' .price').text() != jsonProduct.priceByLine)
 					{
 						// Usual product
-						$('dt#cart_block_product_' + domIdProduct + ' .price').text(jsonProduct.priceByLine);
+						if (parseFloat(this.price_float) > 0)
+							$('dt#cart_block_product_' + domIdProduct + ' .price').text(jsonProduct.priceByLine);
+						else
+							$('dt#cart_block_product_' + domIdProduct + ' .price').html(freeProductTranslation);
 						ajaxCart.updateProductQuantity(jsonProduct, jsonProduct.quantity);
 
 						// Customized product
@@ -493,8 +496,10 @@ var ajaxCart = {
 
 		if (!hasAlreadyCustomizations)
 		{
-			if (!product.hasAttributes) content += '<dd id="cart_block_combination_of_' + productId + '" class="hidden">';
-			content += '<ul class="cart_block_customizations" id="customization_' + productId + '_' + productAttributeId + '">';
+			if (!product.hasAttributes)
+				content += '<dd id="cart_block_combination_of_' + productId + '" class="hidden">';
+			if ($('#customization_' + productId + '_' + productAttributeId).val() == undefined)
+				content += '<ul class="cart_block_customizations" id="customization_' + productId + '_' + productAttributeId + '">';
 		}
 
 		$(product.customizedDatas).each(function(){
@@ -502,7 +507,7 @@ var ajaxCart = {
 			customizationId = parseInt(this.customizationId);
 			productAttributeId = typeof(product.idCombination) == 'undefined' ? 0 : parseInt(product.idCombination);
 			// If the customization is already displayed on the cart, no update's needed
-			if($('#cart_block').find("div[id^=deleteCustomizableProduct_" + customizationId + "_]").length)
+			if ($("#deleteCustomizableProduct_" + customizationId + "_" + productId + "_" + productAttributeId).length)
 				return ('');
 			content += '<li name="customization"><div class="deleteCustomizableProduct" id="deleteCustomizableProduct_' + customizationId + '_' + productId + '_' + (productAttributeId ?  productAttributeId : '0') + '"><a  rel="nofollow" class="ajax_cart_block_remove_link" href="' + baseDir + 'index.php?controller=cart&amp;delete&amp;id_product=' + productId + '&amp;ipa=' + productAttributeId + '&amp;id_customization=' + customizationId + '&amp;token=' + static_token + '"> </a></div><span class="quantity-formated"><span class="quantity">' + parseInt(this.quantity) + '</span>x</span>';
 
@@ -575,7 +580,11 @@ var ajaxCart = {
 	//update general cart informations everywhere in the page
 	updateCartEverywhere : function(jsonData) {
 		$('.ajax_cart_total').text(jsonData.productTotal);
-		$('.ajax_cart_shipping_cost').text(jsonData.shippingCost);
+		
+		if (parseFloat(jsonData.shippingCostFloat) > 0)
+			$('.ajax_cart_shipping_cost').text(jsonData.shippingCost);
+		else
+			$('.ajax_cart_shipping_cost').html(freeShippingTranslation);
 		$('.ajax_cart_tax_cost').text(jsonData.taxCost);
 		$('.cart_block_wrapping_cost').text(jsonData.wrappingCost);
 		$('.ajax_block_cart_total').text(jsonData.total);
@@ -619,18 +628,18 @@ var ajaxCart = {
 };
 
 function HoverWatcher(selector){
-  this.hovering = false;
-  var self = this;
+	this.hovering = false;
+	var self = this;
 
-  this.isHoveringOver = function() {
-    return self.hovering;
-  }
+	this.isHoveringOver = function() {
+		return self.hovering;
+	}
 
-    $(selector).hover(function() {
-      self.hovering = true;
-    }, function() {
-      self.hovering = false;
-    })
+	$(selector).hover(function() {
+		self.hovering = true;
+	}, function() {
+		self.hovering = false;
+	})
 }
 
 //when document is loaded...
@@ -664,6 +673,19 @@ $(document).ready(function(){
 			if (!shopping_cart.isHoveringOver())
 				$("#cart_block").stop(true, true).slideUp(450);
 		}, 200);
+	});
+	
+	$('.delete_voucher').live('click', function() {
+		$.ajax({url:$(this).attr('href')});
+		$(this).parent().parent().remove();
+		if ($('body').attr('id') == 'order' || $('body').attr('id') == 'order-opc')
+		{
+			if (typeof(updateAddressSelection) != 'undefined')
+				updateAddressSelection();
+			else
+				location.reload();
+		}
+		return false;
 	});
 });
 

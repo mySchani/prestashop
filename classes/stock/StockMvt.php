@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13081 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13843 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -164,7 +164,7 @@ class StockMvtCore extends ObjectModel
 	/**
 	 * @deprecated since 1.5.0
 	 *
-	 * This method no longer exists, and have no equivalent because of the missing movements have to be handle by inventories on real stock.
+	 * This method no longer exists, and have no equivalent because the missing movements have to be handled by inventories.
 	 */
 	public static function addMissingMvt($id_employee)
 	{
@@ -231,6 +231,7 @@ class StockMvtCore extends ObjectModel
 		$query->orderBy('date_add DESC');
 
 		$res = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($query);
+
 		if ($res != false)
 			return $res['0'];
 		return false;

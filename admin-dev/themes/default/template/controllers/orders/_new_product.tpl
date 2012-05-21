@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9856 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -64,7 +64,7 @@
 </tr>
 <tr id="new_invoice" style="display:none;background-color:#e9f1f6;">
 	<td colspan="10">
-		<h3>{l s='New invoice informations'}</h3>
+		<h3>{l s='New invoice information'}</h3>
 		<label>{l s='Carrier:'}</label>
 		<div class="margin-form">
 			{$carrier->name}
@@ -72,7 +72,7 @@
 		<div class="margin-form">
 			<input type="checkbox" name="add_invoice[free_shipping]" value="1" />
 			<label class="t">{l s='Free shipping'}</label>
-			<p>{l s='If you don\'t select the "Free shipping", the normal shipping cost will be applied'}</p>
+			<p>{l s='If you don\'t select "Free shipping," the normal shipping cost will be applied'}</p>
 		</div>
 	</td>
 </tr>

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -51,6 +51,9 @@ class AdminTrackingControllerCore extends AdminController
 
 	public function initContent()
 	{
+		if (!Configuration::get('PS_STOCK_MANAGEMENT'))
+			$this->warnings[] = $this->l('List of products without available quantities for sale are not displayed because stock management is disabled.');
+		
 		$methods = get_class_methods($this);
 		$tpl_vars['arrayList'] = array();
 		foreach ($methods as $method_name)
@@ -87,10 +90,11 @@ class AdminTrackingControllerCore extends AdminController
 			'active' => array('title' => $this->l('Status'), 'type' => 'bool', 'active' => 'status', 'width' => 50)
 		));
 
-		$this->_filter = ' AND a.id_category NOT IN (
+		$this->_filter = ' AND a.`id_category` NOT IN (
 			SELECT DISTINCT(cp.id_category)
 			FROM `'._DB_PREFIX_.'category_product` cp
-		)';
+		)
+		AND a.`id_category` != '.(int)Category::getTopCategory()->id;
 
 		$this->tpl_list_vars = array('sub_title' => $this->l('List of empty categories:'));
 
@@ -99,6 +103,9 @@ class AdminTrackingControllerCore extends AdminController
 
 	public function getCustomListProductsAttributesNoStock()
 	{
+		if (!Configuration::get('PS_STOCK_MANAGEMENT'))
+			return;
+		
 		$this->clearListOptions();
 		$this->table = 'product';
 		$this->lang = true;
@@ -137,6 +144,9 @@ class AdminTrackingControllerCore extends AdminController
 
 	public function getCustomListProductsNoStock()
 	{
+		if (!Configuration::get('PS_STOCK_MANAGEMENT'))
+			return;
+		
 		$this->clearListOptions();
 		$this->table = 'product';
 		$this->lang = true;

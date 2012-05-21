@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -112,6 +112,8 @@ class AdminStoresControllerCore extends AdminController
 		);
 
 		parent::__construct();
+
+		$this->_buildOrderedFieldsShop($this->_getDefaultFieldsContent());
 	}
 
 	public function renderList()
@@ -145,7 +147,7 @@ class AdminStoresControllerCore extends AdminController
 					'size' => 33,
 					'required' => false,
 					'hint' => $this->l('Allowed characters: letters, spaces and').' (-)',
-					'desc' => $this->l('Store name, e.g. Citycentre Mall Store')
+					'desc' => $this->l('Store name (e.g. Citycentre Mall Store)')
 				),
 				array(
 					'type' => 'text',
@@ -162,7 +164,7 @@ class AdminStoresControllerCore extends AdminController
 				),
 				array(
 					'type' => 'text',
-					'label' => $this->l('Postcode/ Zip Code:'),
+					'label' => $this->l('Postcode / Zip Code:'),
 					'name' => 'postcode',
 					'size' => 6,
 					'required' => true
@@ -180,10 +182,11 @@ class AdminStoresControllerCore extends AdminController
 					'label' => $this->l('Country:'),
 					'name' => 'id_country',
 					'required' => true,
+					'default_value' => (int)$this->context->country->id,
 					'options' => array(
 						'query' => Country::getCountries($this->context->language->id),
 						'id' => 'id_country',
-						'name' => 'name'
+						'name' => 'name',
 					)
 				),
 				array(
@@ -193,7 +196,8 @@ class AdminStoresControllerCore extends AdminController
 					'required' => true,
 					'options' => array(
 						'id' => 'id_state',
-						'name' => 'name'
+						'name' => 'name',
+                        'query' => null
 					)
 				),
 				array(
@@ -203,7 +207,7 @@ class AdminStoresControllerCore extends AdminController
 					'required' => true,
 					'size' => 11,
 					'maxlength' => 12,
-					'desc' => $this->l('Store coords, eg. 45.265469 / -47.226478')
+					'desc' => $this->l('Store coordinates (e.g. 45.265469 / -47.226478)')
 				),
 				array(
 					'type' => 'text',
@@ -249,7 +253,7 @@ class AdminStoresControllerCore extends AdminController
 							'label' => $this->l('Disabled')
 						)
 					),
-					'desc' => $this->l('Display or not this store')
+					'desc' => $this->l('Whether or not to display this store')
 				)
 			),
 			'rightCols' => array (
@@ -257,7 +261,7 @@ class AdminStoresControllerCore extends AdminController
 					'type' => 'file',
 					'label' => $this->l('Picture:'),
 					'name' => 'image',
-					'desc' => $this->l('Store window picture')
+					'desc' => $this->l('Storefront picture')
 				)
 			),
 			'submit' => array(
@@ -290,7 +294,8 @@ class AdminStoresControllerCore extends AdminController
 			'image' => $image ? $image : false,
 			'size' => $image ? filesize(_PS_STORE_IMG_DIR_.'/'.$obj->id.'.jpg') / 1000 : false,
 			'days' => $days,
-			'hours' => isset($hours_unserialized) ? $hours_unserialized : false
+			'hours' => isset($hours_unserialized) ? $hours_unserialized : false,
+			'id_country' => Configuration::get('PS_COUNTRY_DEFAULT')
 		);
 
 		return parent::renderForm();
@@ -335,7 +340,7 @@ class AdminStoresControllerCore extends AdminController
 					$zip_regexp = str_replace('L', '[a-zA-Z]', $zip_regexp);
 					$zip_regexp = str_replace('C', $country->iso_code, $zip_regexp);
 					if (!preg_match($zip_regexp, $postcode))
-						$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.
+						$this->errors[] = Tools::displayError('Your Postcode / Zip code code is incorrect.').'<br />'.Tools::displayError('Must be typed as follows:').' '.
 											str_replace(
 												'C',
 												$country->iso_code,
@@ -351,9 +356,9 @@ class AdminStoresControllerCore extends AdminController
 											);
 				}
 				else if ($zip_code_format)
-					$this->errors[] = Tools::displayError('Postcode required.');
+					$this->errors[] = Tools::displayError('Postcode / Zip code required.');
 				else if ($postcode && !preg_match('/^[0-9a-zA-Z -]{4,9}$/ui', $postcode))
-					$this->errors[] = Tools::displayError('Your zip/postal code is incorrect.');
+					$this->errors[] = Tools::displayError('Your Postcode / Zip code code is incorrect.');
 			}
 
 			/* Store hours */
@@ -365,6 +370,8 @@ class AdminStoresControllerCore extends AdminController
 
 		if (!count($this->errors))
 			parent::postProcess();
+        else
+            $this->display = 'add';
 	}
 
 	protected function postImage($id)
@@ -375,9 +382,8 @@ class AdminStoresControllerCore extends AdminController
 			$images_types = ImageType::getImagesTypes('stores');
 			foreach ($images_types as $k => $image_type)
 			{
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				ImageManager::resize(_PS_STORE_IMG_DIR_.$id_store.'.jpg',
-							_PS_STORE_IMG_DIR_.$id_store.'-'.stripslashes($image_type['name']).$theme.'.jpg',
+							_PS_STORE_IMG_DIR_.$id_store.'-'.stripslashes($image_type['name']).'.jpg',
 							(int)$image_type['width'], (int)$image_type['height']
 				);
 			}
@@ -385,6 +391,168 @@ class AdminStoresControllerCore extends AdminController
 		return $ret;
 	}
 
+	protected function _getDefaultFieldsContent()
+	{
+		$this->context = Context::getContext();
+		$countryList = array();
+		$countryList[] = array('id' => '0', 'name' => $this->l('Choose your country'));
+		foreach (Country::getCountries($this->context->language->id) as $country)
+			$countryList[] = array('id' => $country['id_country'], 'name' => $country['name']);
+		$stateList = array();
+		$stateList[] = array('id' => '0', 'name' => $this->l('Choose your state (if applicable)'));
+		foreach (State::getStates($this->context->language->id) as $state)
+			$stateList[] = array('id' => $state['id_state'], 'name' => $state['name']);
+
+		$formFields = array(
+			'PS_SHOP_NAME' => array(
+				'title' => $this->l('Shop name:'),
+				'desc' => $this->l('Displayed in e-mails and page titles'),
+				'validation' => 'isGenericName',
+				'required' => true,
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_EMAIL' => array('title' => $this->l('Shop e-mail:'),
+				'desc' => $this->l('Displayed in e-mails sent to customers'),
+				'validation' => 'isEmail',
+				'required' => true,
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_DETAILS' => array(
+				'title' => $this->l('Registration:'),
+				'desc' => $this->l('Shop registration information (e.g. SIRET or RCS)'),
+				'validation' => 'isGenericName',
+				'size' => 30,
+				'type' => 'textarea',
+				'cols' => 30,
+				'rows' => 5
+			),
+			'PS_SHOP_ADDR1' => array(
+				'title' => $this->l('Shop address line 1:'),
+				'validation' => 'isAddress',
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_ADDR2' => array(
+				'title' => 'Address line 2',
+				'validation' => 'isAddress',
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_CODE' => array(
+				'title' => $this->l('Postcode / Zip code:'),
+				'validation' => 'isGenericName',
+				'size' => 6,
+				'type' => 'text'
+			),
+			'PS_SHOP_CITY' => array(
+				'title' => $this->l('City:'),
+				'validation' => 'isGenericName',
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_COUNTRY_ID' => array(
+				'title' => $this->l('Country:'),
+				'validation' => 'isInt',
+				'type' => 'select',
+				'list' => $countryList,
+				'identifier' => 'id',
+				'cast' => 'intval',
+				'defaultValue' => (int)$this->context->country->id
+			),
+			'PS_SHOP_STATE_ID' => array(
+				'title' => $this->l('State:'),
+				'validation' => 'isInt',
+				'type' => 'select',
+				'list' => $stateList,
+				'identifier' => 'id',
+				'cast' => 'intval'
+			),
+			'PS_SHOP_PHONE' => array(
+				'title' => $this->l('Phone:'),
+				'validation' => 'isGenericName',
+				'size' => 30,
+				'type' => 'text'
+			),
+			'PS_SHOP_FAX' => array(
+				'title' => $this->l('Fax:'),
+				'validation' => 'isGenericName',
+				'size' => 30,
+				'type' => 'text'
+			),
+		);
+		return $formFields;
+	}
+
+	protected function _buildOrderedFieldsShop($formFields)
+	{
+		$associatedOrderKey = array(
+			'PS_SHOP_NAME' => 'company',
+			'PS_SHOP_ADDR1' => 'address1',
+			'PS_SHOP_ADDR2' => 'address2',
+			'PS_SHOP_CITY' => 'city',
+			'PS_SHOP_STATE_ID' => 'State:name',
+			'PS_SHOP_CODE' => 'postcode',
+			'PS_SHOP_COUNTRY_ID' => 'Country:name',
+			'PS_SHOP_PHONE' => 'phone');
+
+		$fields = array();
+		$orderedFields = AddressFormat::getOrderedAddressFields(Configuration::get('PS_SHOP_COUNTRY_ID'), false, true);
+
+		foreach ($orderedFields as $lineFields)
+			if (($patterns = explode(' ', $lineFields)))
+				foreach ($patterns as $pattern)
+					if (($key = array_search($pattern, $associatedOrderKey)))
+						$fields[$key] = $formFields[$key];
+		foreach ($formFields as $key => $value)
+			if (!isset($fields[$key]))
+				$fields[$key] = $formFields[$key];
+
+		$this->options['contact'] = array(
+			'title' =>	$this->l('Contact details'),
+			'icon' =>	'tab-contact',
+			'fields' =>	$fields,
+			'submit' => array('title' => $this->l('   Save   '), 'class' => 'button')
+		);
+	}
+
+	public function beforeUpdateOptions()
+	{
+		if (isset($_POST['PS_SHOP_STATE_ID']) && $_POST['PS_SHOP_STATE_ID'] != '0')
+		{
+			$sql = 'SELECT `active` FROM `'._DB_PREFIX_.'state`
+					WHERE `id_country` = '.(int)Tools::getValue('PS_SHOP_COUNTRY_ID').'
+						AND `id_state` = '.(int)Tools::getValue('PS_SHOP_STATE_ID');
+			$isStateOk = Db::getInstance()->getValue($sql);
+			if ($isStateOk != 1)
+				$this->errors[] = Tools::displayError('This state is not in this country.');
+		}
+	}
+
+	public function updateOptionPsShopCountryId($value)
+	{
+		if (!$this->errors && $value)
+		{
+			$country = new Country($value, $this->context->language->id);
+			if ($country->id)
+			{
+				Configuration::updateValue('PS_SHOP_COUNTRY_ID', $value);
+				Configuration::updateValue('PS_SHOP_COUNTRY', pSQL($country->name));
+			}
+		}
+	}
+
+	public function updateOptionPsShopStateId($value)
+	{
+		if (!$this->errors && $value)
+		{
+			$state = new State($value);
+			if ($state->id)
+			{
+				Configuration::updateValue('PS_SHOP_STATE_ID', $value);
+				Configuration::updateValue('PS_SHOP_STATE', pSQL($state->name));
+			}
+		}
+	}
 }
-
-

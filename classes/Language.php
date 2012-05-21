@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -237,12 +237,14 @@ class LanguageCore extends ObjectModel
 
 		$lPath_from = _PS_TRANSLATIONS_DIR_.(string)$iso_from.'/';
 		$tPath_from = _PS_ROOT_DIR_.'/themes/'.(string)$theme_from.'/';
+		$pPath_from = _PS_ROOT_DIR_.'/themes/'.(string)$theme_from.'/pdf/';
 		$mPath_from = _PS_MAIL_DIR_.(string)$iso_from.'/';
 
 		if ($copy)
 		{
 			$lPath_to = _PS_TRANSLATIONS_DIR_.(string)$iso_to.'/';
 			$tPath_to = _PS_ROOT_DIR_.'/themes/'.(string)$theme_to.'/';
+			$pPath_to = _PS_ROOT_DIR_.'/themes/'.(string)$theme_to.'/pdf/';
 			$mPath_to = _PS_MAIL_DIR_.(string)$iso_to.'/';
 		}
 
@@ -347,6 +349,11 @@ class LanguageCore extends ObjectModel
 		if (!$check || ($check && (string)$iso_from != 'en'))
 		{
 			$files_theme[$tPath_from.'lang/'.(string)$iso_from.'.php'] = ($copy ? $tPath_to.'lang/'.(string)$iso_to.'.php' : ++$number);
+
+			// Override for pdf files in the theme
+			if (file_exists($pPath_from.'lang/'.(string)$iso_from.'.php'))
+				$files_theme[$pPath_from.'lang/'.(string)$iso_from.'.php'] = ($copy ? $pPath_to.'lang/'.(string)$iso_to.'.php' : ++$number);
+
 			$module_theme_files = (file_exists($tPath_from.'modules/') ? scandir($tPath_from.'modules/') : array());
 			foreach ($module_theme_files as $module)
 				if ($module !== '.' && $module != '..' && $module !== '.svn' && file_exists($tPath_from.'modules/'.$module.'/'.(string)$iso_from.'.php'))
@@ -634,13 +641,13 @@ class LanguageCore extends ObjectModel
 			return true;
 		else
 		{
-			if (@fsockopen('api.prestashop.com', 80))
+			if (@fsockopen('www.prestashop.com', 80))
 			{
 				$lang = new Language();
 				$lang->iso_code = $iso_code;
 				$lang->active = true;
 
-				if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://api.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$iso_code)))
+				if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$iso_code)))
 				{
 					if (isset($lang_pack->name)
 					&& isset($lang_pack->version)
@@ -653,7 +660,7 @@ class LanguageCore extends ObjectModel
 
 				if ($lang_pack)
 				{
-					$flag = Tools::file_get_contents('http://api.prestashop.com/download/lang_packs/flags/jpeg/'.$iso_code.'.jpg');
+					$flag = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/flags/jpeg/'.$iso_code.'.jpg');
 					if ($flag != null && !preg_match('/<body>/', $flag))
 					{
 						$file = fopen(dirname(__FILE__).'/../img/l/'.$insert_id.'.jpg', 'w');
@@ -709,7 +716,7 @@ class LanguageCore extends ObjectModel
 		if (!self::$countActiveLanguages)
 			self::$countActiveLanguages = Db::getInstance()->getValue('
 				SELECT COUNT(*) FROM `'._DB_PREFIX_.'lang` l
-				'.Context::getContext()->shop->addSqlAssociation('lang', 'l').'
+				'.Shop::addSqlAssociation('lang', 'l').'
 				WHERE l.`active` = 1
 			');
 		return self::$countActiveLanguages;

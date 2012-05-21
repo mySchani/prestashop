@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12949 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13824 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -72,18 +72,22 @@
 		</span>
 		{if count($warnings) > 1}
 			{l s='There are'} {count($warnings)} {l s='warnings'}
+			<span style="margin-left:20px;" id="labelSeeMore">
+				<a id="linkSeeMore" href="#" style="text-decoration:underline">{l s='Click here to see more'}</a>
+				<a id="linkHide" href="#" style="text-decoration:underline;display:none">{l s='Hide warning'}</a>
+			</span>
+			<ul {if count($warnings) > 1}style="display:none;"{/if} id="seeMore">
+			{foreach $warnings as $warning}
+				<li>{$warning}</li>
+			{/foreach}
+			</ul>
 		{else}
-			{l s='There is'} {count($warnings)} {l s='warning'}
+			<ul style="margin-top: 3px">
+			{foreach $warnings as $warning}
+				<li>{$warning}</li>
+			{/foreach}
+			</ul>
 		{/if}
-		<span style="margin-left:20px;" id="labelSeeMore">
-			<a id="linkSeeMore" href="#" style="text-decoration:underline">{l s='Click here to see more'}</a>
-			<a id="linkHide" href="#" style="text-decoration:underline;display:none">{l s='Hide warning'}</a>
-		</span>
-		<ul style="display:none;" id="seeMore">
-		{foreach $warnings as $warning}
-			<li>{$warning}</li>
-		{/foreach}
-		</ul>
 	</div>
 {/if}
 

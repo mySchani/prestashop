@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13147 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -144,10 +144,7 @@ class InstallXmlLoader
 		$this->ids = $ids;
 	}
 
-	/**
-	 * Read all XML files from data folder and populate tables
-	 */
-	public function populateFromXmlFiles()
+	public function getSortedEntities()
 	{
 		// Browse all XML files from data/xml directory
 		$entities = array();
@@ -201,14 +198,19 @@ class InstallXmlLoader
 		}
 		while ($current != $sort_entities);
 
+		return $sort_entities;
+	}
+
+	/**
+	 * Read all XML files from data folder and populate tables
+	 */
+	public function populateFromXmlFiles()
+	{
+		$entities = $this->getSortedEntities();
+
 		// Populate entities
-		foreach ($sort_entities as $entity)
-		{
-			if (method_exists($this, 'populateEntity'.Tools::toCamelCase($entity)))
-				$this->{'populateEntity'.Tools::toCamelCase($entity)}();
-			else
-				$this->populateEntity($entity);
-		}
+		foreach ($entities as $entity)
+			$this->populateEntity($entity);
 	}
 
 	/**
@@ -218,6 +220,12 @@ class InstallXmlLoader
 	 */
 	public function populateEntity($entity)
 	{
+		if (method_exists($this, 'populateEntity'.Tools::toCamelCase($entity)))
+		{
+			$this->{'populateEntity'.Tools::toCamelCase($entity)}();
+			return;
+		}
+
 		$xml = $this->loadEntity($entity);
 
 		// Read list of fields
@@ -652,8 +660,11 @@ class InstallXmlLoader
 			foreach (Db::getInstance()->executeS($sql) as $row)
 			{
 				$table = current($row);
-				if (preg_match('#^'._DB_PREFIX_.'(.+?)(_lang)?$#i', $table, $m) && !preg_match('#(_group_shop|_shop)$#i', $table))
-					$tables[$m[1]] = (isset($m[2]) && $m[2]) ? true : false;
+				if (preg_match('#^'._DB_PREFIX_.'(.+?)(_lang)?$#i', $table, $m))
+					if (preg_match('#^'._DB_PREFIX_.'(.+?)(_group_shop|_shop)$#i', $table, $m2) && !isset($tables[$m2[1]]))
+						$tables[$m[1]] = (isset($m[2]) && $m[2]) ? true : false;
+					else
+						$tables[$m[1]] = (isset($m[2]) && $m[2]) ? true : false;
 			}
 		}
 
@@ -675,7 +686,7 @@ class InstallXmlLoader
 		if (!isset($columns[$table]))
 		{
 			$columns[$table] = array();
-			$sql = 'SHOW COLUMNS FROM `'.bqSQL(_DB_PREFIX_.$table).'`';
+			$sql = 'SHOW COLUMNS FROM `'._DB_PREFIX_.bqSQL($table).'`';
 			foreach (Db::getInstance()->executeS($sql) as $row)
 				$columns[$table][$row['Field']] = $this->checkIfTypeIsText($row['Type']);
 		}

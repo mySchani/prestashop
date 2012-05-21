@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -27,7 +27,7 @@
 
 function generate_ntree()
 {
-	$categories = Db::getInstance()->ExecuteS('SELECT id_category, id_parent FROM '._DB_PREFIX_.'category ORDER BY id_parent ASC, position ASC');
+	$categories = Db::getInstance()->executeS('SELECT id_category, id_parent FROM '._DB_PREFIX_.'category ORDER BY id_parent ASC, position ASC');
 	$categoriesArray = array();
 	foreach ($categories AS $category)
 		$categoriesArray[(int)$category['id_parent']]['subcategories'][(int)$category['id_category']] = 1;
@@ -43,7 +43,7 @@ function generate_ntree_subTree(&$categories, $id_category, &$n)
 			generate_ntree_subTree($categories, (int)$id_subcategory, $n);
 	$right = (int)$n++;
 
-	Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'category 
+	Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'category
 		SET nleft = '.(int)$left.', nright = '.(int)$right.' 
 		WHERE id_category = '.(int)$id_category.' LIMIT 1');
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 9565 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -37,9 +37,10 @@ class AdminStockMvtControllerCore extends AdminController
 	 	$this->className = 'StockMvt';
 	 	$this->identifier = 'id_stock_mvt';
 	 	$this->lang = false;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->list_no_link = true;
-		$this->displayInformation($this->l('This interface allows you to display the stock movements for a selected warehouse.').'<br />');
+		$this->displayInformation($this->l('This interface allows you to display the stock movement for a selected warehouse.').'<br />');
 
 		$this->fieldsDisplay = array(
 			'product_reference' => array(
@@ -74,8 +75,8 @@ class AdminStockMvtControllerCore extends AdminController
 				'type' => 'select',
 				'filter_key' => 'a!sign',
 				'list' => array(
-					'1' => $this->l('Increment'),
-					'-1' => $this->l('Decrement'),
+					'1' => $this->l('Increase'),
+					'-1' => $this->l('Decrease'),
 				),
 				'icon' => array(
 					-1 => 'remove_stock.png',
@@ -88,7 +89,7 @@ class AdminStockMvtControllerCore extends AdminController
 				'filter_key' => 'a!physical_quantity'
 			),
 			'price_te' => array(
-				'title' => $this->l('Price (TE)'),
+				'title' => $this->l('Price (tax excl.)'),
 				'width' => 70,
 				'align' => 'right',
 				'type' => 'price',
@@ -141,7 +142,7 @@ class AdminStockMvtControllerCore extends AdminController
 		$this->_join = 'INNER JOIN '._DB_PREFIX_.'stock stock ON a.id_stock = stock.id_stock
 							LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (
 								stock.id_product = pl.id_product
-								AND pl.id_lang = '.(int)$this->context->language->id.$this->context->shop->addSqlRestrictionOnLang('pl').'
+								AND pl.id_lang = '.(int)$this->context->language->id.Shop::addSqlRestrictionOnLang('pl').'
 							)
 							LEFT JOIN `'._DB_PREFIX_.'stock_mvt_reason_lang` mrl ON (
 								a.id_stock_mvt_reason = mrl.id_stock_mvt_reason
@@ -157,9 +158,12 @@ class AdminStockMvtControllerCore extends AdminController
 		$this->_group = 'GROUP BY a.id_stock_mvt';
 
 		// overrides where depending on the warehouse
-		$id_warehouse = $this->getCurrentWarehouseId();
+		$id_warehouse = (int)$this->getCurrentWarehouseId();
 		if ($id_warehouse > 0)
+		{
 			$this->_where = ' AND w.id_warehouse = '.$id_warehouse;
+			self::$currentIndex .= '&id_warehouse='.$id_warehouse;
+		}
 
 		// sets the current warehouse
 		$this->tpl_list_vars['current_warehouse'] = $this->getCurrentWarehouseId();
@@ -231,7 +235,7 @@ class AdminStockMvtControllerCore extends AdminController
 					$item = &$this->_list[$i];
 
 					if (empty($item['product_name']))
-						$item['product_name'] = $this->l('The name of this product is not available. Maybe it has been deleted from the system.');
+						$item['product_name'] = $this->l('The name of this product is not available. It may have been deleted from the system.');
 				}
 			}
 	}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -73,7 +73,7 @@ class OrderDetailControllerCore extends FrontController
 						$ct = new CustomerThread();
 						$ct->id_contact = 0;
 						$ct->id_customer = (int)$order->id_customer;
-						$ct->id_shop = (int)$this->context->shop->getId(true);
+						$ct->id_shop = (int)$this->context->shop->id;
 						if ($id_product = (int)Tools::getValue('id_product') && $order->orderContainProduct((int)$id_product))
 							$ct->id_product = $id_product;
 						$ct->id_order = (int)$order->id;
@@ -86,7 +86,7 @@ class OrderDetailControllerCore extends FrontController
 					else
 						$ct = new CustomerThread((int)$id_customer_thread);
 					$cm->id_customer_thread = $ct->id;
-					$cm->message = Tools::htmlentitiesutf8(Tools::nl2br($msgText));
+					$cm->message = Tools::htmlentitiesutf8($msgText);
 					$cm->ip_address = ip2long($_SERVER['REMOTE_ADDR']);
 					$cm->add();
 
@@ -103,11 +103,12 @@ class OrderDetailControllerCore extends FrontController
 					if (Validate::isLoadedObject($customer))
 						Mail::Send($this->context->language->id, 'order_customer_comment', Mail::l('Message from a customer'),
 						array(
-						'{lastname}' => $customer->lastname,
-						'{firstname}' => $customer->firstname,
-						'{email}' => $customer->email,
-						'{id_order}' => (int)($order->id),
-						'{message}' => $msgText),
+							'{lastname}' => $customer->lastname,
+							'{firstname}' => $customer->firstname,
+							'{email}' => $customer->email,
+							'{id_order}' => (int)($order->id),
+							'{message}' => Tools::nl2br($msgText)
+						),
 						$to, $toName, $customer->email, $customer->firstname.' '.$customer->lastname);
 
 					if (Tools::getValue('ajax') != 'true')
@@ -131,6 +132,8 @@ class OrderDetailControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		if (!($id_order = (int)Tools::getValue('id_order')) || !Validate::isUnsignedId($id_order))
 			$this->errors[] = Tools::displayError('Order ID required');
 		else
@@ -203,7 +206,6 @@ class OrderDetailControllerCore extends FrontController
 		}
 
 		$this->setTemplate(_PS_THEME_DIR_.'order-detail.tpl');
-		parent::initContent();
 	}
 
 	public function setMedia()

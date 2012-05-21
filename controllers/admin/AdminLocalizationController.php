@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -32,7 +32,43 @@ class AdminLocalizationControllerCore extends AdminController
 		$this->className = 'Configuration';
 		$this->table = 'configuration';
 
+		parent::__construct();
+
 		$this->options = array(
+			'general' => array(
+				'title' =>	$this->l('Configuration'),
+				'fields' =>	array(
+					'PS_LANG_DEFAULT' => array(
+						'title' => $this->l('Default language:'),
+						'desc' => $this->l('The default language used in your shop'),
+						'cast' => 'intval',
+						'type' => 'select',
+						'identifier' => 'id_lang',
+						'list' => Language::getlanguages(false)
+					),
+					'PS_COUNTRY_DEFAULT' => array(
+						'title' => $this->l('Default country:'),
+						'desc' => $this->l('The default country used in your shop'),
+						'cast' => 'intval',
+						'type' => 'select',
+						'identifier' => 'id_country',
+						'list' => Country::getCountries($this->context->language->id)
+					),
+					'PS_CURRENCY_DEFAULT' => array(
+						'title' => $this->l('Default currency:'),
+						'desc' =>
+							$this->l('The default currency used in your shop')
+							.'<div class="warn">'
+								.$this->l('If you change the default currency, you will have to manually edit every product price.')
+							.'</div>',
+						'cast' => 'intval',
+						'type' => 'select',
+						'identifier' => 'id_currency',
+						'list' => Currency::getCurrencies()
+					),
+				),
+				'submit' => array()
+			),
 			'localization' => array(
 				'title' =>	$this->l('Localization'),
 				'width' =>	'width2',
@@ -40,34 +76,34 @@ class AdminLocalizationControllerCore extends AdminController
 				'fields' =>	array(
 					'PS_WEIGHT_UNIT' => array(
 						'title' => $this->l('Weight unit:'),
-						'desc' => $this->l('The weight unit of your shop (eg. kg or lbs)'),
+						'desc' => $this->l('The default weight unit for your shop (e.g. kg or lbs)'),
 						'validation' => 'isWeightUnit',
 						'required' => true,
 						'type' => 'text'
 					),
 					'PS_DISTANCE_UNIT' => array(
 						'title' => $this->l('Distance unit:'),
-						'desc' => $this->l('The distance unit of your shop (eg. km or mi)'),
+						'desc' => $this->l('The default distance unit for your shop (e.g. km or mi)'),
 						'validation' => 'isDistanceUnit',
 						'required' => true,
 						'type' => 'text'
 					),
 					'PS_VOLUME_UNIT' => array(
 						'title' => $this->l('Volume unit:'),
-						'desc' => $this->l('The volume unit of your shop'),
+						'desc' => $this->l('The default volume unit for your shop'),
 						'validation' => 'isWeightUnit',
 						'required' => true,
 						'type' => 'text'
 					),
 					'PS_DIMENSION_UNIT' => array(
 						'title' => $this->l('Dimension unit:'),
-						'desc' => $this->l('The dimension unit of your shop (eg. cm or in)'),
+						'desc' => $this->l('The default dimension unit for your shop (e.g. cm or in)'),
 						'validation' => 'isDistanceUnit',
 						'required' => true,
 						'type' => 'text'
 					)
 				),
-				'submit' => array('title' => $this->l('   Save   '), 'class' => 'button')
+				'submit' => array('title' => $this->l('Save'), 'class' => 'button')
 			),
 			'options' => array(
 				'title' =>	$this->l('Advanced'),
@@ -88,11 +124,20 @@ class AdminLocalizationControllerCore extends AdminController
 						'type' => 'text',
 						'visibility' => Shop::CONTEXT_ALL
 					)
-				)
+				),
+				'submit' => array('title' => $this->l('Save'), 'class' => 'button')
 			)
 		);
 
-		parent::__construct();
+		if (function_exists('date_default_timezone_set'))
+			$this->options['general']['fields']['PS_TIMEZONE'] = array(
+				'title' => $this->l('Time Zone.'),
+				'validation' => 'isAnything',
+				'type' => 'select',
+				'list' => Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('SELECT name FROM '._DB_PREFIX_.'timezone'),
+				'identifier' => 'name',
+				'visibility' => Shop::CONTEXT_ALL
+			);
 	}
 
 	public function postProcess()
@@ -108,7 +153,7 @@ class AdminLocalizationControllerCore extends AdminController
 				$this->errors[] = Tools::displayError('Cannot load localization pack (from prestashop.com and from your local folder "localization")');
 
 			if (!$selection = Tools::getValue('selection'))
-				$this->errors[] = Tools::displayError('Please select at least one content item to import.');
+				$this->errors[] = Tools::displayError('Please select at least one item to import.');
 			else
 			{
 				foreach ($selection as $selected)
@@ -177,14 +222,14 @@ class AdminLocalizationControllerCore extends AdminController
 			array(
 				'id' => 'units',
 				'val' => 'units',
-				'name' => $this->l('Units (e.g., weight, volume, distance)')
+				'name' => $this->l('Units (e.g. weight, volume, distance)')
 			)
 		);
 
 		$this->fields_form = array(
 			'tinymce' => true,
 			'legend' => array(
-				'title' => $this->l('Localization pack import'),
+				'title' => $this->l('Import localization pack'),
 				'image' => '../img/admin/localization.gif'
 			),
 			'input' => array(
@@ -231,18 +276,29 @@ class AdminLocalizationControllerCore extends AdminController
 
 	public function initContent()
 	{
-		// toolbar (save, cancel, new, ..)
-		$this->initToolbar();
-		$this->content .= $this->renderOptions();
-
 		if (!$this->loadObject(true))
 			return;
 
-		$this->content .= $this->renderForm();
+		// toolbar (save, cancel, new, ..)
+		$this->initToolbar();
 
 		$this->context->smarty->assign(array(
-			'content' => $this->content,
+			'localization_form' => $this->renderForm(),
+			'localization_options' => $this->renderOptions(),
 			'url_post' => self::$currentIndex.'&token='.$this->token,
 		));
+	}
+
+	public function beforeUpdateOptions()
+	{
+		$lang = new Language((int)Tools::getValue('PS_LANG_DEFAULT'));
+		if (!$lang->active)
+			$this->errors[] = Tools::displayError('You cannot set this language as default language because it\'s disabled');
+	}
+
+	public function updateOptionPsCurrencyDefault($value)
+	{
+		Configuration::updateValue('PS_CURRENCY_DEFAULT', $value);
+		Currency::refreshCurrencies();
 	}
 }

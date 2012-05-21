@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -62,7 +62,7 @@ class StatsEquipment extends ModuleGraph
 				FROM `'._DB_PREFIX_.'connections` c 
 				LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_guest` = c.`id_guest`
 				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
-					'.$this->sqlShopRestriction(false, 'c');
+					'.Shop::addSqlRestriction(false, 'c');
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->query($sql);
 
 		$calcArray = array(
@@ -165,7 +165,7 @@ class StatsEquipment extends ModuleGraph
 						LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_web_browser` = wb.`id_web_browser`
 						LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
 						WHERE 1
-							'.$this->sqlShopRestriction(false, 'c').'
+							'.Shop::addSqlRestriction(false, 'c').'
 							AND c.`date_add` BETWEEN ';
 				$this->_query2 = ' GROUP BY g.`id_web_browser`';
 			break;
@@ -177,7 +177,7 @@ class StatsEquipment extends ModuleGraph
 						LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_operating_system` = os.`id_operating_system`
 						LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
 						WHERE 1
-							'.$this->sqlShopRestriction(false, 'c').'
+							'.Shop::addSqlRestriction(false, 'c').'
 							AND c.`date_add` BETWEEN ';
 				$this->_query2 = ' GROUP BY g.`id_operating_system`';
 			 break;

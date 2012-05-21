@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7234 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -121,10 +121,11 @@ if (Tools::isSubmit('ajaxCategoriesPositions'))
 			$pos = explode('_', $value);
 			if ((isset($pos[1]) AND isset($pos[2])) AND ($pos[1] == $id_category_parent AND $pos[2] == $id_category_to_move))
 			{
-				$position = $key;
+				$position = $key + 1;
 				break;
 			}
 		}
+
 	$category = new Category($id_category_to_move);
 	if (Validate::isLoadedObject($category))
 	{
@@ -264,7 +265,7 @@ if (Tools::isSubmit('ajaxProductPackItems'))
 	FROM `'._DB_PREFIX_.'product` p
 	NATURAL LEFT JOIN `'._DB_PREFIX_.'product_lang` pl
 	WHERE pl.`id_lang` = '.(int)(Tools::getValue('id_lang')).'
-	'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').'
+	'.Shop::addSqlRestrictionOnLang('pl').'
 	AND p.`id_product` NOT IN (SELECT DISTINCT id_product_pack FROM `'._DB_PREFIX_.'pack`)
 	AND p.`id_product` != '.(int)(Tools::getValue('id_product')));
 
@@ -503,7 +504,7 @@ if (Tools::isSubmit('saveHook'))
 	$hooks_list = explode(',', Tools::getValue('hooks_list'));
 	$id_shop = (int)Tools::getValue('id_shop');
 	if (!$id_shop)
-		$id_shop = Context::getContext()->shop->getId(true);
+		$id_shop = Context::getContext()->shop->id;
 
 	$res = true;
 	$hookableList = array();
@@ -637,36 +638,55 @@ if (Tools::isSubmit('updateElementEmployee') && Tools::getValue('updateElementEm
 
 if (Tools::isSubmit('syncImapMail'))
 {
-	if (!$url = Configuration::get('PS_SAV_IMAP_URL')
-	|| !$port = Configuration::get('PS_SAV_IMAP_PORT')
-	|| !$user = Configuration::get('PS_SAV_IMAP_USER')
-	|| !$password = Configuration::get('PS_SAV_IMAP_PWD'))
+	if (!($url = Configuration::get('PS_SAV_IMAP_URL'))
+	|| !($port = Configuration::get('PS_SAV_IMAP_PORT'))
+	|| !($user = Configuration::get('PS_SAV_IMAP_USER'))
+	|| !($password = Configuration::get('PS_SAV_IMAP_PWD')))
 	die('{"hasError" : true, "errors" : ["Configuration is not correct"]}');
+
+	$conf = Configuration::getMultiple(array(
+		'PS_SAV_IMAP_OPT_NORSH', 'PS_SAV_IMAP_OPT_SSL',
+		'PS_SAV_IMAP_OPT_VALIDATE-CERT', 'PS_SAV_IMAP_OPT_NOVALIDATE-CERT',
+		'PS_SAV_IMAP_OPT_TLS', 'PS_SAV_IMAP_OPT_NOTLS'));
+	
+	$conf_str = '';
+	if ($conf['PS_SAV_IMAP_OPT_NORSH'])
+		$conf_str .= '/norsh';
+	if ($conf['PS_SAV_IMAP_OPT_SSL'])
+		$conf_str .= '/ssl';
+	if ($conf['PS_SAV_IMAP_OPT_VALIDATE-CERT'])
+		$conf_str .= '/validate-cert';
+	if ($conf['PS_SAV_IMAP_OPT_NOVALIDATE-CERT'])
+		$conf_str .= '/novalidate-cert';
+	if ($conf['PS_SAV_IMAP_OPT_TLS'])
+		$conf_str .= '/tls';
+	if ($conf['PS_SAV_IMAP_OPT_NOTLS'])
+		$conf_str .= '/notls';
 
 	if (!function_exists('imap_open'))
 		die('{"hasError" : true, "errors" : ["imap is not installed on this server"]}');
 
-	$mbox = @imap_open('{'.$url.':'.$port.(Configuration::get('PS_SAV_IMAP_SSL') ? '/ssl' : '').'}', $user, $password);
+	$mbox = @imap_open('{'.$url.':'.$port.$conf_str.'}', $user, $password);
 
 	//checks if there is no error when connecting imap server
 	$errors = imap_errors();
 	$str_errors = '';
 	$str_error_delete = '';
-	if (sizeof($errors))
+	if (sizeof($errors) && is_array($errors))
 	{
-		$str_errors = '["';
+		var_dump($errors);
+		$str_errors = '';
 		foreach($errors as $error)
 			$str_errors .= '"'.$error.'",';
 		$str_errors = rtrim($str_errors, ',').'';
 	}
-
 	//checks if imap connexion is active
 	if (!$mbox)
 		die('{"hasError" : true, "errors" : ["Cannot connect to the mailbox"]}');
 
 	//Returns information about the current mailbox. Returns FALSE on failure.
 	$check = imap_check($mbox);
-	if ($check)
+	if (!$check)
 		die('{"hasError" : true, "errors" : ["Fail to get information about the current mailbox"]}');
 
 	if ($check->Nmsgs == 0)
@@ -717,7 +737,7 @@ if (Tools::isSubmit('syncImapMail'))
 	}
 	imap_expunge($mbox);
 	imap_close($mbox);
-	die('{"hasError" : false, "errors" : '.$str_errors.$str_errors_delete.'"]}');
+	die('{"hasError" : false, "errors" : ["'.$str_errors.$str_error_delete.'"]}');
 }
 
 /* Modify attribute position */
@@ -758,7 +778,7 @@ if (Tools::isSubmit('ajaxGroupsAttributesPositions'))
 
 	$new_positions = array();
 	foreach($positions as $k => $v)
-		if (count(explode('_', $v)) == 3)
+		if (count(explode('_', $v)) == 4)
 			$new_positions[] = $v;
 
 	foreach ($new_positions as $position => $value)
@@ -766,11 +786,11 @@ if (Tools::isSubmit('ajaxGroupsAttributesPositions'))
 		// pos[1] = id_attribute_group, pos[2] = old position
 		$pos = explode('_', $value);
 
-		if (isset($pos[1]) && (int)$pos[1] === $id_attribute_group)
+		if (isset($pos[2]) && (int)$pos[2] === $id_attribute_group)
 		{
-			if ($group_attribute = new AttributeGroup((int)$pos[1]))
+			if ($group_attribute = new AttributeGroup((int)$pos[2]))
 				if (isset($position) && $group_attribute->updatePosition($way, $position))
-					echo "ok position ".(int)$position." for group attribute ".(int)$pos[1]."\r\n";
+					echo "ok position ".(int)$position." for group attribute ".(int)$pos[2]."\r\n";
 				else
 					echo '{"hasError" : true, "errors" : "Can not update group attribute '. (int)$id_attribute_group . ' to position '.(int)$position.' "}';
 			else
@@ -847,7 +867,7 @@ if (Tools::isSubmit('searchCategory'))
 	$results = Db::getInstance()->executeS(
 		'SELECT c.`id_category`, cl.`name`
 		FROM `'._DB_PREFIX_.'category` c
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category`'.$context->shop->addSqlRestrictionOnLang('cl').')
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category`'.Shop::addSqlRestrictionOnLang('cl').')
 		WHERE cl.`id_lang` = '.(int)$context->language->id.' AND c.`level_depth` <> 0
 		AND cl.`name` LIKE \'%'.pSQL($q).'%\'
 		GROUP BY c.id_category
@@ -893,3 +913,36 @@ if (Tools::isSubmit('getZones'))
 	die(Tools::jsonEncode($html));
 }
 
+/* Modify carrier position */
+if (Tools::isSubmit('ajaxTabsPositions'))
+{
+	$way = (int)(Tools::getValue('way'));
+	$id_tab = (int)(Tools::getValue('id_tab'));
+	$positions = Tools::getValue('tab');
+
+	// when changing positions in a tab sub-list, the first array value is empty and needs to be removed
+	if (!$positions[0])
+	{
+		unset($positions[0]);
+		// reset indexation from 0
+		$positions = array_merge($positions);
+	}
+
+	foreach ($positions as $position => $value)
+	{
+		$pos = explode('_', $value);
+
+		if (isset($pos[2]) && (int)$pos[2] === $id_tab)
+		{
+			if ($tab = new Tab((int)$pos[2]))
+				if (isset($position) && $tab->updatePosition($way, $position))
+					echo "ok position ".(int)$position." for tab ".(int)$pos[1]."\r\n";
+				else
+					echo '{"hasError" : true, "errors" : "Can not update tab '. (int)$id_tab . ' to position '.(int)$position.' "}';
+			else
+				echo '{"hasError" : true, "errors" : "This tab ('.(int)$id_tab.') can t be loaded"}';
+
+			break;
+		}
+	}
+}

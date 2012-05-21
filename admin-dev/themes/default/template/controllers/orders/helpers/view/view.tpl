@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13125 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 14143 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -41,7 +41,7 @@
 	var use_taxes = {$order->getTaxCalculationMethod() == $smarty.const.PS_TAX_INC}
 	var token = "{$smarty.get.token|escape:'htmlall':'UTF-8'}";
 
-	var txt_add_product_stock_issue = "{l s='You want to add more product than available in stock, are you sure you want to add this quantity?' js=1}";
+	var txt_add_product_stock_issue = "{l s='You want to add more product than are available in stock, are you sure you want to add this quantity?' js=1}";
 	var txt_add_product_new_invoice = "{l s='Are you sure you want to create a new invoice?' js=1}";
 	var txt_add_product_no_product = "{l s='Error: No product has been selected' js=1}";
 	var txt_add_product_no_product_quantity = "{l s='Error: Quantity of product must be set' js=1}";
@@ -69,7 +69,7 @@
 			<img src="../img/admin/charged_ko.gif" alt="{l s='No invoice'}" /> {l s='No invoice'}
 			{/if}
 			 |
-			{if ($currentState->delivery || $order->delivery_number)}
+			{if (($currentState && $currentState->delivery) || $order->delivery_number)}
 			<a class="button"  href="pdf.php?id_order={$order->id}&delivery" target="_blank"><img src="../img/admin/delivery.gif" alt="{l s='View delivery slip'}" /> {l s='View delivery slip'}</a>
 			{else}
 			<img src="../img/admin/delivery_ko.gif" alt="{l s='No delivery slip'}" /> {l s='No delivery slip'}
@@ -83,11 +83,11 @@
 				<dd>{dateFormat date=$order->date_add full=true}</dd>
 			|</dl>
 			<dl>
-				<dt>{l s='Message:'}</dt>
+				<dt>{l s='Messages:'}</dt>
 				<dd>{sizeof($messages)}</dd>
 			|</dl>
 			<dl>
-				<dt>{l s='Product:'}</dt>
+				<dt>{l s='Products:'}</dt>
 				<dd id="product_number">{sizeof($products)}</dd>
 			|</dl>
 			<dl>
@@ -153,16 +153,16 @@
 					{if (!Customer::customerExists($customer->email))}
 					<form method="POST" action="index.php?tab=AdminCustomers&id_customer={$customer->id}&token={getAdminToken tab='AdminCustomers'}">
 						<input type="hidden" name="id_lang" value="{$order->id_lang}" />
-						<p class="center"><input class="button" type="submit" name="submitGuestToCustomer" value="{l s='Transform to customer'}" /></p>
+						<p class="center"><input class="button" type="submit" name="submitGuestToCustomer" value="{l s='Transform guest into customer'}" /></p>
 						{l s='This feature will generate a random password and send an e-mail to the customer'}
 					</form>
 					{else}
-						<div><b style="color:red;">{l s='A registered customer account exists with the same email address'}</b></div>
+						<div><b style="color:red;">{l s='A registered customer account already exists with this e-mail address'}</b></div>
 					{/if}
 				{else}
 					{l s='Account registered:'} <b>{dateFormat date=$customer->date_add full=true}</b><br />
 					{l s='Valid orders placed:'} <b>{$customerStats['nb_orders']}</b><br />
-					{l s='Total paid since registration:'} <b>{displayPrice price=Tools::ps_round(Tools::convertPrice($customerStats['total_orders'], $currency), 2) currency=$currency->id}</b><br />
+					{l s='Total spent since registration:'} <b>{displayPrice price=Tools::ps_round(Tools::convertPrice($customerStats['total_orders'], $currency), 2) currency=$currency->id}</b><br />
 			</fieldset>
 				{/if}
 			{/if}
@@ -192,6 +192,12 @@
 
 		<!-- Right column -->
 		<div style="width: 49%; float:right;">
+			<div class="button-command-prev-next">
+				<b>{l s='Orders'}</b> :
+				{if $previousOrder}<a class="button" href="{$link->getAdminLink('AdminOrders')}&vieworder&id_order={$previousOrder}">{l s='< Prev'}</a>{/if}
+				{if $nextOrder}<a class="button" href="{$link->getAdminLink('AdminOrders')}&vieworder&id_order={$nextOrder}">{l s='Next >'}</a>{/if}
+			</div>
+			<div class="clear"></div>
 			<!-- Documents block -->
 			<fieldset>
 				<legend><img src="../img/admin/details.gif" /> {l s='Documents'}</legend>
@@ -208,7 +214,7 @@
 				{if (!$order->valid && sizeof($currencies) > 1)}
 				<form method="post" action="{$currentIndex}&viewOrder&id_order={$smarty.get.id_order|escape:'htmlall':'UTF-8'}&token={$smarty.get.token|escape:'htmlall':'UTF-8'}">
 					<p class="warn">{l s='Don\'t forget to update your conversion rate before make this change.'}</p>
-					<label>{l s='Change order\'s currency to:'}</label>
+					<label>{l s='Don\'t forget to update your conversion rate before make this change.'}</label>
 					<select name="new_currency">
 						{foreach from=$currencies item=currency_change}
 							{if $currency_change['id_currency'] != $order->id_currency}
@@ -352,7 +358,7 @@
 				<legend><img src="../img/admin/delivery.gif" /> {l s='Shipping'}</legend>
 
 				<div class="clear" style="float: left; margin-right: 10px;">
-					<span>{l s='Recycled package:'}</span>
+					<span>{l s='Recycled packaging:'}</span>
 					{if $order->recyclable}
 					<img src="../img/admin/enabled.gif" />
 					{else}
@@ -360,7 +366,7 @@
 					{/if}
 				</div>
 				<div style="float: left;">
-					<span>{l s='Gift wrapping:'}</span>
+					<span>{l s='Gift-wrapping:'}</span>
 					{if $order->gift}
 					<img src="../img/admin/enabled.gif" />
 					</div>
@@ -507,8 +513,8 @@
 				{if !$order->hasBeenDelivered()}<div style="float: left;"><a href="#" class="add_product button"><img src="../img/admin/add.gif" alt="{l s='Add a product'}" /> {l s='Add a product'}</a></div>{/if}
 				<div style="float: right; margin-right: 10px" id="refundForm">
 				<!--
-					<a href="#" class="standard_refund"><img src="../img/admin/add.gif" alt="{l s='Proceed a standard refund'}" /> {l s='Proceed a standard refund'}</a>
-					<a href="#" class="partial_refund"><img src="../img/admin/add.gif" alt="{l s='Proceed a partial refund'}" /> {l s='Proceed a partial refund'}</a>
+					<a href="#" class="standard_refund"><img src="../img/admin/add.gif" alt="{l s='Process a standard refund'}" /> {l s='Process a standard refund'}</a>
+					<a href="#" class="partial_refund"><img src="../img/admin/add.gif" alt="{l s='Process a partial refund'}" /> {l s='Process a partial refund'}</a>
 				-->
 				</div>
 				<br clear="left" /><br />
@@ -517,7 +523,7 @@
 					<tr>
 						<th height="39" align="center" style="width: 7%">&nbsp;</th>
 						<th>{l s='Product'}</th>
-						<th style="width: 15%; text-align: center">{l s='UP'} <sup>*</sup></th>
+						<th style="width: 15%; text-align: center">{l s='Unit Price'} <sup>*</sup></th>
 						<th style="width: 4%; text-align: center">{l s='Qty'}</th>
 						{if ($order->hasBeenPaid())}<th style="width: 3%; text-align: center">{l s='Refunded'}</th>{/if}
 						{if ($order->hasBeenDelivered())}<th style="width: 3%; text-align: center">{l s='Returned'}</th>{/if}
@@ -557,20 +563,20 @@
 				</table>
 
 				<div style="float:left; width:280px; margin-top:15px;">
-					<sup>*</sup> {l s='According to the group of this customer, prices are printed:'}
+					<sup>*</sup> {l s='For this customer group, prices are displayed as:'}
 					{if ($order->getTaxCalculationMethod() == $smarty.const.PS_TAX_EXC)}
 						{l s='tax excluded.'}
 					{else}
 						{l s='tax included.'}
 					{/if}
 
-					{if Configuration::get('PS_ORDER_RETURN')}
+					{if !Configuration::get('PS_ORDER_RETURN')}
 						<br /><br />{l s='Merchandise returns are disabled'}
 					{/if}
 				</div>
 
 				<div style="float:right;">
-					<table class="table" width="450px;" cellspacing="0" cellpadding="0">
+					<table class="table" width="450px;" style="border-radius:0px;"cellspacing="0" cellpadding="0">
 						<tr id="total_products">
 							<td width="150px;"><b>{l s='Products'}</b></td>
 							<td class="amount" align="right">{displayPrice price=$order->total_products_wt currency=$currency->id}</td>
@@ -629,7 +635,7 @@
 					{if $can_edit}
 						<tr>
 							<td colspan="3" class="center">
-								<a href="#" id="add_voucher"><img src="../img/admin/add.gif" alt="{l s='Add'}" /> {l s='Add a new discount'}</a>
+								<a class="button" href="#" id="add_voucher"><img src="../img/admin/add.gif" alt="{l s='Add'}" /> {l s='Add a new discount'}</a>
 							</td>
 						</tr>
 						<tr style="display: none" >
@@ -675,6 +681,7 @@
 			<div id="message_m" style="display: {if Tools::getValue('message')}none{else}block{/if}; overflow: auto; width: 400px;">
 				<a href="#" onclick="$('#message').slideToggle();$('#message_m').slideToggle();return false"><b>{l s='Click here'}</b> {l s='to add a comment or send a message to the customer'}</a>
 			</div>
+			<a href="{$link->getAdminLink('AdminCustomerThreads')}"><b>{l s='Click here'}</b> {l s='to see all messages'}</a><br>
 			<div id="message" style="display: {if Tools::getValue('message')}block{else}none{/if}">
 						<select name="order_message" id="order_message" onchange="orderOverwriteMessage(this, '{l s='Do you want to overwrite your existing message?'}')">
 							<option value="0" selected="selected">-- {l s='Choose a standard message'} --</option>
@@ -682,7 +689,7 @@
 				<option value="{$orderMessage['message']|escape:'htmlall':'UTF-8'}">{$orderMessage['name']}</option>
 			{/foreach}
 						</select><br /><br />
-						<b>{l s='Display to consumer?'}</b>
+						<b>{l s='Display to customer?'}</b>
 						<input type="radio" name="visibility" id="visibility" value="0" /> {l s='Yes'}
 						<input type="radio" name="visibility" value="1" checked="checked" /> {l s='No'}
 						<p id="nbchars" style="display:inline;font-size:10px;color:#666;"></p><br /><br />
@@ -710,7 +717,7 @@
 			</div>
 			<br />
 		{/foreach}
-		<p class="info">{l s='When you read a message, please click on the green check.'}</p>
+		<p class="info">{l s='When you read a message, please click on the green check to mark it as read.'}</p>
 		</fieldset>
 	{/if}
 	</div>

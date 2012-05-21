@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -67,13 +67,13 @@ class AdminManufacturersControllerCore extends AdminController
 			),
 			'addresses' => array(
 				'title' => $this->l('Addresses'),
-				'tmpTableFilter' => true,
 				'width' => 20,
 				'align' => 'center',
+				'havingFilter' => true
 			),
 			'products' => array(
 				'title' => $this->l('Products'),
-				'tmpTableFilter' => true,
+				'havingFilter' => true,
 				'width' => 20,
 				'align' => 'center',
 			),
@@ -167,7 +167,7 @@ class AdminManufacturersControllerCore extends AdminController
 				'filter_key' => 'a!name'
 			),
 			'postcode' => array(
-				'title' => $this->l('Postcode/ Zip Code'),
+				'title' => $this->l('Postcode / Zip Code'),
 				'align' => 'right',
 				'width' => 50
 			),
@@ -327,7 +327,6 @@ class AdminManufacturersControllerCore extends AdminController
 				'type' => 'group_shop',
 				'label' => $this->l('GroupShop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -457,10 +456,11 @@ class AdminManufacturersControllerCore extends AdminController
 			'label' => $this->l('Country:'),
 			'name' => 'id_country',
 			'required' => false,
+			'default_value' => (int)$this->context->country->id,
 			'options' => array(
 				'query' => Country::getCountries($this->context->language->id),
 				'id' => 'id_country',
-				'name' => 'name'
+				'name' => 'name',
 			)
 		);
 		$form['input'][] = array(
@@ -504,7 +504,8 @@ class AdminManufacturersControllerCore extends AdminController
 
 		$this->fields_value = array(
 			'name' => Manufacturer::getNameById($address->id_manufacturer),
-			'alias' => 'manufacturer'
+			'alias' => 'manufacturer',
+			'id_country' => Configuration::get('PS_COUNTRY_DEFAULT')
 		);
 
 		$this->initToolbar();
@@ -517,7 +518,7 @@ class AdminManufacturersControllerCore extends AdminController
 		$helper->identifier = $this->identifier;
 		$helper->title = $this->l('Edit Addresses');
 		$helper->id = $address->id;
-		$helper->toolbar_fix = true;
+		$helper->toolbar_scroll = true;
 		$helper->languages = $this->_languages;
 		$helper->default_form_language = $this->default_form_language;
 		$helper->allow_employee_form_lang = $this->allow_employee_form_lang;
@@ -573,18 +574,18 @@ class AdminManufacturersControllerCore extends AdminController
 		for ($i = 0; $i < $total_product; $i++)
 		{
 			$products[$i] = new Product($products[$i]['id_product'], false, $this->context->language->id);
-			/* Build attributes combinaisons */
-			$combinaisons = $products[$i]->getAttributeCombinations($this->context->language->id);
-			foreach ($combinaisons as $k => $combinaison)
+			/* Build attributes combinations */
+			$combinations = $products[$i]->getAttributeCombinations($this->context->language->id);
+			foreach ($combinations as $k => $combination)
 			{
-				$comb_array[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
-				$comb_array[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
-				$comb_array[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
-				$comb_array[$combinaison['id_product_attribute']]['quantity'] = $combinaison['quantity'];
-				$comb_array[$combinaison['id_product_attribute']]['attributes'][] = array(
-					$combinaison['group_name'],
-					$combinaison['attribute_name'],
-					$combinaison['id_attribute']
+				$comb_array[$combination['id_product_attribute']]['reference'] = $combination['reference'];
+				$comb_array[$combination['id_product_attribute']]['ean13'] = $combination['ean13'];
+				$comb_array[$combination['id_product_attribute']]['upc'] = $combination['upc'];
+				$comb_array[$combination['id_product_attribute']]['quantity'] = $combination['quantity'];
+				$comb_array[$combination['id_product_attribute']]['attributes'][] = array(
+					$combination['group_name'],
+					$combination['attribute_name'],
+					$combination['id_attribute']
 				);
 			}
 
@@ -597,7 +598,7 @@ class AdminManufacturersControllerCore extends AdminController
 						$list .= $attribute[0].' - '.$attribute[1].', ';
 					$comb_array[$key]['attributes'] = rtrim($list, ', ');
 				}
-				isset($comb_array) ? $products[$i]->combinaison = $comb_array : '';
+				isset($comb_array) ? $products[$i]->combination = $comb_array : '';
 				unset($comb_array);
 			}
 		}
@@ -607,7 +608,7 @@ class AdminManufacturersControllerCore extends AdminController
 			'addresses' => $addresses,
 			'products' => $products,
 			'stock_management' => Configuration::get('PS_STOCK_MANAGEMENT'),
-			'shopContext' => Context::getContext()->shop(),
+			'shopContext' => Shop::getContext(),
 		);
 
 		return parent::renderView();
@@ -685,10 +686,9 @@ class AdminManufacturersControllerCore extends AdminController
 			$images_types = ImageType::getImagesTypes('manufacturers');
 			foreach ($images_types as $k => $image_type)
 			{
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
 				ImageManager::resize(
 					_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg',
-					_PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($image_type['name']).$theme.'.jpg',
+					_PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($image_type['name']).'.jpg',
 					(int)$image_type['width'],
 					(int)$image_type['height']
 				);

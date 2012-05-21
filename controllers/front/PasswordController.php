@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -61,7 +61,7 @@ class PasswordControllerCore extends FrontController
 						$customer->firstname.' '.$customer->lastname))
 							$this->context->smarty->assign(array('confirmation' => 2, 'email' => $customer->email));
 						else
-							$this->errors[] = Tools::displayError('Error occurred when sending the e-mail.');
+							$this->errors[] = Tools::displayError('Error occurred while sending the e-mail.');
 					}
 				}
 			}
@@ -92,7 +92,7 @@ class PasswordControllerCore extends FrontController
 						$customer->firstname.' '.$customer->lastname))
 							$this->context->smarty->assign(array('confirmation' => 1, 'email' => $customer->email));
 						else
-							$this->errors[] = Tools::displayError('Error occurred when sending the e-mail.');
+							$this->errors[] = Tools::displayError('Error occurred while sending the e-mail.');
 					}
 					else
 						$this->errors[] = Tools::displayError('An error occurred with your account and your new password cannot be sent to your e-mail. Please report your problem using the contact form.');
@@ -111,8 +111,9 @@ class PasswordControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
-		$this->setTemplate(_PS_THEME_DIR_.'password.tpl');
 		parent::initContent();
+
+		$this->setTemplate(_PS_THEME_DIR_.'password.tpl');
 	}
 }
 

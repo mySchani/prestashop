@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -96,13 +96,10 @@ class StatsCheckUp extends Module
 		$employee = Context::getContext()->employee;
 		$prop30 = ((strtotime($employee->stats_date_to.' 23:59:59') - strtotime($employee->stats_date_from.' 00:00:00')) / 60 / 60 / 24) / 30;
 
-		$shopID = $this->context->shop->getID();
-		$shopGroupID = $this->context->shop->getGroupID();
-
 		// Get languages
 		$sql = 'SELECT l.*
 				FROM '._DB_PREFIX_.'lang l'
-				.$this->context->shop->addSqlAssociation('lang', 'l');
+				.Shop::addSqlAssociation('lang', 'l');
 		$languages = $db->executeS($sql);
 
 		$arrayColors = array(
@@ -129,7 +126,7 @@ class StatsCheckUp extends Module
 		$sql = 'SELECT p.id_product, p.active, pl.name, (
 					SELECT COUNT(*)
 					FROM '._DB_PREFIX_.'image i
-					'.$this->context->shop->addSqlAssociation('image', 'i').'
+					'.Shop::addSqlAssociation('image', 'i').'
 					WHERE i.id_product = p.id_product
 				) as nbImages, (
 					SELECT SUM(od.product_quantity)
@@ -137,14 +134,14 @@ class StatsCheckUp extends Module
 					LEFT JOIN '._DB_PREFIX_.'order_detail od ON o.id_order = od.id_order
 					WHERE od.product_id = p.id_product
 						AND o.invoice_date BETWEEN '.ModuleGraph::getDateBetween().'
-						'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
+						'.Shop::addSqlRestriction(Shop::SHARE_ORDER, 'o').'
 				) as nbSales,
 				IFNULL(stock.quantity, 0) as stock
 				FROM '._DB_PREFIX_.'product p
 				'.Product::sqlStock('p', 0).'
 				LEFT JOIN '._DB_PREFIX_.'product_lang pl
-					ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$this->context->language->id.$this->context->shop->addSqlRestrictionOnLang('pl').')
-				'.$this->context->shop->addSqlAssociation('product', 'p').'
+					ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$this->context->language->id.Shop::addSqlRestrictionOnLang('pl').')
+				'.Shop::addSqlAssociation('product', 'p').'
 				ORDER BY '.$orderBy;
 		$result = $db->executeS($sql);
 
@@ -232,7 +229,7 @@ class StatsCheckUp extends Module
 				FROM '._DB_PREFIX_.'product_lang pl
 				LEFT JOIN '._DB_PREFIX_.'lang l
 					ON pl.id_lang = l.id_lang
-				WHERE id_product = '.(int)$row['id_product'].$this->context->shop->addSqlRestrictionOnLang('pl'));
+				WHERE id_product = '.(int)$row['id_product'].Shop::addSqlRestrictionOnLang('pl'));
 			foreach ($descriptions as $description)
 			{
 				$row['desclength_'.$description['iso_code']] = Tools::strlen(strip_tags($description['description']));

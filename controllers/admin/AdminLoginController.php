@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -40,7 +40,6 @@ class AdminLoginControllerCore extends AdminController
 	public function setMedia()
 	{
 		$this->addJquery();
-		$this->addJqueryPlugin('flip');
 		$this->addCSS(_PS_CSS_DIR_.'login.css');
 		$this->addJS(_PS_JS_DIR_.'login.js');
 		$this->addJqueryUI('ui.widget');
@@ -75,6 +74,16 @@ class AdminLoginControllerCore extends AdminController
 				'randomNb' => rand(100, 999),
 				'wrong_folder_name'	=> true)
 				);
+
+		// Redirect to admin panel
+		if (isset($_GET['redirect']) && Validate::isControllerName($_GET['redirect']))
+			$this->context->smarty->assign(array('redirect' => Tools::getValue('redirect')));
+		else
+		{
+			$tab = new Tab((int)$this->context->employee->default_tab);
+			$url = $this->context->link->getAdminLink($tab->class_name);
+			$this->context->smarty->assign(array('redirect' => $url));
+		}
 		
 		if ($nbErrors = count($this->errors))
 			$this->context->smarty->assign(
@@ -132,37 +141,38 @@ class AdminLoginControllerCore extends AdminController
 			
 		if (!count($this->errors))
 		{
-		 	/* Seeking for employee */
-			$employee = new Employee();
-			if (!$employee->getByemail($email, $passwd))
+		 	// Find employee
+			$this->context->employee = new Employee();
+			if (!$this->context->employee->getByemail($email, $passwd))
 			{
 				$this->errors[] = Tools::displayError('Employee does not exist or password is incorrect.');
-				$employee->logout();
+				$this->context->employee->logout();
 			}
 			else
 			{
-				$employee->remote_addr = ip2long(Tools::getRemoteAddr());
-			 	/* Creating cookie */
+				$this->context->employee->remote_addr = ip2long(Tools::getRemoteAddr());
+			 	// Update cookie
 				$cookie = Context::getContext()->cookie;
-				$cookie->id_employee = $employee->id;
-				$cookie->email = $employee->email;
-				$cookie->profile = $employee->id_profile;
-				$cookie->passwd = $employee->passwd;
-				$cookie->remote_addr = $employee->remote_addr;
+				$cookie->id_employee = $this->context->employee->id;
+				$cookie->email = $this->context->employee->email;
+				$cookie->profile = $this->context->employee->id_profile;
+				$cookie->passwd = $this->context->employee->passwd;
+				$cookie->remote_addr = $this->context->employee->remote_addr;
 				$cookie->write();
-								
-				/* Redirect to admin panel */
-				if (isset($_GET['redirect']))
-					$url = strval($_GET['redirect'].(isset($_GET['token']) ? ('&token='.$_GET['token']) : ''));
+
+				// If there is a valid controller name submitted, redirect to it
+				if (isset($_POST['redirect']) && Validate::isControllerName($_POST['redirect']))
+					$url = $this->context->link->getAdminLink($_POST['redirect']);
 				else
-					$url = 'index.php';
-				if (!Validate::isCleanHtml($url))
-					die(Tools::displayError());
-				
+				{
+					$tab = new Tab((int)$this->context->employee->default_tab);
+					$url = $this->context->link->getAdminLink($tab->class_name);
+				}
+
 				if (Tools::isSubmit('ajax'))
-					die(Tools::jsonEncode(array('hasErrors' => false, 'redirect' => $this->context->link->getAdminLink('AdminHome'))));
+					die(Tools::jsonEncode(array('hasErrors' => false, 'redirect' => $url)));
 				else
-					$this->redirect_after = $this->context->link->getAdminLink('AdminHome');
+					$this->redirect_after = $url;
 			}
 		}
 		if (Tools::isSubmit('ajax'))
@@ -185,7 +195,7 @@ class AdminLoginControllerCore extends AdminController
 					$this->errors[] = Tools::displayError('You can regenerate your password only every').' '.Configuration::get('PS_PASSWD_TIME_BACK').' '.Tools::displayError('minute(s)');
 		}
 		if (_PS_MODE_DEMO_)
-			$errors[] = Tools::displayError('This functionnality has been disabled.');
+			$errors[] = Tools::displayError('This functionality has been disabled.');
 
 		if (!count($this->errors))
 		{	

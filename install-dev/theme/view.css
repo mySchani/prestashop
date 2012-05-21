@@ -704,7 +704,7 @@ ul#optional_update {list-style-type:none;}
 
 /* STEP 5 ******************************************/
 #install_process_form{
-    min-height: 260px;
+    min-height: 300px;
 }
 #progress_bar {
 	display: none;
@@ -797,6 +797,11 @@ ul#optional_update {list-style-type:none;}
 
 #install_process_success {
 	display: none;
+}
+
+#sheets ul.chzn-results{
+    margin-left: 5px;
+    padding: 0px;
 }
 
 /* ****************************************************************************

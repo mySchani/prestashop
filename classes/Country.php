@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -104,7 +104,7 @@ class CountryCore extends ObjectModel
 	{
 		if (!parent::delete())
 			return false;
-		return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'cart_rule_country WHERE id_country = '.(int)$this->id);
+		return Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'cart_rule_country WHERE id_country = '.(int)$this->id);
 	}
 
 	/**
@@ -114,13 +114,10 @@ class CountryCore extends ObjectModel
 	  * @param boolean $active return only active coutries
 	  * @return array Countries and corresponding zones
 	  */
-	public static function getCountries($id_lang, $active = false, $contain_states = null, Shop $shop = null)
+	public static function getCountries($id_lang, $active = false, $contain_states = null)
 	{
 	 	if (!Validate::isBool($active))
 	 		die(Tools::displayError());
-
-		if (!$shop)
-			$shop = Context::getContext()->shop;
 
 		$states = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT s.*
@@ -129,7 +126,7 @@ class CountryCore extends ObjectModel
 
 		$sql = 'SELECT cl.*,c.*, cl.`name` AS country, z.`name` AS zone
 				FROM `'._DB_PREFIX_.'country` c
-				'.$shop->addSqlAssociation('country', 'c', false).'
+				'.Shop::addSqlAssociation('country', 'c', false).'
 				LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country` AND cl.`id_lang` = '.(int)$id_lang.')
 				LEFT JOIN `'._DB_PREFIX_.'zone` z ON z.`id_zone` = c.`id_zone`
 				WHERE 1'
@@ -275,17 +272,14 @@ class CountryCore extends ObjectModel
 		return Context::getContext()->country->id;
 	}
 
-    public static function getCountriesByZoneId($id_zone, $id_lang, Shop $shop = null)
+    public static function getCountriesByZoneId($id_zone, $id_lang)
     {
         if (empty($id_zone) || empty($id_lang))
             die(Tools::displayError());
 
-        if (!$shop)
-        	$shop = Context::getContext()->shop;
-
 		$sql = ' SELECT DISTINCT c.*, cl.*
         		FROM `'._DB_PREFIX_.'country` c
-				'.$shop->addSqlAssociation('country', 'c', false).'
+				'.Shop::addSqlAssociation('country', 'c', false).'
 				LEFT JOIN `'._DB_PREFIX_.'state` s ON (s.`id_country` = c.`id_country`)
 		        LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country`)
         		WHERE (c.`id_zone` = '.(int)$id_zone.' OR s.`id_zone` = '.(int)$id_zone.')

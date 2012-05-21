@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 11069 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -35,7 +35,7 @@
 		<br />
 		<p>{l s='When using the advanced stock management (see Preferences/Products), the values you fill here (prices, references) will be used in the supply orders.'}</p>
 	</div>
-	<p>{l s='Please choose the suppliers associated to this product, and the default one.'}</p>
+	<p>{l s='Please choose the suppliers associated with this product, and the default one.'}</p>
 	<a class="button bt-icon confirm_leave" href="{$link->getAdminLink('AdminSuppliers')}&addsupplier">
 		<img src="../img/admin/add.gif" alt="{l s='Create new supplier'}" title="{l s='Create new supplier'}" /><span>{l s='Create new supplier'}</span>
 	</a>
@@ -73,7 +73,7 @@
 	{else}
 		<p>{l s='You can specify product reference(s) for each supplier associated.'}</p>
 	{/if}
-
+	<p>{l s='Click "Save and Stay" after changing selected suppliers to display the associated product references.'}</p>
 	<div id="suppliers_accordion" style="margin-top:10px; display:block;">
 		{foreach from=$associated_suppliers item=supplier}
 		    <h3 style="margin-bottom:0;"><a href="#">{$supplier->name}</a></h3>
@@ -126,10 +126,6 @@
 				</table>
 			</div>
 		{/foreach}
-	</div>
-	
-	<div style="margin-top: 10px">
-	<input type="button" value="{l s='Save'}" onClick="btn_save_and_stay.click()"/>
 	</div>
 
 	<script type="text/javascript">

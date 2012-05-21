@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12519 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13991 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 function attribute_group_clean_combinations()
 {
-	$attributeCombinations = Db::getInstance()->ExecuteS('SELECT 
+	$attributeCombinations = Db::getInstance()->executeS('SELECT
 		pac.`id_attribute`, pa.`id_product_attribute` 
 		FROM `'._DB_PREFIX_.'product_attribute` pa 
 		LEFT JOIN `'._DB_PREFIX_.'product_attribute_combination` pac 
@@ -39,7 +39,7 @@ function attribute_group_clean_combinations()
 
 	if (!empty($toRemove))
 	{
-		$res = Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_attribute` 
+		$res = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'product_attribute`
 			WHERE `id_product_attribute` IN ('.implode(', ', $toRemove).')');
 		return $res;
 	}

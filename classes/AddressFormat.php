@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -88,7 +88,19 @@ class AddressFormatCore extends ObjectModel
 		'need_zip_code',
 		'contains_states',
 		'call_prefixes',
-		'call_prefix');
+		'show_public_prices',
+		'max_payment',
+		'max_payment_days',
+		'geoloc_postcode',
+		'logged',
+		'account_number',
+		'groupBox',
+		'ape',
+		'max_payment',
+		'outstanding_allow_amount',
+		'call_prefix',
+		'definition',
+	);
 
 	public static $forbiddenClassList = array(
 		'Manufacturer',
@@ -108,7 +120,7 @@ class AddressFormatCore extends ObjectModel
 		$isValide = false;
 
 		if (!class_exists($className))
-			$this->_errorFormatList[] = Tools::displayError('This class name doesn\'t exist').
+			$this->_errorFormatList[] = Tools::displayError('This class name does not exist.').
 			': '.$className;
 		else
 		{
@@ -126,7 +138,7 @@ class AddressFormatCore extends ObjectModel
 			}
 
 			if (!$isValide)
-				$this->_errorFormatList[] = Tools::displayError('This property doesn\'t exist in the class or is forbidden').
+				$this->_errorFormatList[] = Tools::displayError('This property does not exist in the class or is forbidden.').
 				': '.$className.': '.$fieldName;
 
 			unset($obj);
@@ -150,37 +162,39 @@ class AddressFormatCore extends ObjectModel
 		{
 			$totalNameUsed = count($associationName);
 			if ($totalNameUsed > 2)
-				$this->_errorFormatList[] = Tools::displayError('This assocation contains too much key name');
+				$this->_errorFormatList[] = Tools::displayError('This association has too many elements.');
 			else if ($totalNameUsed == 1)
 			{
 				$associationName[0] = strtolower($associationName[0]);
 				if (in_array($associationName[0], self::$forbiddenPropertyList) ||
-						!$this->_checkValidateClassField('Address', $associationName[0], false))
-					$this->_errorFormatList[] = Tools::displayError('This name isn\'t allowed').': '.
-						$associationName[0];
+					!$this->_checkValidateClassField('Address', $associationName[0], false))
+					$this->_errorFormatList[] = Tools::displayError('This name is not allowed.').': '.
+					$associationName[0];
 			}
 			else if ($totalNameUsed == 2)
 			{
 				if (empty($associationName[0]) || empty($associationName[1]))
-					$this->_errorFormatList[] = Tools::displayError('Syntax error with this pattern').': '.$patternName;
+					$this->_errorFormatList[] = Tools::displayError('Syntax error with this pattern.').': '.$patternName;
 				else
 				{
 					$associationName[0] = ucfirst($associationName[0]);
 					$associationName[1] = strtolower($associationName[1]);
 
 					if (in_array($associationName[0], self::$forbiddenClassList))
-						$this->_errorFormatList[] = Tools::displayError('This name isn\'t allowed').': '.
-							$associationName[0];
+						$this->_errorFormatList[] = Tools::displayError('This name is not allowed.').': '.
+						$associationName[0];
 					else
 					{
-					// Check if the id field name exist in the Address class
-					$this->_checkValidateClassField('Address', 'id_'.strtolower($associationName[0]), true);
+						// Check if the id field name exist in the Address class
+						// Don't check this attribute on Address (no sense)
+						if ($associationName[0] != 'Address')
+							$this->_checkValidateClassField('Address', 'id_'.strtolower($associationName[0]), true);
 
-					// Check if the field name exist in the class write by the user
-					$this->_checkValidateClassField($associationName[0], $associationName[1], false);
+						// Check if the field name exist in the class write by the user
+						$this->_checkValidateClassField($associationName[0], $associationName[1], false);
+					}
 				}
 			}
-		}
 		}
 	}
 
@@ -206,12 +220,12 @@ class AddressFormatCore extends ObjectModel
 							{
 								$this->_checkLiableAssociation($patternName, $fieldsValidate);
 								$usedKeyList[] = $patternName;
-					}
+							}
 							else
-								$this->_errorFormatList[] = Tools::displayError('This key is used too many times (once allowed)').
+								$this->_errorFormatList[] = Tools::displayError('This key has already been used.').
 									': '.$patternName;
+					}
 				}
-			}
 			}
 		return (count($this->_errorFormatList)) ? false : true;
 	}
@@ -508,20 +522,21 @@ class AddressFormatCore extends ObjectModel
 	public function getFormat($id_country)
 	{
 		$out = $this->_getFormatDB($id_country);
-
-		if (strlen(trim($out)) == 0)
+		if (empty($out))
 			$out = $this->_getFormatDB(Configuration::get('PS_COUNTRY_DEFAULT'));
 		return $out;
 	}
 
 	protected function _getFormatDB($id_country)
 	{
-		$result = Db::getInstance()->getRow('
-		SELECT format
-		FROM `'._DB_PREFIX_.$this->def['table'].'`
-		WHERE `id_country` = '.(int)($id_country));
-
-		return isset($result['format']) ? trim($result['format']) : '';
+		if (!Cache::isStored('AddressFormat::_getFormatDB'.$id_country))
+		{
+			$format = Db::getInstance()->getValue('
+			SELECT format
+			FROM `'._DB_PREFIX_.$this->def['table'].'`
+			WHERE `id_country` = '.(int)$id_country);
+			Cache::store('AddressFormat::_getFormatDB'.$id_country, trim($format));
+		}
+		return Cache::retrieve('AddressFormat::_getFormatDB'.$id_country);
 	}
 }
-

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -49,12 +49,10 @@ class BlockCart extends Module
 		global $errors;
 
 		// Set currency
-		if (!(int)($params['cart']->id_currency))
-			$currency = new Currency((int)$params['cookie']->id_currency);
-		else
+		if ((int)$params['cart']->id_currency && (int)$params['cart']->id_currency != $this->context->currency->id)
 			$currency = new Currency((int)$params['cart']->id_currency);
-		if (!Validate::isLoadedObject($currency))
-			$currency = new Currency((int)(Configuration::get('PS_CURRENCY_DEFAULT')));
+		else
+			$currency = $this->context->currency;
 
 		if ($params['cart']->id_customer)
 		{
@@ -70,7 +68,10 @@ class BlockCart extends Module
 		$nbTotalProducts = 0;
 		foreach ($products as $product)
 			$nbTotalProducts += (int)$product['cart_quantity'];
+		$cart_rules = $params['cart']->getCartRules();
 
+		$shipping_cost = Tools::displayPrice($params['cart']->getOrderTotal($useTax, Cart::ONLY_SHIPPING), $currency);
+		$shipping_cost_float = Tools::convertPrice($params['cart']->getOrderTotal($useTax, Cart::ONLY_SHIPPING), $currency);
 		$wrappingCost = (float)($params['cart']->getOrderTotal($useTax, Cart::ONLY_WRAPPING));
 		$totalToPay = $params['cart']->getOrderTotal($useTax);
 
@@ -79,15 +80,37 @@ class BlockCart extends Module
 			$totalToPayWithoutTaxes = $params['cart']->getOrderTotal(false);
 			$this->smarty->assign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
 		}
+		foreach ($cart_rules as &$cart_rule)
+		{
+			if ($cart_rule['free_shipping'])
+			{
+				$shipping_cost = Tools::displayPrice(0, $currency);
+				$shipping_cost_float = 0;
+				$cart_rule['value_real'] -= Tools::convertPrice($params['cart']->getOrderTotal(true, Cart::ONLY_SHIPPING), $currency);
+				$cart_rule['value_tax_exc'] = Tools::convertPrice($params['cart']->getOrderTotal(false, Cart::ONLY_SHIPPING), $currency);
+			}
+			elseif ($cart_rule['gift_product'])
+			{
+				foreach ($products as &$product)
+					if ($product['id_product'] == $cart_rule['gift_product'] && $product['id_product_attribute'] == $cart_rule['gift_product_attribute'])
+					{
+						$product['total_wt'] = Tools::ps_round($product['total_wt'] - $product['price_wt'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+						$product['total'] = Tools::ps_round($product['total'] - $product['price'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+						$cart_rule['value_real'] = Tools::ps_round($cart_rule['value_real'] - $product['price_wt'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+						$cart_rule['value_tax_exc'] = Tools::ps_round($cart_rule['value_tax_exc'] - $product['price'], (int)$currency->decimals * _PS_PRICE_DISPLAY_PRECISION_);
+					}
+			}
+		}
 
 		$this->smarty->assign(array(
 			'products' => $products,
 			'customizedDatas' => Product::getAllCustomizedDatas((int)($params['cart']->id)),
 			'CUSTOMIZE_FILE' => _CUSTOMIZE_FILE_,
 			'CUSTOMIZE_TEXTFIELD' => _CUSTOMIZE_TEXTFIELD_,
-			'discounts' => $params['cart']->getCartRules(false, Tools::isSubmit('id_product')),
+			'discounts' => $cart_rules,
 			'nb_total_products' => (int)($nbTotalProducts),
-			'shipping_cost' => Tools::displayPrice($params['cart']->getOrderTotal($useTax, Cart::ONLY_SHIPPING), $currency),
+			'shipping_cost' => $shipping_cost,
+			'shipping_cost_float' => $shipping_cost_float,
 			'show_wrapping' => $wrappingCost > 0 ? true : false,
 			'show_tax' => (int)(Configuration::get('PS_TAX_DISPLAY') == 1 && (int)Configuration::get('PS_TAX')),
 			'wrapping_cost' => Tools::displayPrice($wrappingCost, $currency),

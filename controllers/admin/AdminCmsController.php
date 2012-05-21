@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -30,6 +30,8 @@ class AdminCmsControllerCore extends AdminController
 	private $_category;
 
 	public $id_cms_category;
+
+	protected $position_identifier = 'id_cms';
 
 	public function __construct()
 	{
@@ -53,7 +55,7 @@ class AdminCmsControllerCore extends AdminController
 		$this->_join = '
 		LEFT JOIN `'._DB_PREFIX_.'cms_category` c ON (c.`id_cms_category` = a.`id_cms_category`)';
 		$this->_select = 'a.position ';
-		$this->_filter = 'AND c.id_cms_category = '.(int)($this->_category->id);
+		$this->_filter = 'AND c.id_cms_category = '.(int)$this->_category->id;
 
 		parent::__construct();
 	}
@@ -96,21 +98,24 @@ class AdminCmsControllerCore extends AdminController
 					'lang' => true,
 					'required' => true,
 					'class' => 'copy2friendlyUrl',
-					'hint' => $this->l('Invalid characters:').' <>;=#{}'
+					'hint' => $this->l('Invalid characters:').' <>;=#{}',
+					'size' => 50
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Meta description'),
 					'name' => 'meta_description',
 					'lang' => true,
-					'hint' => $this->l('Invalid characters:').' <>;=#{}'
+					'hint' => $this->l('Invalid characters:').' <>;=#{}',
+					'size' => 70
 				),
 				array(
-					'type' => 'text',
+					'type' => 'tags',
 					'label' => $this->l('Meta keywords'),
 					'name' => 'meta_keywords',
 					'lang' => true,
-					'hint' => $this->l('Invalid characters:').' <>;=#{}'
+					'hint' => $this->l('Invalid characters:').' <>;=#{}',
+					'size' => 70
 				),
 				array(
 					'type' => 'text',
@@ -163,7 +168,6 @@ class AdminCmsControllerCore extends AdminController
 				'type' => 'shop',
 				'label' => $this->l('Shop association:'),
 				'name' => 'checkBoxShopAsso',
-				'values' => Shop::getTree()
 			);
 		}
 
@@ -232,7 +236,7 @@ class AdminCmsControllerCore extends AdminController
 				Configuration::updateValue('PS_CONDITIONS', 0);
 				Configuration::updateValue('PS_CONDITIONS_CMS_ID', 0);
 			}
-			$cms = new CMS((int)(Tools::getValue('id_cms')));
+			$cms = new CMS((int)Tools::getValue('id_cms'));
 			$cms->cleanPositions($cms->id_cms_category);
 			if (!$cms->delete())
 				$this->errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
@@ -275,22 +279,6 @@ class AdminCmsControllerCore extends AdminController
 						$this->errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
 					else
 						$this->updateAssoShop($cms->id);
-					if (Tools::isSubmit('submitAddcmsAndPreview'))
-					{
-						$preview_url = $this->context->link->getCMSLink($cms, $this->getFieldValue($cms, 'link_rewrite', $this->context->language->id), $this->context->language->id);
-
-						if (!$cms->active)
-						{
-							$admin_dir = dirname($_SERVER['PHP_SELF']);
-							$admin_dir = substr($admin_dir, strrpos($admin_dir, '/') + 1);
-							$token = Tools::encrypt('PreviewCMS'.$cms->id);
-
-							$preview_url .= $cms->active ? '' : '&adtoken='.$token.'&ad='.$admin_dir;
-						}
-						Tools::redirectAdmin($preview_url);
-					}
-					else
-						Tools::redirectAdmin(self::$currentIndex.'&id_cms_category='.$cms->id_cms_category.'&conf=3&token='.Tools::getAdminTokenLite('AdminCmsContent'));
 				}
 				else
 				{
@@ -300,22 +288,25 @@ class AdminCmsControllerCore extends AdminController
 						$this->errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.' ('.Db::getInstance()->getMsgError().')</b>';
 					else
 						$this->updateAssoShop($cms->id);
-					if (Tools::isSubmit('submitAddcmsAndPreview'))
-					{
-						$preview_url = $this->context->link->getCMSLink($cms, $this->getFieldValue($object, 'link_rewrite', $this->context->language->id), $this->context->language->id);
-						if (!$cms->active)
-						{
-							$admin_dir = dirname($_SERVER['PHP_SELF']);
-							$admin_dir = substr($admin_dir, strrpos($admin_dir, '/') + 1);
-							$token = Tools::encrypt('PreviewCMS'.$cms->id);
 
-							$preview_url .= $object->active ? '' : '&adtoken='.$token.'&ad='.$admin_dir;
-						}
-						Tools::redirectAdmin($preview_url);
-					}
-					else
-						Tools::redirectAdmin(self::$currentIndex.'&id_cms_category='.$cms->id_cms_category.'&conf=4&token='.Tools::getAdminTokenLite('AdminCmsContent'));
 				}
+                if (Tools::isSubmit('submitAddcmsAndPreview'))
+                {
+                    $alias = $this->getFieldValue($cms, 'link_rewrite', $this->context->language->id);
+                    $preview_url = $this->context->link->getCMSLink($cms, $alias, $this->context->language->id);
+
+                    if (!$cms->active)
+                    {
+                        $admin_dir = dirname($_SERVER['PHP_SELF']);
+                        $admin_dir = substr($admin_dir, strrpos($admin_dir, '/') + 1);
+                        $token = Tools::encrypt('PreviewCMS'.$cms->id);
+
+                        $preview_url .= $object->active ? '' : '&adtoken='.$token.'&ad='.$admin_dir;
+                    }
+                    Tools::redirectAdmin($preview_url);
+                }
+                else
+                    Tools::redirectAdmin(self::$currentIndex.'&id_cms_category='.$cms->id_cms_category.'&conf=4&token='.Tools::getAdminTokenLite('AdminCmsContent'));
 			}
 		}
 		elseif (Tools::getValue('position'))
@@ -330,7 +321,7 @@ class AdminCmsControllerCore extends AdminController
 				Tools::redirectAdmin(self::$currentIndex.'&'.$this->table.'Orderby=position&'.$this->table.'Orderway=asc&conf=4'.(($id_category = (int)(Tools::getValue('id_cms_category'))) ? ('&id_cms_category='.$id_category) : '').'&token='.Tools::getAdminTokenLite('AdminCmsContent'));
 		}
 		/* Change object statuts (active, inactive) */
-		elseif (Tools::isSubmit('status') && Tools::isSubmit($this->identifier))
+		elseif (Tools::isSubmit('statuscms') && Tools::isSubmit($this->identifier))
 		{
 			if ($this->tabAccess['edit'] === '1')
 			{

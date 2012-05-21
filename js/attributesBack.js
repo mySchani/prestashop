@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -26,7 +26,7 @@
 
 var storeUsedGroups = {};
 
-function fillCombinaison(wholesale_price, price_impact, weight_impact, unit_impact, reference, 
+function fillCombination(wholesale_price, price_impact, weight_impact, unit_impact, reference,
 ean, quantity, image, old_attr, id_product_attribute, default_attribute, eco_tax, upc, minimal_quantity, available_date,
 virtual_product_name_attribute, virtual_product_filename_attribute, virtual_product_nb_downloable, virtual_product_expiration_date_attribute, 
 virtual_product_nb_days, is_shareable)
@@ -53,6 +53,7 @@ virtual_product_nb_days, is_shareable)
 	getE('attribute_upc').value = upc;
 	getE('attribute_wholesale_price').value = Math.abs(wholesale_price);
 	getE('attribute_price').value = ps_round(Math.abs(price_impact), 2);
+	getE('attribute_priceTEReal').value = Math.abs(price_impact);
 	getE('attribute_weight').value = Math.abs(weight_impact);
 	getE('attribute_unity').value = Math.abs(unit_impact);
 	if ($('#attribute_ecotax').length != 0)

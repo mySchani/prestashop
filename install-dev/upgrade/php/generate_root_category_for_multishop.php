@@ -13,6 +13,11 @@ function generate_root_category_for_multishop()
 		(0, 0, 1, NOW(), NOW(), 0)
 	');
 	$id = Db::getInstance()->insert_id();
+	// set vars config
+	Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES
+	(\'PS_ROOT_CATEGORY\', '.(int)$id.', NOW(), NOW()),
+	(\'PS_HOME_CATEGORY\', 1, NOW(), NOW())
+	');
 
 	$langs = Db::getInstance()->executeS('
 		SELECT `id_lang`

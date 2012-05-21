@@ -1,5 +1,5 @@
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 12338 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13707 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,6 +35,9 @@ var id_category_root = 0;
 
 function buildTreeView()
 {
+	use_shop_context = false;
+	if (buildTreeView.arguments[0])
+		use_shop_context = true;
 	$("#categories-treeview").treeview({
 		url : 'ajax.php',
 		toggle: function () { callbackToggle($(this)); },
@@ -43,6 +46,7 @@ function buildTreeView()
 			async: true,
 			data: {
 				getChildrenCategories : true,
+				use_shop_context : use_shop_context,
 				selectedCat: selectedCat
 			}
 		}
@@ -74,7 +78,7 @@ function buildTreeView()
 		needUncheckAll = true;
 		uncheckAllCategories();
 		return false;
-	});	
+	});
 }
 
 function callbackToggle(element)

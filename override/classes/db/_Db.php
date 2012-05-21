@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 8668 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -92,9 +92,17 @@ abstract class Db extends DbCore
 		$result = parent::query($sql);
 		$end = microtime(true);
 		
+		// Save details
+		$timeSpent = $end - $start;
+		$trace = debug_backtrace(false);
+		while (preg_match('@[/\\\\]classes[/\\\\]db[/\\\\]@i', $trace[0]['file']))
+			array_shift($trace);
+		
 		$this->queries[] = array(
-			'query' =>	$sql,
-			'time' =>	($end - $start)
+			'query' => $sql,
+			'time' => $timeSpent,
+			'file' => $trace[0]['file'],
+			'line' => $trace[0]['line'],
 		);
 		
 		return $result;

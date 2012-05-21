@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -50,12 +50,12 @@ class ContactControllerCore extends FrontController
 			$message = Tools::htmlentitiesUTF8(Tools::getValue('message'));
 			if (!($from = trim(Tools::getValue('from'))) || !Validate::isEmail($from))
 				$this->errors[] = Tools::displayError('Invalid e-mail address');
-			else if (!($message = Tools::nl2br($message)))
+			else if (!$message)
 				$this->errors[] = Tools::displayError('Message cannot be blank');
 			else if (!Validate::isCleanHtml($message))
 				$this->errors[] = Tools::displayError('Invalid message');
 			else if (!($id_contact = (int)(Tools::getValue('id_contact'))) || !(Validate::isLoadedObject($contact = new Contact($id_contact, $this->context->language->id))))
-				$this->errors[] = Tools::displayError('Please select a subject on the list.');
+				$this->errors[] = Tools::displayError('Please select a subject from the list.');
 			else if (!empty($_FILES['fileUpload']['name']) && $_FILES['fileUpload']['error'] != 0)
 				$this->errors[] = Tools::displayError('An error occurred during the file upload');
 			else if (!empty($_FILES['fileUpload']['name']) && !in_array(substr($_FILES['fileUpload']['name'], -4), $extension) && !in_array(substr($_FILES['fileUpload']['name'], -5), $extension))
@@ -72,7 +72,7 @@ class ContactControllerCore extends FrontController
 						$id_customer_thread = (int)Tools::getValue('id_customer_thread')
 						&& (int)Db::getInstance()->getValue('
 						SELECT cm.id_customer_thread FROM '._DB_PREFIX_.'customer_thread cm
-						WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop = '.(int)$this->context->shop->getID(true).' AND token = \''.pSQL(Tools::getValue('token')).'\'')
+						WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop = '.(int)$this->context->shop->id.' AND token = \''.pSQL(Tools::getValue('token')).'\'')
 					) || (
 						$id_customer_thread = CustomerThread::getIdCustomerThreadByEmailAndIdOrder($from, (int)Tools::getValue('id_order'))
 					)))
@@ -80,7 +80,7 @@ class ContactControllerCore extends FrontController
 					$fields = Db::getInstance()->executeS('
 					SELECT cm.id_customer_thread, cm.id_contact, cm.id_customer, cm.id_order, cm.id_product, cm.email
 					FROM '._DB_PREFIX_.'customer_thread cm
-					WHERE email = \''.pSQL($from).'\' AND cm.id_shop = '.(int)$this->context->shop->getID(true).' AND ('.
+					WHERE email = \''.pSQL($from).'\' AND cm.id_shop = '.(int)$this->context->shop->id.' AND ('.
 						($customer->id ? 'id_customer = '.(int)($customer->id).' OR ' : '').'
 						id_order = '.(int)(Tools::getValue('id_order')).')');
 					$score = 0;
@@ -107,7 +107,7 @@ class ContactControllerCore extends FrontController
 				$old_message = Db::getInstance()->getValue('
 					SELECT cm.message FROM '._DB_PREFIX_.'customer_message cm
 					LEFT JOIN '._DB_PREFIX_.'customer_thread cc on (cm.id_customer_thread = cc.id_customer_thread)
-					WHERE cc.id_customer_thread = '.(int)($id_customer_thread).' AND cc.id_shop = '.(int)$this->context->shop->getID(true).'
+					WHERE cc.id_customer_thread = '.(int)($id_customer_thread).' AND cc.id_shop = '.(int)$this->context->shop->id.'
 					ORDER BY cm.date_add DESC');
 				if ($old_message == htmlentities($message, ENT_COMPAT, 'UTF-8'))
 				{
@@ -119,7 +119,7 @@ class ContactControllerCore extends FrontController
 				{
 					$mail_var_list = array(
 						'{email}' => $from,
-						'{message}' => stripslashes($message),
+						'{message}' => Tools::nl2br(stripslashes($message)),
 						'{id_order}' => (int)Tools::getValue('id_order'),
 						'{attached_file}' => $_FILES['fileUpload']['name'] ? $_FILES['fileUpload']['name'] : '');
 
@@ -151,7 +151,7 @@ class ContactControllerCore extends FrontController
 						$ct = new CustomerThread();
 						if (isset($customer->id))
 							$ct->id_customer = (int)($customer->id);
-						$ct->id_shop = (int)$this->context->shop->getID(true);
+						$ct->id_shop = (int)$this->context->shop->id;
 						if ($id_order = (int)Tools::getValue('id_order'))
 							$ct->id_order = $id_order;
 						if ($id_product = (int)Tools::getValue('id_product'))
@@ -194,7 +194,9 @@ class ContactControllerCore extends FrontController
 	public function setMedia()
 	{
 		parent::setMedia();
-		$this->addCSS(_THEME_CSS_DIR_.'contact-form.css');
+		// These CSS isn't used for the mobile theme.
+		if ($this->context->getMobileDevice() == false)
+			$this->addCSS(_THEME_CSS_DIR_.'contact-form.css');
 	}
 
 	/**
@@ -203,6 +205,8 @@ class ContactControllerCore extends FrontController
 	 */
 	public function initContent()
 	{
+		parent::initContent();
+
 		$this->assignOrderList();
 
 		$email = Tools::safeOutput(Tools::getValue('from',
@@ -218,7 +222,7 @@ class ContactControllerCore extends FrontController
 		{
 			$customerThread = Db::getInstance()->getRow('
 			SELECT cm.* FROM '._DB_PREFIX_.'customer_thread cm
-			WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop = '.(int)$this->context->shop->getID(true).' AND token = \''.pSQL($token).'\'');
+			WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop = '.(int)$this->context->shop->id.' AND token = \''.pSQL($token).'\'');
 			$this->context->smarty->assign('customerThread', $customerThread);
 		}
 		$this->context->smarty->assign(array('contacts' => Contact::getContacts($this->context->language->id),
@@ -226,7 +230,6 @@ class ContactControllerCore extends FrontController
 		));
 
 		$this->setTemplate(_PS_THEME_DIR_.'contact-form.tpl');
-		parent::initContent();
 	}
 
 	/**

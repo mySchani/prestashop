@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -44,6 +44,8 @@ class CombinationCore extends ObjectModel
 	public $price;
 
 	public $ecotax;
+	
+	public $minimal_quantity = 1;
 
 	public $quantity;
 
@@ -51,7 +53,7 @@ class CombinationCore extends ObjectModel
 
 	public $default_on;
 
-	public $available_date;
+	public $available_date = '0000-00-00';
 
 	/**
 	 * @see ObjectModel::$definition
@@ -65,10 +67,11 @@ class CombinationCore extends ObjectModel
 			'ean13' => 				array('type' => self::TYPE_STRING, 'validate' => 'isEan13', 'size' => 13),
 			'upc' => 				array('type' => self::TYPE_STRING, 'validate' => 'isUpc', 'size' => 12),
 			'wholesale_price' =>	array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'size' => 27),
-			'price' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'size' => 20),
+			'price' => 				array('type' => self::TYPE_FLOAT, 'validate' => 'isNegativePrice', 'size' => 20),
 			'ecotax' => 			array('type' => self::TYPE_FLOAT, 'validate' => 'isPrice', 'size' => 20),
 			'quantity' => 			array('type' => self::TYPE_INT, 'validate' => 'isUnsignedInt', 'size' => 10),
 			'weight' => 			array('type' => self::TYPE_INT, 'validate' => 'isFloat'),
+			'minimal_quantity' => 	array('type' => self::TYPE_INT, 'validate' => 'isUnsignedId', 'required' => true),
 			'default_on' => 		array('type' => self::TYPE_INT, 'validate' => 'isBool'),
 			'available_date' => 	array('type' => self::TYPE_DATE, 'validate' => 'isDateFormat'),
 			'reference' => 			array('type' => self::TYPE_STRING, 'size' => 32),
@@ -103,23 +106,25 @@ class CombinationCore extends ObjectModel
 			return false;
 		return true;
 	}
-	
+
 	public function setAttributes($ids_attribute)
 	{
 		if ($this->deleteAssociations())
 		{
-			$sqlValues = array();
+			$sql_values = array();
 			foreach ($ids_attribute as $value)
-				$sqlValues[] = '('.(int)$value.', '.(int)$this->id.')';
+				$sql_values[] = '('.(int)$value.', '.(int)$this->id.')';
+
 			$result = Db::getInstance()->execute('
 				INSERT INTO `'._DB_PREFIX_.'product_attribute_combination` (`id_attribute`, `id_product_attribute`)
-				VALUES '.implode(',', $sqlValues)
+				VALUES '.implode(',', $sql_values)
 			);
+
 			return $result;
 		}
 		return false;
 	}
-	
+
 	public function setWsProductOptionValues($values)
 	{
 		$ids_attributes = array();
@@ -130,31 +135,38 @@ class CombinationCore extends ObjectModel
 
 	public function getWsProductOptionValues()
 	{
-		$result = Db::getInstance()->executeS('SELECT id_attribute AS id from `'._DB_PREFIX_.'product_attribute_combination` WHERE id_product_attribute = '.(int)$this->id);
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+			SELECT id_attribute AS id
+			FROM `'._DB_PREFIX_.'product_attribute_combination`
+			WHERE id_product_attribute = '.(int)$this->id);
+
 		return $result;
 	}
 
 	public function getWsImages()
 	{
-		return Db::getInstance()->executeS('
-		SELECT `id_image` as id
-		FROM `'._DB_PREFIX_.'product_attribute_image`
-		WHERE `id_product_attribute` = '.(int)($this->id).'
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+			SELECT `id_image` as id
+			FROM `'._DB_PREFIX_.'product_attribute_image`
+			WHERE `id_product_attribute` = '.(int)$this->id.'
 		');
 	}
-	
+
 	public function setImages($ids_image)
 	{
 		if (Db::getInstance()->execute('
 			DELETE FROM `'._DB_PREFIX_.'product_attribute_image`
-			WHERE `id_product_attribute` = '.(int)($this->id)) === false)
+			WHERE `id_product_attribute` = '.(int)$this->id) === false)
 		return false;
-		$sqlValues = array();
+
+		$sql_values = array();
+
 		foreach ($ids_image as $value)
-			$sqlValues[] = '('.(int)$this->id.', '.(int)$value['id'].')';
+			$sql_values[] = '('.(int)$this->id.', '.(int)$value.')';
+
 		Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'product_attribute_image` (`id_product_attribute`, `id_image`)
-			VALUES '.implode(',', $sqlValues)
+			VALUES '.implode(',', $sql_values)
 		);
 		return true;
 	}
@@ -163,13 +175,14 @@ class CombinationCore extends ObjectModel
 	{
 		return $this->setImages($values);
 	}
-	
+
 	public function getAttributesName($id_lang)
 	{
-		return Db::getInstance()->executeS('SELECT al.*
-														FROM '._DB_PREFIX_.'product_attribute_combination pac
-														JOIN '._DB_PREFIX_.'attribute_lang al ON (pac.id_attribute = al.id_attribute AND al.id_lang='.(int)$id_lang.')
-														WHERE pac.id_product_attribute='.(int)$this->id);
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+			SELECT al.*
+			FROM '._DB_PREFIX_.'product_attribute_combination pac
+			JOIN '._DB_PREFIX_.'attribute_lang al ON (pac.id_attribute = al.id_attribute AND al.id_lang='.(int)$id_lang.')
+			WHERE pac.id_product_attribute='.(int)$this->id);
 	}
 
 	/**
@@ -192,5 +205,16 @@ class CombinationCore extends ObjectModel
 	public static function isCurrentlyUsed($table = null, $has_active_column = false)
 	{
 		return parent::isCurrentlyUsed('product_attribute');
+	}
+
+	public static function getIdByReference($id_product, $reference)
+	{
+		$query = new DbQuery();
+		$query->select('pa.id_product_attribute');
+		$query->from('product_attribute', 'pa');
+		$query->where('pa.reference LIKE \'%'.pSQL($reference).'%\'');
+		$query->where('pa.id_product = '.(int)$id_product);
+
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($query);
 	}
 }

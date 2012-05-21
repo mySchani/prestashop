@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -176,7 +176,7 @@ class ReferralProgramModule extends ObjectModel
 	public static function isEmailExists($email, $getId = false, $checkCustomer = true)
 	{
 		if (empty($email) OR !Validate::isEmail($email))
-			die (Tools::displayError('Email invalid.'));
+			die (Tools::displayError('E-mail invalid.'));
 
 		if ($checkCustomer === true AND Customer::customerExists($email))
 			return false;

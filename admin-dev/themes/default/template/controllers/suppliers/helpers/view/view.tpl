@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 13052 $
+*  @copyright  2007-2012 PrestaShop SA
+*  @version  Release: $Revision: 13573 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -30,15 +30,15 @@
 
 <h2>{$supplier->name}</h2>
 
-<h3>{l s='Total products:'} {count($products)}</h3>
+<h3>{l s='Number of products:'} {count($products)}</h3>
 {foreach $products AS $product}
 	<hr />
 	{if !$product->hasAttributes()}
 		<table border="0" cellpadding="0" cellspacing="0" class="table" style="">
 			<tr>
-				<th  width="150">{l s='Name:'} {$product->name}</th>
-				{if !empty($product->product_supplier_reference)}<th width="280">{l s='Supplier Reference:'} {$product->product_supplier_reference}</th>{/if}
-				{if !empty($product->product_supplier_price_te)}<th width="280">{l s='Wholesale price:'} {$product->product_supplier_price_te}</th>{/if}
+				<th  width="450">{l s='Name:'} {$product->name}</th>
+				{if !empty($product->product_supplier_reference)}<th width="190">{l s='Supplier Reference:'} {$product->product_supplier_reference}</th>{/if}
+				{if !empty($product->product_supplier_price_te)}<th width="190">{l s='Wholesale price:'} {$product->product_supplier_price_te}</th>{/if}
 				{if !empty($product->reference)}<th width="150">{l s='Reference:'} {$product->reference}</th>{/if}
 				{if !empty($product->ean13)}<th width="120">{l s='EAN13:'} {$product->ean13}</th>{/if}
 				{if !empty($product->upc)}<th width="120">{l s='UPC:'} {$product->upc}</th>{/if}
@@ -66,7 +66,7 @@
 				<th>{l s='UPC'}</th>
 				{if $stock_management && $shopContext != Shop::CONTEXT_ALL}<th class="right">{l s='Available Quantity'}</th>{/if}
 			</tr>
-			{foreach $product->combinaison AS $id_product_attribute => $product_attribute}
+			{foreach $product->combination AS $id_product_attribute => $product_attribute}
 				<tr {if $id_product_attribute %2}class="alt_row"{/if} >
 					<td>{$product_attribute.attributes}</td>
 					<td>{$product_attribute.product_supplier_reference}</td>

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -119,21 +119,20 @@ class AdminImportControllerCore extends AdminController
 						'label' => $this->l('Value (Value:Position)').'*'
 					),
 					'reference' => array('label' => $this->l('Reference')),
-					'supplier_reference' => array('label' => $this->l('Supplier reference')),
 					'ean13' => array('label' => $this->l('EAN13')),
 					'upc' => array('label' => $this->l('UPC')),
 					'wholesale_price' => array('label' => $this->l('Wholesale price')),
-					'price' => array('label' => $this->l('Price')),
+					'price' => array('label' => $this->l('Impact on price')),
 					'ecotax' => array('label' => $this->l('Ecotax')),
 					'quantity' => array('label' => $this->l('Quantity')),
-					'weight' => array('label' => $this->l('Weight')),
+					'weight' => array('label' => $this->l('Impact on weight')),
 					'default_on' => array('label' => $this->l('Default')),
 					'image_position' => array(
 						'label' => $this->l('Image position')
 					),
 					'image_url' => array('label' => $this->l('Image URL')),
 					'delete_existing_images' => array(
-						'label' => $this->l('Delete existing images (0 = no, 1 = yes)')
+						'label' => $this->l('Delete existing images (0 = No, 1 = Yes)')
 					),
 				);
 
@@ -164,11 +163,15 @@ class AdminImportControllerCore extends AdminController
 					'meta_description' => array('label' => $this->l('Meta-description')),
 					'link_rewrite' => array('label' => $this->l('URL rewritten')),
 					'image' => array('label' => $this->l('Image URL')),
+					'shop' => array(
+						'label' => $this->l('ID / Name of shop'),
+						'help' => $this->l('Ignore this field if you don\'t use the multishop tool. If you leave this field empty, default shop will be used'),
+					),
 				);
 
 				self::$default_values = array(
 					'active' => '1',
-					'parent' => '1',
+					'parent' => Configuration::get('PS_HOME_CATEGORY'),
 					'link_rewrite' => ''
 				);
 			break;
@@ -187,7 +190,7 @@ class AdminImportControllerCore extends AdminController
 					'category' => array('label' => $this->l('Categories (x,y,z...)')),
 					'price_tex' => array('label' => $this->l('Price tax excl.')),
 					'price_tin' => array('label' => $this->l('Price tax incl.')),
-					'id_tax_rules_group' => array('label' => $this->l('Tax rules id')),
+					'id_tax_rules_group' => array('label' => $this->l('Tax rules ID')),
 					'wholesale_price' => array('label' => $this->l('Wholesale price')),
 					'on_sale' => array('label' => $this->l('On sale (0/1)')),
 					'reduction_price' => array('label' => $this->l('Discount amount')),
@@ -210,17 +213,17 @@ class AdminImportControllerCore extends AdminController
 					'meta_keywords' => array('label' => $this->l('Meta-keywords')),
 					'meta_description' => array('label' => $this->l('Meta-description')),
 					'link_rewrite' => array('label' => $this->l('URL rewritten')),
-					'available_now' => array('label' => $this->l('Text when in-stock')),
-					'available_later' => array('label' => $this->l('Text if back-order allowed')),
+					'available_now' => array('label' => $this->l('Text when in stock')),
+					'available_later' => array('label' => $this->l('Text when backorder allowed')),
 					'available_for_order' => array('label' => $this->l('Available for order')),
-					'date_add' => array('label' => $this->l('Date add product')),
+					'date_add' => array('label' => $this->l('Product creation date')),
 					'show_price' => array('label' => $this->l('Show price')),
 					'image' => array('label' => $this->l('Image URLs (x,y,z...)')),
 					'delete_existing_images' => array(
-						'label' => $this->l('Delete existing images (0 = no, 1 = yes)')
+						'label' => $this->l('Delete existing images (0 = No, 1 = Yes)')
 					),
 					'features' => array('label' => $this->l('Feature(Name:Value:Position)')),
-					'online_only' => array('label' => $this->l('Only available online')),
+					'online_only' => array('label' => $this->l('Available online only')),
 					'condition' => array('label' => $this->l('Condition')),
 					'shop' => array(
 						'label' => $this->l('ID / Name of shop')
@@ -228,8 +231,8 @@ class AdminImportControllerCore extends AdminController
 				);
 
 				self::$default_values = array(
-					'id_category' => array(1),
-					'id_category_default' => 1,
+					'id_category' => array((int)Configuration::get('PS_HOME_CATEGORY')),
+					'id_category_default' => (int)Configuration::get('PS_HOME_CATEGORY'),
 					'active' => '1',
 					'quantity' => 0,
 					'price' => 0,
@@ -259,10 +262,10 @@ class AdminImportControllerCore extends AdminController
 					'lastname' => array('label' => $this->l('Lastname *')),
 					'firstname' => array('label' => $this->l('Firstname *')),
 					'newsletter' => array('label' => $this->l('Newsletter (0/1)')),
-					'optin' => array('label' => $this->l('Opt in (0/1)')),
+					'optin' => array('label' => $this->l('Opt-in (0/1)')),
 					'id_shop' => array(
 						'label' => $this->l('ID / Name of shop'),
-						'help' => $this->l('Ignore this field if you don\'t use multishop tool. If you leave this field empty, default shop will be used'),
+						'help' => $this->l('Ignore this field if you don\'t use the multishop tool. If you leave this field empty, default shop will be used'),
 					),
 				);
 
@@ -335,7 +338,7 @@ class AdminImportControllerCore extends AdminController
 					'meta_description' => array('label' => $this->l('Meta-description')),
 					'shop' => array(
 						'label' => $this->l('ID / Name of group shop'),
-						'help' => $this->l('Ignore this field if you don\'t use multishop tool. If you leave this field empty, default shop will be used'),
+						'help' => $this->l('Ignore this field if you don\'t use the multishop tool. If you leave this field empty, default shop will be used'),
 					),
 				);
 
@@ -393,7 +396,7 @@ class AdminImportControllerCore extends AdminController
 						'supply_order_reference' => array('label' => $this->l('Supply Order Reference *')),
 						'id_product' => array('label' => $this->l('Product ID *')),
 						'id_product_attribute' => array('label' => $this->l('Product Attribute ID')),
-						'unit_price_te' => array('label' => $this->l('Unit Price (te) *')),
+						'unit_price_te' => array('label' => $this->l('Unit Price (tax excl.) *')),
 						'quantity_expected' => array('label' => $this->l('Quantity Expected *')),
 						'discount_rate' => array('label' => $this->l('Discount Rate')),
 						'tax_rate' => array('label' => $this->l('Tax Rate')),
@@ -432,7 +435,7 @@ class AdminImportControllerCore extends AdminController
 
 		$this->fields_form = array('');
 
-		$this->toolbar_fix = false;
+		$this->toolbar_scroll = false;
 		$this->toolbar_btn = array();
 
 		// adds fancybox
@@ -512,7 +515,7 @@ class AdminImportControllerCore extends AdminController
 				// Default save button - action dynamically handled in javascript
 				$this->toolbar_btn['save-import'] = array(
 					'href' => '#',
-					'desc' => $this->l('Import CSV data')
+					'desc' => $this->l('Import .CSV data')
 				);
 				break;
 		}
@@ -773,8 +776,7 @@ class AdminImportControllerCore extends AdminController
 			$images_types = ImageType::getImagesTypes($entity);
 			foreach ($images_types as $k => $image_type)
 			{
-				$theme = (Shop::isFeatureActive() ? '-'.$image_type['id_theme'] : '');
-				ImageManager::resize($tmpfile, $path.'-'.stripslashes($image_type['name']).$theme.'.jpg', $image_type['width'], $image_type['height']);
+				ImageManager::resize($tmpfile, $path.'-'.stripslashes($image_type['name']).'.jpg', $image_type['width'], $image_type['height']);
 			}
 			if (in_array($image_type['id_image_type'], $watermark_types))
 				Hook::exec('actionWatermark', array('id_image' => $id_image, 'id_product' => $id_entity));
@@ -802,9 +804,12 @@ class AdminImportControllerCore extends AdminController
 				$line = $this->utf8EncodeArray($line);
 			$info = AdminImportController::getMaskedRow($line);
 
-			if (!isset($info['id']) || (int)$info['id'] < 2)
-								continue;
-
+			$tab_categ = array(Configuration::get('PS_HOME_CATEGORY'), Configuration::get('PS_ROOT_CATEGORY'));
+			if (isset($info['id']) && in_array((int)$info['id'], $tab_categ))
+			{
+				$this->errors[] = Tools::displayError('The ID category cannot be the same as the ID Root category, nor the ID Home category');
+				continue;
+			}
 			AdminImportController::setDefaultValues($info);
 			$category = new Category();
 			AdminImportController::arrayWalk($info, array('AdminImportController', 'fillInfo'), $category);
@@ -825,7 +830,7 @@ class AdminImportControllerCore extends AdminController
 					$category_to_create = new Category();
 					$category_to_create->name = AdminImportController::createMultiLangField($category->parent);
 					$category_to_create->active = 1;
-					$category_to_create->id_parent = 1; // Default parent is home for unknown category to create
+					$category_to_create->id_parent = Configuration::get('PS_HOME_CATEGORY'); // Default parent is home for unknown category to create
 					if (($field_error = $category_to_create->validateFields(UNFRIENDLY_ERROR, true)) === true &&
 						($lang_field_error = $category_to_create->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $category_to_create->add())
 						$category->id_parent = $category_to_create->id;
@@ -881,8 +886,8 @@ class AdminImportControllerCore extends AdminController
 				// If id category AND id category already in base, trying to update
 				if ($category->id && $category->categoryExists($category->id) && $category->id != 1)
 					$res = $category->update();
-				if ($category->id == 1)
-					$this->errors[] = Tools::displayError('Root category cannot be modify');
+				if ($category->id == Configuration::get('PS_ROOT_CATEGORY'))
+					$this->errors[] = Tools::displayError('Root category cannot be modified');
 				// If no id_category or update failed
 				if (!$res)
 					$res = $category->add();
@@ -897,6 +902,18 @@ class AdminImportControllerCore extends AdminController
 				$this->errors[] = $info['name'].(isset($info['id']) ? ' (ID '.$info['id'].')' : '').' '.Tools::displayError('Cannot be saved');
 				$this->errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '').
 					Db::getInstance()->getMsgError();
+			}
+			else
+			{
+				// Associate category to shop
+				if (Shop::isFeatureActive() && $info['shop'])
+				{
+					if (!is_numeric($info['shop']))
+						$info['id_shop'] = Shop::getIdByName($info['shop']);
+				}
+				else
+					$info['shop'] = Configuration::get('PS_SHOP_DEFAULT');
+				$category->addShop($info['shop']);
 			}
 		}
 
@@ -934,6 +951,7 @@ class AdminImportControllerCore extends AdminController
 			{
 				if (Validate::isLoadedObject(new TaxRulesGroup($product->id_tax_rules_group)))
 				{
+					$product->setTaxRulesGroup((int)$product->id_tax_rules_group, true);
 					$address = $this->context->shop->getAddress();
 					$tax_manager = TaxManagerFactory::getManager($address, $product->id_tax_rules_group);
                     $product_tax_calculator = $tax_manager->getTaxCalculator();
@@ -1018,7 +1036,9 @@ class AdminImportControllerCore extends AdminController
 							$category_to_create->id = (int)$value;
 							$category_to_create->name = AdminImportController::createMultiLangField($value);
 							$category_to_create->active = 1;
-							$category_to_create->id_parent = 1; // Default parent is home for unknown category to create
+							$category_to_create->id_parent = Configuration::get('PS_HOME_CATEGORY'); // Default parent is home for unknown category to create
+							$category_link_rewrite = Tools::link_rewrite($category_to_create->name[$default_language_id]);
+							$category_to_create->link_rewrite = AdminImportController::createMultiLangField($category_link_rewrite);
 							if (($field_error = $category_to_create->validateFields(UNFRIENDLY_ERROR, true)) === true &&
 								($lang_field_error = $category_to_create->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $category_to_create->add())
 								$product->id_category[] = (int)$category_to_create->id;
@@ -1041,7 +1061,9 @@ class AdminImportControllerCore extends AdminController
 							$category_to_create = new Category();
 							$category_to_create->name = AdminImportController::createMultiLangField($value);
 							$category_to_create->active = 1;
-							$category_to_create->id_parent = 1; // Default parent is home for unknown category to create
+							$category_to_create->id_parent = (int)Configuration::get('PS_HOME_CATEGORY'); // Default parent is home for unknown category to create
+							$category_link_rewrite = Tools::link_rewrite($category_to_create->name[$default_language_id]);
+							$category_to_create->link_rewrite = AdminImportController::createMultiLangField($category_link_rewrite);
 							if (($field_error = $category_to_create->validateFields(UNFRIENDLY_ERROR, true)) === true &&
 								($lang_field_error = $category_to_create->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $category_to_create->add())
 								$product->id_category[] = (int)$category_to_create->id;
@@ -1058,6 +1080,7 @@ class AdminImportControllerCore extends AdminController
 			}
 
 			$product->id_category_default = isset($product->id_category[0]) ? (int)$product->id_category[0] : '';
+
 			$link_rewrite = (is_array($product->link_rewrite) && count($product->link_rewrite)) ? $product->link_rewrite[$default_language_id] : '';
 
 			$valid_link = Validate::isLinkRewrite($link_rewrite);
@@ -1068,6 +1091,7 @@ class AdminImportControllerCore extends AdminController
 				if ($link_rewrite == '')
 					$link_rewrite = 'friendly-url-autogeneration-failed';
 			}
+
 			if (!$valid_link)
 				$this->warnings[] = Tools::displayError('Rewrite link for').' '.$link_rewrite.(isset($info['id']) ? ' (ID '.$info['id'].') ' : '').
 					' '.Tools::displayError('was re-written as').' '.$link_rewrite;
@@ -1091,7 +1115,7 @@ class AdminImportControllerCore extends AdminController
 						FROM `'._DB_PREFIX_.'product`
 						WHERE `reference` = "'.$product->reference.'"
 					');
-					$product->id = pSQL($datas['id_product']);
+					$product->id = (int)$datas['id_product'];
 					$product->date_add = pSQL($datas['date_add']);
 					$res = $product->update();
 				} // Else If id product && id product already in base, trying to update
@@ -1110,6 +1134,7 @@ class AdminImportControllerCore extends AdminController
 					$res = $product->add();
 				}
 			}
+
 			// If both failed, mysql error
 			if (!$res)
 			{
@@ -1141,11 +1166,12 @@ class AdminImportControllerCore extends AdminController
 					$specific_price = new SpecificPrice();
 					$specific_price->id_product = (int)$product->id;
 					// @todo multishop specific price import
-					$specific_price->id_shop = $this->context->shop->getID(true);
+					$specific_price->id_shop = $this->context->shop->id;
 					$specific_price->id_currency = 0;
 					$specific_price->id_country = 0;
 					$specific_price->id_group = 0;
 					$specific_price->price = 0.00;
+					$specific_price->id_customer = 0;
 					$specific_price->from_quantity = 1;
 					$specific_price->reduction = (isset($info['reduction_price']) && $info['reduction_price']) ? $info['reduction_price'] : $info['reduction_percent'] / 100;
 					$specific_price->reduction_type = (isset($info['reduction_price']) && $info['reduction_price']) ? 'amount' : 'percentage';
@@ -1214,7 +1240,7 @@ class AdminImportControllerCore extends AdminController
 								($lang_field_error = $image->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $image->add())
 							{
 								if (!AdminImportController::copyImg($product->id, $image->id, $url))
-									$this->warnings[] = Tools::displayError('Error copying image: ').$url;
+									$this->warnings[] = Tools::displayError('Error copying image:').$url;
 							}
 							else
 							{
@@ -1230,7 +1256,8 @@ class AdminImportControllerCore extends AdminController
 
 				// Features import
 				$features = get_object_vars($product);
-				if (isset($features['features']))
+
+				if (isset($features['features']) && !empty($features['features']))
 					foreach (explode(',', $features['features']) as $single_feature)
 					{
 						$tab_feature = explode(':', $single_feature);
@@ -1244,6 +1271,16 @@ class AdminImportControllerCore extends AdminController
 				// clean feature positions to avoid conflict
 				Feature::cleanPositions();
 			}
+
+			// stock available
+			if (Shop::isFeatureActive())
+			{
+				foreach ($shops as $shop)
+					StockAvailable::setQuantity((int)$product->id, 0, $product->quantity, (int)$shop);
+			}
+			else
+				StockAvailable::setQuantity((int)$product->id, 0, $product->quantity, $this->context->shop->id);
+
 		}
 		$this->closeCsvFile($handle);
 	}
@@ -1292,7 +1329,7 @@ class AdminImportControllerCore extends AdminController
 					($lang_field_error = $image->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true && $image->add())
 				{
 					if (!AdminImportController::copyImg($product->id, $image->id, $url))
-						$this->warnings[] = Tools::displayError('Error copying image: ').$url;
+						$this->warnings[] = Tools::displayError('Error copying image:').$url;
 					else
 						$id_image = array($image->id);
 				}
@@ -1321,20 +1358,6 @@ class AdminImportControllerCore extends AdminController
 						(int)$info['image_position']
 					);
 			}
-
-			$id_product_attribute = $product->addAttribute(
-				(float)$info['price'],
-				(float)$info['weight'],
-				0,
-				(float)$info['ecotax'],
-				(int)$info['quantity'],
-				$id_image,
-				strval($info['reference']),
-				strval($info['supplier_reference']),
-				strval($info['ean13']),
-				(int)$info['default_on'],
-				strval($info['upc'])
-			);
 
 			$id_attribute_group = 0;
 			$group = '';
@@ -1397,9 +1420,9 @@ class AdminImportControllerCore extends AdminController
 
 				if (isset($groups_attributes[$key]))
 				{
+					$group = $groups_attributes[$key]['group'];
 					if (!isset($attributes[$group.'_'.$attribute]) && count($groups_attributes[$key]) == 2)
 					{
-						$group = $groups_attributes[$key]['group'];
 						$id_attribute_group = $groups_attributes[$key]['id'];
 						$obj = new Attribute();
 						// sets the proper id (corresponding to the right key)
@@ -1414,13 +1437,83 @@ class AdminImportControllerCore extends AdminController
 						}
 						else
 							$this->errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '');
-
 					}
 
-					Db::getInstance()->execute('
-						INSERT INTO '._DB_PREFIX_.'product_attribute_combination (id_attribute, id_product_attribute)
-						VALUES ('.(int)$attributes[$group.'_'.$attribute].','.(int)$id_product_attribute.')
-					');
+					$id_product_attribute = Combination::getIdByReference($product->id, strval($info['reference']));
+					$attribute_combinations = $product->getAttributeCombinations($default_language);
+
+					if (!count($attribute_combinations))
+					{
+						$id_product_attribute = $product->addAttribute(
+								(float)$info['price'],
+								(float)$info['weight'],
+								0,
+								(float)$info['ecotax'],
+								$id_image,
+								strval($info['reference']),
+								strval($info['ean13']),
+								(int)$info['default_on'],
+								0,
+								strval($info['upc']),
+								(int)$info['quantity']
+							);
+
+						Db::getInstance()->execute('
+								INSERT INTO '._DB_PREFIX_.'product_attribute_combination (id_attribute, id_product_attribute)
+								VALUES ('.(int)$attributes[$group.'_'.$attribute].','.(int)$id_product_attribute.')
+							');
+					}
+
+					foreach ($attribute_combinations as $attribute_combination)
+					{
+						if ($id_product_attribute && in_array($id_product_attribute, $attribute_combination))
+						{
+							$product->updateAttribute(
+								$id_product_attribute,
+								(float)$info['wholesale_price'],
+								(float)$info['price'],
+								(float)$info['weight'],
+								0,
+								(float)$info['ecotax'],
+								$id_image,
+								strval($info['reference']),
+								strval($info['ean13']),
+								(int)$info['default_on'],
+								0,
+								strval($info['upc']),
+								(int)$info['quantity'],
+								0
+							);
+							// update
+							Db::getInstance()->execute('
+								UPDATE '._DB_PREFIX_.'product_attribute_combination
+								SET id_attribute = '.(int)$attributes[$group.'_'.$attribute].'
+								WHERE id_product_attribute = '.(int)$id_product_attribute);
+
+						}
+						else
+						{
+							// insert
+							$id_product_attribute = $product->addAttribute(
+								(float)$info['price'],
+								(float)$info['weight'],
+								0,
+								(float)$info['ecotax'],
+								$id_image,
+								strval($info['reference']),
+								strval($info['ean13']),
+								(int)$info['default_on'],
+								0,
+								strval($info['upc']),
+								(int)$info['quantity']
+							);
+
+							Db::getInstance()->execute('
+								INSERT INTO '._DB_PREFIX_.'product_attribute_combination (id_attribute, id_product_attribute)
+								VALUES ('.(int)$attributes[$group.'_'.$attribute].','.(int)$id_product_attribute.')
+							');
+						}
+					}
 
 					// after insertion, we clean attribute position and group attribute position
 					$obj = new Attribute();
@@ -1571,7 +1664,7 @@ class AdminImportControllerCore extends AdminController
 							(isset($info['id']) ? ' (ID '.$info['id'].')' : '').' '.Tools::displayError('Cannot be saved');
 				}
 				else
-					$this->errors[] = '"'.$address->customer_email.'" :'.Tools::displayError('Is not a valid Email');
+					$this->errors[] = '"'.$address->customer_email.'" :'.Tools::displayError('Is not a valid e-mail address');
 			}
 
 			if (isset($address->manufacturer) && is_numeric($address->manufacturer) && Manufacturer::manufacturerExists((int)$address->manufacturer))
@@ -1738,7 +1831,7 @@ class AdminImportControllerCore extends AdminController
 			}
 			else
 			{
-				$this->errors[] = $this->l('Supplier not valid').' ('.$supplier->name.')';
+				$this->errors[] = $this->l('Supplier is invalid').' ('.$supplier->name.')';
 				$this->errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '');
 			}
 		}
@@ -1899,14 +1992,14 @@ class AdminImportControllerCore extends AdminController
 					$this->errors[] = sprintf($this->l('Product (%d/%d) is not available for this order (at line %d).'), $id_product,
 											   $id_product_attribute, $current_line + 1);
 				if ($unit_price_te < 0)
-					$this->errors[] = sprintf($this->l('Unit Price (te) (%d) is not valid (at line %d).'), $unit_price_te, $current_line + 1);
+					$this->errors[] = sprintf($this->l('Unit Price (tax excl.) (%d) is not valid (at line %d).'), $unit_price_te, $current_line + 1);
 				if ($quantity_expected < 0)
 					$this->errors[] = sprintf($this->l('Quantity Expected (%d) is not valid (at line %d).'), $quantity_expected, $current_line + 1);
 				if ($discount_rate < 0 || $discount_rate > 100)
 				$this->errors[] = sprintf($this->l('Discount rate (%d) is not valid (at line %d). %s.'), $discount_rate,
 										   $current_line + 1, $this->l('Format: between 0 and 100'));
 				if ($tax_rate < 0 || $tax_rate > 100)
-				$this->errors[] = sprintf($this->l('Tax rate (%d) is not valid (at line %d). %s.'), $tax_rate,
+				$this->errors[] = sprintf($this->l('Quantity Expected (%d) is not valid (at line %d).'), $tax_rate,
 										   $current_line + 1, $this->l('Format: between 0 and 100'));
 
 				// if no errors, sets supply order details
@@ -1995,7 +2088,7 @@ class AdminImportControllerCore extends AdminController
 		 $handle = fopen(_PS_ADMIN_DIR_.'/import/'.strval(preg_replace('/\.{2,}/', '.', Tools::getValue('csv'))), 'r');
 
 		if (!$handle)
-			$this->errors[] = Tools::displayError('Cannot read the CSV file');
+			$this->errors[] = Tools::displayError('Cannot read the .CSV file');
 
 		AdminImportController::rewindBomAware($handle);
 
@@ -2032,7 +2125,8 @@ class AdminImportControllerCore extends AdminController
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price');
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price_priority');
 				Image::deleteAllImages(_PS_PROD_IMG_DIR_);
-				mkdir(_PS_PROD_IMG_DIR_);
+				if (!file_exists(_PS_PROD_IMG_DIR_))
+					mkdir(_PS_PROD_IMG_DIR_);
 				break;
 			case $this->entities[$this->l('Customers')]:
 				Db::getInstance()->execute('TRUNCATE TABLE `'._DB_PREFIX_.'customer');
@@ -2074,7 +2168,7 @@ class AdminImportControllerCore extends AdminController
 		/* PrestaShop demo mode */
 		if (_PS_MODE_DEMO_)
 		{
-			$this->errors[] = Tools::displayError('This functionnality has been disabled.');
+			$this->errors[] = Tools::displayError('This functionality has been disabled.');
 			return;
 		}
 		/* PrestaShop demo mode*/
@@ -2088,18 +2182,16 @@ class AdminImportControllerCore extends AdminController
 					case UPLOAD_ERR_INI_SIZE:
 						$this->errors[] = Tools::displayError('The uploaded file exceeds the upload_max_filesize directive in php.ini.
 							If your server configuration allows it, you may add a directive in your .htaccess, for example:')
-						.'<br/><a href="?tab=AdminGenerator&amp;token='
-						.Tools::getAdminTokenLite('AdminGenerator').'" >
+						.'<br/><a href="'.$this->context->link->getAdminLink('AdminMeta').'" >
 						<code>php_value upload_max_filesize 20M</code> '.
-						Tools::displayError('(clic to open Generator tab)').'</a>';
+						Tools::displayError('(click to open "Generators" tab)').'</a>';
 						break;
 					case UPLOAD_ERR_FORM_SIZE:
 						$this->errors[] = Tools::displayError('The uploaded file exceeds the post_max_size directive in php.ini.
 							If your server configuration allows it, you may add a directive in your .htaccess, for example:')
-						.'<br/><a href="?tab=AdminGenerator&amp;token='
-						.Tools::getAdminTokenLite('AdminGenerator').'" >
+						.'<br/><a href="'.$this->context->link->getAdminLink('AdminMeta').'" >
 						<code>php_value post_max_size 20M</code> '.
-						Tools::displayError('(clic to open Generator tab)').'</a>';
+						Tools::displayError('(click to open "Generators" tab)').'</a>';
 						break;
 					break;
 					case UPLOAD_ERR_PARTIAL:
@@ -2157,7 +2249,7 @@ class AdminImportControllerCore extends AdminController
 						$this->supplyOrdersDetailsImport();
 				break;
 				default:
-					$this->errors[] = $this->l('no entity selected');
+					$this->errors[] = $this->l('Please select what you would like to import');
 			}
 		}
 

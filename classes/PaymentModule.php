@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -151,8 +151,8 @@ abstract class PaymentModuleCore extends Module
 						$order->id_cart = (int)$cart->id;
 						$order->reference = $reference;
 
-						$order->id_shop = (int)($shop->getID() ? $shop->getID() : $cart->id_shop);
-						$order->id_group_shop = (int)($shop->getID() ? $shop->getGroupID() : $cart->id_group_shop);
+						$order->id_shop = (int)(Shop::getContext() == Shop::CONTEXT_SHOP ? $shop->id : $cart->id_shop);
+						$order->id_group_shop = (int)(Shop::getContext() == Shop::CONTEXT_SHOP ? $shop->id_group_shop : $cart->id_group_shop);
 
 						$customer = new Customer($order->id_customer);
 						$order->secure_key = ($secure_key ? pSQL($secure_key) : pSQL($customer->secure_key));
@@ -224,13 +224,15 @@ abstract class PaymentModuleCore extends Module
 					}
 
 			// Next !
+			$only_one_gift = false;
+			$cart_rule_used = array();
 			foreach ($order_detail_list as $key => $order_detail)
 			{
 				$order = $order_list[$key];
 				if (!$order_creation_failed & isset($order->id))
 				{
 					if (!$secure_key)
-						$message .= '<br />'.Tools::displayError('Warning : the secure key is empty, check your payment account before validation');
+						$message .= '<br />'.Tools::displayError('Warning: the secure key is empty, check your payment account before validation');
 					// Optional message to attach to this order
 					if (isset($message) & !empty($message))
 					{
@@ -298,39 +300,91 @@ abstract class PaymentModuleCore extends Module
 					} // end foreach ($products)
 
 					$cart_rules_list = '';
-					$result = $cart->getCartRules();
-					foreach ($result as $cart_rule)
+					$cart_rules = $cart->getCartRules();
+					foreach ($cart_rules as $cart_rule)
 					{
-						$cart_rule_obj = $cart_rule['obj'];
-						$values = array(
-							'tax_incl' => $cart_rule_obj->getContextualValue(true),
-							'tax_excl' => $cart_rule_obj->getContextualValue(false)
-						);
+						$values = array('tax_incl' => 0, 'tax_excl' => 0);
 
-						if ($values['tax_incl'] > $order->total_products_wt && $cart_rule_obj->partial_use == 1 && $cart_rule_obj->reduction_amount > 0)
+						// If the cart is split in multiple orders, the cart rule must be split too
+						if (count($order_list) > 1)
+						{
+							// If the cart rule is a fee gift, then add the free gift value only if the gift is in this order
+							if ((int)$cart_rule['obj']->gift_product && !$only_one_gift)
+							{
+								$in_order = (bool)Db::getInstance()->getValue('
+								SELECT product_id
+								FROM '._DB_PREFIX_.'order_detail
+								WHERE product_id = '.(int)$cart_rule['obj']->gift_product.'
+								AND product_attribute_id = '.(int)$cart_rule['obj']->gift_product_attribute.'
+								AND id_order = '.(int)$order->id);
+
+								if ($in_order)
+								{
+									$values['tax_incl'] += $cart_rule['obj']->getContextualValue(true, null, CartRule::FILTER_ACTION_GIFT);
+									$values['tax_excl'] += $cart_rule['obj']->getContextualValue(false, null, CartRule::FILTER_ACTION_GIFT);
+									$only_one_gift = true;
+								}
+							}
+
+							// If the cart rule offers free shipping, add the shipping cost
+							if ($cart_rule['obj']->free_shipping)
+							{
+								$values['tax_incl'] += $order->total_shipping_tax_incl;
+								$values['tax_excl'] += $order->total_shipping_tax_excl;
+							}
+
+							// If the cart rule offers a reduction, the amount is prorated
+							if ($cart_rule['obj']->reduction_amount || $cart_rule['obj']->reduction_percent)
+							{
+								$prorata = $order->total_paid_tax_incl / $cart_total_paid;
+								$values['tax_incl'] += Tools::ps_round($prorata * $cart_rule['obj']->getContextualValue(true, null, CartRule::FILTER_ACTION_REDUCTION), 2);
+								$values['tax_excl'] += Tools::ps_round($prorata * $cart_rule['obj']->getContextualValue(false, null, CartRule::FILTER_ACTION_REDUCTION), 2);
+							}
+						}
+						else
+						{
+							$values = array(
+								'tax_incl' => $cart_rule['obj']->getContextualValue(true),
+								'tax_excl' => $cart_rule['obj']->getContextualValue(false)
+							);
+						}
+
+						// If the reduction is not applicable to this order (in a multi-shipping case), then try the next
+						if (!$values['tax_excl'])
+							continue;
+
+						/* IF
+						** - This is not multi-shipping
+						** - The value of the voucher is greater than the total of the order
+						** - Partial use is allowed
+						** - This is an "amount" reduction, not a reduction in % or a gift
+						** THEN
+						** The voucher is cloned with a new value corresponding to the remainder
+						*/
+						if (count($order_list) == 1 && $values['tax_incl'] > $order->total_products_wt && $cart_rule['obj']->partial_use == 1 && $cart_rule['obj']->reduction_amount > 0)
 						{
 							// Create a new voucher from the original
-							$voucher = clone $cart_rule_obj;
+							$voucher = clone $cart_rule['obj'];
 							unset($voucher->id);
-							
+
 							// Set a new voucher code
-							$voucher->code = empty($voucher->code) ? substr(md5($order->id.'-'.$order->id_customer.'-'.$cart_rule_obj->id), 0, 16) : $voucher->code.'-2';
+							$voucher->code = empty($voucher->code) ? substr(md5($order->id.'-'.$order->id_customer.'-'.$cart_rule['obj']->id), 0, 16) : $voucher->code.'-2';
 							if (preg_match('/\-([0-9]{1,2})\-([0-9]{1,2})$/', $voucher->code, $matches) && $matches[1] == $matches[2])
 								$voucher->code = preg_replace('/'.$matches[0].'$/', '-'.(intval($matches[1]) + 1), $voucher->code);
-								
+
 							// Set the new voucher value
 							if ($voucher->reduction_tax)
 								$voucher->reduction_amount = $values['tax_incl'] - $order->total_products_wt;
 							else
 								$voucher->reduction_amount = $values['tax_excl'] - $order->total_products;
-								
+
 							$voucher->id_customer = $order->id_customer;
 							$voucher->quantity = 1;
 							if ($voucher->add())
 							{
 								// If the voucher has conditions, they are now copied to the new voucher
-								CartRule::copyConditions($cart_rule_obj->id, $voucher->id);
-								
+								CartRule::copyConditions($cart_rule['obj']->id, $voucher->id);
+
 								$params = array(
 									'{voucher_amount}' => Tools::displayPrice($voucher->reduction_amount, $currency, false),
 									'{voucher_num}' => $voucher->code,
@@ -342,19 +396,25 @@ abstract class PaymentModuleCore extends Module
 							}
 						}
 
-						$order->addCartRule($cart_rule_obj->id, $cart_rule_obj->name, $values);
+						$order->addCartRule($cart_rule['obj']->id, $cart_rule['obj']->name, $values);
 
-						if ($id_order_state != Configuration::get('PS_OS_ERROR') && $id_order_state != Configuration::get('PS_OS_CANCELED'))
+						$order->total_discounts = $order->total_discounts_tax_incl = round($values['tax_incl'], 9);
+						$order->total_discounts_tax_excl = $values['tax_excl'];
+						$order->update();
+
+						if ($id_order_state != Configuration::get('PS_OS_ERROR') && $id_order_state != Configuration::get('PS_OS_CANCELED') && !in_array($cart_rule['obj']->id, $cart_rule_used))
 						{
+							$cart_rule_used[] = $cart_rule['obj']->id;
+
 							// Create a new instance of Cart Rule without id_lang, in order to update its quantity
-							$cart_rule_to_update = new CartRule($cart_rule_obj->id);
-							$cart_rule_to_update->quantity = $cart_rule_to_update->quantity - 1;
+							$cart_rule_to_update = new CartRule($cart_rule['obj']->id);
+							$cart_rule_to_update->quantity = max(0, $cart_rule_to_update->quantity - 1);
 							$cart_rule_to_update->update();
 						}
 
 						$cart_rules_list .= '
 						<tr style="background-color:#EBECEE;">
-							<td colspan="4" style="padding:0.6em 0.4em;text-align:right">'.$this->l('Voucher name:').' '.$cart_rule_obj->name.'</td>
+							<td colspan="4" style="padding:0.6em 0.4em;text-align:right">'.$this->l('Voucher name:').' '.$cart_rule['obj']->name.'</td>
 							<td style="padding:0.6em 0.4em;text-align:right">'.($values['tax_incl'] != 0.00 ? '-' : '').Tools::displayPrice($values['tax_incl'], $currency, false).'</td>
 						</tr>';
 					}

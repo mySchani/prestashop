@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -47,7 +47,7 @@ class SEKeywords extends ModuleGraph
 		$this->_query = 'SELECT `keyword`, COUNT(TRIM(`keyword`)) as occurences
 				FROM `'._DB_PREFIX_.'sekeyword`
 				WHERE '.(Configuration::get('SEK_FILTER_KW') == '' ? '1' : '`keyword` REGEXP \''.pSQL(Configuration::get('SEK_FILTER_KW')).'\'')
-					.$this->sqlShopRestriction().
+					.Shop::addSqlRestriction().
 					' AND `date_add` BETWEEN ';
 
 		$this->_query2 = 'GROUP BY TRIM(`keyword`)
@@ -89,7 +89,7 @@ class SEKeywords extends ModuleGraph
 
 		if ($keywords = $this->getKeywords($_SERVER['HTTP_REFERER']))
 			Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'sekeyword` (`keyword`, `date_add`, `id_shop`, `id_group_shop`)
-										VALUES (\''.pSQL(Tools::strtolower(trim($keywords))).'\', NOW(), '.$this->context->shop->getID().', '.$this->context->shop->getGroupID().')');
+										VALUES (\''.pSQL(Tools::strtolower(trim($keywords))).'\', NOW(), '.(int)$this->context->shop->id.', '.(int)$this->context->shop->id_group_shop.')');
 	}
 
 	public function hookAdminStatsModules()

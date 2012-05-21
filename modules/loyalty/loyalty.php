@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -229,6 +229,7 @@ class Loyalty extends Module
 					$errors .= $error.'<br />';
 				echo $this->displayError($errors);
 			}
+//            redirect($this->context->link);
 		}
 	}
 
@@ -246,7 +247,6 @@ class Loyalty extends Module
 		$this->instanceDefaultStates();
 		$this->_postProcess();
 
-		$categories = Category::getCategories($this->context->language->id);
 		$order_states = OrderState::getOrderStates($this->context->language->id);
 		$currency = new Currency((int)(Configuration::get('PS_CURRENCY_DEFAULT')));
 		$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
@@ -449,7 +449,7 @@ class Loyalty extends Module
 					$points = 0;
 					$this->smarty->assign('no_pts_discounted', 1);
 				}
-				else			
+				else
 					$points = (int)(LoyaltyModule::getNbPointsByPrice($product->getPrice(Product::getTaxCalculationMethod() == PS_TAX_EXC ? false : true, (int)($product->getIdProductAttributeMostExpensive()))));
 				$pointsAfter = $points;
 				$pointsBefore = 0;
@@ -460,7 +460,8 @@ class Loyalty extends Module
 				'point_rate' => Configuration::get('PS_LOYALTY_POINT_RATE'),
 				'point_value' => Configuration::get('PS_LOYALTY_POINT_VALUE'),
 				'points_in_cart' => (int)$pointsBefore,
-				'voucher' => LoyaltyModule::getVoucherValue((int)$pointsAfter)));
+				'voucher' => LoyaltyModule::getVoucherValue((int)$pointsAfter),
+				'none_award' => Configuration::get('PS_LOYALTY_NONE_AWARD')));
 
 			return $this->display(__FILE__, 'product.tpl');
 		}
@@ -555,7 +556,7 @@ class Loyalty extends Module
 		$newOrder = $params['newOrderStatus'];
 		$order = new Order((int)($params['id_order']));
 		if ($order AND !Validate::isLoadedObject($order))
-			die(Tools::displayError('Incorrect object Order.'));
+			die(Tools::displayError('Incorrect Order object.'));
 		$this->instanceDefaultStates();
 
 		if ($newOrder->id == $this->loyaltyStateValidation->id_order_state OR $newOrder->id == $this->loyaltyStateCancel->id_order_state)
@@ -589,7 +590,7 @@ class Loyalty extends Module
 		
 		$customer = new Customer((int)$params['id_customer']);
 		if ($customer AND !Validate::isLoadedObject($customer))
-			die(Tools::displayError('Incorrect object Customer.'));
+			die(Tools::displayError('Incorrect Customer object.'));
 
 		$details = LoyaltyModule::getAllByIdCustomer((int)$params['id_customer'], (int)$params['cookie']->id_lang);
 		$points = (int)LoyaltyModule::getPointsByCustomer((int)$params['id_customer']);

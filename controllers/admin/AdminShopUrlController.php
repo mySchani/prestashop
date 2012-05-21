@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop
+* 2007-2012 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2011 PrestaShop SA
+*  @copyright  2007-2012 PrestaShop SA
 *  @version  Release: $Revision: 8971 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -33,6 +33,7 @@ class AdminShopUrlControllerCore extends AdminController
 		$this->className = 'ShopUrl';
 	 	$this->lang = false;
 		$this->requiredDatabase = true;
+		$this->multishop_context = Shop::CONTEXT_ALL;
 
 		$this->context = Context::getContext();
 
@@ -47,7 +48,8 @@ class AdminShopUrlControllerCore extends AdminController
 			),
 			'shop_name' => array(
 				'title' => $this->l('Shop name'),
-				'width' => 150
+				'width' => 150,
+				'filter_key' => 's!name'
 			),
 			'domain' => array(
 				'title' => $this->l('Domain'),
@@ -60,9 +62,10 @@ class AdminShopUrlControllerCore extends AdminController
 				'filter_key' => 'domain'
 			),
 			'uri' => array(
-				'title' => $this->l('Uri'),
+				'title' => $this->l('URI'),
 				'width' => 200,
-				'filter_key' => 'uri'
+				'filter_key' => 'uri',
+				'havingFilter' => true
 			),
 			'main' => array(
 				'title' => $this->l('Main URL'),
@@ -105,33 +108,37 @@ class AdminShopUrlControllerCore extends AdminController
 	{
 		$this->fields_form = array(
 			'legend' => array(
-				'title' => $this->l('Shop Url')
+				'title' => $this->l('Shop URL')
 			),
 			'input' => array(
 				array(
 					'type' => 'text',
 					'label' => $this->l('Domain:'),
-					'name' => 'domain'
+					'name' => 'domain',
+					'size' => 50,
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Domain SSL:'),
-					'name' => 'domain_ssl'
+					'name' => 'domain_ssl',
+					'size' => 50,
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Physical URI:'),
 					'name' => 'physical_uri',
-					'desc' => $this->l('Physical folder of your store on your server. Leave this field empty if your store is installed on root path. E.g. if your store is available from www.my-prestashop.com/my-store/, you have to set my-store/ in this field.')
+					'desc' => $this->l('Physical folder of your store on your server. Leave this field empty if your store is installed on the root path (e.g. if your store is available at www.my-prestashop.com/my-store/, you would set my-store/ in this field).'),
+					'size' => 50,
 				),
 				array(
 					'type' => 'text',
 					'label' => $this->l('Virtual URI:'),
 					'name' => 'virtual_uri',
 					'desc' => array(
-						$this->l('You can use this option if you want to create a store with an URI that doesn\'t exist on your server. E.g. if you want your store to be available with url www.my-prestashop.com/my-store/shoes/, you have to set shoes/ in this field (we considere that my-store/ is your physical URI).'),
+						$this->l('You can use this option if you want to create a store with an URI that doesn\'t exist on your server (e.g. if you want your store to be available with the URL www.my-prestashop.com/my-store/shoes/, you have to set shoes/ in this field, assuming that my-store/ is your Physical URI).'),
 						'<strong>'.$this->l('URL rewriting must be activated on your server to use this feature.').'</strong>'
-					)
+					),
+					'size' => 50,
 				),
 				array(
 					'type' => 'text',
@@ -175,13 +182,13 @@ class AdminShopUrlControllerCore extends AdminController
 						)
 					),
 					'desc' => array(
-						$this->l('If you set this url as main url for selected shop, all urls set to this shop will be redirected to this url (you can only have one main url per shop).'),
+						$this->l('If you set this URL as the Main URL for the selected shop, all URLs set to this shop will be redirected to this URL (you can only have one Main URL per shop).'),
 						array(
-							'text' => $this->l('Since the selected shop has no main url, you have to set this url as main'),
+							'text' => $this->l('Since the selected shop has no Main URL, you have to set this URL as the Main URL'),
 							'id' => 'mainUrlInfo'
 						),
 						array(
-							'text' => $this->l('The selected shop has already a main url, if you set this one as main url, the older one will be set as normal url'),
+							'text' => $this->l('The selected shop has already a Main URL, if you set this one as the Main URL, the older one will be set as the Normal URL.'),
 							'id' => 'mainUrlInfoExplain'
 						)
 					)
@@ -208,7 +215,7 @@ class AdminShopUrlControllerCore extends AdminController
 				)
 			),
 			'submit' => array(
-				'title' => $this->l('   Save   '),
+				'title' => $this->l('Save'),
 				'class' => 'button'
 			)
 		);
@@ -246,7 +253,7 @@ class AdminShopUrlControllerCore extends AdminController
 				if (Validate::isLoadedObject($object = $this->loadObject()))
 				{
 					if ($object->main)
-						$this->errors[] = Tools::displayError('You can\'t disable a main url');
+						$this->errors[] = Tools::displayError('You can\'t disable a Main URL');
 					elseif ($object->toggleStatus())
 						Tools::redirectAdmin(self::$currentIndex.'&conf=5&token='.$token);
 					else
@@ -260,7 +267,7 @@ class AdminShopUrlControllerCore extends AdminController
 		}
 		else if (Tools::isSubmit('submitAdd'.$this->table) && $this->tabAccess['add'] === '1')
 		{
-			if (ShopUrl::virtualUriExists(Tools::getValue('virtual_uri'), Tools::getValue('id_shop')))
+			if (ShopUrl::urlExists(Tools::getValue('domain'), Tools::getValue('physical_uri'), Tools::getValue('virtual_uri'), Tools::getValue('id_shop')))
 				$this->errors[] = Tools::displayError('Virtual URI already used.');
 			else
 				return parent::postProcess();
@@ -269,30 +276,50 @@ class AdminShopUrlControllerCore extends AdminController
 			return parent::postProcess();
 	}
 
+	public function processSave($token)
+	{
+		$return = parent::processSave($token);
+		if (!$this->errors)
+			Tools::generateHtaccess();
+
+		return $return;
+	}
+
 	public function processAdd($token)
 	{
-			$object = $this->loadObject(true);
-			if ($object->id && Tools::getValue('main'))
-				$object->setMain();
+		$object = $this->loadObject(true);
+		if ($object->id && Tools::getValue('main'))
+			$object->setMain();
 
-			if ($object->main && !Tools::getValue('main'))
-				$this->errors[] = Tools::displayError('You can\'t change a main url to a non main url, you have to set an other url as main url for selected shop');
+		if ($object->main && !Tools::getValue('main'))
+			$this->errors[] = Tools::displayError('You can\'t change a Main URL to a non-Main URL, you have to set another URL as Main URL for selected shop');
 
-			if (($object->main || Tools::getValue('main')) && !Tools::getValue('active'))
-				$this->errors[] = Tools::displayError('You can\'t disable a main url');
+		if (($object->main || Tools::getValue('main')) && !Tools::getValue('active'))
+			$this->errors[] = Tools::displayError('You can\'t disable a Main URL');
 
-			if ($object->canAddThisUrl(Tools::getValue('domain'), Tools::getValue('domain_ssl'), Tools::getValue('physical_uri'), Tools::getValue('virtual_uri')))
-				$this->errors[] = Tools::displayError('A shop url that use this domain and uri already exists');
+		if ($object->canAddThisUrl(Tools::getValue('domain'), Tools::getValue('domain_ssl'), Tools::getValue('physical_uri'), Tools::getValue('virtual_uri')))
+			$this->errors[] = Tools::displayError('A shop URL that use this domain and uri already exists');
 
-			parent::processAdd($token);
-			if (!$this->errors)
-				Tools::generateHtaccess();
+		parent::processAdd($token);
+	}
+
+	public function processUpdate($token)
+	{
+		$this->redirect_shop_url = false;
+		$current_url = parse_url($_SERVER['REQUEST_URI']);
+		if (trim(dirname(dirname($current_url['path'])), '/') == trim($this->object->getBaseURI(), '/'))
+			$this->redirect_shop_url = true;
+
+		return parent::processUpdate($token);
 	}
 
 	protected function afterUpdate($object)
 	{
 		if (Tools::getValue('main'))
 			$object->setMain();
+
+		if ($this->redirect_shop_url)
+			$this->redirect_after = $object->getBaseURI().basename(_PS_ADMIN_DIR_).'/'.$this->context->link->getAdminLink('AdminShopUrl');
 	}
 }
 
