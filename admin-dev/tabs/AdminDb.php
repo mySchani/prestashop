@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,26 +35,18 @@ class AdminDb extends AdminPreferences
 		$this->table = 'configuration';
  	
  		$this->_fieldsDatabase = array(
-		'db_server' => array('title' => $this->l('Server:'), 'desc' => $this->l('IP or server name; \'localhost\' will work in most cases'), 'size' => 30, 'type' => 'text', 'required' => true),
-		'db_name' => array('title' => $this->l('Database:'), 'desc' => $this->l('Database name (e.g., \'prestashop\')'), 'size' => 30, 'type' => 'text', 'required' => true),
-		'db_prefix' => array('title' => $this->l('Prefix:'), 'size' => 30, 'type' => 'text'),
-		'db_user' => array('title' => $this->l('User:'), 'size' => 30, 'type' => 'text', 'required' => true),
-		'db_passwd' => array('title' => $this->l('Password:'), 'size' => 30, 'type' => 'password', 'desc' => $this->l('Leave blank if no change')));
+		'db_server' => array('title' => $this->l('Server:'), 'desc' => $this->l('IP or server name; \'localhost\' will work in most cases'), 'size' => 30, 'type' => 'text', 'required' => true, 'visibility' => Shop::CONTEXT_ALL),
+		'db_name' => array('title' => $this->l('Database:'), 'desc' => $this->l('Database name (e.g., \'prestashop\')'), 'size' => 30, 'type' => 'text', 'required' => true, 'visibility' => Shop::CONTEXT_ALL),
+		'db_prefix' => array('title' => $this->l('Prefix:'), 'size' => 30, 'type' => 'text', 'visibility' => Shop::CONTEXT_ALL),
+		'db_user' => array('title' => $this->l('User:'), 'size' => 30, 'type' => 'text', 'required' => true, 'visibility' => Shop::CONTEXT_ALL),
+		'db_passwd' => array('title' => $this->l('Password:'), 'size' => 30, 'type' => 'password', 'desc' => $this->l('Leave blank if no change')), 'visibility' => Shop::CONTEXT_ALL);
 		parent::__construct();
 	}
 	
 	public function postProcess()
 	{
 		global $currentIndex;
-		
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		
+
 		if (isset($_POST['submitDatabase'.$this->table]))
 		{
 		 	if ($this->tabAccess['edit'] === '1')	 	
@@ -92,18 +84,13 @@ class AdminDb extends AdminPreferences
 					$tables_engine[$table['Name']] = $table['Engine'];
 				
 				$engineType = pSQL(Tools::getValue('engineType'));
-				
-				/* Datas are not saved in database but in config/settings.inc.php */
-				$settings = array('_MYSQL_ENGINE_' => $engineType);
-			    rewriteSettingsFile(NULL, NULL, $settings);
-				
-			    foreach ($_POST['tablesBox'] AS $table)
+				foreach ($_POST['tablesBox'] AS $table)
 				{
 					if ($engineType == $tables_engine[$table])
 						$this->_errors[] = $table.' '.$this->l('is already in').' '.$engineType;
 					else
-						if (!Db::getInstance()->Execute('ALTER TABLE `'.bqSQL($table).'` ENGINE=`'.bqSQL($engineType).'`'))
-							$this->_errors[] = $this->l('Cannot change engine for').' '.$table;
+						if (!Db::getInstance()->Execute('ALTER TABLE '.pSQL($table).' ENGINE='.pSQL($engineType)))
+							$this->_errors[] = $this->l('Can\'t change engine for').' '.$table;
 						else
 							echo '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Engine change of').' '.$table.' '.$this->l('to').' '.$engineType.'</div>';
 				}

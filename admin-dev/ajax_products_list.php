@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
-
+define('PS_ADMIN_DIR', getcwd());
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 /* Getting cookie or logout */
 require_once(dirname(__FILE__).'/init.php');
@@ -38,12 +36,12 @@ if (!$query OR $query == '' OR strlen($query) < 1)
 
 /*
  * In the SQL request the "q" param is used entirely to match result in database.
- * In this way if string:"(ref : #ref_pattern#)" is displayed on the return list,
- * they are no return values just because string:"(ref : #ref_pattern#)"
+ * In this way if string:"(ref : #ref_pattern#)" is displayed on the return list, 
+ * they are no return values just because string:"(ref : #ref_pattern#)" 
  * is not write in the name field of the product.
  * So the ref pattern will be cut for the search request.
  */
-if ($pos = strpos($query, ' (ref:'))
+if($pos = strpos($query, ' (ref:'))
 	$query = substr($query, 0, $pos);
 
 $excludeIds = Tools::getValue('excludeIds', false);

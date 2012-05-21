@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14440 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 	
 class BlockCms extends Module
@@ -57,10 +56,7 @@ class BlockCms extends Module
 		foreach ($languages AS $language)
 			$queryLang .= '(1, '.(int)($language['id_lang']).'),';
 	
-		if (!parent::install() || !$this->registerHook('leftColumn') 
-			|| !$this->registerHook('rightColumn') 
-			|| !$this->registerHook('footer') 
-			|| !$this->registerHook('header') ||
+		if (!parent::install() OR !$this->registerHook('leftColumn') OR !$this->registerHook('rightColumn') OR !$this->registerHook('footer') OR !$this->registerHook('header') OR
 		!Db::getInstance()->Execute('
 		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'cms_block`(
 		`id_cms_block` int(10) unsigned NOT NULL auto_increment,
@@ -69,7 +65,7 @@ class BlockCms extends Module
 		`position` int(10) unsigned NOT NULL default \'0\',
 		`display_store` tinyint(1) unsigned NOT NULL default \'1\',
 		PRIMARY KEY (`id_cms_block`)
-		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') ||
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') OR
 		!Db::getInstance()->Execute('
 		INSERT INTO `'._DB_PREFIX_.'cms_block` (`id_cms_category`, `location`, `position`) VALUES(1, 0, 0)') OR
 		!Db::getInstance()->Execute('
@@ -78,8 +74,8 @@ class BlockCms extends Module
 		`id_lang` int(10) unsigned NOT NULL,
 		`name` varchar(40) NOT NULL default \'\',
 		PRIMARY KEY (`id_cms_block`, `id_lang`)
-		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') ||
-		!Db::getInstance()->Execute(rtrim($queryLang, ',')) ||
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') OR
+		!Db::getInstance()->Execute(rtrim($queryLang, ',')) OR
 		!Db::getInstance()->Execute('
 		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'cms_block_page`(
 		`id_cms_block_page` int(10) unsigned NOT NULL auto_increment,
@@ -87,10 +83,9 @@ class BlockCms extends Module
 		`id_cms` int(10) unsigned NOT NULL,
 		`is_category` tinyint(1) unsigned NOT NULL,
 		PRIMARY KEY (`id_cms_block_page`)
-		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') ||
-		!Configuration::updateValue('FOOTER_CMS', '') ||
-		!Configuration::updateValue('FOOTER_BLOCK_ACTIVATION', 1) ||
-		!Configuration::updateValue('FOOTER_POWEREDBY', 1))
+		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8') OR
+		!Configuration::updateValue('FOOTER_CMS', '') OR
+		!Configuration::updateValue('FOOTER_BLOCK_ACTIVATION', 1))
 			return false;
 		return true;
 	}
@@ -100,7 +95,6 @@ class BlockCms extends Module
 		if (!parent::uninstall() OR
 		!Configuration::deleteByName('FOOTER_CMS') OR
 		!Configuration::deleteByName('FOOTER_BLOCK_ACTIVATION') OR
-		!Configuration::deleteByName('FOOTER_POWEREDBY') OR
 		!Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'cms_block` , `'._DB_PREFIX_.'cms_block_page`, `'._DB_PREFIX_.'cms_block_lang`'))
 			return false;
 		return true;
@@ -114,14 +108,8 @@ class BlockCms extends Module
 		LEFT JOIN `'._DB_PREFIX_.'cms_block_lang` cbl ON (cbl.`id_cms_block` = cb.`id_cms_block`)
 		WHERE cb.`id_cms_block` = '.(int)$id_cms_block);
 
-		$store_display_update = array(0, $size = count($cmsBlocks), $display = Configuration::get('PS_STORES_DISPLAY_FOOTER'));
 		foreach ($cmsBlocks AS $cmsBlock)
-		{
 			$cmsBlocks['name'][(int)$cmsBlock['id_lang']] = $cmsBlock['name'];
-			if ($store_display_update['0'] < $store_display_update['1'])
-				$cmsBlocks[$store_display_update['0']]['display_store'] = $store_display_update['2'];
-			++$store_display_update['0'];
-		}
 		return $cmsBlocks;
 	}
 	
@@ -143,7 +131,7 @@ class BlockCms extends Module
 		return array_merge($this->getBlocksCMS(self::LEFT_COLUMN), $this->getBlocksCMS(self::RIGHT_COLUMN));
 	}
 
-	public static function getCMStitlesFooter()
+	static public function getCMStitlesFooter()
 	{
 		global $cookie;
 		
@@ -185,16 +173,17 @@ class BlockCms extends Module
 		return $content;
 	}
 
-	public static function getCMStitles($location)
+	static public function getCMStitles($location)
 	{
 		global $cookie;
 
+		$id_current_shop = Shop::getCurrentShop();
 		$cmsCategories = Db::getInstance()->ExecuteS('
 		SELECT bc.`id_cms_block`, bc.`id_cms_category`, bc.`display_store`, ccl.`link_rewrite`, ccl.`name` category_name, bcl.`name` block_name
 		FROM `'._DB_PREFIX_.'cms_block` bc
 		INNER JOIN `'._DB_PREFIX_.'cms_category_lang` ccl ON (bc.`id_cms_category` = ccl.`id_cms_category`)
 		INNER JOIN `'._DB_PREFIX_.'cms_block_lang` bcl ON (bc.`id_cms_block` = bcl.`id_cms_block`)
-		WHERE bc.`location` = '.(int)($location).' AND ccl.`id_lang` = '.(int)($cookie->id_lang).' AND bcl.`id_lang` = '.(int)($cookie->id_lang).'
+		WHERE bc.`location` = '.(int)($location).' AND ccl.`id_lang` = '.(int)($cookie->id_lang).' AND bcl.`id_lang` = '.(int)($cookie->id_lang).' AND bc.id_shop='.(int)$id_current_shop.'
 		ORDER BY `position`');
 		
 		$content = array();
@@ -413,7 +402,6 @@ class BlockCms extends Module
 		<form method="POST" action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'">
 		<fieldset>
 			<legend><img src="'._PS_BASE_URL_.__PS_BASE_URI__.'modules/'.$this->name.'/logo.gif" alt="" /> '.$this->l('Footer\'s various links Configuration').'</legend>
-			<input type="checkbox" name="footer_poweredby_active" id="footer_poweredby_active" '.(((int)Configuration::get('FOOTER_POWEREDBY') === 1 || Configuration::get('FOOTER_POWEREDBY') === false) ? 'checked="checked"' : '').'> <label for="footer_poweredby_active" style="float:none;">'.$this->l('Display "Powered by Prestashop"').'</label><br /><br />
 			<input type="checkbox" name="footer_active" id="footer_active" '.(Configuration::get('FOOTER_BLOCK_ACTIVATION') ? 'checked="checked"' : '').'> <label for="footer_active" style="float:none;">'.$this->l('Display the Footer\'s various links').'</label><br /><br />
 			<table cellspacing="0" cellpadding="0" class="table" width="100%">
 				<tr>
@@ -569,7 +557,7 @@ class BlockCms extends Module
 		}
 		elseif (Tools::getValue('way') == 1)
 		{
-			if (Db::getInstance()->Execute('
+			if(Db::getInstance()->Execute('
 			UPDATE `'._DB_PREFIX_.'cms_block`
 			SET `position` = '.((int)Tools::getValue('position') - 1).'
 			WHERE `position` = '.((int)Tools::getValue('position')).'
@@ -585,7 +573,7 @@ class BlockCms extends Module
 	private function _postProcess()
 	{
 		global $currentIndex;
-
+	
 		if (Tools::isSubmit('submitBlockCMS'))
 		{
 			$position = Db::getInstance()->getValue('
@@ -605,15 +593,11 @@ class BlockCms extends Module
 					INSERT INTO `'._DB_PREFIX_.'cms_block_lang` (`id_cms_block`, `id_lang`, `name`) 
 					VALUES('.(int)$id_cms_block.', '.(int)$language['id_lang'].', 
 					"'.pSQL(Tools::getValue('block_name_'.$language['id_lang'])).'")');
-					
-				Db::getInstance()->Execute('
-				UPDATE `'._DB_PREFIX_.'cms_block`
-				SET `display_store` = '.Configuration::get('PS_STORES_DISPLAY_FOOTER'));
 			}
 			elseif (Tools::isSubmit('editBlockCMS'))
 			{
 				$id_cms_block = Tools::getvalue('id_cms_block');
-
+				
 				$old_block = Db::getInstance()->ExecuteS('
 				SELECT `location`, `position` 
 				FROM `'._DB_PREFIX_.'cms_block` 
@@ -623,7 +607,7 @@ class BlockCms extends Module
 				Db::getInstance()->Execute('
 				DELETE FROM `'._DB_PREFIX_.'cms_block_page` 
 				WHERE `id_cms_block` = '.(int)$id_cms_block);
-
+				
 				if ($location_change == true)
 					Db::getInstance()->Execute('
 					UPDATE `'._DB_PREFIX_.'cms_block` 
@@ -638,9 +622,7 @@ class BlockCms extends Module
 				`position` = '.(int)($position) : '').',
 				`display_store` = '.(int)(Tools::getValue('PS_STORES_DISPLAY_CMS')).'
 				WHERE `id_cms_block` = '.(int)($id_cms_block));
-
-				Configuration::updateValue('PS_STORES_DISPLAY_FOOTER', (int)(Tools::getValue('PS_STORES_DISPLAY_CMS')));
-
+				
 				foreach ($languages as $language)
 					Db::getInstance()->Execute('
 					UPDATE `'._DB_PREFIX_.'cms_block_lang` 
@@ -694,7 +676,6 @@ class BlockCms extends Module
 					$footer .= $box.'|';
 			Configuration::updateValue('FOOTER_CMS', rtrim($footer, '|'));
 			Configuration::updateValue('FOOTER_BLOCK_ACTIVATION', Tools::getValue('footer_active'));
-			Configuration::updateValue('FOOTER_POWEREDBY', (Tools::getValue('footer_poweredby_active') == 'on' ? 1 : 0));
 			
 			$this->_html = $this->displayConfirmation($this->l('Footer\'s CMS updated'));
 		}
@@ -758,8 +739,7 @@ class BlockCms extends Module
 				'block' => 0,
 				'cmslinks' => $cms_titles,
 				'theme_dir' => _PS_THEME_DIR_,
-				'display_stores_footer' => Configuration::get('PS_STORES_DISPLAY_FOOTER'),
-				'display_poweredby' => ((int)Configuration::get('FOOTER_POWEREDBY') === 1 || Configuration::get('FOOTER_POWEREDBY') === false)
+				'display_stores_footer' => Configuration::get('PS_STORES_DISPLAY_FOOTER')
 			));
 			return $this->display(__FILE__, 'blockcms.tpl');
 		}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,11 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14948 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
+
+/**
+ * @author Lucas Cherifi - Nans Pellicari - Anatole Korczak - PrestaShop Team
+ */
 
 class WebserviceOutputXMLCore implements WebserviceOutputInterface
 {
@@ -120,10 +124,8 @@ class WebserviceOutputXMLCore implements WebserviceOutputInterface
 			
 			if (isset($field['getter']) && $this->schemaToDisplay != 'blank')
 				$ret .= ' not_filterable="true"';
-			// Setter can be null or false if field can't be set
-			if (array_key_exists('setter', $field) && (!isset($field['setter']) || $field['setter'] === false) && $this->schemaToDisplay != 'blank')
-				$ret .= ' readonly="true"';
-			if ($field['value'] != '')
+			
+			if ($field['value'] != '')	
 				$node_content .= '<![CDATA['.$field['value'].']]>';
 		}
 		if (isset($field['synopsis_details']) && !empty($field['synopsis_details']) && $this->schemaToDisplay !== 'blank')

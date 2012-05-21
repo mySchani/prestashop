@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,36 +19,36 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsSales extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
-	private $_query2 = '';
-	private $_option = '';
-	private $id_country = '';
+    private $_html = '';
+    private $_query = '';
+    private $_query2 = '';
+    private $_option = '';
+    private $id_country = '';
 
-	function __construct()
-	{
-		$this->name = 'statssales';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statssales';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
+		
 		parent::__construct();
-
-		$this->displayName = $this->l('Sales and orders');
-		$this->description = $this->l('Display the sales evolution and orders by statuses');
-	}
+		
+        $this->displayName = $this->l('Sales and orders');
+        $this->description = $this->l('Display the sales evolution and orders by statuses');
+    }
 	
 	public function install()
 	{
@@ -70,7 +70,7 @@ class StatsSales extends ModuleGraph
 			
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
-			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" style="float: right; margin-left: 10px;">
+			<form action="'.$_SERVER['REQUEST_URI'].'" method="post" style="float: right; margin-left: 10px;">
 				<select name="id_country">
 					<option value="0"'.((!Tools::getValue('id_order_state')) ? ' selected="selected"' : '').'>'.$this->l('All').'</option>';
 		foreach (Country::getCountries($cookie->id_lang) AS $country)
@@ -83,16 +83,16 @@ class StatsSales extends ModuleGraph
 			</center></p>
 			<p>'.$this->l('Orders placed:').' '.(int)($totals['orderCount']).'</p>
 			<p>'.$this->l('Products bought:').' '.(int)($totals['products']).'</p>
-			<center>'.ModuleGraph::engine(array('type' => 'line', 'option' => '1-'.(int)(Tools::getValue('id_country')), 'layers' => 2)).'</center>
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" alt="" />'.$this->l('CSV Export').'</a></p>
+			<center>'.$this->engine(array('type' => 'line', 'option' => '1-'.(int)Tools::getValue('id_country'), 'layers' => 2)).'</center>
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" alt="" />'.$this->l('CSV Export').'</a></p>
 			<p>'.$this->l('Sales:').' '.Tools::displayPrice($totals['orderSum'], $currency).'</p>
-			<center>'.ModuleGraph::engine(array('type' => 'line', 'option' => '2-'.(int)(Tools::getValue('id_country')))).'</center></p>
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=2"><img src="../img/admin/asterisk.gif" alt="" />'.$this->l('CSV Export').'</a></p>
+			<center>'.$this->engine(array('type' => 'line', 'option' => '2-'.(int)Tools::getValue('id_country'))).'</center></p>
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=2"><img src="../img/admin/asterisk.gif" alt="" />'.$this->l('CSV Export').'</a></p>
 			<p class="space"><img src="../img/admin/down.gif" />
 				'.$this->l('You can see the order state distribution below.').'
 			</p><br />
-			'.($totals['orderCount'] ? ModuleGraph::engine(array('type' => 'pie', 'option' => '3-'.(int)Tools::getValue('id_country'))) : $this->l('No orders for this period.')).'</center>
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=3"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+			'.($totals['orderCount'] ? $this->engine(array('type' => 'pie', 'option' => '3-'.(int)Tools::getValue('id_country'))) : $this->l('No orders for this period.')).'</center>
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=3"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset>
 		<br class="clear" />
 		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
@@ -107,22 +107,25 @@ class StatsSales extends ModuleGraph
 
 	private function getTotals()
 	{
-		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(o.`id_order`) as orderCount, SUM(o.`total_paid_real` / o.conversion_rate) as orderSum
-		FROM `'._DB_PREFIX_.'orders` o
-		'.((int)(Tools::getValue('id_country')) ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
-		WHERE o.valid = 1
-		'.((int)(Tools::getValue('id_country')) ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
-		AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(o.`id_order`) as orderCount, SUM(o.`total_paid_real` / o.conversion_rate) as orderSum
+				FROM `'._DB_PREFIX_.'orders` o
+				'.((int)Tools::getValue('id_country') ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
+				WHERE o.valid = 1
+					'.$this->sqlShopRestriction(false, 'o').'
+					'.((int)Tools::getValue('id_country') ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
+					AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween();
+		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		
-		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT SUM(od.product_quantity) as products
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON od.`id_order` = o.`id_order`
-		'.((int)(Tools::getValue('id_country')) ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
-		WHERE o.valid = 1
-		'.((int)Tools::getValue('id_country') ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
-		AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT SUM(od.product_quantity) as products
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON od.`id_order` = o.`id_order`
+				'.((int)Tools::getValue('id_country') ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
+				WHERE o.valid = 1
+					'.$this->sqlShopRestriction(false, 'o').'
+					'.((int)Tools::getValue('id_country') ? 'AND a.id_country = '.(int)Tools::getValue('id_country') : '').'
+					AND o.`invoice_date` BETWEEN '.ModuleGraph::getDateBetween();
+		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
+
 		return array_merge($result1, $result2);
 	}
 	
@@ -157,8 +160,9 @@ class StatsSales extends ModuleGraph
 			LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON od.`id_order` = o.`id_order`
 			'.((int)($this->id_country) ? 'LEFT JOIN `'._DB_PREFIX_.'address` a ON o.id_address_delivery = a.id_address' : '').'
 			WHERE o.valid = 1
-			'.((int)($this->id_country) ? 'AND a.id_country = '.(int)$this->id_country : '').'
-			AND o.`invoice_date` BETWEEN ';
+				'.$this->sqlShopRestriction('o').'
+				'.((int)($this->id_country) ? 'AND a.id_country = '.(int)$this->id_country : '').'
+				AND o.`invoice_date` BETWEEN ';
 		$this->_query2 = ' GROUP BY o.id_order';
 		$this->setDateGraph($layers, true);
 	}

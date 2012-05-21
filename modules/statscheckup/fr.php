@@ -8,6 +8,7 @@ $_MODULE['<{statscheckup}prestashop>statscheckup_20015706a8cbd457cbb6ea3e7d5dc9b
 $_MODULE['<{statscheckup}prestashop>statscheckup_bae60998ffe4923b131e3d6e4c19993e'] = 'mauvais';
 $_MODULE['<{statscheckup}prestashop>statscheckup_6927a3a7218a3195858411433ec20a21'] = 'moyen';
 $_MODULE['<{statscheckup}prestashop>statscheckup_755f85c2723bb39381c7379a604160d8'] = 'bon';
+$_MODULE['<{statscheckup}prestashop>statscheckup_44fb451a35a1c382da79166dc8c78e43'] = 'Aucun produit trouvé';
 $_MODULE['<{statscheckup}prestashop>statscheckup_8bc84316c4078bf66723fd019616d920'] = 'Descriptions';
 $_MODULE['<{statscheckup}prestashop>statscheckup_5cd1930570823694abdd596f29c8943d'] = 'caractères (sans HTML)';
 $_MODULE['<{statscheckup}prestashop>statscheckup_fff0d600f8a0b5e19e88bfb821dd1157'] = 'Images';

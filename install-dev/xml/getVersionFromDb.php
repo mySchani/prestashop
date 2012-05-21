@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,16 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 require_once(SETTINGS_FILE);
-require_once(INSTALL_PATH.'/classes/GetVersionFromDb.php');
+include_once(INSTALL_PATH.'/classes/GetVersionFromDb.php');
 
-require_once(INSTALL_PATH.'/classes/LanguagesManager.php');
+include(INSTALL_PATH.'/classes/LanguagesManager.php');
 $lm = new LanguageManager(INSTALL_PATH.'/langs/list.xml');
 $_LANG = array();
 $_LIST_WORDS = array();

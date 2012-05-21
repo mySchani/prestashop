@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -136,22 +136,16 @@ if (strtoupper($result) == 'VERIFIED')
 		elseif (Order::getOrderByCartId((int)($cart_secure[0])))
 			$errors = $paypal->getL('order').'<br />';
 		else
-			$paypal->validateOrder((int)$cart_secure[0], Configuration::get('PS_OS_PAYMENT'), (float)($_POST['mc_gross']), $paypal->displayName, $paypal->getL('transaction').$_POST['txn_id'], array('transaction_id' => $_POST['txn_id'], 'payment_status' => $_POST['payment_status']), NULL, false, $cart_secure[1]);
+			$paypal->validateOrder((int)$cart_secure[0], _PS_OS_PAYMENT_, (float)($_POST['mc_gross']), $paypal->displayName, $paypal->getL('transaction').$_POST['txn_id'], array('transaction_id' => $_POST['txn_id'], 'payment_status' => $_POST['payment_status']), NULL, false, $cart_secure[1]);
 	}
 }
 else
 	$errors .= $paypal->getL('verified');
 
-// Set transaction details if pcc is defiend in PaymentModule class
-if (isset($paypal->pcc))
-{
-	$this->pcc->transaction_id = (isset($_POST['txn_id']) ? $_POST['txn_id'] : '');
-}
-
 if (!empty($errors) AND isset($_POST['custom']))
 {
 	if (strtoupper($_POST['payment_status']) == 'PENDING')
-		$paypal->validateOrder((int)$cart_secure[0], Configuration::get('PS_OS_PAYPAL'), (float)$_POST['mc_gross'], $paypal->displayName, $paypal->getL('transaction').$_POST['txn_id'].'<br />'.$errors, array('transaction_id' => $_POST['txn_id'], 'payment_status' => $_POST['payment_status']), NULL, false, $cart_secure[1]);
+		$paypal->validateOrder((int)$cart_secure[0], _PS_OS_PAYPAL_, (float)$_POST['mc_gross'], $paypal->displayName, $paypal->getL('transaction').$_POST['txn_id'].'<br />'.$errors, array('transaction_id' => $_POST['txn_id'], 'payment_status' => $_POST['payment_status']), NULL, false, $cart_secure[1]);
 	else
-		$paypal->validateOrder((int)$cart_secure[0], Configuration::get('PS_OS_ERROR'), 0, $paypal->displayName, $errors.'<br />', array(), NULL, false, $cart_secure[1]);
+		$paypal->validateOrder((int)$cart_secure[0], _PS_OS_ERROR_, 0, $paypal->displayName, $errors.'<br />', array(), NULL, false, $cart_secure[1]);
 }

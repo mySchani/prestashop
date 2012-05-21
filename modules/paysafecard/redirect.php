@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,14 +30,12 @@ include(dirname(__FILE__).'/paysafecard.php');
 
 $module = new PaysafeCard();
 
-$url = (_PS_VERSION_ < '1.5') ? 'order.php?step=3' : 'index.php?controller=order&step=3';
-
 if (!$cart->id OR $cart->id_customer == 0 OR $cart->id_address_delivery == 0 OR $cart->id_address_invoice == 0 OR !$module->active)
-	Tools::redirect($url);
+	Tools::redirect('index.php?controller=order&step=3');
 	
 $currency = new Currency($cart->id_currency);
 if (!$module->isCurrencyActive($currency->iso_code))
-	Tools::redirect($url);
+	Tools::redirect('index.php?controller=order&step=3');
 
 $result = $module->createDisposition($cart);
 

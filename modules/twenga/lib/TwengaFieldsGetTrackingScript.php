@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2012 PrestaShop
+ * 2007-2011 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -19,17 +19,21 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author PrestaShop SA <contact@prestashop.com>
- *  @copyright 2007-2012 PrestaShop SA : 6 rue lacepede, 75005 PARIS
- *  @version  Release: $Revision: 14011 $
+ *  @copyright 2007-2011 PrestaShop SA : 6 rue lacepede, 75005 PARIS
+ *  @version  Release: $Revision: 6844 $
  *  @license	http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  **/
 
+/**
+ * @author Nans Pellicari - Prestashop
+ * @version 1.3
+ */
 class TwengaFieldsGetTrackingScript extends TwengaFields
 {
 	public function __construct()
 	{
-		if (!is_array($this->fields) AND empty($this->fields))
+		if(!is_array($this->fields) AND empty($this->fields))
 		{
 			// required
 			$this->fields['PARTNER_AUTH_KEY'] = array(56, array('is_string', 'isCleanHtml'), true);
@@ -68,15 +72,15 @@ class TwengaFieldsGetTrackingScript extends TwengaFields
 			$str_error .= ' '.$key.' ';
 			$str_error .= isset($item['name']) ? $item['name'].' ' : '';
 			$str_error .= ' :';
-			if (isset($item['total_ht']) && !Validate::isFloat($item['total_ht']))
+			if(isset($item['total_ht']) && !Validate::isFloat($item['total_ht']))
 				throw new TwengaFieldsException($str_error.Tools::displayError('The total HT must be a float value.'));
-			if (isset($item['quantity']) && !Validate::isInt($item['quantity']))
+			if(isset($item['quantity']) && !Validate::isInt($item['quantity']))
 				throw new TwengaFieldsException($str_error.Tools::displayError('The quantity must be a integer value.'));
-			if (isset($item['sku']) && !is_string($item['sku']) && strlen($item['sku']) > 40)
+			if(isset($item['sku']) && !is_string($item['sku']) && strlen($item['sku']) > 40)
 				throw new TwengaFieldsException($str_error.Tools::displayError('The sku must be a string with length less than 40 chars.'));
-			if (isset($item['name']) && !is_string($item['name']))
+			if(isset($item['name']) && !is_string($item['name']))
 				throw new TwengaFieldsException($str_error.Tools::displayError('The name must be a string with length less than 100 chars.'));
-			if (isset($item['category_name']) && !is_string($item['category_name']))
+			if(isset($item['category_name']) && !is_string($item['category_name']))
 				throw new TwengaFieldsException($str_error.Tools::displayError('The category name must be a string with length less than 100 chars.'));
 		}
 		return true;

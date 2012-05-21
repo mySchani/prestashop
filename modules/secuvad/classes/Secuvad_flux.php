@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -120,13 +120,13 @@ class Secuvad_flux
 				break;
 		}
 		
-		if ($address_invoice->company == '')
+		if($address_invoice->company == '')
 			$flux_xml .= '<client mode="facturation" qualite="particulier">'."\n";
 		else
 			$flux_xml .= '<client mode="facturation" qualite="entreprise">'."\n";
 		$flux_xml .= '<nom titre="'.$gender .'">'.$address_invoice->lastname.'</nom>'."\n";
 		$flux_xml .= '<prenom>'.$address_invoice->firstname.'</prenom>'."\n";
-		if ($address_invoice->company != '')	
+		if($address_invoice->company != '')	
 			$flux_xml .= '<societe>'.$address_invoice->company.'</societe>'."\n";
 		$flux_xml .= '<telephoneperso>'.$address_invoice->phone.'</telephoneperso>'."\n";
 		$flux_xml .= '<portable>'.$address_invoice->phone_mobile.'</portable>'."\n";
@@ -162,17 +162,17 @@ class Secuvad_flux
 
 		$flux_xml .= '<paiement>'."\n";
 		$flux_xml .= '<paiementtype>'."\n";
-		if ($code_payment == 'cheque')
+		if($code_payment == 'cheque')
 			$flux_xml .= '<cheque></cheque>'."\n";
-		elseif ($code_payment == 'virement')
+		elseif($code_payment == 'virement')
 			$flux_xml .= '<virement></virement>'."\n";
-		elseif ($code_payment == 'paypal')
+		elseif($code_payment == 'paypal')
 			$flux_xml .= '<paypal></paypal>'."\n";
-		elseif ($code_payment == 'cb en n fois')
+		elseif($code_payment == 'cb en n fois')
 			$flux_xml .= '<CBX></CBX>'."\n";
-		elseif ($code_payment == 'contre-remboursement')
+		elseif($code_payment == 'contre-remboursement')
 			$flux_xml .= '<CR></CR>'."\n";
-		elseif ($code_payment == "carte")
+		elseif($code_payment == "carte")
 		{
 			if (!empty($card_number))
 			{

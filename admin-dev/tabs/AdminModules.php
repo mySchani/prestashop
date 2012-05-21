@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14100 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7451 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,50 +40,32 @@ class AdminModules extends AdminTab
 	private $listTabModules;
 	private $listPartnerModules = array();
 	private $listNativeModules = array();
-	private $_moduleCacheFile = '/config/modules_list.xml';
- 	public $xml_modules_list = 'http://www.prestashop.com/xml/modules_list.xml';
+	private $_moduleCacheFile;
 	static private $MAX_DISP_AUTHOR = 20;		// maximum length to display
 	
 
-	public function __construct()
+	function __construct()
 	{
-		parent::__construct();
+		parent::__construct ();
 		
-		$this->listTabModules['administration'] = $this->l('Administration');
-		$this->listTabModules['advertising_marketing'] = $this->l('Advertising & Marketing');
-		$this->listTabModules['analytics_stats'] = $this->l('Analytics & Stats');
-		$this->listTabModules['billing_invoicing'] = $this->l('Billing & Invoicing');
-		$this->listTabModules['checkout'] = $this->l('Checkout');
-		$this->listTabModules['content_management'] = $this->l('Content Management');
-		$this->listTabModules['export'] = $this->l('Export');
-		$this->listTabModules['front_office_features'] = $this->l('Front Office Features');
-		$this->listTabModules['i18n_localization'] = $this->l('I18n & Localization');
-		$this->listTabModules['merchandizing'] = $this->l('Merchandizing');
-		$this->listTabModules['migration_tools'] = $this->l('Migration Tools');
-		$this->listTabModules['mobile'] = $this->l('Mobile');
-		$this->listTabModules['payments_gateways'] = $this->l('Payments & Gateways');
-		$this->listTabModules['payment_security'] = $this->l('Payment Security');
-		$this->listTabModules['pricing_promotion'] = $this->l('Pricing & Promotion');
-		$this->listTabModules['quick_bulk_update'] = $this->l('Quick / Bulk update');
-		$this->listTabModules['search_filter'] = $this->l('Search & Filter');
-		$this->listTabModules['seo'] = $this->l('SEO');
-		$this->listTabModules['shipping_logistics'] = $this->l('Shipping & Logistics');
-		$this->listTabModules['slideshows'] = $this->l('Slideshows');
-		$this->listTabModules['smart_shopping'] = $this->l('Smart Shopping');
-		$this->listTabModules['market_place'] = $this->l('Market Place');
-		$this->listTabModules['social_networks'] = $this->l('Social Networks');
-		$this->listTabModules['others'] = $this->l('Other Modules');
+		$this->_moduleCacheFile = _PS_ROOT_DIR_.'/config/modules_list.xml';
 		
-		if (file_exists(_PS_ROOT_DIR_.$this->_moduleCacheFile))
-			$xmlModules = @simplexml_load_file(_PS_ROOT_DIR_.$this->_moduleCacheFile);
-		else
-			$xmlModules = false;
+		//refresh modules_list.xml every week
+		if (!$this->isFresh()) 
+			$this->refresh();
+		
+		$this->listTabModules = array('administration' => $this->l('Administration'), 'advertising_marketing' => $this->l('Advertising & Marketing'),
+		 'analytics_stats' => $this->l('Analytics & Stats'), 'billing_invoicing' => $this->l('Billing & Invoicing'), 'checkout' => $this->l('Checkout'),
+		 'content_management' => $this->l('Content Management'), 'export' => $this->l('Export'), 'front_office_features' => $this->l('Front Office Features'),
+		 'i18n_localization' => $this->l('I18n & Localization'), 'merchandizing' => $this->l('Merchandizing'), 'migration_tools' => $this->l('Migration Tools'),
+		 'payments_gateways' => $this->l('Payments & Gateways'), 'payment_security' => $this->l('Payment Security'), 'pricing_promotion' => $this->l('Pricing & Promotion'),
+		 'quick_bulk_update' => $this->l('Quick / Bulk update'), 'search_filter' => $this->l('Search & Filter'), 'seo' => $this->l('SEO'), 'shipping_logistics' => $this->l('Shipping & Logistics'),
+		 'slideshows' => $this->l('Slideshows'), 'smart_shopping' => $this->l('Smart Shopping'), 'market_place' => $this->l('Market Place'), 'social_networks' => $this->l('Social Networks'), 'others'=> $this->l('Other Modules'));
+		 
+		 $xmlModules = @simplexml_load_file($this->_moduleCacheFile);
 
-		if ($xmlModules)
-		{
 		 foreach($xmlModules->children() as $xmlModule)
-		 {
-				if ($xmlModule->attributes() == 'native')
+		 	if ($xmlModule->attributes() == 'native')
 		 		foreach($xmlModule->children() as $module)
 		 			foreach($module->attributes() as $key => $value)
 		 			if ($key == 'name')
@@ -93,30 +75,6 @@ class AdminModules extends AdminTab
 		 			foreach($module->attributes() as $key => $value)
 		 			if ($key == 'name')
 		 				$this->listPartnerModules[] = (string)$value;
-			}
-		}
-	}
-
-	/** if modules_list.xml is outdated, 
-	 * this function will re-upload it from prestashop.com
-	 *
-	 * @return null
-	 */
-	public function ajaxProcessRefreshModuleList()
-	{
-		//refresh modules_list.xml every week
-		if (!$this->isFresh()) 
-		{
-			$this->refresh();
-			$this->status = 'refresh';
-		}
-		else
-			$this->status = 'cache';
-	}
-
-	public function displayAjaxRefreshModuleList()
-	{
-		echo Tools::jsonEncode(array('status' => $this->status));
 	}
 	
 	public function postProcess()
@@ -162,7 +120,7 @@ class AdminModules extends AdminTab
 				if (Validate::isLoadedObject($module))
 				{
 					$module->enable();
-					Tools::redirectAdmin($currentIndex.'&conf=5'.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name);
+					Tools::redirectAdmin($currentIndex.'&conf=5&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name);
 				} else
 					$this->_errors[] = Tools::displayError('Cannot load module object');
 			} else
@@ -176,7 +134,7 @@ class AdminModules extends AdminTab
 				if (Validate::isLoadedObject($module))
 				{
 					$module->disable();
-					Tools::redirectAdmin($currentIndex.'&conf=5'.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name);
+					Tools::redirectAdmin($currentIndex.'&conf=5&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name);
 				} else
 					$this->_errors[] = Tools::displayError('Cannot load module object');
 			} else
@@ -206,13 +164,6 @@ class AdminModules extends AdminTab
 		/* Automatically copy a module from external URL and unarchive it in the appropriated directory */
 		if (Tools::isSubmit('submitDownload'))
 		{
-			/* PrestaShop demo mode */
-			if (_PS_MODE_DEMO_)
-			{
-				$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-				return;
-			}
-			/* PrestaShop demo mode*/
 		 	if ($this->tabAccess['add'] === '1')
 			{
 				if (Validate::isModuleUrl($url = Tools::getValue('url'), $this->_errors))
@@ -228,13 +179,6 @@ class AdminModules extends AdminTab
 		}
 		if (Tools::isSubmit('submitDownload2'))
 		{
-		 	/* PrestaShop demo mode */
-			if (_PS_MODE_DEMO_)
-			{
-				$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-				return;
-			}
-			/* PrestaShop demo mode*/
 		 	if ($this->tabAccess['add'] === '1')
 			{
 				if (!isset($_FILES['file']['tmp_name']) OR empty($_FILES['file']['tmp_name']))
@@ -249,6 +193,28 @@ class AdminModules extends AdminTab
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
 		}
+		
+		// Enable / disable module
+		if (Tools::getValue('enable') !== false)
+		{
+		 	if ($this->tabAccess['edit'] === '1')
+			{
+				$module = Module::getInstanceByName(Tools::getValue('module_name'));
+				if (Validate::isLoadedObject($module))
+				{
+					if (Tools::getValue('enable'))
+						$module->enable();
+					else
+						$module->disable();
+					Tools::redirectAdmin($this->getCurrentUrl('enable'));
+				}
+				else
+					$this->_errors[] = Tools::displayError('Cannot load module object');
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+		}
+		
 		if (Tools::isSubmit('deleteModule'))
 		{
 		 	if ($this->tabAccess['delete'] === '1')
@@ -257,7 +223,7 @@ class AdminModules extends AdminTab
 				{
 					$moduleDir = _PS_MODULE_DIR_.str_replace(array('.', '/', '\\'), array('', '', ''), Tools::getValue('module_name'));
 					$this->recursiveDeleteOnDisk($moduleDir);
-					Tools::redirectAdmin($currentIndex.'&conf=22&token='.$this->token.'&tab_module='.Tools::getValue('tab_module'));
+					Tools::redirectAdmin($currentIndex.'&conf=22&token='.$this->token.'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name'));
 				}
 				Tools::redirectAdmin($currentIndex.'&token='.$this->token);
 			}
@@ -292,47 +258,73 @@ class AdminModules extends AdminTab
 							$this->_errors[] = Tools::displayError('This module is already installed : ').$module->name;
 						elseif ($key == 'uninstall' AND !Module::isInstalled($module->name))
 							$this->_errors[] = Tools::displayError('This module is already uninstalled : ').$module->name;
-						elseif (($echo = $module->{$method}()) AND ($key == 'configure') AND Module::isInstalled($module->name))
+						else
 						{
-							$backlink = $currentIndex.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name;
-							$hooklink = 'index.php?tab=AdminModulesPositions&token='.Tools::getAdminTokenLite('AdminModulesPositions').'&show_modules='.(int)$module->id;
-							$tradlink = 'index.php?tab=AdminTranslations&token='.Tools::getAdminTokenLite('AdminTranslations').'&type=modules&lang=';
-							
-							$toolbar = '
-							<table class="table" cellpadding="0" cellspacing="0" style="margin:auto;text-align:center">
-								<tr>
-									<th>'.$this->l('Module').' <span style="color: green;">'.$module->name.'</span></th>
-									<th><a href="'.$backlink.'" style="padding:5px 10px">'.$this->l('Back').'</a></th>
-									<th><a href="'.$hooklink.'" style="padding:5px 10px">'.$this->l('Manage hooks').'</a></th>
-									<th style="padding:5px 10px">'.$this->l('Manage translations:').' ';
-									foreach (Language::getLanguages(false) AS $language)
-										$toolbar .= '<a href="'.$tradlink.$language['iso_code'].'#'.$module->name.'" style="margin-left:5px"><img src="'._THEME_LANG_DIR_.$language['id_lang'].'.jpg" alt="'.$language['iso_code'].'" title="'.$language['iso_code'].'" /></a>';
-							$toolbar .= '
-									</th>
-								</tr>
-							</table>';
-							
-							echo 
-							$toolbar.'
-							<div class="clear">&nbsp;</div>'.$echo.'<div class="clear">&nbsp;</div>
-							'.$toolbar;
+							if (((method_exists($module, $method) && ($echo = $module->{$method}())) || ($echo = ' ')) AND $key == 'configure' AND Module::isInstalled($module->name))
+							{
+								$backlink = $currentIndex.'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name;
+								$hooklink = 'index.php?tab=AdminModulesPositions&token='.Tools::getAdminTokenLite('AdminModulesPositions').'&show_modules='.(int)$module->id;
+								$tradlink = 'index.php?tab=AdminTranslations&token='.Tools::getAdminTokenLite('AdminTranslations').'&type=modules&lang=';
+								
+								$toolbar = '
+								<table class="table" cellpadding="0" cellspacing="0" style="margin:auto;text-align:center">
+									<tr>
+										<th>'.$this->l('Module').' <span style="color: green;">'.$module->name.'</span></th>
+										<th><a href="'.$backlink.'" style="padding:5px 10px">'.$this->l('Back').'</a></th>
+										<th><a href="'.$hooklink.'" style="padding:5px 10px">'.$this->l('Manage hooks').'</a></th>
+										<th style="padding:5px 10px">'.$this->l('Manage translations:').' ';
+										foreach (Language::getLanguages(false) AS $language)
+											$toolbar .= '<a href="'.$tradlink.$language['iso_code'].'#'.$module->name.'" style="margin-left:5px"><img src="'._THEME_LANG_DIR_.$language['id_lang'].'.jpg" alt="'.$language['iso_code'].'" title="'.$language['iso_code'].'" /></a>';
+								$toolbar .= '
+										</th>
+									</tr>';
+	
+								// Display checkbox in toolbar if multishop
+								if (Tools::isMultiShopActivated())
+								{
+									$activateOnclick = 'onclick="location.href = \''.$this->getCurrentUrl('enable').'&enable=\'+(($(this).attr(\'checked\')) ? 1 : 0)"';
+									$toolbar .= '<tr>
+										<th colspan="4">
+											<input type="checkbox" name="activateModule" value="1" '.(($module->active) ? 'checked="checked"' : '').' '.$activateOnclick.' /> '.$this->l('Activate module for').' ';
+									if (Shop::getContextType() == Shop::CONTEXT_SHOP)
+									{
+										$shop = new Shop((int)Shop::getCurrentShop());
+										$toolbar .= 'shop <b>'.$shop->name.'</b>';
+									}
+									elseif (Shop::getContextType() == Shop::CONTEXT_GROUP)
+									{
+										$group_shop = new GroupShop((int)Shop::getCurrentGroupShop());
+										$toolbar .= 'all shops of group shop <b>'.$group_shop->name.'</b>';
+									}
+									elseif (Shop::getContextType() == Shop::CONTEXT_ALL)
+										$toolbar .= 'all shops';
+									$toolbar .= '</th>
+									</tr>';
+								}
+								
+								$toolbar .= '</table>';
+								
+								// Display configure page
+								echo $toolbar.'
+								<div class="clear">&nbsp;</div>'.$echo.'<div class="clear">&nbsp;</div>
+								'.$toolbar;
+							}
+							elseif($echo)
+								$return = ($method == 'install' ? 12 : 13);
+							elseif ($echo === false)
+								$module_errors[] = $name;
 						}
-						elseif ($echo)
-							$return = ($method == 'install' ? 12 : 13);
-						elseif ($echo === false)
-							$module_errors[] = $name;
 						if ($key != 'configure' AND isset($_GET['bpay']))
 							Tools::redirectAdmin('index.php?tab=AdminPayment&token='.Tools::getAdminToken('AdminPayment'.(int)(Tab::getIdFromClassName('AdminPayment')).(int)($cookie->id_employee)));
 					}
 				if (sizeof($module_errors))
 				{
-					// If error during module installation, no redirection
 					$htmlError = '';
 
 					foreach ($module_errors AS $module_error)
 						$htmlError .= '<li>'.$module_error.'</li>';
 					$htmlError .= '</ul>';
-					$this->_errors[] = sprintf(Tools::displayError('The following module(s) were not installed successfully: %s'), $htmlError);
+					$this->_errors[] = Tools::displayError('The following module(s) were not installed successfully:'.$htmlError);
 				}
 			}
 			if ($return)
@@ -346,12 +338,10 @@ class AdminModules extends AdminTab
 		$success = false;
 		if (substr($file, -4) == '.zip')
 		{
-			if (Tools::ZipExtract($file, _PS_MODULE_DIR_))
-				$success = true;
+			if (!Tools::ZipExtract($file, _PS_MODULE_DIR_))
+					$this->_errors[] = Tools::displayError('Error while extracting module (file may be corrupted).');
+			}
 			else
-				$this->_errors[] = Tools::displayError('Error while extracting module (file may be corrupted).');
-		}
-		else
 		{
 			$archive = new Archive_Tar($file);
 			if ($archive->extract(_PS_MODULE_DIR_))
@@ -419,38 +409,10 @@ class AdminModules extends AdminTab
 				$(\'input[name="filtername"]\').result(function(event, data, formatted) {
 				 $(\'#filternameForm\').submit();
 				});
-			});';
-
-			// the following to get modules_list.xml from prestashop.com
-			echo '$(document).ready(function(){
-				try
-				{
-					resAjax = $.ajax({
-							type:"POST",
-							url : "'. str_replace('index','ajax-tab',$currentIndex) . '",
-							async: true,
-							data : {
-								ajaxMode : "1",
-								ajax : "1",
-								token : "'.$this->token.'",
-								tab : "AdminModules",
-								action : "refreshModuleList"
-							},
-							success : function(res,textStatus,jqXHR)
-							{
-								// res.status  = cache or refresh
-							},
-							error: function(res,textStatus,jqXHR)
-							{
-								alert("TECHNICAL ERROR"+res);
-							}
-						});
-				}
-				catch(e){}
-			});	
+			});
+			
 		</script>';
 	}
-
 	public static function sortModule($a, $b)
 	{
 	    if (sizeof($a) == sizeof($b)) {
@@ -637,6 +599,7 @@ class AdminModules extends AdminTab
 			'.$this->l('Add a module from my computer').'
 		</span>
 		&nbsp;|&nbsp;';
+		if (@fsockopen('www.prestashop.com', 80))
 		echo '<a href="index.php?tab=AdminAddonsMyAccount&token='.Tools::getAdminTokenLite('AdminAddonsMyAccount').'">
 			<img src="https://addons.prestashop.com/modules.php?'.(isset($_SERVER['SERVER_ADDR']) ? 'server='.ip2long($_SERVER['SERVER_ADDR']).'&' : '').'mods='.$serialModules.'" alt="Add" class="middle" />
 			'.$this->l('Add a module from PrestaShop Addons').'
@@ -691,11 +654,11 @@ class AdminModules extends AdminTab
 		$concatWarning = array();
 		foreach ($orderModule AS $tabModule)
 			foreach ($tabModule AS $module)
-				if ($module->active AND $module->warning)
+				if ($module->active AND isset($module->warning) && $module->warning)
 					$warnings[] ='<a href="'.$currentIndex.'&configure='.urlencode($module->name).'&token='.$this->token.'">'.$module->displayName.'</a> - '.stripslashes(pSQL($module->warning));
 		$this->displayWarning($warnings);
 		echo '<form method="POST">
-			<table cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:5px;">
+			<table cellpadding="0" cellspacing="0" style="width:100%;;margin-bottom:5px;">
 				<tr>
 					<th style="border-right:solid 1px;border:inherit">
 						<span class="button" style="padding:0.4em;">
@@ -794,9 +757,9 @@ class AdminModules extends AdminTab
 		 	}
 		 	return false;
 		 });
-		'.(!$goto ? '': 'if ($(\'#'.$goto.'_content\').length > 0) $(\'#'.$goto.'_content\').slideToggle( function (){
+		'.(!$goto ? '': '$(\'#'.$goto.'_content\').slideToggle( function (){
 		$(\'#'.$goto.'_img\').attr(\'src\', \'../img/admin/less.png\');
-		'.(!$goto ? '' : 'if ($("#modgo_'.Tools::getValue('module_name').'").length > 0) $.scrollTo($("#modgo_'.Tools::getValue('module_name').'"), 300 , 
+		'.(!$goto ? '' : '$.scrollTo($("#modgo_'.Tools::getValue('module_name').'"), 300 , 
 		{onAfter:function(){
 			$("#modgo_'.Tools::getValue('module_name').'").fadeTo(100, 0, function (){
 				$(this).fadeTo(100, 0, function (){
@@ -853,7 +816,7 @@ class AdminModules extends AdminTab
 						echo '</td>
 						<td class="center" style="width:60px" rowspan="2">';
 					if ($module->id)
-						echo '<a href="'.$currentIndex.'&token='.$this->token.'&module_name='.$module->name.'&'.($module->active ? 'desactive' : 'active').'">';
+						echo '<a href="'.$currentIndex.'&token='.$this->token.'&module_name='.$module->name.'&'.($module->active ? 'enable=0' : 'enable=1').'">';
 					echo $img;
 					if ($module->id)
 						'</a>';
@@ -864,7 +827,7 @@ class AdminModules extends AdminTab
 						? '<input type="button" class="button small" name="Install" value="'.$this->l('Install').'"
 						onclick="javascript:document.location.href=\''.$currentIndex.'&install='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.$module->name.'\'">'
 						: '<input type="button" class="button small" name="Uninstall" value="'.$this->l('Uninstall').'"
-						onclick="'.((!method_exists($module, 'onclickOption')) ? ((empty($module->confirmUninstall)) ? '' : 'if (confirm(\''.addslashes($module->confirmUninstall).'\')) ').'document.location.href=\''.$href.'\'' : $module->onclickOption('uninstall', $href)).'">').'</td>
+						onclick="'.((!method_exists($module, 'onclickOption')) ? ((empty($module->confirmUninstall)) ? '' : 'if(confirm(\''.addslashes($module->confirmUninstall).'\')) ').'document.location.href=\''.$href.'\'' : $module->onclickOption('uninstall', $href)).'">').'</td>
 						
 					</tr>
 					<tr'.($irow++ % 2 ? ' class="alt_row"' : '').'>
@@ -920,35 +883,36 @@ class AdminModules extends AdminTab
 	public function displayOptions($module)
 	{
 		global $currentIndex;
+		
 		$return = '';
-		$href = $currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&tab_module='.$module->tab;
+		$href = $currentIndex.'&token='.$this->token.'&module_name='.
+			urlencode($module->name).'&tab_module='.$module->tab;
 
-		$hrefDelete = $currentIndex.'&deleteModule='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.urlencode($module->name);
-		$return .= '<a class="action_module_delete" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('delete', $hrefDelete).'"' : '').' onclick="return confirm(\''.$this->l('This action will permanently remove the module from the server. Are you sure you want to do this ?').'\');" href="'.$hrefDelete.'">'.$this->l('Delete').'</a>&nbsp;&nbsp;';
+		if ($module->id)
+			$return .= '<a class="action_module" '.($module->active && method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('desactive', $href).'"' : '').' href="'.$currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&'.($module->active ? 'enable=0' : 'enable=1').'&tab_module='.$module->tab.'&module_name='.urlencode($module->name).'" '.((Tools::isMultiShopActivated()) ? 'title="'.htmlspecialchars($module->active ? $this->l('Disable this module') : $this->l('Enable this module for all shops')).'"' : '').'>'.($module->active ? $this->l('Disable') : $this->l('Enable')).'</a>&nbsp;&nbsp;';
 		
-		if ((int)$module->id)
-			$return .= '<a class="action_module" '.($module->active && method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('desactive', $href).'"' : '').' href="'.$currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&'.($module->active ? 'desactive' : 'active').'&tab_module='.$module->tab.'">'.($module->active ? $this->l('Disable') : $this->l('Enable')).'</a>&nbsp;&nbsp;';
+		if ($module->id AND $module->active)
+			$return .= '<a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('reset', $href).'"' : '').' href="'.$currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&reset&tab_module='.$module->tab.'&module_name='.urlencode($module->name).'">'.$this->l('Reset').'</a>&nbsp;&nbsp;';
 		
-		if ((int)$module->id && $module->active)
-			$return .= '<a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('reset', $href).'"' : '').' href="'.$currentIndex.'&token='.$this->token.'&module_name='.urlencode($module->name).'&reset&tab_module='.$module->tab.'">'.$this->l('Reset').'</a>&nbsp;&nbsp;';
-		
-		if ((int)$module->id && $module->active && (method_exists($module, 'getContent') || (isset($module->is_configurable) && (int)$module->is_configurable)))
+		if ($module->id AND (method_exists($module, 'getContent') OR (isset($module->is_configurable) AND $module->is_configurable) OR Tools::isMultiShopActivated()))
 			$return .= '<a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('configure', $href).'"' : '').' href="'.$currentIndex.'&configure='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.urlencode($module->name).'">'.$this->l('Configure').'</a>&nbsp;&nbsp;';
+			
+		$return .= '<a class="action_module" '.(method_exists($module, 'onclickOption')? 'onclick="'.$module->onclickOption('delete', $href).'"' : '').' onclick="return confirm(\''.$this->l('This action will permanently remove the module from the server. Are you sure you want to do this ?').'\');" href="'.$currentIndex.'&deleteModule='.urlencode($module->name).'&token='.$this->token.'&tab_module='.$module->tab.'&module_name='.urlencode($module->name).'">'.$this->l('Delete').'</a>&nbsp;&nbsp;';
 		
 		return $return;
 	}
 	
 	public function isFresh($timeout = 604800000)
 	{
-		if (file_exists(_PS_ROOT_DIR_ . $this->_moduleCacheFile))
-			return ((time() - filemtime(_PS_ROOT_DIR_ . $this->_moduleCacheFile)) < $timeout);
+		if (file_exists($this->_moduleCacheFile))
+			return ((time() - filemtime($this->_moduleCacheFile)) < $timeout);
 		else
 			return false;
 	}
 	
 	public function refresh()
 	{
-		return file_put_contents(_PS_ROOT_DIR_.$this->_moduleCacheFile, Tools::file_get_contents($this->xml_modules_list));
+		return file_put_contents($this->_moduleCacheFile, Tools::file_get_contents('http://www.prestashop.com/xml/modules_list.xml'));
 	}
 	
 	public function displaySelectedFilter()

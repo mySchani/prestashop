@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,7 +80,7 @@ class MessageCore extends ObjectModel
 	  * @param integer $id_cart Cart ID
 	  * @return array Message
 	  */
-	public static function getMessageByCartId($id_cart)
+	static public function getMessageByCartId($id_cart)
 	{
 		$db = Db::getInstance();
 		$result = $db->getRow('
@@ -98,7 +98,7 @@ class MessageCore extends ObjectModel
 	  * @param boolean $private return WITH private messages
 	  * @return array Messages
 	  */
-	public static function getMessagesByOrderId($id_order, $private = false)
+	static public function getMessagesByOrderId($id_order, $private = false)
 	{
 	 	if (!Validate::isBool($private))
 	 		die(Tools::displayError());
@@ -124,7 +124,7 @@ class MessageCore extends ObjectModel
 	  * @param boolean $private return WITH private messages
 	  * @return array Messages
 	  */
-	public static function getMessagesByCartId($id_cart, $private = false)
+	static public function getMessagesByCartId($id_cart, $private = false)
 	{
 	 	if (!Validate::isBool($private))
 	 		die(Tools::displayError());
@@ -149,7 +149,7 @@ class MessageCore extends ObjectModel
 	  * @param integer $id_message Message ID
 	  * @param integer $id_emplyee Employee ID
 	  */
-	public static function markAsReaded($id_message, $id_employee)
+	static public function markAsReaded($id_message, $id_employee)
 	{
 	 	if (!Validate::isUnsignedId($id_message) OR !Validate::isUnsignedId($id_employee))
 	 		die(Tools::displayError());

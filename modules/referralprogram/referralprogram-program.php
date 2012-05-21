@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,7 +33,7 @@ require_once(dirname(__FILE__).'/../../init.php');
 include_once(dirname(__FILE__).'/ReferralProgramModule.php');
 
 if (!$cookie->isLogged())
-	Tools::redirect('authentication.php?back=modules/referralprogram/referralprogram-program.php');
+	Tools::redirect('index.php?controller=authentication&back=modules/referralprogram/referralprogram-program.php');
 
 Tools::addCSS(_PS_CSS_DIR_.'thickbox.css', 'all');
 Tools::addJS(array(_PS_JS_DIR_.'jquery/thickbox-modified.js',_PS_JS_DIR_.'jquery/jquery.idTabs.modified.js'));
@@ -41,15 +41,7 @@ Tools::addJS(array(_PS_JS_DIR_.'jquery/thickbox-modified.js',_PS_JS_DIR_.'jquery
 include(dirname(__FILE__).'/../../header.php');
 
 // get discount value (ready to display)
-$discount_type = (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE'));
-if ($discount_type == 1)
-{
-	$discount = Discount::display((float)(Configuration::get('REFERRAL_PERCENTAGE')), $discount_type, new Currency($cookie->id_currency));
-}
-else
-{
-	$discount = Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency))), $discount_type, new Currency($cookie->id_currency));
-}
+$discount = Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency))), (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE')), new Currency($cookie->id_currency));
 
 $activeTab = 'sponsor';
 $error = false;
@@ -108,7 +100,7 @@ if (Tools::isSubmit('submitSponsorFriends') AND Tools::getValue('friendsEmail') 
 							'{email_friend}' => $friendEmail,
 							'{lastname_friend}' => $friendLastName,
 							'{firstname_friend}' => $friendFirstName,
-							'{link}' => 'authentication.php?create_account=1&sponsor='.base64_encode($cipherTool->encrypt($referralprogram->id.'|'.$referralprogram->email.'|')),
+							'{link}' => 'authentication.php?create_account=1&sponsor='.urlencode($cipherTool->encrypt($referralprogram->id.'|'.$referralprogram->email.'|')),
 							'{discount}' => $discount);
 						Mail::Send((int)($cookie->id_lang), 'referralprogram-invitation', Mail::l('Referral Program'), $vars, $friendEmail, $friendFirstName.' '.$friendLastName, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
 						$invitation_sent = true;
@@ -125,7 +117,7 @@ if (Tools::isSubmit('submitSponsorFriends') AND Tools::getValue('friendsEmail') 
 		if ($nbInvitation > 0)
 			unset($_POST);
 		//Not to stop the sending of e-mails in case of doubloon
-		if (sizeof($mails_exists))
+		if(sizeof($mails_exists))
 			$error = 'email exists';
 	}
 }
@@ -142,27 +134,27 @@ if (Tools::isSubmit('revive'))
 		{
 			if (ReferralProgramModule::isSponsorFriend((int)($cookie->id_customer), (int)($friendChecked)))
 			{
-				if (Configuration::get('PS_CIPHER_ALGORITHM'))
-					$cipherTool = new Rijndael(_RIJNDAEL_KEY_, _RIJNDAEL_IV_);
-				else
-					$cipherTool = new Blowfish(_COOKIE_KEY_, _COOKIE_IV_);
-				$referralprogram = new ReferralProgramModule((int)($key));
-				$vars = array(
-					'{email}' => $cookie->email,
-					'{lastname}' => $cookie->customer_lastname,
-					'{firstname}' => $cookie->customer_firstname,
-					'{email_friend}' => $referralprogram->email,
-					'{lastname_friend}' => $referralprogram->lastname,
-					'{firstname_friend}' => $referralprogram->firstname,
-					'{link}' => 'authentication.php?create_account=1&sponsor='.base64_encode($cipherTool->encrypt($referralprogram->id.'|'.$referralprogram->email.'|')),
-					'{discount}' => $discount
-				);
-				$referralprogram->save();
-				Mail::Send((int)($cookie->id_lang), 'referralprogram-invitation', Mail::l('Referral Program'), $vars, $referralprogram->email, $referralprogram->firstname.' '.$referralprogram->lastname, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
-				$revive_sent = true;
-				$nbRevive++;
-			}
+			if (Configuration::get('PS_CIPHER_ALGORITHM'))
+				$cipherTool = new Rijndael(_RIJNDAEL_KEY_, _RIJNDAEL_IV_);
+			else
+				$cipherTool = new Blowfish(_COOKIE_KEY_, _COOKIE_IV_);
+			$referralprogram = new ReferralProgramModule((int)($key));
+			$vars = array(
+				'{email}' => $cookie->email,
+				'{lastname}' => $cookie->customer_lastname,
+				'{firstname}' => $cookie->customer_firstname,
+				'{email_friend}' => $referralprogram->email,
+				'{lastname_friend}' => $referralprogram->lastname,
+				'{firstname_friend}' => $referralprogram->firstname,
+				'{link}' => 'authentication.php?create_account=1&sponsor='.urlencode($cipherTool->encrypt($referralprogram->id.'|'.$referralprogram->email.'|')),
+				'{discount}' => $discount
+			);
+			$referralprogram->save();
+			Mail::Send((int)($cookie->id_lang), 'referralprogram-invitation', Mail::l('Referral Program'), $vars, $referralprogram->email, $referralprogram->firstname.' '.$referralprogram->lastname, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
+			$revive_sent = true;
+			$nbRevive++;
 		}
+	}
 	}
 	else
 		$error = 'no revive checked';
@@ -196,3 +188,5 @@ $smarty->assign(array(
 echo Module::display(dirname(__FILE__).'/referralprogram.php', 'referralprogram-program.tpl');
 
 include(dirname(__FILE__).'/../../footer.php'); 
+
+

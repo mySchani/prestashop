@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14289 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7383 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -30,7 +30,7 @@ require_once(dirname(__FILE__).'/../images.inc.php');
 function bindDatepicker($id, $time)
 {
 	if ($time)
-		echo '
+	echo '
 		var dateObj = new Date();
 		var hours = dateObj.getHours();
 		var mins = dateObj.getMinutes();
@@ -42,7 +42,7 @@ function bindDatepicker($id, $time)
 
 	echo '
 	$(function() {
-		$("#'.Tools::htmlentitiesUTF8($id).'").datepicker({
+		$("#'.$id.'").datepicker({
 			prevText:"",
 			nextText:"",
 			dateFormat:"yy-mm-dd"'.($time ? '+time' : '').'});
@@ -54,9 +54,9 @@ function includeDatepicker($id, $time = false)
 {
 	global $cookie;
 	echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery-ui-1.8.10.custom.min.js"></script>';
-	$iso = Db::getInstance()->getValue('SELECT iso_code FROM '._DB_PREFIX_.'lang WHERE `id_lang` = '.(int)$cookie->id_lang);
+	$iso = Db::getInstance()->getValue('SELECT iso_code FROM '._DB_PREFIX_.'lang WHERE `id_lang` = '.(int)($cookie->id_lang));
 	if ($iso != 'en')
-		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/datepicker/ui/i18n/ui.datepicker-'.Tools::htmlentitiesUTF8($iso).'.js"></script>';
+		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/datepicker/ui/i18n/ui.datepicker-'.$iso.'.js"></script>';
 	echo '<script type="text/javascript">';
 		if (is_array($id))
 			foreach ($id as $id2)
@@ -73,18 +73,17 @@ function includeDatepicker($id, $time = false)
   * @param string $theme Theme name (eg. default)
   * @param array $arrayDB Parameters in order to connect to database
   */
-function rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
+function	rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 {
  	$defines = array();
-	$defines['__PS_BASE_URI__'] = ($baseUrls AND $baseUrls['__PS_BASE_URI__']) ? $baseUrls['__PS_BASE_URI__'] : __PS_BASE_URI__;
+	$defines['_PS_DIRECTORY_'] = ($baseUrls AND $baseUrls['_PS_DIRECTORY_']) ? $baseUrls['_PS_DIRECTORY_'] : _PS_DIRECTORY_;
 	$defines['_MEDIA_SERVER_1_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_1_'])) ? $baseUrls['_MEDIA_SERVER_1_'] : _MEDIA_SERVER_1_;
 	$defines['_MEDIA_SERVER_2_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_2_'])) ? $baseUrls['_MEDIA_SERVER_2_'] : _MEDIA_SERVER_2_;
 	$defines['_MEDIA_SERVER_3_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_3_'])) ? $baseUrls['_MEDIA_SERVER_3_'] : _MEDIA_SERVER_3_;
 	$defines['_PS_CACHING_SYSTEM_'] = _PS_CACHING_SYSTEM_;
 	$defines['_PS_CACHE_ENABLED_'] = _PS_CACHE_ENABLED_;
-	$defines['_THEME_NAME_'] = $theme ? $theme : _THEME_NAME_;
 	$defines['_DB_NAME_'] = (($arrayDB AND isset($arrayDB['_DB_NAME_'])) ? $arrayDB['_DB_NAME_'] : _DB_NAME_);
-	$defines['_MYSQL_ENGINE_'] = (($arrayDB AND isset($arrayDB['_MYSQL_ENGINE_'])) ? $arrayDB['_MYSQL_ENGINE_'] : _MYSQL_ENGINE_);
+	$defines['_MYSQL_ENGINE_'] = _MYSQL_ENGINE_;
 	$defines['_DB_SERVER_'] = (($arrayDB AND isset($arrayDB['_DB_SERVER_'])) ? $arrayDB['_DB_SERVER_'] : _DB_SERVER_);
 	$defines['_DB_USER_'] = (($arrayDB AND isset($arrayDB['_DB_USER_'])) ? $arrayDB['_DB_USER_'] : _DB_USER_);
 	$defines['_DB_PREFIX_'] = (($arrayDB AND isset($arrayDB['_DB_PREFIX_'])) ? $arrayDB['_DB_PREFIX_'] : _DB_PREFIX_);
@@ -92,7 +91,6 @@ function rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 	$defines['_DB_TYPE_'] = (($arrayDB AND isset($arrayDB['_DB_TYPE_'])) ? $arrayDB['_DB_TYPE_'] : _DB_TYPE_);
 	$defines['_COOKIE_KEY_'] = addslashes(_COOKIE_KEY_);
 	$defines['_COOKIE_IV_'] = addslashes(_COOKIE_IV_);
-	$defines['_PS_CREATION_DATE_'] = defined(_PS_CREATION_DATE_) ? _PS_CREATION_DATE_ : date('Y-m-d');
 	if (defined('_RIJNDAEL_KEY_'))
 		$defines['_RIJNDAEL_KEY_'] = addslashes(_RIJNDAEL_KEY_);
 	if (defined('_RIJNDAEL_IV_'))
@@ -118,7 +116,7 @@ function rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
   * @param boolean $withTime Display both date and time
   * @todo Several formats (french : DD-MM-YYYY)
   */
-function displayDate($sqlDate, $withTime = false)
+function	displayDate($sqlDate, $withTime = false)
 {
 	return strftime('%Y-%m-%d'.($withTime ? ' %H:%M:%S' : ''), strtotime($sqlDate));
 }
@@ -132,7 +130,7 @@ function displayDate($sqlDate, $withTime = false)
   * @param string $highlight String to highlight (in XHTML/CSS)
   * @param string $type Category type (products/cms)
   */
-function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryType = 'catalog')
+function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryType = 'catalog', $home = false)
 {
 	global $cookie;
 	
@@ -142,23 +140,22 @@ function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryT
 		SELECT id_category, level_depth, nleft, nright
 		FROM '._DB_PREFIX_.'category
 		WHERE id_category = '.(int)$id_category);
-
 		if (isset($category['id_category']))
 		{
 			$categories = Db::getInstance()->ExecuteS('
 			SELECT c.id_category, cl.name, cl.link_rewrite
 			FROM '._DB_PREFIX_.'category c
 			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category)
-			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)($cookie->id_lang).'
+			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)$cookie->id_lang.($home ? ' AND c.id_category='.$id_category : '').'
+			GROUP BY c.id_category
 			ORDER BY c.level_depth ASC
-			LIMIT '.(int)($category['level_depth'] + 1));
-			
+			LIMIT '.(!$home ? (int)($category['level_depth'] + 1) : 1));
 			$fullPath = '';
 			$n = 1;
 			$nCategories = (int)sizeof($categories);
 			foreach ($categories AS $category)
 			{
-				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.($category['id_category'] == 1 ? 'viewcategory' : 'addcategory').'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.($category['id_category'] == 1 ? 'home' : 'edit').'.gif" alt="" /></a> ';
+				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'addcategory').'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
 				$fullPath .= $edit.
 				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
 				(!empty($highlight) ? str_ireplace($highlight, '<span class="highlight">'.htmlentities($highlight, ENT_NOQUOTES, 'UTF-8').'</span>', $category['name']) : $category['name']).
@@ -212,9 +209,10 @@ function createDir($path, $rights)
 
 function checkPSVersion()
 {
-	$upgrader = new Upgrader();
-
-	return $upgrader->checkPSVersion();
+	libxml_set_streams_context(stream_context_create(array('http' => array('timeout' => 3))));
+	if ($feed = @simplexml_load_file('http://www.prestashop.com/xml/version.xml') AND _PS_VERSION_ < $feed->version->num)
+		return array('name' => $feed->version->name, 'link' => $feed->download->link);
+	return false;
 }
 
 function translate($string)
@@ -253,8 +251,8 @@ function checkingTab($tab)
 		echo Tools::displayError('Tab cannot be found.');
 		return false;
 	}
-	if ($row['module'] AND file_exists(_PS_MODULE_DIR_.$row['module'].'/'.$tab.'.php'))
-		include_once(_PS_MODULE_DIR_.$row['module'].'/'.$tab.'.php');
+	if ($row['module'] AND file_exists(_PS_MODULE_DIR_.'/'.$row['module'].'/'.$tab.'.php'))
+		include_once(_PS_MODULE_DIR_.'/'.$row['module'].'/'.$tab.'.php');
 	elseif (file_exists(PS_ADMIN_DIR.'/tabs/'.$tab.'.php'))
 		include_once(PS_ADMIN_DIR.'/tabs/'.$tab.'.php');
 

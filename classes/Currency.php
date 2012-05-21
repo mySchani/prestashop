@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7503 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -96,7 +96,7 @@ class CurrencyCore extends ObjectModel
 	 */
 	public static function exists ($iso_code)
 	{
-		if (is_int($iso_code))
+		if(is_int($iso_code))
 			$id_currency_exists = Currency::getIdByIsoCodeNum($iso_code);
 		else
 			$id_currency_exists = Currency::getIdByIsoCode($iso_code);
@@ -129,6 +129,7 @@ class CurrencyCore extends ObjectModel
 	{
 		if (!is_array($selection) OR !Validate::isTableOrIdentifier($this->identifier) OR !Validate::isTableOrIdentifier($this->table))
 			die(Tools::displayError());
+		$result = true;
 		foreach ($selection AS $id)
 		{
 			$obj = new Currency((int)($id));
@@ -181,13 +182,14 @@ class CurrencyCore extends ObjectModel
 	  *
 	  * @return array Currencies
 	  */
-	public static function getCurrencies($object = false, $active = 1)
+	static public function getCurrencies($object = false, $active = 1, $id_shop = false)
 	{
 		$tab = Db::getInstance()->ExecuteS('
 		SELECT *
-		FROM `'._DB_PREFIX_.'currency`
+		FROM `'._DB_PREFIX_.'currency` c
+		'.($id_shop ? 'LEFT JOIN '._DB_PREFIX_.'currency_shop cs ON (c.id_currency = cs.id_currency)' : '').'
 		WHERE `deleted` = 0
-		'.($active == 1 ? 'AND `active` = 1' : '').'
+		'.($active == 1 ? 'AND c.`active` = 1' : '').($id_shop ? ' AND cs.id_shop='.(int)$id_shop : '').'
 		ORDER BY `name` ASC');
 		if ($object)
 			foreach ($tab as $key => $currency)
@@ -195,35 +197,46 @@ class CurrencyCore extends ObjectModel
 		return $tab;
 	}
 
-	public static function getPaymentCurrenciesSpecial($id_module)
+	static public function getPaymentCurrenciesSpecial($id_module, $id_shop = null)
 	{
-		return Db::getInstance()->getRow('
-		SELECT mc.*
-		FROM `'._DB_PREFIX_.'module_currency` mc
-		WHERE mc.`id_module` = '.(int)($id_module));
+		if (is_null($id_shop))
+			$id_shop = Shop::getCurrentShop(true);
+
+		$sql = 'SELECT *
+				FROM '._DB_PREFIX_.'module_currency
+				WHERE id_module = '.(int)$id_module.'
+					AND id_shop ='.(int)$id_shop;
+		return Db::getInstance()->getRow($sql);
 	}
 
-	public static function getPaymentCurrencies($id_module)
+	static public function getPaymentCurrencies($id_module, $id_shop = null)
 	{
-		return Db::getInstance()->ExecuteS('
-		SELECT c.*
-		FROM `'._DB_PREFIX_.'module_currency` mc
-		LEFT JOIN `'._DB_PREFIX_.'currency` c ON c.`id_currency` = mc.`id_currency`
-		WHERE c.`deleted` = 0
-		AND mc.`id_module` = '.(int)($id_module).'
-		AND c.`active` = 1 
-		ORDER BY c.`name` ASC');
+		if (is_null($id_shop))
+			$id_shop = Shop::getCurrentShop(true);
+
+		$sql = 'SELECT c.*
+				FROM `'._DB_PREFIX_.'module_currency` mc
+				LEFT JOIN `'._DB_PREFIX_.'currency` c ON c.`id_currency` = mc.`id_currency`
+				WHERE c.`deleted` = 0
+					AND mc.`id_module` = '.(int)$id_module.'
+					AND c.`active` = 1
+					AND mc.id_shop = '.(int)$id_shop.'
+				ORDER BY c.`name` ASC';
+		return Db::getInstance()->ExecuteS($sql);
 	}
 
-	public static function checkPaymentCurrencies($id_module)
+	static public function checkPaymentCurrencies($id_module, $id_shop = null)
 	{
+		if (is_null($id_shop))
+			$id_shop = Shop::getCurrentShop(true);
+
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT mc.*
 		FROM `'._DB_PREFIX_.'module_currency` mc
-		WHERE mc.`id_module` = '.(int)($id_module));
+		WHERE mc.`id_module` = '.(int)$id_module.' AND mc.`id_shop`='.(int)$id_shop);
 	}
 
-	public static function getCurrency($id_currency)
+	static public function getCurrency($id_currency)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT *
@@ -232,7 +245,7 @@ class CurrencyCore extends ObjectModel
 		AND `id_currency` = '.(int)($id_currency));
 	}
 
-	public static function getIdByIsoCode($iso_code)
+	static public function getIdByIsoCode($iso_code)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `id_currency`
@@ -241,7 +254,8 @@ class CurrencyCore extends ObjectModel
 		AND `iso_code` = \''.pSQL($iso_code).'\'');
 		return $result['id_currency'];
 	}
-	public static function getIdByIsoCodeNum($iso_code)
+
+	static public function getIdByIsoCodeNum($iso_code)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `id_currency`
@@ -297,7 +311,7 @@ class CurrencyCore extends ObjectModel
 	/**
  	* @deprecated
 	**/
-	public static function refreshCurrenciesGetDefault($data, $isoCodeSource, $idCurrency)
+	static public function refreshCurrenciesGetDefault($data, $isoCodeSource, $idCurrency)
 	{
 		Tools::displayAsDeprecated();
 
@@ -321,10 +335,10 @@ class CurrencyCore extends ObjectModel
 		return new Currency($id_currency);
 	}
 
-	public static function refreshCurrencies()
+	static public function refreshCurrencies()
 	{
 		// Parse
-		if (!$feed = Tools::simplexml_load_file('http://www.prestashop.com/xml/currencies.xml'))
+		if (!$feed = @simplexml_load_file('http://www.prestashop.com/xml/currencies.xml'))
 			return Tools::displayError('Cannot parse feed.');
 
 		// Default feed currency (EUR)
@@ -339,7 +353,7 @@ class CurrencyCore extends ObjectModel
 
 	}
 
-	public static function getCurrent()
+	static public function getCurrent()
 	{
 		global $cookie;
 
@@ -353,7 +367,7 @@ class CurrencyCore extends ObjectModel
 		return self::$current;
 	}
 
-	public static function getCurrencyInstance($id)
+	static public function getCurrencyInstance($id)
 	{
 		if (!array_key_exists($id, self::$currencies))
 			self::$currencies[(int)($id)] = new Currency((int)($id));

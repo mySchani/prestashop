@@ -2,8 +2,6 @@
 
 global $_MODULE;
 $_MODULE = array();
-$_MODULE['<{paysafecard}prestashop>prepaidservices_3e8e30e75887d2f3b02da669ebd5b380'] = 'Un certificat a été trouvé pour cette configuration';
-$_MODULE['<{paysafecard}prestashop>prepaidservices_515f3d11e66f6fc5f7bb453e6030241a'] = 'Un mot de passe a déjà été enregistré';
 $_MODULE['<{paysafecard}prestashop>disposition-error_393988def796f78c4b673b90548f3afa'] = 'La disposition est dans un état invalide';
 $_MODULE['<{paysafecard}prestashop>disposition-error_5db89f2bf67f2c7dbd86cac101c3c1b8'] = '. Vous n\'êtes pas authorisé à récupérer le paiement.';
 $_MODULE['<{paysafecard}prestashop>payment_da9c72b9e543135f3f59e3c8ac68ef35'] = 'Payer avec';
@@ -13,7 +11,7 @@ $_MODULE['<{paysafecard}prestashop>paysafecard-accept-payment_e9b3579d8e877bcd29
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_2e2117b7c81aa9ea6931641ea2c6499f'] = 'Votre commande sur';
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_75fbf512d744977d62599cc3f0ae2bb4'] = 'a bien été enregistrée.';
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_91675397c13245179e4bc959514fc2ca'] = 'Vous avez choisi de payer avec ';
-$_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_2c987f462c2ab7fc63e061e871e6a97d'] = ' méthode';
+$_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_2c987f462c2ab7fc63e061e871e6a97d'] = ' ';
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_e6dc7945b557a1cd949bea92dd58963e'] = 'Votre commande va être expediée rapidement.';
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_0db71da7150c27142eef9d22b843b4a9'] = 'Pour toutes questions ou informations complémentaires, contactez notre';
 $_MODULE['<{paysafecard}prestashop>paysafecard-confirmation_64430ad2835be8ad60c59e7d44e4b0b1'] = 'service client';
@@ -47,7 +45,7 @@ $_MODULE['<{paysafecard}prestashop>paysafecard_e9185d874b4244d6f13619cf77dca0aa'
 $_MODULE['<{paysafecard}prestashop>paysafecard_99f6765a05b697eb78e8c2e5e228f2fc'] = 'Disposition consommée';
 $_MODULE['<{paysafecard}prestashop>paysafecard_c3e260f43a99b6fd907538953fe700d0'] = 'Disposition relachée';
 $_MODULE['<{paysafecard}prestashop>paysafecard_f6a62a622cbba2c1b8cd0be062deff96'] = 'Une erreur est survenue au moment de la relache.';
-$_MODULE['<{paysafecard}prestashop>paysafecard_315e941f57cf90350aea15d968e190f8'] = 'Tout le monde peut utiliser paysafecard puisquelle ne nécessite ni carte de crédit ni compte bancaire.  Aux cours des dernières années, Paysafecard est devenu l\'un des leaders des moyens de paiement en ligne alternatifs.  ';
+$_MODULE['<{paysafecard}prestashop>paysafecard_315e941f57cf90350aea15d968e190f8'] = 'Tout le monde peut utiliser paysafecard puisqu’elle ne nécessite ni carte de crédit ni compte bancaire.  Aux cours des dernières années, Paysafecard est devenu l\'un des leaders des moyens de paiement en ligne alternatifs.  ';
 $_MODULE['<{paysafecard}prestashop>paysafecard_d59048f21fd887ad520398ce677be586'] = 'En savoir plus';
-$_MODULE['<{paysafecard}prestashop>paysafecard_ee363d108ef0c9c5a599d3afe04b9e32'] = 'Une erreur est survenue. Consulter la partie \"Messages\" ci-dessous pour plus d\'informations\"';
+$_MODULE['<{paysafecard}prestashop>paysafecard_ee363d108ef0c9c5a599d3afe04b9e32'] = 'Une erreur est survenue. Consulter la partie \"Messages\" ci-dessous pour plus d\'informations';
 $_MODULE['<{paysafecard}prestashop>paysafecard_a9ced76f2dd6907220fa95b3a136b04a'] = 'Montant incorrect';

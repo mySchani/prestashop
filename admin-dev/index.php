@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7451 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,32 +40,26 @@ if (empty($tab) and !sizeof($_POST))
 
 	if ($id_tab = checkingTab($tab))
 	{
-		$isoUser = Language::getIsoById(intval($cookie->id_lang));
+    	$isoUser = Language::getIsoById(intval($cookie->id_lang));
 		$tabs = array();
 		recursiveTab($id_tab);
 		$tabs = array_reverse($tabs);
 		$bread = '';
 
 		foreach ($tabs AS $key => $item)
-			$bread .= ' <img src="../img/admin/separator_breadcrum.png" style="margin-right:5px" alt="&gt;" />
+			$bread .= ' <img src="../img/admin/separator_breadcrum.png" style="margin-right:5px" />
 			'.((sizeof($tabs) - 1 > $key)
 				? '<a href="?tab='.$item['class_name'].'&token='.Tools::getAdminToken($item['class_name'].intval($item['id_tab']).intval($cookie->id_employee)).'">'
 				: '').'
 			'.$item['name'].((sizeof($tabs) - 1 > $key) ? '</a>' : '');
-		// @TODO : a way to desactivate this feature
+
 		echo'<script type="text/javascript">
 
-		$(document).ready(function(){
+		$(function() {
 			$.ajax({
-				type : "POST",
-				url: "ajax.php",
-				data:{
-					"helpAccess":"1",
-					"item":"'.$item['class_name'].'",
-					"isoUser":"'.$isoUser.'",
-					"country":"'.Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT')).'",
-					"version":"'._PS_VERSION_.'"
-				},
+				type: \'POST\',
+				url: \'ajax.php\',
+				data: \'helpAccess=1&item='.$item['class_name'].'&isoUser='.$isoUser.'&country='.Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT')).'&version='._PS_VERSION_.'\',
 				async : true,
 				success: function(msg) {
 					$("#help-button").html(msg);
@@ -74,11 +68,32 @@ if (empty($tab) and !sizeof($_POST))
 			});
 		});</script>';
 
+
 		echo '<div class="path_bar">
 		<div id="help-button" class="floatr" style="display: none; font-family: Verdana; font-size: 10px; margin-right: 4px; margin-top: 4px;">
 		</div>
 			<a href="?token='.Tools::getAdminToken($tab.intval(Tab::getIdFromClassName($tab)).intval($cookie->id_employee)).'">'.translate('Back Office').'</a>
-			'.$bread.'
+			'.$bread;
+		if (Tools::isMultiShopActivated())
+		{
+			echo '
+			<span style="float:right">'.translate('You are currently view/configure your store for').' <b>';
+			if (Shop::getContextType() == Shop::CONTEXT_ALL)
+				echo 'all shops';
+			elseif (Shop::getContextType() == Shop::CONTEXT_GROUP)
+			{
+				$group_shop = new GroupShop((int)Shop::getCurrentGroupShop());
+				echo 'all shops of group shop <b>'.$group_shop->name.'</b>';
+			}
+			elseif (Shop::getContextType() == Shop::CONTEXT_SHOP)
+			{
+				$shop = new Shop((int)Shop::getCurrentShop());
+				echo  'shop <b>'.$shop->name.'</b>';
+			}
+			echo '</b>
+			</span>&nbsp;';
+		}
+		echo '
 		</div>';
 
 		if (Validate::isLoadedObject($adminObj))
@@ -129,11 +144,11 @@ if (empty($tab) and !sizeof($_POST))
 						<img src="../img/admin/error2.png" style="margin:-4px 5px 0 0;vertical-align:middle">
 						'.$message.'
 					</div>';
-				echo '<a href="'.htmlentities($url).'" method="get" style="float:left;background: #E3E3E3;border-color: #CCCCCC #BBBBBB #A0A0A0;border-left: 1px solid #BBBBBB;border-radius: 3px 3px 3px 3px;border-right: 1px solid #BBBBBB;border-style: solid;border-width: 1px;color: #000000;margin: 20px 10px;padding:10px;text-align:center;vertical-align:middle;">
-						'.Tools::htmlentitiesUTF8(translate('I understand the risks and I really want to display this page')).'
+				echo '<a href="'.htmlentities($url).'" method="get" style="float:left;margin:10px">
+						<input type="button" value="'.Tools::htmlentitiesUTF8(translate('I understand the risks and I really want to display this page')).'" style="height:30px;margin-top:5px" />
 					</a>
-					<a href="index.php" method="get" style="float:left;background: #E3E3E3;border-color: #CCCCCC #BBBBBB #A0A0A0;border-left: 1px solid #BBBBBB;border-radius: 3px 3px 3px 3px;border-right: 1px solid #BBBBBB;border-style: solid;border-width: 1px;color: #000000;margin: 20px 10px;padding:10px;text-align:center;vertical-align:middle;">
-						'.Tools::htmlentitiesUTF8(translate('Take me out of here!')).'
+					<a href="index.php" method="get" style="float:left;margin:10px">
+						<input type="button" value="'.Tools::htmlentitiesUTF8(translate('Take me out of here!')).'" style="height:40px" />
 					</a>
 				</body></html>';
 				die;
@@ -142,3 +157,4 @@ if (empty($tab) and !sizeof($_POST))
 	}
 
 include(PS_ADMIN_DIR.'/footer.inc.php');
+

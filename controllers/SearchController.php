@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,20 +19,21 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class SearchControllerCore extends FrontController
 {
-	public $php_self = 'search.php';
 	public $instantSearch;
 	public $ajaxSearch;
 	
 	public function __construct()
 	{
+		$this->php_self = 'search.php';
+		
 		parent::__construct();
 		
 		$this->instantSearch = Tools::getValue('instantSearch');
@@ -47,7 +48,7 @@ class SearchControllerCore extends FrontController
 		if ($this->ajaxSearch)
 		{
 			self::$link = new Link();
-			$searchResults = Search::find((int)(Tools::getValue('id_lang')), $query, 1, 10, 'position', 'desc', true);
+			$searchResults = Search::find((int)(Tools::getValue('id_lang')), $query, 1, 10, 'position', 'desc', true, true, (int)$this->id_current_shop);
 			foreach ($searchResults AS &$product)
 				$product['product_link'] = self::$link->getProductLink($product['id_product'], $product['prewrite'], $product['crewrite']);
 			die(Tools::jsonEncode($searchResults));
@@ -58,7 +59,7 @@ class SearchControllerCore extends FrontController
 			$this->productSort();
 			$this->n = abs((int)(Tools::getValue('n', Configuration::get('PS_PRODUCTS_PER_PAGE'))));
 			$this->p = abs((int)(Tools::getValue('p', 1)));
-			$search = Search::find((int)(self::$cookie->id_lang), $query, $this->p, $this->n, $this->orderBy, $this->orderWay);
+			$search = Search::find((int)(self::$cookie->id_lang), $query, $this->p, $this->n, $this->orderBy, $this->orderWay, false, true, (int)$this->id_current_shop);
 			Module::hookExec('search', array('expr' => $query, 'total' => $search['total']));
 			$nbProducts = $search['total'];
 			$this->pagination($nbProducts);
@@ -75,7 +76,7 @@ class SearchControllerCore extends FrontController
 			$this->productSort();
 			$this->n = abs((int)(Tools::getValue('n', Configuration::get('PS_PRODUCTS_PER_PAGE'))));
 			$this->p = abs((int)(Tools::getValue('p', 1)));
-			$search = Search::find((int)(self::$cookie->id_lang), $query, $this->p, $this->n, $this->orderBy, $this->orderWay);
+			$search = Search::find((int)(self::$cookie->id_lang), $query, $this->p, $this->n, $this->orderBy, $this->orderWay, false, true, (int)$this->id_current_shop);
 			Module::hookExec('search', array('expr' => $query, 'total' => $search['total']));
 			$nbProducts = $search['total'];
 			$this->pagination($nbProducts);
@@ -90,7 +91,7 @@ class SearchControllerCore extends FrontController
 		{
 			$nbProducts = (int)(Search::searchTag((int)(self::$cookie->id_lang), $tag, true));
 			$this->pagination($nbProducts);
-			$result = Search::searchTag((int)(self::$cookie->id_lang), $tag, false, $this->p, $this->n, $this->orderBy, $this->orderWay);
+			$result = Search::searchTag((int)(self::$cookie->id_lang), $tag, false, $this->p, $this->n, $this->orderBy, $this->orderWay, false, true, (int)$this->id_current_shop);
 			Module::hookExec('search', array('expr' => $tag, 'total' => sizeof($result)));
 			self::$smarty->assign(array(
 			'search_tag' => $tag,

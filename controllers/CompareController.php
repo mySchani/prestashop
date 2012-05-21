@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,75 +19,35 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7507 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class CompareControllerCore extends FrontController
 {
-	public $php_self = 'products-comparison.php';
-	
 	public function setMedia()
 	{
 		parent::setMedia();
 		Tools::addCSS(_THEME_CSS_DIR_.'/comparator.css');
-		
-		if (Configuration::get('PS_COMPARATOR_MAX_ITEM') > 0)
-			Tools::addJS(_THEME_JS_DIR_.'products-comparison.js');
-	}
-	
-	public function preProcess()
-	{
-		parent::preProcess();
-		
-		//Add or remove product with Ajax
-		if (Tools::getValue('ajax') AND Tools::getValue('id_product') AND Tools::getValue('action'))
-		{				
-			if (Tools::getValue('action') == 'add')
-			{
-				$id_compare = isset(self::$cookie->id_compare) ? self::$cookie->id_compare: false;
-				if(CompareProduct::getNumberProducts($id_compare) < Configuration::get('PS_COMPARATOR_MAX_ITEM'))
-					CompareProduct::addCompareProduct($id_compare, (int)Tools::getValue('id_product'));
-				else
-					die('0');
-			}
-			elseif (Tools::getValue('action') == 'remove')
-			{
-				if (isset(self::$cookie->id_compare))
-					CompareProduct::removeCompareProduct((int)self::$cookie->id_compare, (int)Tools::getValue('id_product'));
-				else
-					die('0');
-			}
-			else
-				die('0');
-			
-			die('1');
-		}	
 	}
 
 	public function process()
 	{
 		parent::process();
-		
-		//Clean compare product table
-		CompareProduct::cleanCompareProducts('week');
-		
+
 		$hasProduct = false;
-		
+		$product_list = Tools::getValue('compare_product_list');
+		$postProducts = isset($product_list) ? rtrim($product_list,'|') : '';
+
 		if (!Configuration::get('PS_COMPARATOR_MAX_ITEM'))
-				return Tools::redirect('404.php');
-	
-		if ($product_list = Tools::getValue('compare_product_list') AND $postProducts = (isset($product_list) ? rtrim($product_list,'|') : ''))
-			$ids = array_unique(explode('|', $postProducts));
-		elseif (isset(self::$cookie->id_compare))
-			$ids = CompareProduct::getCompareProducts(self::$cookie->id_compare);
-		else
-			$ids = null;
-		
-		if ($ids)
+				return Tools::redirect('index.php?controller=404');
+
+		if ($postProducts)
 		{
+			$ids = array_unique(explode('|', $postProducts));
+
 			if (sizeof($ids) > 0)
 			{
 				if (sizeof($ids) > Configuration::get('PS_COMPARATOR_MAX_ITEM'))
@@ -96,20 +56,34 @@ class CompareControllerCore extends FrontController
 				$listProducts = array();
 				$listFeatures = array();
 
-				foreach ($ids AS $id)
+				foreach ($ids AS $k => &$id)
 				{
-					$curProduct = new Product((int)($id), true, (int)(self::$cookie->id_lang));
+					$curProduct = new Product((int)$id, true, (int)self::$cookie->id_lang,(int)$this->id_current_shop);
+					if (!$curProduct->active OR !$curProduct->isAssociatedToShop((int)$this->id_current_shop))
+					{
+						unset($ids[$k]);
+						continue;
+					}
+
+					if (!$curProduct->active OR !$curProduct->isAssociatedToShop((int)$this->id_current_shop))
+					{
+						unset($ids[$k]);
+						continue;
+					}
+
 					if (!Validate::isLoadedObject($curProduct))
 						continue;
+
 					if (!$curProduct->active)
 					{
 						unset($ids[$k]);
 						continue;
 					}
+
 					foreach ($curProduct->getFrontFeatures(self::$cookie->id_lang) AS $feature)
 						$listFeatures[$curProduct->id][$feature['id_feature']] = $feature['value'];
 
-					$cover = Product::getCover((int)$id);
+					$cover = Product::getCover((int)$id, (int)$this->id_current_shop);
 
 					$curProduct->id_image = Tools::htmlentitiesUTF8(Product::defineProductImage(array('id_image' => $cover['id_image'], 'id_product' => $id), self::$cookie->id_lang));
 					$curProduct->allow_oosp = Product::isAvailableWhenOutOfStock($curProduct->out_of_stock);

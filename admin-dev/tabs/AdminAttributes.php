@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,7 +36,6 @@ class AdminAttributes extends AdminTab
 	 	$this->lang = true;
 	 	$this->edit = true;
 	 	$this->delete = true;
-
 		$this->fieldImageSettings = array('name' => 'texture', 'dir' => 'co');
 
 		parent::__construct();
@@ -49,7 +48,7 @@ class AdminAttributes extends AdminTab
 	 */
 	public function displayForm($token = NULL)
 	{
-		global $currentIndex;
+		global $currentIndex, $cookie;
 		parent::displayForm();
 
 		if (!($obj = $this->loadObject(true)))
@@ -75,11 +74,7 @@ class AdminAttributes extends AdminTab
 						<input size="33" type="text" name="name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'name', (int)($language['id_lang']))).'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
-			echo '
-				<script type="text/javascript">
-					var flag_fields = \'name\';
-				</script>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'name', false, true);
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name', 'name');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -91,7 +86,14 @@ class AdminAttributes extends AdminTab
 			echo '<option value="'.$attribute_group['id_attribute_group'].'"'.($this->getFieldValue($obj, 'id_attribute_group') == $attribute_group['id_attribute_group'] ? ' selected="selected"' : '').'>'.$attribute_group['name'].'</option>';
 		echo '
 					</select><sup> *</sup>
-				</div>
+				</div>';
+		if (Tools::isMultiShopActivated())
+		{
+			echo '<label>'.$this->l('GroupShop association:').'</label><div class="margin-form">';
+			$this->displayAssoGroupShop();
+			echo '</div>';
+		}
+		echo '
 				<script type="text/javascript" src="../js/jquery/jquery-colorpicker.js"></script>
 				<div id="colorAttributeProperties" style="'.((Validate::isLoadedObject($obj) AND $obj->isColorAttribute()) ? 'display: block;' : 'display: none;').'">
 					<label>'.$this->l('Color').'</label>
@@ -107,12 +109,11 @@ class AdminAttributes extends AdminTab
 					<label>'.$this->l('Current texture:').' </label>
 					<div class="margin-form">
 						<p>'.(file_exists(_PS_IMG_DIR_.$this->fieldImageSettings['dir'].'/'.$obj->id.'.jpg')
-							? '<img src="../img/'.$this->fieldImageSettings['dir'].'/'.$obj->id.'.jpg" alt="" title="" /> <a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&deleteImage=1"><img src="../img/admin/delete.gif" alt="" title="'.$this->l('Delete').'" />'.$this->l('Delete').'</a>'
+							? '<img src="../img/'.$this->fieldImageSettings['dir'].'/'.$obj->id.'.jpg" alt="" title="" /> <a href="'.$_SERVER['REQUEST_URI'].'&deleteImage=1"><img src="../img/admin/delete.gif" alt="'.$this->l('delete').'" title="" /></a>'
 							: $this->l('None')
 						).'</p>
 					</div>
 				</div>
-				'.Module::hookExec('attributeForm', array('id_attribute' => $obj->id)).'
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAddattribute" class="button" />
 				</div>
@@ -132,10 +133,6 @@ class AdminAttributes extends AdminTab
 	public function postProcess($token = NULL)
 	{
 		global $currentIndex;
-		
-		Module::hookExec('postProcessAttribute',
-		array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessFeatureValue to stop saving process
-		
 		if (Tools::getValue('submitDel'.$this->table))
 		{
 			if ($this->tabAccess['delete'] === '1')
@@ -153,17 +150,11 @@ class AdminAttributes extends AdminTab
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
-		elseif (Tools::isSubmit('submitAddattribute'))
-		{
-			// clean \n\r characters
-			foreach ($_POST as $key => $value)
-				if (preg_match('/^name_/Ui', $key))
-					$_POST[$key] = str_replace ('\n', '', str_replace('\r', '', $value));
-			parent::postProcess();
-		}
 		else
 			parent::postProcess();
 	}
+	
+
 }
 
 

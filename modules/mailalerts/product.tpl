@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,7 +28,7 @@
 oosHookJsCodeFunctions.push('oosHookJsCodeMailAlert');
 
 function clearText() {
-	if ($('#oos_customer_email').val() == '{/literal}{l s='your@email.com' mod='mailalerts'}{literal}')
+	if ($('#oos_customer_email').val() == 'your@email.com')
 		$('#oos_customer_email').val('');
 }
 
@@ -86,7 +86,7 @@ $(document).ready(function() {
 
 <!-- MODULE MailAlerts -->
 {if isset($email) AND $email}
-	<input type="text" id="oos_customer_email" name="customer_email" size="20" value="{l s='your@email.com' mod='mailalerts'}" class="mailalerts_oos_email" onclick="clearText();" /><br />
+	<input type="text" id="oos_customer_email" name="customer_email" size="20" value="your@email.com" class="mailalerts_oos_email" onclick="clearText();" /><br />
 {/if}
 <a href="#" onclick="return addNotification();" id="mailalert_link">{l s='Notify me when available' mod='mailalerts'}</a>
 <span id="oos_customer_email_result" style="display:none;"></span>

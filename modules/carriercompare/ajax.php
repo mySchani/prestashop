@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,7 +39,7 @@ switch (Tools::getValue('method'))
 		die(Tools::jsonEncode($carrierCompare->getStatesByIdCountry((int)Tools::getValue('id_country'))));
 		break;
 	case 'getCarriers':
-		die(Tools::jsonEncode($carrierCompare->getCarriersListByIdZone((int)Tools::getValue('id_country'), (int)Tools::getValue('id_state', 0), Tools::safeOutput(Tools::getValue('zipcode', 0)))));
+		die(Tools::jsonEncode($carrierCompare->getCarriersListByIdZone((int)Tools::getValue('id_country'), (int)Tools::getValue('id_state', 0))));
 		break;
 	case 'saveSelection':
 		$errors = $carrierCompare->saveSelection((int)Tools::getValue('id_country'), (int)Tools::getValue('id_state', 0), Tools::getValue('zipcode', 0), (int)Tools::getValue('id_carrier', 0));

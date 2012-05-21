@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,21 +19,21 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderReturnControllerCore extends FrontController
 {
-	public $auth = true;
-	public $php_self = 'order-return.php';
-	public $authRedirection = 'order-follow.php';
-	public $ssl = true;
-	
 	public function __construct()
 	{
+		$this->auth = true;
+		$this->php_self = 'order-return.php';
+		$this->authRedirection = 'order-follow.php';
+		$this->ssl = true;
+		
 		parent::__construct();
 		
 		header("Cache-Control: no-cache, must-revalidate");

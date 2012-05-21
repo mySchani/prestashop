@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -94,7 +94,7 @@ function displayProcess($payerID)
 
 	$cookie->paypal_token = strval($cookie->paypal_token);
 	$cookie->paypal_payer_id = $payerID;
-	Tools::redirect('order.php?step=1&back=paypal');
+	Tools::redirect('index.php?controller=order&step=1&back=paypal');
 }
 
 function displayConfirm()
@@ -115,8 +115,8 @@ function displayConfirm()
 		'ppToken' => strval($cookie->paypal_token),
 		'cust_currency' => $cart->id_currency,
 		'currencies' => $ppExpress->getCurrency((int)$cart->id_currency),
-		'total' => $cart->getOrderTotal(true, PayPal::BOTH),
-		'this_path_ssl' => PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'. $ppExpress->name.'/',
+		'total' => $cart->getOrderTotal(true, Cart::BOTH),
+		'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'. $ppExpress->name.'/',
 		'payerID' => $payerID,
 		'mode' => 'express/'
 	));
@@ -136,7 +136,7 @@ function submitConfirm()
 		die('No currency');
 	elseif (!$payerID = Tools::htmlentitiesUTF8(strval(Tools::getValue('payerID'))))
 		die('No payer ID');
-	elseif (!$cart->getOrderTotal(true, PayPal::BOTH))
+	elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 		die('Empty cart');
 
 	$ppExpress->makePayPalAPIValidation($cookie, $cart, $currency, $payerID, 'express');
@@ -150,7 +150,7 @@ function submitAccount()
 		$errors[] = Tools::displayError('e-mail not valid');
 	elseif (!Validate::isPasswd(Tools::getValue('passwd')))
 		$errors[] = Tools::displayError('invalid password');
-	elseif (Customer::customerExists($email))
+	elseif (Customer::customerExists($email, false, true, (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop()))
 		$errors[] = Tools::displayError('someone has already registered with this e-mail address');	
 	elseif (!@checkdate(Tools::getValue('months'), Tools::getValue('days'), Tools::getValue('years')) AND !(Tools::getValue('months') == '' AND Tools::getValue('days') == '' AND Tools::getValue('years') == ''))
 		$errors[] = Tools::displayError('invalid birthday');
@@ -180,7 +180,7 @@ function submitAccount()
 					$errors[] = Tools::displayError('an error occurred while creating your address');
 				else
 				{
-					if (Mail::Send((int)$cookie->id_lang, 'account', Mail::l('Welcome!', (int)$cookie->id_lang), 
+					if (Mail::Send((int)($cookie->id_lang), 'account', Mail::l('Welcome!'), 
 					array('{firstname}' => $customer->firstname, '{lastname}' => $customer->lastname, '{email}' => $customer->email, '{passwd}' => Tools::getValue('passwd')), $customer->email, $customer->firstname.' '.$customer->lastname))
 						$smarty->assign('confirmation', 1);
 					$cookie->id_customer = (int)($customer->id);
@@ -222,7 +222,7 @@ function submitLogin()
 	else
 	{
 		$customer = new Customer();
-		$authentication = $customer->getByemail(trim($email), trim($passwd));
+		$authentication = $customer->getByemail(trim($email), trim($passwd), (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop());
 		/* Handle brute force attacks */
 		sleep(1);
 		if (!$authentication OR !$customer->id)
@@ -297,10 +297,8 @@ function displayAccount()
 	// Select the most appropriate country
 	if (Tools::getValue('id_country'))
 		$selectedCountry = (int)(Tools::getValue('id_country'));
-	else if ((int)$result['COUNTRYCODE'])
-	{
+	else
 		$selectedCountry = Country::getByIso(strval($result['COUNTRYCODE']));
-	}
 	$countries = Country::getCountries((int)($cookie->id_lang), true);
 
 	// Smarty assigns
@@ -333,12 +331,10 @@ function displayAccount()
 
 // #####
 // Process !!
-/*if (!$cookie->isLogged(true))
-{
-	displayAccount();
+
+if (!$cookie->isLogged(true))
 	die('Not logged');
-}*/
-if (!$cart->getOrderTotal(true, PayPal::BOTH))
+elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 	die('Empty cart');
 
 // No token, we need to get one by making PayPal Authorisation
@@ -387,7 +383,7 @@ else
 			unset($cookie->paypal_token);
 			Tools::redirect('modules/paypal/express/submit.php');
 		}
-		if (Customer::customerExists($email) OR Tools::isSubmit('submitLogin'))
+		if (Customer::customerExists($email, false, true, (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop()) OR Tools::isSubmit('submitLogin'))
 			displayLogin();
 		displayAccount();
 	}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -101,7 +101,14 @@ class AdminContacts extends AdminTab
 				$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤description', 'description');
 				echo '
 					<p style="clear: both">'.$this->l('Additional information about this contact').'</p>
-				</div>
+				</div>';
+		if (Tools::isMultiShopActivated())
+		{
+			echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+			$this->displayAssoShop();
+			echo '</div>';
+		}
+		echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>

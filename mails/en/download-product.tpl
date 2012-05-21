@@ -6,7 +6,7 @@
 			expires on {$product.deadline}
 		{/if}
 		{if isset($product.downloadable)}
-			downloadable {$product.downloadable} time(s)
+			downloadable {$product.downloadable} times
 		{/if}
 	</li>
 {/foreach}

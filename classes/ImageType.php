@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -101,7 +101,7 @@ class ImageTypeCore extends ObjectModel
 	* @param string|null Image type
 	* @return array Image type definitions
 	*/
-	public static function getImagesTypes($type = NULL)
+	static public function getImagesTypes($type = NULL)
 	{
 		if (!isset(self::$images_types_cache[$type]))
 		{
@@ -123,12 +123,12 @@ class ImageTypeCore extends ObjectModel
 	* @param string $typeName Name
 	* @return integer Number of results found
 	*/
-	public static function typeAlreadyExists($typeName)
+	static public function typeAlreadyExists($typeName)
 	{
 		if (!Validate::isImageTypeName($typeName))
 			die(Tools::displayError());
 			
-		Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->ExecuteS('
 		SELECT `id_image_type`
 		FROM `'._DB_PREFIX_.'image_type`
 		WHERE `name` = \''.pSQL($typeName).'\'');
@@ -141,7 +141,7 @@ class ImageTypeCore extends ObjectModel
 	 * @param string $name
 	 * @param string $type
 	 */
-	public static function getByNameNType($name, $type)
+	static public function getByNameNType($name, $type)
 	{
 		return Db::getInstance()->getRow('SELECT `id_image_type`, `name`, `width`, `height`, `products`, `categories`, `manufacturers`, `suppliers`, `scenes` FROM `'._DB_PREFIX_.'image_type` WHERE `name` = \''.pSQL($name).'\' AND `'.pSQL($type).'` = 1');
 	}

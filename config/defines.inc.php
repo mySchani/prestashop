@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,14 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14009 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 define('_PS_MODE_DEV_', true);
-define('_PS_MODE_DEMO_', false);
 
 $currentDir = dirname(__FILE__);
 
@@ -44,7 +43,7 @@ define('_THEME_CSS_DIR_',  _THEME_DIR_.'css/');
 define('_THEME_JS_DIR_',   _THEME_DIR_.'js/');
 
 /* Image URLs */
-define('_PS_IMG_',         			__PS_BASE_URI__.'img/');
+define('_PS_IMG_',         __PS_BASE_URI__.'img/');
 define('_PS_ADMIN_IMG_',   			_PS_IMG_.'admin/');
 define('_PS_TMP_IMG_',   			_PS_IMG_.'tmp/');
 define('_THEME_CAT_DIR_',  			_PS_IMG_.'c/');
@@ -108,7 +107,18 @@ if (!defined('_PS_MYSQL_REAL_ESCAPE_STRING_'))
 define('_CAN_LOAD_FILES_', 1);
 
 /* Order states */
-// Order states has been moved in config.inc.php file for backward compatibility reasons
+define('_PS_OS_CHEQUE_',      1);
+define('_PS_OS_PAYMENT_',     2);
+define('_PS_OS_PREPARATION_', 3);
+define('_PS_OS_SHIPPING_',    4);
+define('_PS_OS_DELIVERED_',   5);
+define('_PS_OS_CANCELED_',    6);
+define('_PS_OS_REFUND_',      7);
+define('_PS_OS_ERROR_',       8);
+define('_PS_OS_OUTOFSTOCK_',  9);
+define('_PS_OS_BANKWIRE_',    10);
+define('_PS_OS_PAYPAL_',      11);
+define('_PS_OS_WS_PAYEMENT_', 12);
 
 /* Tax behavior */
 define('PS_PRODUCT_TAX', 0);
@@ -127,7 +137,6 @@ define('PS_ROUND_DOWN', 1);
 define('PS_ROUND_HALF', 2);
 
 /* Carrier::getCarriers() filter */
-// these defines are DEPRECATED since 1.4.5 version
 define('PS_CARRIERS_ONLY', 1);
 define('CARRIERS_MODULE', 2);
 define('CARRIERS_MODULE_NEED_RANGE', 3);

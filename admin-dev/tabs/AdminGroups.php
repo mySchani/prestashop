@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7332 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -50,7 +50,7 @@ class AdminGroups extends AdminTab
 		'id_group' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'name' => array('title' => $this->l('Name'), 'width' => 80, 'filter_key' => 'b!name'),
 		'reduction' => array('title' => $this->l('Discount'), 'width' => 50, 'align' => 'right'),
-		'nb' => array('title' => $this->l('Members'), 'width' => 25, 'align' => 'center', 'filter_key' => 'nb', 'havingFilter' => true),
+		'nb' => array('title' => $this->l('Members'), 'width' => 25, 'align' => 'center'),
 		'date_add' => array('title' => $this->l('Creation date'), 'width' => 60, 'type' => 'date', 'align' => 'right'));
 
 		parent::__construct();
@@ -69,7 +69,7 @@ class AdminGroups extends AdminTab
 		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset class="width3"><legend><img src="../img/admin/tab-groups.gif" alt="" />'.$this->l('Customer group').'</legend>
+			<fieldset><legend><img src="../img/admin/tab-groups.gif" />'.$this->l('Group').'</legend>
 				<label>'.$this->l('Name:').' </label>
 				<div class="margin-form">';
 				foreach ($this->_languages as $language)
@@ -126,7 +126,14 @@ class AdminGroups extends AdminTab
 				<div class="clear">&nbsp;</div>
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
-				</div>
+				</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('GroupShop association:').'</label><div class="margin-form">';
+					$this->displayAssoGroupShop();
+					echo '</div>';
+				}
+			echo '
 				<div class="small"><sup>*</sup> '.$this->l('Required field').'</div>
 			</fieldset>
 		</form><br />';
@@ -143,11 +150,10 @@ class AdminGroups extends AdminTab
 				foreach ($categories AS $category)
 					echo '	<option value="'.(int)($category['id_category']).'">'.Tools::htmlentitiesUTF8($category['name']).'</option>';
 				echo '	</select><sup>*</sup>
-					<p>'.$this->l('Only products that have this category as default category will be affected').'.</p>
 					</div>
 					<label>'.$this->l('Discount (in %):').' </label>
 					<div class="margin-form">
-						<input type="text" name="reductionByCategory" value="" /><sup>*</sup>
+						<input type="text" name="reduction" value="" /><sup>*</sup>
 					</div>
 					<div class="clear">&nbsp;</div>
 					<div class="margin-form">
@@ -203,7 +209,7 @@ class AdminGroups extends AdminTab
 			
 			$customers = $obj->getCustomers(false, $from, $customersPerPage);
 			
-			echo '<table><tr>
+			echo '<tr>
 				<form method="post" action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'">
 				<td style="vertical-align: bottom;"><span style="float: left; height:30px">';
 						
@@ -231,9 +237,7 @@ class AdminGroups extends AdminTab
 			echo	'	</select> / '.$nbCustomers.' result(s)	
 					</span><span class="clear"></span></td>
 				</form>
-			</tr>
-			</table>
-			<div class="clear"></div>';
+			</tr>';
 			// Pagination End
 			
 			echo '<table cellspacing="0" cellpadding="0" class="table widthfull">
@@ -306,10 +310,8 @@ class AdminGroups extends AdminTab
 				$groupReduction = new GroupReduction();
 				if (!$id_category = Tools::getValue('id_category') OR !Validate::isUnsignedId($id_category))
 					$this->_errors[] = Tools::displayError('Wrong category ID');
-				elseif (!$reduction = Tools::getValue('reductionByCategory') OR !Validate::isPrice($reduction))
+				elseif (!$reduction = Tools::getValue('reduction') OR !Validate::isPrice($reduction))
 					$this->_errors[] = Tools::displayError('Invalid reduction (must be a percentage)');
-				elseif (Tools::getValue('reductionByCategory') > 100 OR Tools::getValue('reductionByCategory') < 0)
-					$this->_errors[] = Tools::displayError('Reduction value is incorrect');
 				elseif (GroupReduction::doesExist((int)($obj->id), $id_category))
 					$this->_errors[] = Tools::displayError('A reduction already exists for this category.');
 				else
@@ -337,20 +339,16 @@ class AdminGroups extends AdminTab
 					$id_group_reductions = Tools::getValue('gr_id_group_reduction');
 					$reductions = Tools::getValue('gr_reduction');
 					if ($id_group_reductions)
-					{
 						foreach ($id_group_reductions AS $key => $id_group_reduction)
 							if (!Validate::isUnsignedId($id_group_reductions[$key]) OR !Validate::isPrice($reductions[$key]))
-								$this->_errors[] = Tools::displayError('Invalid reduction (must be a percentage)');
-							elseif ($reductions[$key] > 100 OR $reductions[$key] < 0)
-								$this->_errors[] = Tools::displayError('Reduction value is incorrect');
+								$this->_errors[] = Tools::displayError();
 							else
 							{
 								$groupReduction = new GroupReduction((int)($id_group_reductions[$key]));
 								$groupReduction->reduction = $reductions[$key] / 100;
 								if (!$groupReduction->update())
-									$this->_errors[] = Tools::displayError('Cannot update group reductions');
+									$this->errors[] = Tools::displayError('Cannot update group reductions');
 							}
-					}
 					if (!sizeof($this->_errors))
 						parent::postProcess();
 				}

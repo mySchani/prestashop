@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 	
 class BlockAdvertising extends Module
@@ -172,7 +172,7 @@ class BlockAdvertising extends Module
 		$this->postProcess();
 		$output = '';
 		$output .= '
-<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" enctype="multipart/form-data">
+<form action="'.$_SERVER['REQUEST_URI'].'" method="post" enctype="multipart/form-data">
 <fieldset><legend>'.$this->l('Advertising block configuration').'</legend>
 <a href="'.$this->adv_link.'" target="_blank" title="'.$this->adv_title.'">';
 		if ($this->adv_img)
@@ -181,7 +181,7 @@ class BlockAdvertising extends Module
 			$output .= '<input class="button" type="submit" name="submitDeleteImgConf" value="'.$this->l('Delete image').'" style=""/>';
 		}
 		else
-			$output .= '<div style="margin-left: 100px;width:163px;">'.$this->l('no image').'</div>';
+			$output .= '<div style="margin-left: 100px;width:163px;"/>'.$this->l('no image').'</div>';
 		$output .= '</a>';
 		$output .= '<br/>
 <br/>
@@ -208,10 +208,11 @@ class BlockAdvertising extends Module
 	* @param array $params Parameters
 	* @return string Content
 	*/
-	public function hookRightColumn($params)
+	function hookRightColumn($params)
 	{
 		global $smarty, $protocol_content;
 
+		Tools::addCSS($this->_path.'blockadvertising.css', 'all');
 		$smarty->assign('image', $protocol_content.$this->adv_img);
 		$smarty->assign('adv_link', $this->adv_link);
 		$smarty->assign('adv_title', $this->adv_title);
@@ -219,14 +220,9 @@ class BlockAdvertising extends Module
 		return $this->display(__FILE__, 'blockadvertising.tpl');
 	}
 
-	public function hookLeftColumn($params)
+	function hookLeftColumn($params)
 	{
 		return $this->hookRightColumn($params);
-	}
-
-	public function hookHeader($params)
-	{
-		Tools::addCSS($this->_path.'blockadvertising.css', 'all');
 	}
 
 }

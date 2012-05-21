@@ -1,5 +1,5 @@
 ﻿{*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -28,13 +28,8 @@
 <script type="text/javascript">
 <!--
     document.write(unescape("%3Cscript src='" + ((document.location.protocol == 'https:') ? 'https://' : 'http://') + "api.treepodia.com/video/Treepodia.js' type='text/javascript'%3E%3C/script%3E"));
-//]]>
-</script>
-<script type="text/javascript">
     document.write(unescape("%3Cscript src='" + ((document.location.protocol == 'https:') ? 'https://' : 'http://') + "api.treepodia.com/utils/ps14-video-dialog.js?account={/literal}{$account_id}{literal}' type='text/javascript'%3E%3C/script%3E"));
-//]]>
-</script>
-<script type="text/javascript">
+
     var video;
     function initTreepodia() {
         Treepodia.getProduct('{/literal}{$account_id}{literal}', '{/literal}{$product_sku}{literal}').requestVideo(handleVideo, '{/literal}{$lang_iso}{literal}');

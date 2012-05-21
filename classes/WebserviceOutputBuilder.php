@@ -20,13 +20,14 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 15041 $
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 /**
  * @todo : Create typed exception for more finer errors check
+ * @author Lucas Cherifi - Nans Pellicari - Anatole Korczak - PrestaShop Team
  */
 class WebserviceOutputBuilderCore
 {
@@ -46,8 +47,7 @@ class WebserviceOutputBuilderCore
 	protected $fieldsToDisplay;
 	protected $specificFields = array();
 	protected $virtualFields = array();
-	protected $statusInt;
-	protected $wsParamOverrides;
+	
 	// Header properties
 	protected $headerParams = array(
 		'Access-Time'	=> 0,
@@ -63,10 +63,8 @@ class WebserviceOutputBuilderCore
 	
 	public function __construct($ws_url)
 	{
-		$this->statusInt = 200;
 		$this->status = $_SERVER['SERVER_PROTOCOL'].' 200 OK';
 		$this->wsUrl = $ws_url;
-		$this->wsParamOverrides = array();
 	}
 	
 	/**
@@ -157,7 +155,7 @@ class WebserviceOutputBuilderCore
 		
 		if (!is_null($key))
 		{
-			if (!Validate::isCleanHtml($key))
+			if (!is_null($key) && Validate::isCleanHtml($key))
 				throw new WebserviceException('the key you write is a corrupted text.', array(95, 500));
 			if (!array_key_exists($key, $this->headerParams))
 				throw new WebserviceException(sprintf('The key %s does\'nt exist', $key), array(96, 500));
@@ -187,11 +185,6 @@ class WebserviceOutputBuilderCore
 	{
 		return $this->status;
 	}
-	
-	public function getStatusInt()
-	{
-		return $this->statusInt;
-	}
 	/**
 	 * Set the return header status
 	 *
@@ -200,7 +193,6 @@ class WebserviceOutputBuilderCore
 	 */
 	public function setStatus($num)
 	{
-		$this->statusInt = (int)$num;
 		switch ($num)
 		{
 			case 200 :
@@ -220,9 +212,6 @@ class WebserviceOutputBuilderCore
 				break;
 			case 401 :
 				$this->status = $_SERVER['SERVER_PROTOCOL'].' 401 Unauthorized';
-				break;
-			case 403 :
-				$this->status = $_SERVER['SERVER_PROTOCOL'].' 403 Forbidden';
 				break;
 			case 404 :
 				$this->status = $_SERVER['SERVER_PROTOCOL'].' 404 Not Found';
@@ -283,7 +272,7 @@ class WebserviceOutputBuilderCore
 		if (is_null($this->wsResource))
 			throw new WebserviceException ('You must set web service resource for get the resources list.', array(82, 500));
 		$output = '';
-		$more_attr = array('shop_name' => htmlentities(Configuration::get('PS_SHOP_NAME')));
+		$more_attr = array('shop_name' => Tools::htmlentitiesUTF8(Configuration::get('PS_SHOP_NAME')));
 		$output .= $this->objectRender->renderNodeHeader('api', array(), $more_attr);
 		foreach ($this->wsResource as $resourceName => $resource)
 		{
@@ -323,12 +312,7 @@ class WebserviceOutputBuilderCore
 		$output = $this->objectRender->overrideContent($output);
 		return $output;
 	}
-	
-	public function registerOverrideWSParameters($wsrObject, $method)
-	{
-		$this->wsParamOverrides[] = array('object' => $wsrObject, 'method' => $method);
-	}
-	
+
 	/**
 	 * Method is used for each content type
 	 * Different content types are :
@@ -360,15 +344,11 @@ class WebserviceOutputBuilderCore
 		}
 		
 		$ws_params = $objects['empty']->getWebserviceParameters();
-		foreach ($this->wsParamOverrides AS $p)
-		{
-			$object = $p['object'];
-			$ws_params = $object->{$p['method']}($ws_params);
-		}
 		
 		// If a list is asked, need to wrap with a plural node
 		if ($type_of_view === self::VIEW_LIST)
 			$output .= $this->setIndent($depth).$this->objectRender->renderNodeHeader($ws_params['objectsNodeName'], $ws_params);
+		
 		if (is_null($this->schemaToDisplay))
 		{
 			foreach ($objects as $key => $object)
@@ -446,11 +426,6 @@ class WebserviceOutputBuilderCore
 	{
 		$output = '';
 		$ws_params = $object->getWebserviceParameters();
-		foreach ($this->wsParamOverrides AS $p)
-		{
-			$o = $p['object'];
-			$ws_params = $o->{$p['method']}($ws_params);
-		}
 		$output .= $this->setIndent($depth).$this->objectRender->renderNodeHeader($ws_params['objectNodeName'], $ws_params);
 		
 		if ($object->id != 0)
@@ -511,10 +486,9 @@ class WebserviceOutputBuilderCore
 			$field['synopsis_details'] = $this->getSynopsisDetails($field);
 			if ($field_name === 'id')
 				$show_field = false;
-		}
-		if ($this->schemaToDisplay === 'blank')
-			if (isset($field['setter']) && !$field['setter'])
+			elseif (isset($field['setter']) && !$field['setter'])
 				$show_field = false;
+		}
 
 		// don't set any value for a schema
 		if (isset($field['synopsis_details']) || $this->schemaToDisplay === 'blank')
@@ -578,10 +552,10 @@ class WebserviceOutputBuilderCore
 						'entity_name'	=> $ws_params['objectNodeName'],
 						'entities_name'	=> $ws_params['objectsNodeName'],
 					);
-					
-				if (is_array($getter))
+				
+				if (method_exists($object, $getter) && is_null($this->schemaToDisplay))
 				{
-					$association_resources = call_user_func($getter, $object);
+					$association_resources = $object->$getter();
 					if (is_array($association_resources) && !empty($association_resources))
 					{
 						foreach ($association_resources as $association_resource)
@@ -592,28 +566,14 @@ class WebserviceOutputBuilderCore
 				}
 				else
 				{
-					if (method_exists($object, $getter) && is_null($this->schemaToDisplay))
-					{
-						$association_resources = $object->$getter();
-						if (is_array($association_resources) && !empty($association_resources))
-						{
-							foreach ($association_resources as $association_resource)
-							{
-								$objects_assoc[] = $association_resource;
-							}
-						}
-					}
-					else
-					{
-						$objects_assoc[] = '';
-					}
+					$objects_assoc[] = '';
 				}
 				
 				$class_name = null;
 				if (isset($this->wsResource[$assoc_name]['class']) && class_exists($this->wsResource[$assoc_name]['class'], true))
 					$class_name = $this->wsResource[$assoc_name]['class'];
 				$output_details = '';
-				foreach ($objects_assoc as $object_assoc)
+				foreach ($objects_assoc as $key => $object_assoc)
 				{
 					if ($depth == 0 || $class_name === null)
 					{
@@ -626,7 +586,7 @@ class WebserviceOutputBuilderCore
 					}
 					else
 					{
-						foreach ($object_assoc as $id)
+						foreach ($object_assoc as $key_id => $id)
 						{
 							if ($class_name !== null)
 							{
@@ -761,14 +721,13 @@ class WebserviceOutputBuilderCore
 		} catch (WebserviceException $e) {
 			throw $e;
 		}
+		
 		$this->virtualFields[$entity_name][] = array('parameters' => $parameters, 'object' => $object, 'method' => $method, 'type' => gettype($object));
 	}
-	
 	public function getVirtualFields()
 	{
 		return $this->virtualFields;
 	}
-	
 	public function addVirtualFields($entity_name, $entity_object)
 	{
 		$arr_return = array();

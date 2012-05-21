@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,15 +18,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 {if $display_mode == 0}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module">
+	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; margin-left: 7px; padding: 0.6em;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />
@@ -73,7 +73,7 @@
 {else}
 	{foreach from=$inter item=i}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module">
+	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; height: 50px; margin-left: 7px; padding: 0.6em;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />
@@ -115,7 +115,7 @@
 	{/foreach}
 	{foreach from=$local item=i}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module">
+	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; height: 50px; margin-left: 7px; padding: 0.6em;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />

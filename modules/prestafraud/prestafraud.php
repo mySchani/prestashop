@@ -1,7 +1,7 @@
 <?php
 
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -20,13 +20,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class PrestaFraud extends Module
@@ -151,11 +150,11 @@ class PrestaFraud extends Module
 						<input type="text" style="width:400px;" name="shop_url" value="http://www.'.Tools::getHttpHost().__PS_BASE_URI__.'"/>
 					</div>
 					<div class="margin-form">
-						<input id="terms_and_conditions" type="checkbox" value="1" /> '.$this->l('I agree with the terms of PrestaShop Security service and I adhere to them unconditionally.').'</label>
+						<input id="terms_and_conditions" type="checkbox" value="1" />'.$this->l('I agree with the terms of PrestaShop Security service and I adhere to them unconditionally.').'</label>
 					</div>
 					<div id="terms" class="margin-form">';
 					$terms = file_get_contents($this->_trustUrl.'terms.php?lang='.Language::getIsoById((int)$cookie->id_lang));
-					$this->_html .= '<div style="height:300px;border:1px solid #E0D0B1;overflow-y:scroll;padding:8px;color:black">'.nl2br2(strip_tags($terms)).'</div>';
+					$this->_html .= $terms;
 					$this->_html .= '</div>
 					<div class="margin-form">
 						<input class="button" type="submit" id="submitCreateAccount" name="submitCreateAccount" value="'.$this->l('Create account').'"/>
@@ -202,7 +201,7 @@ class PrestaFraud extends Module
 		}
 			$this->_html .= '</tbody></table></margin>
 			</div>';
-		$modules = PaymentModule::getInstalledPaymentModules();
+		$modules = Module::getModulesOnDisk();
 		$configured_payments = $this->_getConfiguredPayments();
 
 		$this->_html .= '
@@ -213,11 +212,12 @@ class PrestaFraud extends Module
 		
 		foreach ($modules AS $module)
 		{
-			$mod = Module::getInstanceByName($module['name']);
-			$this->_html .= '<tr><td>'.$mod->displayName.'</td><td><select name="paymentmodule_'.$mod->id.'">
+			if (!method_exists($module, 'hookPayment') OR !$module->id)
+				continue;
+			$this->_html .= '<tr><td>'.$module->displayName.'</td><td><select name="paymentmodule_'.$module->id.'">
 			<option value="0">'.$this->l('Choose a payment type...').'</option>';
 			foreach ($this->_payment_types AS $type => $name)
-				$this->_html .= '<option value="'.$type.'"'.((isset($configured_payments[$mod->id]) AND $type == $configured_payments[$mod->id]) ? ' selected="true"' : '').'>'.$name.'</option>';
+				$this->_html .= '<option value="'.$type.'"'.((isset($configured_payments[$module->id]) AND $type == $configured_payments[$module->id]) ? ' selected="true"' : '').'>'.$name.'</option>';
 			$this->_html .= '</select></td>';
 		}
 			$this->_html .= '</tbody></table></margin>
@@ -243,9 +243,9 @@ class PrestaFraud extends Module
 			$payments_configuration = array();
 			foreach($_POST AS $field => $val)
 			{
-				if (preg_match('/^carrier_([0-9]+)$/Ui', $field, $res))
+				if (preg_match('/^carrier_([0-9]+)/Ui', $field, $res))
 					$carriers_configuration[$res[1]] = $val;
-				elseif (preg_match('/^paymentmodule_([0-9]+)$/Ui', $field, $pay_res))
+				elseif (preg_match('/^paymentmodule_([0-9]+)/Ui', $field, $pay_res))
 					$payments_configuration[$pay_res[1]] = $val;	
 			}
 
@@ -401,7 +401,7 @@ class PrestaFraud extends Module
 		$order->addChild('payment_name', $paymentModule->displayName);
 		$order->addChild('payment_type', (int)$configured_payments[$paymentModule->id]);
 		$order->addChild('order_date', $params['order']->date_add);
-		$order->addChild('order_ip_address', $this->_getIpByCart((int)$params['order']->id_cart));
+		$order->addChild('order_ip_address', $this->_getIpByCart($id_cart));
 
 		$carrier = new Carrier((int)$params['order']->id_carrier);
 		$carrier_infos = $order->addChild('carrier_infos');
@@ -586,8 +586,8 @@ class PrestaFraud extends Module
 		}
 		elseif (function_exists('file_get_contents'))
 		{
-			$stream_context = @stream_context_create(array('http' => array('timeout' => 5)));
-			return file_get_contents($this->_trustUrl.'?xml='.urlencode(str_replace("\r", "\n", '', $datas)), $stream_context);
+			$context = stream_context_create(array('http' => array('timeout' => 5)));
+			return file_get_contents($this->_trustUrl.'?xml='.urlencode(str_replace("\r", "\n", '', $datas)), $context);
 		}
 		else
 			return false;

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -129,7 +129,7 @@ class GetVersionFromDb
 	public function __construct($compareTypes = true, $fastExecution = false)
 	{
 		// added for compatibility prestashop version < 1.3.7
-		if (!defined('_PS_CACHE_ENABLED_'))
+		if(!defined('_PS_CACHE_ENABLED_'))
 			define('_PS_CACHE_ENABLED_', '0');
 
 		$this->installPath = INSTALL_PATH . '/';
@@ -283,11 +283,11 @@ class GetVersionFromDb
 						{
 							$type = 'primary';
 						}
-						elseif ($type == 'key')
+						else if ($type == 'key')
 						{
 							$type = 'index';
 						}
-						elseif ($type == 'unique key')
+						else if ($type == 'unique key')
 						{
 							$type = 'unique';
 						}
@@ -342,12 +342,12 @@ class GetVersionFromDb
 				}
 			}
 			// CREATE TABLE -> delete this table from structure
-			elseif (preg_match('#^create\s+table\s+(if\s+not\s+exists\s+)?`?prefix_([a-z0-9_]+)`?#si', $query, $m) && !preg_match('#_tmp[0-9]?$#i', $m[2]))
+			else if (preg_match('#^create\s+table\s+(if\s+not\s+exists\s+)?`?prefix_([a-z0-9_]+)`?#si', $query, $m) && !preg_match('#_tmp[0-9]?$#i', $m[2]))
 			{
 				unset($struct[$m[2]]);
 			}
 			// DROP TABLE -> add this table in structure
-			elseif (preg_match('#^drop\s*table\s+(if\s+exists\s+)?`?prefix_([a-z0-9_]+)`?#si', $query, $m) && !preg_match('#_tmp[0-9]?$#i', $m[2]))
+			else if (preg_match('#^drop\s*table\s+(if\s+exists\s+)?`?prefix_([a-z0-9_]+)`?#si', $query, $m) && !preg_match('#_tmp[0-9]?$#i', $m[2]))
 			{
 				$struct[$m[2]] = array();
 			}
@@ -402,11 +402,11 @@ class GetVersionFromDb
 				{
 					$type = 'primary';
 				}
-				elseif ($type == 'key')
+				else if ($type == 'key')
 				{
 					$type = 'index';
 				}
-				elseif ($type == 'unique key')
+				else if ($type == 'unique key')
 				{
 					$type = 'unique';
 				}
@@ -463,30 +463,28 @@ class GetVersionFromDb
 			// List keys
 			$struct[$virtualTable]['@keys'] = array();
 			$sql = 'SHOW INDEX FROM ' . $table;
-			$results = Db::getInstance()->executeS($sql);
-			if($results)
-				foreach ($results as $rowIndex)
+			foreach (Db::getInstance()->executeS($sql) as $rowIndex)
+			{
+				$keyName = strtolower($rowIndex['Key_name']);
+				$type = 'index';
+				if ($keyName == 'primary')
 				{
-					$keyName = strtolower($rowIndex['Key_name']);
-					$type = 'index';
-					if ($keyName == 'primary')
-					{
-						$type = 'primary';
-					}
-					elseif (!$rowIndex['Non_unique'])
-					{
-						$type = 'unique';
-					}
-	
-					if (!isset($struct[$virtualTable]['@keys'][$keyName]))
-					{
-						$struct[$virtualTable]['@keys'][$keyName] = array(
-							'type' =>	$type,
-							'fields' =>	array(),
-						);
-					}
-					$struct[$virtualTable]['@keys'][$keyName]['fields'][] = $rowIndex['Column_name'];
+					$type = 'primary';
 				}
+				else if (!$rowIndex['Non_unique'])
+				{
+					$type = 'unique';
+				}
+
+				if (!isset($struct[$virtualTable]['@keys'][$keyName]))
+				{
+					$struct[$virtualTable]['@keys'][$keyName] = array(
+						'type' =>	$type,
+						'fields' =>	array(),
+					);
+				}
+				$struct[$virtualTable]['@keys'][$keyName]['fields'][] = $rowIndex['Column_name'];
+			}
 		}
 
 		$this->currentSchema = $struct;

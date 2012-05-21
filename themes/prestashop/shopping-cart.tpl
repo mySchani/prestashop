@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7476 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -40,6 +40,7 @@
 {else}
 	<script type="text/javascript">
 	// <![CDATA[
+	var baseDir = '{$base_dir_ssl}';
 	var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
 	var currencyRate = '{$currencyRate|floatval}';
 	var currencyFormat = '{$currencyFormat|intval}';
@@ -236,12 +237,12 @@
 						</td>
 						<td class="cart_quantity">
 							<div style="float:right">
-								<a rel="nofollow" class="cart_quantity_delete" id="{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart.php', true)}?delete&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;token={$token_cart}"><img src="{$img_dir}icon/delete.gif" alt="{l s='Delete'}" title="{l s='Delete this customization'}" width="11" height="13" class="icon" /></a>
+								<a rel="nofollow" class="cart_quantity_delete" id="{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart', true, NULL, "delete&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;token={$token_cart}")}"><img src="{$img_dir}icon/delete.gif" alt="{l s='Delete'}" title="{l s='Delete this customization'}" width="11" height="13" class="icon" /></a>
 							</div>
 							<div id="cart_quantity_button" style="float:left">
-							<a rel="nofollow" class="cart_quantity_up" id="cart_quantity_up_{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart.php', true)}?add&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;token={$token_cart}" title="{l s='Add'}"><img src="{$img_dir}icon/quantity_up.gif" alt="{l s='Add'}" width="14" height="9" /></a><br />
+							<a rel="nofollow" class="cart_quantity_up" id="cart_quantity_up_{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart', true, NULL, "add&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;token={$token_cart}")}" title="{l s='Add'}"><img src="{$img_dir}icon/quantity_up.gif" alt="{l s='Add'}" width="14" height="9" /></a><br />
 							{if $product.minimal_quantity < ($customization.quantity -$quantityDisplayed) OR $product.minimal_quantity <= 1}
-							<a rel="nofollow" class="cart_quantity_down" id="cart_quantity_down_{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart.php', true)}?add&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;op=down&amp;token={$token_cart}" title="{l s='Subtract'}">
+							<a rel="nofollow" class="cart_quantity_down" id="cart_quantity_down_{$product.id_product}_{$product.id_product_attribute}_{$id_customization}" href="{$link->getPageLink('cart', true, NULL, "add&amp;id_product={$product.id_product|intval}&amp;ipa={$product.id_product_attribute|intval}&amp;id_customization={$id_customization}&amp;op=down&amp;token={$token_cart}")}" title="{l s='Subtract'}">
 								<img src="{$img_dir}icon/quantity_down.gif" alt="{l s='Subtract'}" width="14" height="9" />
 							</a>
 							{else}
@@ -268,7 +269,7 @@
 			<tr class="cart_discount {if $smarty.foreach.discountLoop.last}last_item{elseif $smarty.foreach.discountLoop.first}first_item{else}item{/if}" id="cart_discount_{$discount.id_discount}">
 				<td class="cart_discount_name" colspan="2">{$discount.name}</td>
 				<td class="cart_discount_description" colspan="3">{$discount.description}</td>
-				<td class="cart_discount_delete"><a href="{if $opc}{$link->getPageLink('order-opc.php', true)}{else}{$link->getPageLink('order.php', true)}{/if}?deleteDiscount={$discount.id_discount}" title="{l s='Delete'}"><img src="{$img_dir}icon/delete.gif" alt="{l s='Delete'}" class="icon" width="11" height="13" /></a></td>
+				<td class="cart_discount_delete"><a href="{if $opc}{$link->getPageLink('order-opc', true)}{else}{$link->getPageLink('order', true)}{/if}?deleteDiscount={$discount.id_discount}" title="{l s='Delete'}"><img src="{$img_dir}icon/delete.gif" alt="{l s='Delete'}" class="icon" width="11" height="13" /></a></td>
 				<td class="cart_discount_price"><span class="price-discount">
 					{if $discount.value_real > 0}
 						{if !$priceDisplay}{displayPrice price=$discount.value_real*-1}{else}{displayPrice price=$discount.value_tax_exc*-1}{/if}
@@ -290,7 +291,7 @@
 		{/foreach}
 		</ul>
 	{/if}
-	<form action="{if $opc}{$link->getPageLink('order-opc.php', true)}{else}{$link->getPageLink('order.php', true)}{/if}" method="post" id="voucher">
+	<form action="{if $opc}{$link->getPageLink('order-opc', true)}{else}{$link->getPageLink('order', true)}{/if}" method="post" id="voucher">
 		<fieldset>
 			<h4>{l s='Vouchers'}</h4>
 			<p>
@@ -311,65 +312,29 @@
 </div>
 {/if}
 <div id="HOOK_SHOPPING_CART">{$HOOK_SHOPPING_CART}</div>
-
-{* Define the style if it doesn't exist in the PrestaShop version*}
-{* Will be deleted for 1.5 version and more *}
-{if !isset($addresses_style)}
-	{$addresses_style.company = 'address_company'}
-	{$addresses_style.vat_number = 'address_company'}
-	{$addresses_style.firstname = 'address_name'}
-	{$addresses_style.lastname = 'address_name'}
-	{$addresses_style.address1 = 'address_address1'}
-	{$addresses_style.address2 = 'address_address2'}
-	{$addresses_style.city = 'address_city'}
-	{$addresses_style.country = 'address_country'}
-	{$addresses_style.phone = 'address_phone'}
-	{$addresses_style.phone_mobile = 'address_phone_mobile'}
-	{$addresses_style.alias = 'address_title'}
-{/if}
-
 {if (($carrier->id AND !isset($virtualCart)) OR $delivery->id OR $invoice->id) AND !$opc}
 <div class="order_delivery">
-	{if !isset($formattedAddresses)}
-		{if $delivery->id}
-		<ul id="delivery_address" class="address item">
-			<li class="address_title">{l s='Delivery address'}</li>
-				{if $delivery->company}<li class="address_company">{$delivery->company|escape:'htmlall':'UTF-8'}</li>{/if}
-				<li class="address_name">{$delivery->firstname|escape:'htmlall':'UTF-8'} {$delivery->lastname|escape:'htmlall':'UTF-8'}</li>
-				<li class="address_address1">{$delivery->address1|escape:'htmlall':'UTF-8'}</li>
-				{if $delivery->address2}<li class="address_address2">{$delivery->address2|escape:'htmlall':'UTF-8'}</li>{/if}
-				<li class="address_city">{$delivery->postcode|escape:'htmlall':'UTF-8'} {$delivery->city|escape:'htmlall':'UTF-8'}</li>
-				<li class="address_country">{$delivery->country|escape:'htmlall':'UTF-8'} {if $delivery_state}({$delivery_state|escape:'htmlall':'UTF-8'}){/if}</li>
-		</ul>
-		{/if}
-		{if $invoice->id}
-		<ul id="invoice_address" class="address alternate_item">
-			<li class="address_title">{l s='Invoice address'}</li>
-				{if $invoice->company}<li class="address_company">{$invoice->company|escape:'htmlall':'UTF-8'}</li>{/if}
-				<li class="address_name">{$invoice->firstname|escape:'htmlall':'UTF-8'} {$invoice->lastname|escape:'htmlall':'UTF-8'}</li>
-				<li class="address_address1">{$invoice->address1|escape:'htmlall':'UTF-8'}</li>
-				{if $invoice->address2}<li class="address_address2">{$invoice->address2|escape:'htmlall':'UTF-8'}</li>{/if}
-				<li class="address_city">{$invoice->postcode|escape:'htmlall':'UTF-8'} {$invoice->city|escape:'htmlall':'UTF-8'}</li>
-				<li class="address_country">{$invoice->country|escape:'htmlall':'UTF-8'} {if $invoice_state}({$invoice_state|escape:'htmlall':'UTF-8'}){/if}</li>
-		</ul>
-		{/if}
-	{else}
-		{foreach from=$formattedAddresses item=address name=myLoop}
-			<ul class="address {if $smarty.foreach.myLoop.last}last_item{elseif $smarty.foreach.myLoop.first}first_item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{else}item{/if}">
-				<li class="address_title">{$address.object.alias}</li>
-				{foreach from=$address.ordered name=adr_loop item=pattern}
-					{assign var=addressKey value=" "|explode:$pattern}
-					<li>
-					{foreach from=$addressKey item=key name="word_loop"}
-						<span class="{if isset($addresses_style[$key])}{$addresses_style[$key]}{/if}">
-							{$address.formated[$key]|escape:'htmlall':'UTF-8'}
-						</span>
-					{/foreach}
-					</li>
-				{/foreach}
-				</ul>
-		{/foreach}
-		<p class="clear" />
+	{if $delivery->id}
+	<ul id="delivery_address" class="address item">
+		<li class="address_title">{l s='Delivery address'}</li>
+		{if $delivery->company}<li class="address_company">{$delivery->company|escape:'htmlall':'UTF-8'}</li>{/if}
+		<li class="address_name">{$delivery->firstname|escape:'htmlall':'UTF-8'} {$delivery->lastname|escape:'htmlall':'UTF-8'}</li>
+		<li class="address_address1">{$delivery->address1|escape:'htmlall':'UTF-8'}</li>
+		{if $delivery->address2}<li class="address_address2">{$delivery->address2|escape:'htmlall':'UTF-8'}</li>{/if}
+		<li class="address_city">{$delivery->postcode|escape:'htmlall':'UTF-8'} {$delivery->city|escape:'htmlall':'UTF-8'}</li>
+		<li class="address_country">{$delivery->country|escape:'htmlall':'UTF-8'} {if $delivery_state}({$delivery_state|escape:'htmlall':'UTF-8'}){/if}</li>
+	</ul>
+	{/if}
+	{if $invoice->id}
+	<ul id="invoice_address" class="address alternate_item">
+		<li class="address_title">{l s='Invoice address'}</li>
+		{if $invoice->company}<li class="address_company">{$invoice->company|escape:'htmlall':'UTF-8'}</li>{/if}
+		<li class="address_name">{$invoice->firstname|escape:'htmlall':'UTF-8'} {$invoice->lastname|escape:'htmlall':'UTF-8'}</li>
+		<li class="address_address1">{$invoice->address1|escape:'htmlall':'UTF-8'}</li>
+		{if $invoice->address2}<li class="address_address2">{$invoice->address2|escape:'htmlall':'UTF-8'}</li>{/if}
+		<li class="address_city">{$invoice->postcode|escape:'htmlall':'UTF-8'} {$invoice->city|escape:'htmlall':'UTF-8'}</li>
+		<li class="address_country">{$invoice->country|escape:'htmlall':'UTF-8'} {if $invoice_state}({$invoice_state|escape:'htmlall':'UTF-8'}){/if}</li>
+	</ul>
 	{/if}
 	{if $carrier->id AND !isset($virtualCart)}
 	<div id="order_carrier">
@@ -381,8 +346,8 @@
 </div>
 {/if}
 <p class="cart_navigation">
-	{if !$opc}<a href="{$link->getPageLink('order.php', true)}?step=1{if $back}&amp;back={$back}{/if}" class="exclusive" title="{l s='Next'}">{l s='Next'} &raquo;</a>{/if}
-	<a href="{if (isset($smarty.server.HTTP_REFERER) && strstr($smarty.server.HTTP_REFERER, $link->getPageLink('order.php'))) || !isset($smarty.server.HTTP_REFERER)}{$link->getPageLink('index.php')}{else}{$smarty.server.HTTP_REFERER|escape:'htmlall':'UTF-8'|secureReferrer}{/if}" class="button_large" title="{l s='Continue shopping'}">&laquo; {l s='Continue shopping'}</a>
+	{if !$opc}<a href="{if $back}{$link->getPageLink('order', true, NULL, 'step=1&amp;back={$back}')}{else}{$link->getPageLink('order', true, NULL, 'step=1')}{/if}" class="exclusive" title="{l s='Next'}">{l s='Next'} &raquo;</a>{/if}
+	<a href="{if (isset($smarty.server.HTTP_REFERER) && strstr($smarty.server.HTTP_REFERER, 'order.php')) || !isset($smarty.server.HTTP_REFERER)}{$link->getPageLink('index')}', {else}{$smarty.server.HTTP_REFERER|escape:'htmlall':'UTF-8'|secureReferrer}{/if}" class="button_large" title="{l s='Continue shopping'}">&laquo; {l s='Continue shopping'}</a>
 </p>
 <p class="clear"><br /><br /></p>
 <div class="clear"></div>

@@ -434,7 +434,7 @@ ALTER TABLE `PREFIX_country` ADD `zip_code_format` VARCHAR(12) NOT NULL DEFAULT 
 
 ALTER TABLE `PREFIX_product` ADD `unit_price` DECIMAL(20,6) NOT NULL DEFAULT '0.000000' AFTER `wholesale_price`;
 ALTER TABLE `PREFIX_product` ADD `unity` VARCHAR(10) NOT NULL DEFAULT '0.000000' AFTER `unit_price` ;
-ALTER TABLE `PREFIX_product_attribute` ADD `unit_price_impact` DECIMAL(17,2) NOT NULL DEFAULT '0.00' AFTER `weight`;
+ALTER TABLE `PREFIX_product_attribute` ADD `unit_price_impact`DECIMAL(17,2) NOT NULL DEFAULT '0.00' AFTER `weight`;
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES ('PS_VOLUME_UNIT', 'cl', NOW(), NOW());
 
@@ -587,9 +587,9 @@ INSERT INTO `PREFIX_meta_lang` (`id_lang`, `id_meta`, `title`, `url_rewrite`) VA
 (3, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'order'), 'Carrito', 'carrito');
 INSERT INTO `PREFIX_meta` (`page`) VALUES ('search');
 INSERT INTO `PREFIX_meta_lang` (`id_lang`, `id_meta`, `title`, `url_rewrite`) VALUES
-(1, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search' LIMIT 1), 'Search', 'search'),
-(2, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search' LIMIT 1), 'Recherche', 'recherche'),
-(3, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search' LIMIT 1), 'Buscar', 'buscar');
+(1, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search'), 'Search', 'search'),
+(2, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search'), 'Recherche', 'recherche'),
+(3, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'search'), 'Buscar', 'buscar');
 INSERT INTO `PREFIX_meta` (`page`) VALUES ('stores');
 INSERT INTO `PREFIX_meta_lang` (`id_lang`, `id_meta`, `title`, `url_rewrite`) VALUES
 (1, (SELECT `id_meta` FROM `PREFIX_meta` WHERE `page` = 'stores'), 'Stores', 'stores'),

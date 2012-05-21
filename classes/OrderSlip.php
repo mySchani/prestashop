@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -78,7 +78,7 @@ class OrderSlipCore extends ObjectModel
 		}
 	}
 
-	public static function getOrdersSlip($customer_id, $order_id = false)
+	static public function getOrdersSlip($customer_id, $order_id = false)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -88,7 +88,7 @@ class OrderSlipCore extends ObjectModel
 		ORDER BY `date_add` DESC');
 	}
 
-	public static function getOrdersSlipDetail($id_order_slip = true, $id_order_detail = false)
+	static public function getOrdersSlipDetail($id_order_slip = true, $id_order_detail = false)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS(
 		($id_order_detail ? 'SELECT SUM(`product_quantity`) AS `total`' : 'SELECT *').
@@ -97,7 +97,7 @@ class OrderSlipCore extends ObjectModel
 		.($id_order_detail ? ' WHERE `id_order_detail` = '.(int)($id_order_detail) : ''));
 	}
 
-	public static function getOrdersSlipProducts($orderSlipId, $order)
+	static public function getOrdersSlipProducts($orderSlipId, $order)
 	{
 		$discounts = $order->getDiscounts(true);
 		$productsRet = self::getOrdersSlipDetail($orderSlipId);
@@ -147,7 +147,7 @@ class OrderSlipCore extends ObjectModel
 		return $products;
 	}
 
-	public static function getSlipsIdByDate($dateFrom, $dateTo)
+	static public function getSlipsIdByDate($dateFrom, $dateTo)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT `id_order_slip`
@@ -161,7 +161,7 @@ class OrderSlipCore extends ObjectModel
 		return $slips;
 	}
 
-	public static function createOrderSlip($order, $productList, $qtyList, $shipping_cost = false)
+	static public function createOrderSlip($order, $productList, $qtyList, $shipping_cost = false)
 	{
 		$currency = new Currency($order->id_currency);
 		$orderSlip =  new OrderSlip();

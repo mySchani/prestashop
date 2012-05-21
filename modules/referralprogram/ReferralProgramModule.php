@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class ReferralProgramModule extends ObjectModel
@@ -61,7 +61,7 @@ class ReferralProgramModule extends ObjectModel
 		return $fields;
 	}
 
-	public static function getDiscountPrefix()
+	static public function getDiscountPrefix()
 	{
 		return 'SP';
 	}
@@ -126,7 +126,7 @@ class ReferralProgramModule extends ObjectModel
 	  *
 	  * @return array Sponsor
 	  */
-	public static function getSponsorFriend($id_customer, $restriction = false)
+	static public function getSponsorFriend($id_customer, $restriction = false)
 	{
 		if (!(int)($id_customer))
 			return array();
@@ -151,7 +151,7 @@ class ReferralProgramModule extends ObjectModel
 	  *
 	  * @return boolean
 	  */
-	public static function isSponsorised($id_customer, $getId=false)
+	static public function isSponsorised($id_customer, $getId=false)
 	{
 		$result = Db::getInstance()->getRow('
 		SELECT s.`id_referralprogram`
@@ -164,7 +164,7 @@ class ReferralProgramModule extends ObjectModel
 		return isset($result['id_referralprogram']);
 	}
 
-	public static function isSponsorFriend($id_sponsor, $id_friend)
+	static public function isSponsorFriend($id_sponsor, $id_friend)
 	{
 		if (!(int)($id_sponsor) OR !(int)($id_friend))
 			return false; 
@@ -182,11 +182,12 @@ class ReferralProgramModule extends ObjectModel
 	  *
 	  * @return boolean OR int idReferralProgram
 	  */
-	public static function isEmailExists($email, $getId = false, $checkCustomer = true)
+	static public function isEmailExists($email, $getId = false, $checkCustomer = true)
 	{
 		if (empty($email) OR !Validate::isEmail($email))
 			die (Tools::displayError('Email invalid.'));
-		if ($checkCustomer === true AND Customer::customerExists($email))
+//			$return_id = false, $ignoreGuest = true, $id_group_shop = false, $id_shop = false
+		if ($checkCustomer === true AND Customer::customerExists($email, false, true, (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop()))
 			return false;
 		$result = Db::getInstance()->getRow('
 		SELECT s.`id_referralprogram`

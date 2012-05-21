@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,10 +27,11 @@
 <!-- Block search module TOP -->
 <div id="search_block_top">
 
-	<form method="get" action="{$link->getPageLink('search.php')}" id="searchbox">
+	<form method="get" action="{$link->getPageLink('search')}" id="searchbox">
 		<p>
 			<label for="search_query_top"><!-- image on background --></label>
 			<input type="hidden" name="orderby" value="position" />
+			<input type="hidden" name="controller" value="search" />
 			<input type="hidden" name="orderway" value="desc" />
 			<input class="search_query" type="text" id="search_query_top" name="search_query" value="{if isset($smarty.get.search_query)}{$smarty.get.search_query|htmlentities:$ENT_QUOTES:'utf-8'|stripslashes}{/if}" />
 			<input type="submit" name="submit_search" value="{l s='Search' mod='blocksearch'}" class="button" />
@@ -63,7 +64,7 @@
 			if($(this).val().length > 0){
 				stopInstantSearchQueries();
 				instantSearchQuery = $.ajax({
-				url: '{/literal}{if $search_ssl == 1}{$link->getPageLink('search.php', true)}{else}{$link->getPageLink('search.php')}{/if}{literal}',
+				url: '{/literal}{if $search_ssl == 1}{$link->getPageLink('search', true)}{else}{$link->getPageLink('search')}{/if}{literal}',
 				data: 'instantSearch=1&id_lang={/literal}{$cookie->id_lang}{literal}&q='+$(this).val(),
 				dataType: 'html',
 				success: function(data){
@@ -100,7 +101,7 @@
 		$('document').ready( function() {
 			$("#search_query_top")
 				.autocomplete(
-					'{/literal}{if $search_ssl == 1}{$link->getPageLink('search.php', true)}{else}{$link->getPageLink('search.php')}{/if}{literal}', {
+					'{/literal}{if $search_ssl == 1}{$link->getPageLink('search', true)}{else}{$link->getPageLink('search')}{/if}{literal}', {
 						minChars: 3,
 						max: 10,
 						width: 500,

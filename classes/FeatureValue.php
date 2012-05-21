@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -81,7 +81,7 @@ class FeatureValueCore extends ObjectModel
 	 * @return array Array with feature's values
 	 * @static
 	 */
-	public static function getFeatureValues($id_feature)
+	static public function getFeatureValues($id_feature)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
@@ -97,7 +97,7 @@ class FeatureValueCore extends ObjectModel
 	 * @return array Array with feature's values
 	 * @static
 	 */
-	public static function getFeatureValuesWithLang($id_lang, $id_feature)
+	static public function getFeatureValuesWithLang($id_lang, $id_feature)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -114,7 +114,7 @@ class FeatureValueCore extends ObjectModel
 	 * @return array Array with value's languages
 	 * @static
 	 */
-	public static function getFeatureValueLang($id_feature_value)
+	static public function getFeatureValueLang($id_feature_value)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -131,14 +131,14 @@ class FeatureValueCore extends ObjectModel
 	 * @return string String value name selected
 	 * @static
 	 */
-	public static function selectLang($lang, $id_lang)
+	static public function selectLang($lang, $id_lang)
 	{
 		foreach ($lang as $tab)
 			if ($tab['id_lang'] == $id_lang)
 				return $tab['value'];
 	}
 	
-	public static function addFeatureValueImport($id_feature, $name)
+	static public function addFeatureValueImport($id_feature, $name)
 	{
 		$rq = Db::getInstance()->ExecuteS('
 		SELECT fv.`id_feature_value`
@@ -167,30 +167,10 @@ class FeatureValueCore extends ObjectModel
 		return (int)$id_feature_value;
 	}
 
-	public function add($autodate = true, $nullValues = false)
-	{
-		$return = parent::add($autodate, $nullValues);
-		if ($return)
-			Module::hookExec('afterSaveFeatureValue', array('id_feature_value' => $this->id));
-		return $return;
-	}
-
 	public function delete()
 	{
 		/* Also delete related products */
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'feature_product` WHERE `id_feature_value` = '.(int)$this->id);
-		$return = parent::delete();
-		
-		if ($return)
-			Module::hookExec('afterDeleteFeatureValue', array('id_feature_value' => $this->id));
-		return $return;
-	}
-
-	public function update($nullValues = false)
-	{
-		$return = parent::update($nullValues);
-		if ($return)
-			Module::hookExec('afterSaveFeatureValue', array('id_feature_value' => $this->id));
-		return $return;
+		return parent::delete();
 	}
 }

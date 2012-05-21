@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14455 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -43,7 +43,7 @@ class TrustedShopsSoapApi
 
 	public static function validate($partener_package, $trusted_shops_id, $action = self::ACTIVATE)
 	{
-		ini_set('soap.wsdl_cache_enabled', 1);
+		$ini = ini_set('soap.wsdl_cache_enabled', 1);
 		$result = self::RT_SOAP_ERROR;
 		
 		try
@@ -55,12 +55,11 @@ class TrustedShopsSoapApi
 		}
 		catch(SoapFault $fault) 
 		{
-			/** Enable these lines if you are experiencing issues with your Trusted Shops ID activation.
-             *
-             * $errorText = 'SOAP Fault: (faultcode:{$fault->faultcode}, faultstring:{$fault->faultstring})';
-             * die($errorText);
-             *
-			 */
+			$errorText = 'SOAP Fault: (faultcode:{$fault->faultcode}, faultstring:{$fault->faultstring})';
+			
+			/** Enable this line if you are experiencing issues with your Trusted Shops ID activation. 
+			die($errorText);
+			*/
 		}
 		
 		if ($result == self::RT_WRONG_LOGIN)

@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,12 +18,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14866 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-{if $display_widget && isset($filename)}
+
+{if $display_widget}
 <div style="text-align: center">
 	<a target="_blank" href="https://www.trustedshops.com/buyerrating/info_{$ts_id}.html" title="See customer ratings of {$shop_name}"><img alt="Customer ratings of {$shop_name}" border="0"  src="{$filename}"/></a>
 </div>
@@ -31,9 +32,7 @@
 {/if}
 {if $display_rating_link}
 <div style="text-align: center">
-	<a target="_blank" href="{$rating_url}" title="Rate this shop">
-		<img alt="Rate this shop" border="0" src="{$module_dir}/img/apply_{$language}.gif" />
-	</a>
+	<a target="_blank" href="{$rating_url}" title="Rate this shop"><img alt="Rate this shop" border="0" src="{$module_dir}/img/apply_{$language}.gif" /></a>
 </div>
 <br />
 {/if}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -56,14 +56,6 @@ class AdminTabs extends AdminTab
 
 	public function postProcess()
 	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		
 		if (($id_tab = (int)(Tools::getValue('id_tab'))) AND ($direction = Tools::getValue('move')) AND Validate::isLoadedObject($tab = new Tab($id_tab)))
 		{
 			global $currentIndex;

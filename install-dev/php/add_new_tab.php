@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7450 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-function add_new_tab($className, $name, $id_parent)
+function add_new_tab($className, $name, $id_parent, $returnId = false)
 {
 	$array = array();
 	foreach (explode('|', $name) AS $item)
@@ -36,10 +36,9 @@ function add_new_tab($className, $name, $id_parent)
 	
 	if (!(int)Db::getInstance()->getValue('SELECT count(id_tab) FROM `'._DB_PREFIX_.'tab` WHERE `class_name` = \''.pSQL($className).'\' '))
 		Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tab` (`id_parent`, `class_name`, `module`, `position`) VALUES ('.(int)$id_parent.', \''.pSQL($className).'\', \'\', 
-									(SELECT MAX(t.position)+ 1 FROM `'._DB_PREFIX_.'tab` t WHERE t.id_parent = '.(int)$id_parent.'))');
+									(SELECT IFNULL(MAX(t.position),0)+ 1 FROM `'._DB_PREFIX_.'tab` t WHERE t.id_parent = '.(int)$id_parent.'))');
 		
-	$languages = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'lang`');
-	foreach ($languages AS $lang)
+	foreach (Language::getLanguages() AS $lang)
 	{
 		Db::getInstance()->Execute('
 		INSERT IGNORE INTO `'._DB_PREFIX_.'tab_lang` (`id_lang`, `id_tab`, `name`) 
@@ -57,4 +56,10 @@ function add_new_tab($className, $name, $id_parent)
 								FROM `'._DB_PREFIX_.'tab`
 								WHERE `class_name` = \''.pSQL($className).'\' LIMIT 0,1
 								), 1, 1, 1, 1 FROM `'._DB_PREFIX_.'profile` )');
+
+	if($returnId) {
+		return (int)Db::getInstance()->getValue('SELECT `id_tab`
+								FROM `'._DB_PREFIX_.'tab`
+								WHERE `class_name` = \''.pSQL($className).'\'');
+	}
 }

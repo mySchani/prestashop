@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 	
 class Secuvad extends Module
@@ -47,9 +46,8 @@ class Secuvad extends Module
   		$this->currencies = NULL;
   		$this->currencies_mode = NULL;
 		$this->need_instance = 0;
-
+		
 		parent::__construct();
-		$this->author = 'PrestaShop';
   		$this->displayName = $this->l('Secuvad module');
   		$this->description = $this->l('Solution fighting against online fraud');
   		$this->confirmUninstall = $this->l('Are you sure you want to delete this module?');
@@ -57,7 +55,7 @@ class Secuvad extends Module
 	
 	public function install()
 	{
-	  	if (!parent::install()
+	  	if(!parent::install()
 			|| !$this->registerHook('paymentConfirm')
 			|| !$this->registerHook('adminOrder')
 			|| !Configuration::updateValue('SECUVAD_CONTACT', 'prestashop@secuvad.com') 
@@ -213,7 +211,7 @@ class Secuvad extends Module
 
 	public function uninstall()
 	{
-		if (!parent::uninstall()
+		if(!parent::uninstall()
 	    || !Configuration::deleteByName('SECUVAD_CONTACT')
 	    || !Configuration::deleteByName('SECUVAD_ACTIVATION')
 	    || !Configuration::deleteByName('SECUVAD_ID')
@@ -282,7 +280,7 @@ class Secuvad extends Module
 					<p class="center">
 						<input type="hidden" name="id_secuvad_order" value="'.(int)($params['id_order']).'" />
 						<input type="submit" class="button" name="send_to_secuvad" value="'.$this->l('Update Secuvad status').'"> 
-						<input type="submit" class="button" name="report_fraud" value="'.$this->l('Transmit an unpaid transaction').'" onclick="if (!confirm(\''.$this->l('Please note, by delivery of such unpaid SECUVAD, you certify that your claim is certain, liquid and payable, and that you entrust SECUVAD to EXCLUSIVE recovery. Do you wish to continue?').'\')) return false;">
+						<input type="submit" class="button" name="report_fraud" value="'.$this->l('Transmit an unpaid transaction').'" onclick="if(!confirm(\''.$this->l('Please note, by delivery of such unpaid SECUVAD, you certify that your claim is certain, liquid and payable, and that you entrust SECUVAD to EXCLUSIVE recovery. Do you wish to continue?').'\')) return false;">
 					</p>
 				</form>
 			</fieldset>
@@ -626,7 +624,7 @@ class Secuvad extends Module
 		global $cookie;
 		
 		$this->_html .= '
-		<form method="POST" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+		<form method="POST" action="'.$_SERVER['REQUEST_URI'].'">
 			<fieldset style="width:430px;margin-right:10px;margin-bottom:10px;">
 				<legend><img src="'._PS_BASE_URL_.__PS_BASE_URI__.'/modules/'.$this->name.'/logo.gif" alt="" /> '.$this->l('Company').'</legend>
 				
@@ -664,7 +662,7 @@ class Secuvad extends Module
 			$categories[1]['infos'] = array('name' => $this->l('Home'), 'id_parent' => 0, 'level_depth' => 0);
 			
 			$this->_html .= '
-			<form method="POST" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+			<form method="POST" action="'.$_SERVER['REQUEST_URI'].'">
 				<fieldset style="width:900px;margin-right:10px;margin-bottom:10px;">
 					<legend><img src="'._PS_BASE_URL_.__PS_BASE_URI__.'/modules/'.$this->name.'/logo.gif" alt="" /> '.$this->l('Secuvad categories').'</legend>
 					
@@ -683,7 +681,7 @@ class Secuvad extends Module
 			';
 			
 			$this->_html .= '
-			<form method="POST" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+			<form method="POST" action="'.$_SERVER['REQUEST_URI'].'">
 				<fieldset style="width:430px;margin-right:10px;margin-bottom:10px;">
 					<legend><img src="'._PS_BASE_URL_.__PS_BASE_URI__.'/modules/'.$this->name.'/logo.gif" alt="" /> '.$this->l('Secuvad Payment').'</legend>
 					
@@ -718,7 +716,7 @@ class Secuvad extends Module
 			';
 			
 			$this->_html .= '
-			<form method="POST" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+			<form method="POST" action="'.$_SERVER['REQUEST_URI'].'">
 				<fieldset style="width:430px;margin-right:10px;margin-bottom:10px;">
 					<legend><img src="'._PS_BASE_URL_.__PS_BASE_URI__.'/modules/'.$this->name.'/logo.gif" alt="" /> '.$this->l('Secuvad Carrier').'</legend>
 					
@@ -805,7 +803,7 @@ class Secuvad extends Module
 	{
 		$this->_html .= '
 		<h3>'.$this->l('In order to use the Secuvad module, please fill in this form, then click "Register".').'</h3>
-		<form method="POST" action="'.($lock ? $this->_getSecuvadRegisterURL() : Tools::safeOutput($_SERVER['REQUEST_URI'])).'">';
+		<form method="POST" action="'.($lock ? $this->_getSecuvadRegisterURL() : $_SERVER['REQUEST_URI']).'">';
 		if ($lock)
 		{
 			foreach (Tools::getValue('categories') as $category)
@@ -950,7 +948,7 @@ class Secuvad extends Module
 		$tab->class_name = $tabClass;
 		$tab->module = $this->name;
 		$tab->id_parent = (int)($idTabParent);
-		if (!$tab->save())
+		if(!$tab->save())
 		return false;
 		return true;
 	}
@@ -958,7 +956,7 @@ class Secuvad extends Module
 	private function uninstallModuleTab($tabClass)
 	{
 		$idTab = Tab::getIdFromClassName($tabClass);
-		if ($idTab != 0)
+		if($idTab != 0)
 		{
 			$tab = new Tab($idTab);
 			$tab->delete();
@@ -995,7 +993,7 @@ class Secuvad extends Module
 		FROM `'._DB_PREFIX_.'secuvad_order` 
 		WHERE `id_secuvad_order` = '.(int)($id_secuvad_order));
 		
-		if ($secuvad_status == 0)
+		if($secuvad_status == 0)
 			return false;
 		return true;
 	}
@@ -1003,11 +1001,11 @@ class Secuvad extends Module
 	public function check_assoc()
 	{
 		$result = '';
-		if (!$this->check_payment())
+		if(!$this->check_payment())
 			$result .= 'payment';
-		if (!$this->check_transport())
+		if(!$this->check_transport())
 			$result .= 'transport';
-		if (!$this->check_category())
+		if(!$this->check_category())
 			$result .= 'category';
 		return $result;
 	}
@@ -1138,7 +1136,7 @@ class Secuvad extends Module
 		LEFT JOIN `'._DB_PREFIX_.'secuvad_category` sc ON (sc.`category_id` = sac.`category_id` AND sc.`id_lang` = '.(int)($cookie->id_lang).')
 		WHERE sc.`category_id` IS NULL
 		');
-		if (count($module_not_assoc)>0)
+		if(count($module_not_assoc)>0)
 		{
 			$message = $this->l('Following categories are not associated:');
 			foreach($module_not_assoc as $mod)
@@ -1203,7 +1201,7 @@ class Secuvad extends Module
 			$xml_obj = new Secuvad_flux(Configuration::get('SECUVAD_ID'), Configuration::get('SECUVAD_XML_ENCODING'));
 			$flux_xml = $xml_obj->get_flux_xml_fraud(Tools::getValue('id_secuvad_order'));
 			
-			if (Configuration::get('SECUVAD_MODE') == 'TEST')
+			if(Configuration::get('SECUVAD_MODE') == 'TEST')
 				$url = 'https://'.Configuration::get('SECUVAD_LOGIN').':'.Configuration::get('SECUVAD_MDP').'@'.Configuration::get('SECUVAD_URL_TEST');
 			else
 				$url = 'https://'.Configuration::get('SECUVAD_LOGIN').':'.Configuration::get('SECUVAD_MDP').'@'.Configuration::get('SECUVAD_URL_PROD');			
@@ -1230,7 +1228,7 @@ class Secuvad extends Module
 		$res = Db::getInstance()->getValue('
 		SELECT COUNT(0) nb 
 		FROM `'._DB_PREFIX_.'secuvad_logs`');
-		if ($res > $this->get_secuvad_max_log_size())
+		if($res > $this->get_secuvad_max_log_size())
 			Db::getInstance()->Execute('
 			DELETE FROM `'._DB_PREFIX_.'secuvad_logs` 
 			ORDER BY `date` 

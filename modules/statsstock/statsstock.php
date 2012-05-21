@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,65 +19,78 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
   
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsStock extends Module
 {
-	function __construct()
-	{
-		$this->name = 'statsstock';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsstock';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
-		parent::__construct();
+        parent::__construct();
 
-		$this->displayName = $this->l('Stock stats');
-		$this->description = '';
-	}
+        $this->displayName = $this->l('Stock stats');
+        $this->description = '';
+    }
 
 	public function install()
 	{
 		return (parent::install() && $this->registerHook('AdminStatsModules'));
 	}
-	
-	function hookAdminStatsModules()
-	{
+
+    function hookAdminStatsModules()
+    {
 		global $cookie, $currentIndex;
 		
 		if (Tools::isSubmit('submitCategory'))
 			$cookie->statsstock_id_category = Tools::getValue('statsstock_id_category');
-		
+
 		$ru = $currentIndex.'&module='.$this->name.'&token='.Tools::getValue('token');
 		$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-		$filter = ((int)$cookie->statsstock_id_category ? 'WHERE p.id_product IN (SELECT cp.id_product FROM '._DB_PREFIX_.'category_product cp WHERE cp.id_category = '.(int)$cookie->statsstock_id_category.')' : '');
-		$products = Db::getInstance()->ExecuteS('
-		SELECT p.id_product, p.reference, pl.name,
-			IFNULL((
-				SELECT AVG(pa.wholesale_price)
-				FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
-				AND wholesale_price != 0
-			), p.wholesale_price) as wholesale_price,
-			IFNULL((
-				SELECT SUM(pa.quantity)
-				FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
-			), p.quantity) as quantity,
-			IFNULL((
-				SELECT SUM(IF(pa.wholesale_price > 0, pa.wholesale_price, p.wholesale_price) * pa.quantity)
-				FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
-			), p.wholesale_price * p.quantity) as stockvalue
-		FROM '._DB_PREFIX_.'product p
-		INNER JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
-		'.$filter);
+		$filter = ((int)$cookie->statsstock_id_category ? ' AND p.id_product IN (SELECT cp.id_product FROM '._DB_PREFIX_.'category_product cp WHERE cp.id_category = '.(int)$cookie->statsstock_id_category.')' : '');
 		
+		$joinProduct = $whereProduct = '';
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$joinProduct = ' LEFT JOIN '._DB_PREFIX_.'product_shop ps ON ps.id_product = p.id_product ';
+			if ($this->shopID)
+				$whereProduct = ' AND ps.id_shop = '.$this->shopID;
+			else if ($this->shopGroupID)
+				$whereProduct = ' AND ps.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.')';
+		}
+
+		$sql = 'SELECT p.id_product, p.reference, pl.name,
+				IFNULL((
+					SELECT AVG(pa.wholesale_price)
+					FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
+					AND wholesale_price != 0
+				), p.wholesale_price) as wholesale_price,
+				IFNULL((
+					SELECT SUM(pa.quantity)
+					FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
+				), p.quantity) as quantity,
+				IFNULL((
+					SELECT SUM(IF(pa.wholesale_price > 0, pa.wholesale_price, p.wholesale_price) * pa.quantity)
+					FROM '._DB_PREFIX_.'product_attribute pa WHERE p.id_product = pa.id_product
+				), p.wholesale_price * p.quantity) as stockvalue
+				FROM '._DB_PREFIX_.'product p
+				'.$joinProduct.'
+				INNER JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
+				WHERE 1 = 1
+				'.$filter.$whereProduct;
+		$products = Db::getInstance()->ExecuteS($sql);
+
 		echo '
 		<script type="text/javascript">$(\'#calendar\').slideToggle();</script>
 		<h2 style="float:left">'.$this->l('Stock value').'</h2>
@@ -90,7 +103,7 @@ class StatsStock extends Module
 		echo '	</select>
 		</form>
 		<div style="clear:both">&nbsp;</div>';
-		
+
 		if (!count($products))
 			echo $this->l('Your catalog is empty.');
 		else
@@ -137,4 +150,3 @@ class StatsStock extends Module
 		}
     }
 }
-

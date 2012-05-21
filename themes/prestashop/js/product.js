@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14089 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -106,7 +106,6 @@ function findCombination(firstTime)
 			selectedCombination['reference'] = combinations[combination]['reference'];
 			$('#idCombination').val(combinations[combination]['idCombination']);
 
-			$('#ipa_customization').val(combinations[combination]['idCombination']);
 			//get the data of product with these attributes
 			quantityAvailable = combinations[combination]['quantity'];
 			selectedCombination['price'] = combinations[combination]['price'];
@@ -123,7 +122,7 @@ function findCombination(firstTime)
 			//update the display
 			updateDisplay();
 
-			if(typeof(firstTime) != 'undefined' && firstTime && ipa_default != selectedCombination['idCombination'])
+			if(typeof(firstTime) != 'undefined' && firstTime)
 				refreshProductImages(0);
 			else
 				refreshProductImages(combinations[combination]['idCombination']);
@@ -183,7 +182,7 @@ function updateDisplay()
 		if (!allowBuyWhenOutOfStock)
 		{
 			if (quantityAvailable <= maxQuantityToAllowDisplayOfLastQuantityMessage)
-				$('#last_quantities').show('slow');
+			$('#last_quantities').show('slow');
 			else
 				$('#last_quantities').hide('slow');
 		}
@@ -204,7 +203,7 @@ function updateDisplay()
 				$('#quantityAvailableTxtMultiple').show();
 			}
 		}
-	}
+		}
 	else
 	{
 		//show the hook out of stock
@@ -286,7 +285,6 @@ function updateDisplay()
 		var tax = (taxRate / 100) + 1;
 		var taxExclPrice = (specific_price ? (specific_currency ? specific_price : specific_price * currencyRate) : priceTaxExclWithoutGroupReduction) + selectedCombination['price'] * currencyRate;
 
-
 		if (specific_price)
 			var productPriceWithoutReduction = priceTaxExclWithoutGroupReduction + selectedCombination['price'] * currencyRate;
 
@@ -306,7 +304,6 @@ function updateDisplay()
 		var reduction = 0;
 		if (reduction_price || reduction_percent)
 		{
-            reduction_price = (specific_currency ? reduction_price : reduction_price * currencyRate);
 			reduction = productPrice * (parseFloat(reduction_percent) / 100) + reduction_price;
 			if (reduction_price && (displayPrice || noTaxForThisProduct))
 				reduction = ps_round(reduction / tax, 6);
@@ -414,9 +411,6 @@ function refreshProductImages(id_product_attribute)
 //To do after loading HTML
 $(document).ready(function()
 {
-	// trigger click on the product attribute combination
-	getCombinationById($('#ipa_customization').val());
-
 	//init the serialScroll for thumbs
 	$('#thumbs_list').serialScroll({
 		items:'li:visible',
@@ -479,6 +473,7 @@ $(document).ready(function()
 	else if (typeof productHasAttributes != 'undefined' && !productHasAttributes)
 		refreshProductImages(0);
 
+	//
 	$('a#resetImages').click(function() {
 		updateColorSelect(0);
 	});
@@ -531,23 +526,3 @@ function checkMinimalQuantity(minimal_quantity)
 	}
 }
 
-function getCombinationById(id_combination)
-{
-	passed = false;
-	$.each(combinations, function(key, value)
-	{
-		if (value['idCombination'] == id_combination)
-		{
-			passed = true;
-			selectedCombination = value;
-			$.each(value['idsAttributes'], function(key, value){
-				$('#attributes select option[value='+value+']').attr('selected','selected');
-			})
-		}
-	})
-	if (passed)
-	{
-		refreshProductImages(id_combination);
-		$('#wrapResetImages').show('slow');
-	}
-}

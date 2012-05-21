@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,36 +19,36 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsLive extends Module
 {
-	function __construct()
-	{
-		$this->name = 'statslive';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statslive';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
-		parent::__construct();
-
-		$this->displayName = $this->l('Visitors online');
-		$this->description = $this->l('Display the list of customers and visitors currently online.');
-	}
+		
+        parent::__construct();
+		
+        $this->displayName = $this->l('Visitors online');
+        $this->description = $this->l('Display the list of customers and visitors currently online.');
+    }
 	
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
 	/**
 	 * Get the number of online customers
 	 * 
@@ -56,22 +56,22 @@ class StatsLive extends Module
 	 */
 	private function getCustomersOnline()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT u.id_customer, u.firstname, u.lastname, pt.name as page
-		FROM `'._DB_PREFIX_.'connections` c
-		LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
-		LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page = cp.id_page
-		LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.id_page_type = pt.id_page_type
-		INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
-		INNER JOIN `'._DB_PREFIX_.'customer` u ON u.id_customer = g.id_customer
-		WHERE cp.`time_end` IS NULL
-		AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
-		GROUP BY c.id_connections
-		ORDER BY u.firstname, u.lastname');
-		
-		return array($result, Db::getInstance()->NumRows());
+		$sql = 'SELECT u.id_customer, u.firstname, u.lastname, pt.name as page
+				FROM `'._DB_PREFIX_.'connections` c
+				LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
+				LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page = cp.id_page
+				LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.id_page_type = pt.id_page_type
+				INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
+				INNER JOIN `'._DB_PREFIX_.'customer` u ON u.id_customer = g.id_customer
+				WHERE cp.`time_end` IS NULL
+					'.$this->sqlShopRestriction(false, 'c').'
+					AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
+				GROUP BY c.id_connections
+				ORDER BY u.firstname, u.lastname';
+		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
+		return array($results, Db::getInstance()->NumRows());
 	}
-	
+
 	/**
 	 * Get the number of online visitors
 	 * 
@@ -81,30 +81,32 @@ class StatsLive extends Module
 	{
 		if (Configuration::get('PS_STATSDATA_CUSTOMER_PAGESVIEWS'))
 		{
-			$query = 'SELECT c.id_guest, c.ip_address, c.date_add, c.http_referer, pt.name as page
-			FROM `'._DB_PREFIX_.'connections` c
-			LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
-			LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page = cp.id_page
-			LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.id_page_type = pt.id_page_type
-			INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
-			WHERE cp.`time_end` IS NULL
-			AND (g.id_customer IS NULL OR g.id_customer = 0)
-			AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
-			GROUP BY c.id_connections
-			ORDER BY c.date_add DESC';
+			$sql = 'SELECT c.id_guest, c.ip_address, c.date_add, c.http_referer, pt.name as page
+					FROM `'._DB_PREFIX_.'connections` c
+					LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON c.id_connections = cp.id_connections
+					LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page = cp.id_page
+					LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.id_page_type = pt.id_page_type
+					INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
+					WHERE (g.id_customer IS NULL OR g.id_customer = 0)
+						'.$this->sqlShopRestriction(false, 'c').'
+						AND cp.`time_end` IS NULL
+						AND TIME_TO_SEC(TIMEDIFF(NOW(), cp.`time_start`)) < 900
+					GROUP BY c.id_connections
+					ORDER BY c.date_add DESC';
 		}
 		else
 		{
-			$query = 'SELECT c.id_guest, c.ip_address, c.date_add, c.http_referer
-			FROM `'._DB_PREFIX_.'connections` c
-			INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
-			WHERE (g.id_customer IS NULL OR g.id_customer = 0)
-			AND TIME_TO_SEC(TIMEDIFF(NOW(), c.`date_add`)) < 900
-			ORDER BY c.date_add DESC';
+			$sql = 'SELECT c.id_guest, c.ip_address, c.date_add, c.http_referer
+					FROM `'._DB_PREFIX_.'connections` c
+					INNER JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
+					WHERE (g.id_customer IS NULL OR g.id_customer = 0)
+						'.$this->sqlShopRestriction(false, 'c').'
+						AND TIME_TO_SEC(TIMEDIFF(NOW(), c.`date_add`)) < 900
+					ORDER BY c.date_add DESC';
 		}
-			
-		$result =  Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($query);
-		return array($result, Db::getInstance()->NumRows());
+		
+		$results = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
+		return array($results, Db::getInstance()->NumRows());
 	}
 	
 	public function hookAdminStatsModules($params)

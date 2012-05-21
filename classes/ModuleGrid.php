@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -52,7 +52,7 @@ abstract class ModuleGridCore extends Module
 
 	/** @var ModuleGridEngine grid engine */
 	protected $_render;
-	
+
 	public function install()
 	{
 		return (parent::install());
@@ -69,8 +69,6 @@ abstract class ModuleGridCore extends Module
 	
 	public function create($render, $type, $width, $height, $start, $limit, $sort, $dir)
 	{
-		if (!Validate::isModuleName($render))
-    		die(Tools::displayError());
 		if (!Tools::file_exists_cache($file = dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php'))
 			die(Tools::displayError());
 		require_once($file);
@@ -95,16 +93,14 @@ abstract class ModuleGridCore extends Module
 		$this->_render->render();
 	}
 	
-	public static function engine($params)
+	public function engine($params)
 	{
 		if (!($render = Configuration::get('PS_STATS_GRID_RENDER')))
 			return Tools::displayError('No grid engine selected');
-		if (!Validate::isModuleName($render))
-    		die(Tools::displayError());
 		if (!file_exists(dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php'))
 			return Tools::displayError('Grid engine selected is unavailable.');
 			
-		$grider = 'grider.php?render='.$render.'&module='.Tools::safeOutput(Tools::getValue('module'));
+		$grider = 'grider.php?render='.$render.'&module='.Tools::getValue('module');
 		
 		global $cookie;
 		$grider .= '&id_employee='.(int)($cookie->id_employee);
@@ -116,7 +112,7 @@ abstract class ModuleGridCore extends Module
 			$params['height'] = 920;
 		if (!isset($params['start']) OR !Validate::IsUnsignedInt($params['start']))
 			$params['start'] = 0;
-		if (!isset($params['limit']) OR !Validate::IsUnsignedInt($params['limit']))
+		if (!isset($params['limit']) OR !Validate::IsUnsignedInt($params['height']))
 			$params['limit'] = 40;
 
 		$grider .= '&width='.$params['width'];

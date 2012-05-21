@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,11 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14390 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
+
+$useSSL = true;
 
 include_once(dirname(__FILE__).'/../../../config/config.inc.php');
 include_once(dirname(__FILE__).'/../../../init.php');
@@ -57,7 +59,7 @@ function getAuthorization()
 				$cookie->paypal_token = strval($result['TOKEN']);
 				$cookie->paypal_token_date = time();
 				header('Location: https://'.$ppPayment->getPayPalURL().'/webscr&cmd=_express-checkout&token='.urldecode(strval($cookie->paypal_token)).'&useraction=commit');
-				exit;
+        exit;
 			}
 			else
 				$logs[] = '<b>'.$ppPayment->l('No token given by PayPal', 'submit').'</b>';
@@ -93,8 +95,8 @@ function displayConfirm()
 		'logo' => $ppPayment->getLogo(),
 		'cust_currency' => $cart->id_currency,
 		'currency' => $ppPayment->getCurrency((int)$cart->id_currency),
-		'total' => $cart->getOrderTotal(true, PayPal::BOTH),
-		'this_path_ssl' => PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'. $ppPayment->name.'/',
+		'total' => $cart->getOrderTotal(true, Cart::BOTH),
+		'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'. $ppPayment->name.'/',
 		'mode' => 'payment/'
 	));
 
@@ -114,7 +116,7 @@ function submitConfirm()
 	}
 	elseif (!$id_currency = (int)(Tools::getValue('currency_payement')))
 		die('No currency');
-	elseif (!$cart->getOrderTotal(true, PayPal::BOTH))
+	elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 		die('Empty cart');
 	$currency = new Currency((int)($id_currency));
 	if (!Validate::isLoadedObject($currency))
@@ -131,7 +133,7 @@ function validOrder()
 		header('location:../../../'); exit;
 		die('Not logged');
 	}
-	elseif (!$cart->getOrderTotal(true, PayPal::BOTH))
+	elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 		die('Empty cart');
 	if (!$token = Tools::htmlentitiesUTF8(strval(Tools::getValue('token'))))
 	{
@@ -152,7 +154,7 @@ function validOrder()
 
 if (!$cookie->isLogged(true))
 	die('Not logged');
-elseif (!$cart->getOrderTotal(true, PayPal::BOTH))
+elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 	die('Empty cart');
 
 // No submit, confirmation page

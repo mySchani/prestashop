@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14814 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -31,7 +31,7 @@
 	<input name="shop_id" type="hidden"	value="{$trusted_shops_id}">
 	<div style="background-color: #FFFFFF; font-family: Verdana, Arial, Helvetica, sans-serif; vertical-align: middle; width: 100%; margin: 0px; padding: 0px;" id="tsInnerBox">
 		<div style="text-align: center; width: 100%; float: left; border: 0px solid; margin:2px; padding: 0px;" id="tsSeal">
-			<input type="image" style="border: 0px none; margin:0;" src="{$ts_module_dir}/img/siegel.gif" title="{l s='Trusted Shops seal of approval - click to verify' mod='trustedshops'}">
+			<input type="image" style="border: 0px none; margin:0;" src="{$module_dir}/img/seal.png" title="{l s='Trusted Shops seal of approval - click to verify' mod='trustedshops'}">
 		</div>
 		<div style="text-align: center; line-height: 125%; width: 100%; float: left; border: 0px solid;  margin:0; padding: 0px;" id="tsText">
 			<a style="font-weight: normal; text-decoration: none; color: #000000;" title="" href="{$trusted_shops_url}" target="_blank">{$onlineshop_name} {l s='is a certified online shop with Trusted Shops Buyer Protection. More...' mod='trustedshops'}</a>

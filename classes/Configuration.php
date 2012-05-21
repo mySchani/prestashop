@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7227 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,6 +31,9 @@ class ConfigurationCore extends ObjectModel
 
 	/** @var string Key */
 	public 		$name;
+	
+	public		$id_group_shop;
+	public		$id_shop;
 
 	/** @var string Value */
 	public 		$value;
@@ -43,15 +46,16 @@ class ConfigurationCore extends ObjectModel
 
 	protected	$fieldsRequired = array('name');
 	protected	$fieldsSize = array('name' => 32);
-	protected	$fieldsValidate = array('name' => 'isConfigName');
+	protected	$fieldsValidate = array('name' => 'isConfigName', 'id_group_shop' => 'isUnsignedId', 'id_shop' => 'isUnsignedId');
 
 	protected	$table = 'configuration';
 	protected 	$identifier = 'id_configuration';
 
 	/** @var array Configuration cache */
 	protected static $_CONF;
-	/** @var array Configuration multilang cache */
-	protected static $_CONF_LANG;
+	
+	/** @var array Vars types */
+	protected static $types = array();
 
 	protected $webserviceParameters = array(
 		'fields' => array(
@@ -59,12 +63,12 @@ class ConfigurationCore extends ObjectModel
 		)
 	);
 	
-	
-	
 	public function getFields()
 	{
 		parent::validateFields();
 		$fields['name'] = pSQL($this->name);
+		$fields['id_group_shop'] = $this->id_group_shop;
+		$fields['id_shop'] = $this->id_shop;
 		$fields['value'] = pSQL($this->value);
 		$fields['date_add'] = pSQL($this->date_add);
 		$fields['date_upd'] = pSQL($this->date_upd);
@@ -83,27 +87,52 @@ class ConfigurationCore extends ObjectModel
 		parent::validateFieldsLang();
 		return parent::getTranslationsFields(array('value'));
 	}
-
+	
 	/**
-	  * Delete a configuration key in database (with or without language management)
-	  *
-	  * @param string $key Key to delete
-	  * @return boolean Deletion result
-	  */
-	public static function deleteByName($key)
+	 * Return ID a configuration key
+	 *
+	 * @param string $key
+	 * @param int $shopGroupID
+	 * @param int $shopID
+	 */
+	public static function getIdByName($key, $shopGroupID = null, $shopID = null)
 	{
-	 	if (!Validate::isConfigName($key))
-			return false;
-
-		if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'configuration_lang` WHERE `id_configuration` = (SELECT `id_configuration` FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \''.pSQL($key).'\')')
-		AND Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \''.pSQL($key).'\''))
-		{
-			unset(self::$_CONF[$key]);
-			return true;
-		}
-		return false;
+		self::getShopFromContext($shopGroupID, $shopID);
+		$sql = 'SELECT id_configuration
+				FROM '._DB_PREFIX_.'configuration
+				WHERE name = \''.pSQL($key).'\''
+					.Configuration::sqlRestriction($shopGroupID, $shopID);
+		return (int)Db::getInstance()->getValue($sql);
 	}
+	
+	/**
+	 * Load all configuration data
+	 */
+	static public function loadConfiguration()
+	{
+		self::$_CONF = array();
+		$sql = 'SELECT c.`name`, cl.`id_lang`, IF(cl.`id_lang` IS NULL, c.`value`, cl.`value`) AS value, c.id_group_shop, c.id_shop
+				FROM `'._DB_PREFIX_.'configuration` c
+				LEFT JOIN `'._DB_PREFIX_.'configuration_lang` cl ON (c.id_configuration = cl.id_configuration)';
+		if (!$results = Db::getInstance()->ExecuteS($sql))
+			return;
 
+		foreach ($results as $row)
+		{
+			$lang = ($row['id_lang']) ? $row['id_lang'] : 0;
+			self::$types[$row['name']] = ($lang) ? 'lang' : 'normal';
+			if (!isset(self::$_CONF[$lang]))
+				self::$_CONF[$lang] = array(
+					'global' => array(),
+					'group' => array(),
+					'shop' => array(),
+				);
+
+			// Do not remove (int) cast
+			Configuration::set($row['name'], array($lang => $row['value']), (int)$row['id_group_shop'], (int)$row['id_shop']);
+		}
+	}
+	
 	/**
 	  * Get a single configuration value (in one language only)
 	  *
@@ -111,50 +140,39 @@ class ConfigurationCore extends ObjectModel
 	  * @param integer $id_lang Language ID
 	  * @return string Value
 	  */
-	public static function get($key, $id_lang = NULL)
+	static public function get($key, $langID = NULL, $shopGroupID = NULL, $shopID = NULL)
 	{
-		if ($id_lang AND isset(self::$_CONF_LANG[(int)$id_lang][$key]))
-			return self::$_CONF_LANG[(int)$id_lang][$key];
-		elseif (is_array(self::$_CONF) AND key_exists($key, self::$_CONF))
-			return self::$_CONF[$key];
+		self::getShopFromContext($shopGroupID, $shopID);
+		$langID = (int)$langID;
+		if (!isset(self::$_CONF[$langID]))
+			$langID = 0;
+
+		if ($shopID && Configuration::hasKey($key, $langID, null, $shopID))
+			return self::$_CONF[$langID]['shop'][$shopID][$key];
+		else if ($shopGroupID && Configuration::hasKey($key, $langID, $shopGroupID))
+			return self::$_CONF[$langID]['group'][$shopGroupID][$key];
+		else if (Configuration::hasKey($key, $langID))
+			return self::$_CONF[$langID]['global'][$key];
 		return false;
 	}
-
-	/**
-	  * Set TEMPORARY a single configuration value (in one language only)
-	  *
-	  * @param string $key Key wanted
-	  * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
-	  */
-	public static function set($key, $values)
-	{
-		if (!Validate::isConfigName($key))
-	 		die(Tools::displayError());
-	 	/* Update classic values */
-		if (!is_array($values))
-			self::$_CONF[$key] = $values;
-		/* Update multilingual values */
-		else
-			/* Add multilingual values */
-			foreach ($values as $k => $value)
-				self::$_CONF_LANG[(int)($k)][$key] = $value;
-	}
-
+	
 	/**
 	  * Get a single configuration value (in multiple languages)
 	  *
 	  * @param string $key Key wanted
+	  * @param int $shopGroupID
+	  * @param int $shopID
 	  * @return array Values in multiple languages
 	  */
-	public static function getInt($key)
+	static public function getInt($key, $id_group_shop = NULL, $id_shop = NULL)
 	{
 		$languages = Language::getLanguages();
 		$resultsArray = array();
-		foreach($languages as $language)
-			$resultsArray[$language['id_lang']] = self::get($key, $language['id_lang']);
+		foreach ($languages as $language)
+			$resultsArray[$language['id_lang']] = self::get($key, $language['id_lang'], $id_group_shop, $id_shop);
 		return $resultsArray;
 	}
-
+	
 	/**
 	  * Get several configuration values (in one language only)
 	  *
@@ -162,137 +180,277 @@ class ConfigurationCore extends ObjectModel
 	  * @param integer $id_lang Language ID
 	  * @return array Values
 	  */
-	public static function getMultiple($keys, $id_lang = NULL)
+	static public function getMultiple($keys, $langID = NULL, $shopGroupID = NULL, $shopID = NULL)
 	{
-	 	if (!is_array($keys) OR !is_array(self::$_CONF) OR ($id_lang AND !is_array(self::$_CONF_LANG)))
+	 	if (!is_array($keys))
 	 		die(Tools::displayError());
 
-		$resTab = array();
-		if (!$id_lang)
+		$langID = (int)$langID;
+		self::getShopFromContext($shopGroupID, $shopID);
+
+	 	$results = array();
+	 	foreach ($keys as $key)
+	 		$results[$key] = Configuration::get($key, $langID, $shopGroupID, $shopID);
+		return $results;
+	}
+
+	/**
+	 * Check if key exists in configuration
+	 * 
+	 * @param string $key
+	 * @param int $id_lang
+	 * @param int $shopGroupID
+	 * @param int $shopID
+	 * @return bool
+	 */
+	public static function hasKey($key, $langID = null, $shopGroupID = null, $shopID = null)
+	{
+		$langID = (int)$langID;
+		if ($shopID)
+			return isset(self::$_CONF[$langID]['shop'][$shopID]) && array_key_exists($key, self::$_CONF[$langID]['shop'][$shopID]);
+		else if ($shopGroupID)
+			return isset(self::$_CONF[$langID]['group'][$shopGroupID]) && array_key_exists($key, self::$_CONF[$langID]['group'][$shopGroupID]);
+		return isset(self::$_CONF[$langID]['global']) && array_key_exists($key, self::$_CONF[$langID]['global']);
+	}
+	
+	/**
+	  * Set TEMPORARY a single configuration value (in one language only)
+	  *
+	  * @param string $key Key wanted
+	  * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
+	  * @param int $shopGroupID
+	  * @param int $shopID
+	  */
+	static public function set($key, $values, $id_group_shop = NULL, $id_shop = NULL)
+	{
+		if (!Validate::isConfigName($key))
+			die(Tools::displayError());
+		self::getShopFromContext($id_group_shop, $id_shop);
+		
+		if (!is_array($values))
+			$values = array($values);
+			
+		foreach ($values as $lang => $value)
 		{
-			foreach ($keys AS $key)
-				if (key_exists($key, self::$_CONF))
-					$resTab[$key] = self::$_CONF[$key];
-		}
-		elseif (key_exists($id_lang, self::$_CONF_LANG))
-			foreach ($keys AS $key)
-				if (key_exists($key, self::$_CONF_LANG[(int)($id_lang)]))
-					$resTab[$key] = self::$_CONF_LANG[(int)($id_lang)][$key];
-		return $resTab;
+			if ($id_shop)
+				self::$_CONF[$lang]['shop'][$id_shop][$key] = $value;
+			else if ($id_group_shop)
+				self::$_CONF[$lang]['group'][$id_group_shop][$key] = $value;
+			else
+				self::$_CONF[$lang]['global'][$key] = $value;
+		}			
 	}
-
+	
 	/**
-	  * Get several configuration values (in multiple languages)
-	  *
-	  * @param array $keys Keys wanted
-	  * @return array Values in multiple languages
-	  * @deprecated
-	  */
-	public static function getMultipleInt($keys)
+	 * Update configuration key for global context only
+	 * 
+	 * @param string $key
+	 * @param mixed $values
+	 * @param bool $html
+	 * @return bool
+	 */
+	static public function updateGlobalValue($key, $values, $html = false)
 	{
-		Tools::displayAsDeprecated();
-		$languages = Language::getLanguages();
-		$resultsArray = array();
-		foreach($languages as $language)
-			$resultsArray[$language['id_lang']] = self::getMultiple($keys, $language['id_lang']);
-		return $resultsArray;
+		return Configuration::updateValue($key, $values, $html, 0, 0);
 	}
-
-	/**
-	  * Insert configuration key and value into database
-	  *
-	  * @param string $key Key
-	  * @param string $value Value
-	  * @eturn boolean Insert result
-	  */
-	static protected function _addConfiguration($key, $value = NULL)
-	{
-		$newConfig = new Configuration();
-		$newConfig->name = $key;
-		if (!is_null($value))
-			$newConfig->value = $value;
-		return $newConfig->add();
-	}
-
+	
 	/**
 	  * Update configuration key and value into database (automatically insert if key does not exist)
 	  *
 	  * @param string $key Key
 	  * @param mixed $values $values is an array if the configuration is multilingual, a single string else.
 	  * @param boolean $html Specify if html is authorized in value
+	  * @param int $shopGroupID
+	  * @param int $shopID
 	  * @return boolean Update result
 	  */
-	public static function updateValue($key, $values, $html = false)
+	static public function updateValue($key, $values, $html = false, $shopGroupID = NULL, $shopID = NULL)
 	{
-		if ($key == NULL) return;
 		if (!Validate::isConfigName($key))
 	 		die(Tools::displayError());
-		$db = Db::getInstance();
-		/* Update classic values */
+		self::getShopFromContext($shopGroupID, $shopID);
+
 		if (!is_array($values))
+			$values = array($values);
+
+		$result = true;
+		foreach ($values as $lang => $value)
 		{
-		 	if (Configuration::get($key) !== false)
-		 	{
-		 		$values = pSQL($values, $html);
-				$result = $db->AutoExecute(
-					_DB_PREFIX_.'configuration',
-					array('value' => $values, 'date_upd' => date('Y-m-d H:i:s')),
-					'UPDATE', '`name` = \''.pSQL($key).'\'', true, true);
-				self::$_CONF[$key] = stripslashes($values);
+			if ($value == Configuration::get($key, $lang, $shopGroupID, $shopID))
+				continue;
+
+			// If key already exists, update value
+			if (Configuration::hasKey($key, $lang, $shopGroupID, $shopID))
+			{
+				if (!$lang)
+				{
+					// Update config not linked to lang
+					$result &= Db::getInstance()->AutoExecute(_DB_PREFIX_.'configuration', array(
+						'value' => pSQL($value, $html),
+						'date_upd' => date('Y-m-d H:i:s'),
+					), 'UPDATE', '`name` = \''.pSQL($key).'\''.Configuration::sqlRestriction($shopGroupID, $shopID), true, true);
+				}
+				else
+				{
+					// Update multi lang
+					$sql = 'UPDATE '._DB_PREFIX_.'configuration_lang cl
+							SET cl.value = \''.pSQL($value, $html).'\',
+								cl.date_upd = NOW()
+							WHERE cl.id_lang = '.(int)$lang.'
+								AND cl.id_configuration = (
+									SELECT c.id_configuration
+									FROM '._DB_PREFIX_.'configuration c
+									WHERE c.name = \''.pSQL($key).'\''
+										.Configuration::sqlRestriction($shopGroupID, $shopID)
+								.')';
+					$result &= Db::getInstance()->Execute($sql);
+				}
 			}
+			// If key does not exists, create it
 			else
 			{
-				$result = self::_addConfiguration($key, $values);
-				if ($result)
-					self::$_CONF[$key] = stripslashes($values);
-				return $result;
-			}
-		}
+				if (!$configID = Configuration::getIdByName($key, $shopGroupID, $shopID))
+				{
+					$newConfig = new Configuration();
+					$newConfig->name = $key;
+					if ($shopID)
+						$newConfig->id_shop = (int)$shopID;
+					if ($shopGroupID)
+						$newConfig->id_group_shop = (int)$shopGroupID;
+					if (!$lang)
+						$newConfig->value = $value;
+					$result &= $newConfig->add(true, true);
+					$configID = $newConfig->id;
+				}
 
-		/* Update multilingual values */
-		else
-		{
-			$result = 1;
-			/* Add the key in the configuration table if it does not already exist... */
-			$conf = $db->getRow('SELECT `id_configuration` FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \''.pSQL($key).'\'');
-			if (!is_array($conf) OR !array_key_exists('id_configuration', $conf))
-			{
-				self::_addConfiguration($key);
-				$conf = $db->getRow('SELECT `id_configuration` FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \''.pSQL($key).'\'');
+				if ($lang)
+				{
+					$result &= Db::getInstance()->autoExecute(_DB_PREFIX_.'configuration_lang', array(
+						'id_configuration' =>	$configID,
+						'id_lang' =>			$lang,
+						'value' =>				pSQL($value, $html),
+						'date_upd' =>			date('Y-m-d H:i:s'),
+					), 'INSERT');
+				}
 			}
-			/* ... then add multilingual values into configuration_lang table */
-			if (!array_key_exists('id_configuration', $conf) OR !(int)($conf['id_configuration']))
-				return false;
-			foreach ($values as $id_lang => $value)
-			{
-				$value = pSQL($value, $html);
-				$result &= $db->Execute('INSERT INTO `'._DB_PREFIX_.'configuration_lang` (`id_configuration`, `id_lang`, `value`, `date_upd`)
-										VALUES ('.$conf['id_configuration'].', '.(int)($id_lang).', \''.$value.'\', NOW())
-										ON DUPLICATE KEY UPDATE `value` = \''.$value.'\', `date_upd` = NOW()');
-				self::$_CONF_LANG[(int)($id_lang)][$key] = stripslashes($value);
-			}
+			
+			Configuration::set($key, $value, $shopGroupID, $shopID);
 		}
+		
 		return $result;
 	}
 
-	public static function loadConfiguration()
+	/**
+	  * Delete a configuration key in database (with or without language management)
+	  *
+	  * @param string $key Key to delete
+	  * @return boolean Deletion result
+	  */
+	static public function deleteByName($key)
 	{
-		self::$_CONF = array();
-		self::$_CONF_LANG = array();
-		$result = Db::getInstance()->ExecuteS('
-		SELECT c.`name`, cl.`id_lang`, cl.`value` as cl_value, c.`value` as c_value
-		FROM `'._DB_PREFIX_.'configuration` c
-		LEFT JOIN `'._DB_PREFIX_.'configuration_lang` cl ON (c.id_configuration = cl.id_configuration)');
+	 	if (!Validate::isConfigName($key))
+			return false;
+
+		$sql = 'DELETE FROM `'._DB_PREFIX_.'configuration_lang`
+				WHERE `id_configuration` = (
+					SELECT `id_configuration`
+					FROM `'._DB_PREFIX_.'configuration`
+					WHERE `name` = \''.pSQL($key).'\'
+				)';
+		$result = Db::getInstance()->Execute($sql);
 		
-		if (is_array($result))
-			foreach ($result AS $row)
-			{
-				self::$_CONF[$row['name']] = $row['c_value'];
-				if ($row['id_lang'])
-					self::$_CONF_LANG[(int)$row['id_lang']][$row['name']] = $row['cl_value'];
-			}
+		$sql = 'DELETE FROM `'._DB_PREFIX_.'configuration`
+				WHERE `name` = \''.pSQL($key).'\'';
+		$result2 = Db::getInstance()->Execute($sql);
+		return ($result && $result2);
+	}
+
+	/**
+	 * Delete configuration key from current context.
+	 *
+	 * @param string $key
+	 */
+	public static function deleteFromContext($key)
+	{
+		list($shopID, $shopGroupID) = Shop::retrieveContext();
+		if (!$shopID && !$shopGroupID)
+			return;
+
+		$id = Configuration::getIdByName($key, $shopGroupID, $shopID);
+		$sql = 'DELETE FROM '._DB_PREFIX_.'configuration
+				WHERE id_configuration = '.$id;
+		Db::getInstance()->Execute($sql);
+		
+		$sql = 'DELETE FROM '._DB_PREFIX_.'configuration_lang
+				WHERE id_configuration = '.$id;
+		Db::getInstance()->Execute($sql);
 	}
 	
+	/**
+	 * Check if configuration var is defined in given context
+	 * 
+	 * @param string $key
+	 * @param int $langID
+	 * @param int $context
+	 */
+	public static function hasContext($key, $langID, $context)
+	{
+		list($shopID, $shopGroupID) = Shop::retrieveContext();
+		if ($context == Shop::CONTEXT_SHOP && Configuration::hasKey($key, $langID, null, $shopID))
+			return true;
+		else if ($context == Shop::CONTEXT_GROUP && Configuration::hasKey($key, $langID, $shopGroupID))
+			return true;
+		else if ($context == Shop::CONTEXT_ALL && Configuration::hasKey($key, $langID))
+			return true;
+		return false;
+	}
+	
+	/**
+	 * Check if a key was loaded as multi lang
+	 *
+	 * @param string $key
+	 * @return bool
+	 */
+	public static function isLangKey($key)
+	{
+		return (isset(self::$types[$key]) && self::$types[$key] == 'lang') ? true : false;
+	}
+
+	/**
+	 * Fill $id_group_shop and $id_shop vars from correct context
+	 *
+	 * @param int $id_group_shop
+	 * @param int $id_shop
+	 */
+	protected static function getShopFromContext(&$id_group_shop, &$id_shop)
+	{
+		list($shopID, $shopGroupID) = Shop::retrieveContext();
+		if (is_null($id_shop))
+			$id_shop = $shopID;
+		if (is_null($id_group_shop))
+			$id_group_shop = $shopGroupID;
+		
+		$id_shop = (int)$id_shop;
+		$id_group_shop = (int)$id_group_shop;
+	}
+	
+	/**
+	 * Add SQL restriction on shops for configuration table 
+	 * 
+	 * @param int $shopGroupID
+	 * @param int $shopID
+	 * @return string
+	 */
+	protected static function sqlRestriction($shopGroupID, $shopID)
+	{
+		if ($shopID)
+			return ' AND id_shop = '.$shopID;
+		else if ($shopGroupID)
+			return ' AND id_group_shop = '.$shopGroupID.' AND id_shop IS NULL';
+		else
+			return ' AND id_group_shop IS NULL AND id_shop IS NULL';
+	}
+
 	/**
 	 * This method is override to allow TranslatedConfiguration entity
 	 * 
@@ -316,5 +474,21 @@ class ConfigurationCore extends ObjectModel
 		';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($query);
 	}
-}
 
+	/**
+	  * Get several configuration values (in multiple languages)
+	  *
+	  * @param array $keys Keys wanted
+	  * @return array Values in multiple languages
+	  * @deprecated
+	  */
+	static public function getMultipleInt($keys)
+	{
+		Tools::displayAsDeprecated();
+		$languages = Language::getLanguages();
+		$resultsArray = array();
+		foreach($languages as $language)
+			$resultsArray[$language['id_lang']] = self::getMultiple($keys, $language['id_lang']);
+		return $resultsArray;
+	}
+}

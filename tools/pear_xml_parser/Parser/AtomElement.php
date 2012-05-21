@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: AtomElement.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: AtomElement.php 6844 2011-06-03 14:46:51Z dMetzger $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -26,7 +26,7 @@
  * XML_Feed_Parser_Atom with which it shares many methods.
  *
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  */
 class XML_Feed_Parser_AtomElement extends XML_Feed_Parser_Atom

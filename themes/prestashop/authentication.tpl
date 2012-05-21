@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,32 +18,11 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-
-{*
-** Compatibility code for Prestashop older than 1.4.2 using a recent theme
-** Ignore list isn't require here
-** $address exist in every PrestaShop version
-*}
-
-{* Will be deleted for 1.5 version and more *}
-{* Smarty code compatibility v2 *}
-{* If ordered_adr_fields doesn't exist, it's a PrestaShop older than 1.4.2 *}
-{if !isset($dlv_all_fields)}
-		{$dlv_all_fields.0 = 'company'}
-		{$dlv_all_fields.1 = 'firstname'}
-		{$dlv_all_fields.2 = 'lastname'}
-		{$dlv_all_fields.3 = 'address1'}
-		{$dlv_all_fields.4 = 'address2'}
-		{$dlv_all_fields.5 = 'postcode'}
-		{$dlv_all_fields.6 = 'city'}
-		{$dlv_all_fields.7 = 'country'}
-		{$dlv_all_fields.8 = 'state'}
-{/if}
 
 {capture name=path}{l s='Login'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
@@ -92,6 +71,7 @@ $(function(){ldelim}
 	{/literal}
 {/if}
 </script>
+
 <h1>{if !isset($email_create)}{l s='Log in'}{else}{l s='Create your account'}{/if}</h1>
 {assign var='current_step' value='login'}
 {include file="$tpl_dir./order-steps.tpl"}
@@ -99,7 +79,7 @@ $(function(){ldelim}
 {include file="$tpl_dir./errors.tpl"}
 {assign var='stateExist' value=false}
 {if !isset($email_create)}
-	<form action="{$link->getPageLink('authentication.php', true)}" method="post" id="create-account_form" class="std">
+	<form action="{$link->getPageLink('authentication', true)}" method="post" id="create-account_form" class="std">
 		<fieldset>
 			<h3>{l s='Create your account'}</h3>
 			<h4>{l s='Enter your e-mail address to create an account'}.</h4>
@@ -114,7 +94,7 @@ $(function(){ldelim}
 			</p>
 		</fieldset>
 	</form>
-	<form action="{$link->getPageLink('authentication.php', true)}" method="post" id="login_form" class="std">
+	<form action="{$link->getPageLink('authentication', true)}" method="post" id="login_form" class="std">
 		<fieldset>
 			<h3>{l s='Already registered ?'}</h3>
 			<p class="text">
@@ -129,17 +109,17 @@ $(function(){ldelim}
 				{if isset($back)}<input type="hidden" class="hidden" name="back" value="{$back|escape:'htmlall':'UTF-8'}" />{/if}
 				<input type="submit" id="SubmitLogin" name="SubmitLogin" class="button" value="{l s='Log in'}" />
 			</p>
-			<p class="lost_password"><a href="{$link->getPageLink('password.php')}">{l s='Forgot your password?'}</a></p>
+			<p class="lost_password"><a href="{$link->getPageLink('password')}', ">{l s='Forgot your password?'}</a></p>
 		</fieldset>
 	</form>
 	{if isset($inOrderProcess) && $inOrderProcess && $PS_GUEST_CHECKOUT_ENABLED}
-		<form action="{$link->getPageLink('authentication.php', true)}?back={$back}" method="post" id="new_account_form" class="std">
+		<form action="{$link->getPageLink('authentication', true, NULL, "back=$back")}" method="post" id="new_account_form" class="std">
 			<fieldset>
 				<h3>{l s='Instant Checkout'}</h3>
 				<div id="opc_account_form" style="display: block; ">
 					<!-- Account -->
 					<p class="required text">
-						<label for="guest_email">{l s='E-mail address'}</label>
+						<label for="email">{l s='E-mail address'}</label>
 						<input type="text" class="text" id="guest_email" name="guest_email" value="{if isset($smarty.post.guest_email)}{$smarty.post.guest_email}{/if}">
 						<sup>*</sup>
 					</p>
@@ -197,7 +177,7 @@ $(function(){ldelim}
 							{/foreach}
 						</select>
 					</p>
-					{if isset($newsletter) && $newsletter}
+					{if $newsletter}
 						<p class="checkbox">
 							<input type="checkbox" name="newsletter" id="newsletter" value="1" {if isset($smarty.post.newsletter) && $smarty.post.newsletter == '1'}checked="checked"{/if}>
 							<label for="newsletter">{l s='Sign up for our newsletter'}</label>
@@ -254,7 +234,7 @@ $(function(){ldelim}
 							</select>
 							<sup>*</sup>
 						</p>
-						{elseif $field_name eq "State:name" || $field_name eq 'state'}
+						{elseif $field_name eq "State:name"}
 						{assign var='stateExist' value=true}
 
 						<p class="required id_state select">
@@ -295,14 +275,14 @@ $(function(){ldelim}
 					<sup>*</sup>
 				</p>
 			</fieldset>
-			<p class="cart_navigation required submit">
-				<span><sup>*</sup>{l s='Required field'}</span>
+			<p class="cart_navigation required submit">		
+				<span><sup>*</sup>{l s='Required field'}</span>			
 				<input type="submit" class="button" name="submitGuestAccount" id="submitGuestAccount" style="float:right" value="{l s='Continue'}">
 			</p>
 		</form>
 	{/if}
 {else}
-<form action="{$link->getPageLink('authentication.php', true)}" method="post" id="account-creation_form" class="std">
+<form action="{$link->getPageLink('authentication', true)}" method="post" id="account-creation_form" class="std">
 	{$HOOK_CREATE_ACCOUNT_TOP}
 	<fieldset class="account_creation">
 		<h3>{l s='Your personal information'}</h3>
@@ -369,7 +349,7 @@ $(function(){ldelim}
 				{/foreach}
 			</select>
 		</p>
-		{if isset($newsletter) && $newsletter}
+		{if $newsletter}
 		<p class="checkbox" >
 			<input type="checkbox" name="newsletter" id="newsletter" value="1" {if isset($smarty.post.newsletter) AND $smarty.post.newsletter == 1} checked="checked"{/if} />
 			<label for="newsletter">{l s='Sign up for our newsletter'}</label>
@@ -412,7 +392,7 @@ $(function(){ldelim}
 					<label for="address1">{l s='Address'}</label>
 					<input type="text" class="text" name="address1" id="address1" value="{if isset($smarty.post.address1)}{$smarty.post.address1}{/if}" />
 					<sup>*</sup>
-					<span class="inline-infos">{l s='Street address, P.O. box, company name, c/o'}</span>
+					<span class="inline-infos">{l s='Street address, P.O. box, compagny name, c/o'}</span>
 				</p>
 			{elseif $field_name eq "address2"}
 				<p class="text">
@@ -447,7 +427,7 @@ $(function(){ldelim}
 					</select>
 					<sup>*</sup>
 				</p>
-			{elseif $field_name eq "State:name" || $field_name eq 'state'}
+			{elseif $field_name eq "State:name"}
 				{assign var='stateExist' value=true}
 				<p class="required id_state select">
 					<label for="id_state">{l s='State'}</label>
@@ -507,4 +487,3 @@ $(function(){ldelim}
 
 </form>
 {/if}
-

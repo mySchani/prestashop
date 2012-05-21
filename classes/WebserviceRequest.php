@@ -20,7 +20,7 @@
 *
 *  @author Prestashop SA <contact@prestashop.com>
 *  @copyright  2007-2010 Prestashop SA
-*  @version  Release: $Revision: 14944 $
+*  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -179,6 +179,10 @@ class WebserviceRequestCore
 	 */
 	public static $ws_current_classname;
 	
+	
+	public static $shopIDs;
+
+	
 	public function getOutputEnabled()
 	{
 		return $this->_outputEnabled;
@@ -198,7 +202,7 @@ class WebserviceRequestCore
 	 */
 	public static function getInstance()
 	{
-		if (!isset(self::$_instance))
+		if(!isset(self::$_instance))
 			self::$_instance = new WebserviceRequest::$ws_current_classname();
 		return self::$_instance;
 	}
@@ -207,9 +211,6 @@ class WebserviceRequestCore
 	{
 		switch ($type)
 		{
-			case 'JSON' :
-				$obj_render = new WebserviceOutputJSON();
-				break;
 			case 'XML' :
 			default :
 				$obj_render = new WebserviceOutputXML();
@@ -259,10 +260,8 @@ class WebserviceRequestCore
 			'stock_movements' => array('description' => 'Stock movements management', 'class' => 'StockMvt', 'forbidden_method' => array('PUT')),
 			'search' => array('description' => 'Search', 'specific_management' => true, 'forbidden_method' => array('PUT', 'POST', 'DELETE')),
 			'stock_movement_reasons' => array('description' => 'The stock movement reason', 'class' => 'StockMvtReason'),
-			'content_management_system' => array('description' => 'Content management system', 'class' => 'CMS'),
-			'taxes' => array('description' => 'The tax rate', 'class' => 'Tax'),
-			'customer_messages' => array('description' => 'Customer messages', 'class' => 'CustomerMessage'),
-			'customer_threads' => array('description' => 'Customer threads', 'class' => 'CustomerThread'),
+			'shops' => array('description' => 'Shops from multi-shop feature', 'class' => 'Shop'),
+			'shop_groups' => array('description' => 'Shop groups from multi-shop feature', 'class' => 'GroupShop'),
 		);
 		ksort($resources);
 		return $resources;
@@ -298,7 +297,7 @@ class WebserviceRequestCore
 	 */
 	public function specificPriceForProduct($entity_object, $parameters)
 	{
-		foreach(array_keys($parameters) as $name)
+		foreach($parameters as $name => $value)
 		{
 			$parameters[$name]['object_id'] = $entity_object->id;
 		}
@@ -324,7 +323,7 @@ class WebserviceRequestCore
 			$use_reduc = (isset($value['use_reduction']) ? $value['use_reduction'] : true);
 			$use_ecotax = (isset($value['use_ecotax']) ? $value['use_ecotax'] : Configuration::get('PS_USE_ECOTAX'));
 			$specific_price_output = null;
-			$id_county = (isset($value['county']) ? $value['county'] : 0);
+			$county = (isset($value['county']) ? $value['county'] : 0);
 			$return_value = Product::priceCalculation(null, $value['object_id'], $id_product_attribute, $id_country, $id_state, $id_county, $id_currency, $id_group, $quantity, 
 									$use_tax, $decimals, $only_reduc, $use_reduc, $use_ecotax, $specific_price_output, null);
 			$arr_return[$name] = array('sqlId'=>strtolower($name), 'value'=>$return_value);
@@ -341,7 +340,7 @@ class WebserviceRequestCore
 	 */
 	public function specificPriceForCombination($entity_object, $parameters)
 	{
-		foreach(array_keys($parameters) as $name)
+		foreach($parameters as $name => $value)
 		{
 			$parameters[$name]['object_id'] = $entity_object->id_product;
 			$parameters[$name]['product_attribute'] = $entity_object->id;
@@ -373,26 +372,26 @@ class WebserviceRequestCore
 		$this->_startTime = microtime(true);
 		$this->objects = array();
 		
-		// Error handler
-		set_error_handler(array($this, 'webserviceErrorHandler'));
-		ini_set('html_errors', 'off');
-		
 		// Two global vars, for compatibility with the PS core...
 		global $webservice_call, $display_errors;
 		$webservice_call = true;
 		$display_errors = strtolower(ini_get('display_errors')) != 'off';
-		$this->wsUrl = Tools::getHttpHost(true).__PS_BASE_URI__.'api/';
-		
+		// __PS_BASE_URI__ is from Shop::$current_base_uri
+		$this->wsUrl = Tools::getHttpHost(true).__PS_BASE_URI__;
 		// set the output object which manage the content and header structure and informations
 		$this->objOutput = new WebserviceOutputBuilder($this->wsUrl);
+		
+		// Error handler
+		set_error_handler(array($this, 'webserviceErrorHandler'));
+		ini_set('html_errors', 'off');
+		
 		$this->_key = trim($key);
 		
 		$this->outputFormat = isset($params['output_format']) ? $params['output_format'] : $this->outputFormat;
 		// Set the render object to build the output on the asked format (XML, JSON, CSV, ...)
 		$this->objOutput->setObjectRender($this->getOutputObject($this->outputFormat));
-		
 		// Check webservice activation and request authentication
-		if ($this->webserviceChecks())
+		if ($this->isActivated() && $this->authenticate() && $this->shopExists($params) && $this->shopHasRight($key))
 		{
 			if ($bad_class_name)
 				$this->setError(500, 'Bad override class name for this key. Please update class_name field', 126);
@@ -482,7 +481,7 @@ class WebserviceRequestCore
 				// if the management is specific
 				else
 				{
-					$specificObjectName = 'WebserviceSpecificManagement'.ucfirst(Tools::toCamelCase($this->urlSegment[0]));
+					$specificObjectName = 'WebserviceSpecificManagement'.ucfirst($this->urlSegment[0]);
 					if(!class_exists($specificObjectName))
 						$this->setError(501, sprintf('The specific management class is not implemented for the "%s" entity.', $this->urlSegment[0]), 124);
 					else
@@ -509,10 +508,6 @@ class WebserviceRequestCore
 		unset ($display_errors);
 	}
 	
-	protected function webserviceChecks()
-	{
-		return ($this->isActivated() && $this->authenticate());
-	}
 	
 	/**
 	 * Set a webservice error
@@ -583,27 +578,9 @@ class WebserviceRequestCore
 	 */
 	public function webserviceErrorHandler($errno, $errstr, $errfile, $errline)
 	{
-		$display_errors = strtolower(ini_get('display_errors')) != 'off';
-		if (!(error_reporting() & $errno) || $display_errors)
+		if (!(error_reporting() & $errno))
 			return;
-			
-		$errortype = array (
-                E_ERROR              => 'Error',
-                E_WARNING            => 'Warning',
-                E_PARSE              => 'Parse',
-                E_NOTICE             => 'Notice',
-                E_CORE_ERROR         => 'Core Error',
-                E_CORE_WARNING       => 'Core Warning',
-                E_COMPILE_ERROR      => 'Compile Error',
-                E_COMPILE_WARNING    => 'Compile Warning',
-                E_USER_ERROR         => 'Error',
-                E_USER_WARNING       => 'User warning',
-                E_USER_NOTICE        => 'User notice',
-                E_STRICT             => 'Runtime Notice',
-                E_RECOVERABLE_ERROR => 'Recoverable error'
-                );
-		$type = (isset($errortype[$errno]) ? $errortype[$errno] : 'Unknown error');
-		error_log('[PHP '.$type.' #'.$errno.'] '.$errstr.' ('.$errfile.', line '.$errline.')');
+		
 		switch($errno)
 		{
 			case E_ERROR:
@@ -691,7 +668,7 @@ class WebserviceRequestCore
 					{
 						$this->setError(401, 'Authentification key does not exist', 19);
 					}
-					else if ($keyValidation === true)
+					elseif($keyValidation === true)
 					{
 						$this->keyPermissions = WebserviceKey::getPermissionForAccount($this->_key);
 					}
@@ -734,6 +711,62 @@ class WebserviceRequestCore
 			return false;
 		}
 		return true;
+	}
+	
+	protected function shopHasRight($key)
+	{
+		$sql = 'SELECT 1
+				FROM '._DB_PREFIX_.'webservice_account wsa LEFT JOIN '._DB_PREFIX_.'webservice_account_shop wsas ON (wsa.id_webservice_account = wsas.id_webservice_account)
+				WHERE wsa.key = \''.$key.'\'';
+		foreach (self::$shopIDs as $id_shop)
+			$OR[] = ' wsas.id_shop = '.$id_shop.' ';
+		$sql .= ' AND ('.implode('OR', $OR).') ';
+		if (!Db::getInstance()->getValue($sql))
+		{
+			$this->setError(403, 'No permission for this key on this shop', 132);
+			return false;
+		}
+		return true;
+	}
+	
+	protected function shopExists($params)
+	{
+		// Case no shop specified
+		if (!isset($params['id_shop']))
+		{
+			self::$shopIDs[] = Configuration::get('PS_SHOP_DEFAULT');
+			return true;
+		}
+		
+		if ($params['id_shop'][0] == '[' && $params['id_shop'][strlen($params['id_shop']) - 1] == ']')
+			$shops = explode(',', substr($params['id_shop'], 1, strlen($params['id_shop']) - 2));
+		else
+			$shops[] = $params['id_shop'];
+		if ($params['id_shop'] != 'all')
+			foreach ($shops as $id)
+			{
+				if (!is_numeric($id))
+				{
+					$this->setError(404, 'Bad syntax for id_shop parameter (eg : all, 1, [1,2,3])', 130);
+					return false;
+				}
+			}
+		$allshops = Shop::getShops(true);
+		$counter = 0;
+		foreach ($allshops as $shop)
+		{
+			if ($params['id_shop'] == 'all')
+				self::$shopIDs[] = $shop['id_shop'];
+			elseif (in_array($shop['id_shop'], $shops))
+			{
+				$counter++;
+				self::$shopIDs[] = $shop['id_shop'];
+			}
+		}
+		if ($counter == count($shops) || $params['id_shop'] == 'all')
+			return true;
+		$this->setError(404, 'This shop id doesn\'t exist', 129);
+		return false;
 	}
 	
 	/**
@@ -785,6 +818,7 @@ class WebserviceRequestCore
 	protected function setObjects()
 	{
 		$objects = array();
+		$count = 0;
 		$arr_avoid_id = array();
 		$ids = array();
 		if (isset($this->urlFragments['id']))
@@ -822,6 +856,7 @@ class WebserviceRequestCore
 	
 	protected function parseDisplayFields($str)
 	{
+		$last = 0;
 		$bracket_level = 0;
 		$part = array();
 		$tmp = '';
@@ -842,7 +877,7 @@ class WebserviceRequestCore
 		if ($tmp != '')
 			$part[] = $tmp;
 		$fields = array();
-		foreach ($part as $str)
+		foreach ($part as $key => $str)
 		{
 			$field_name = trim(substr($str, 0, (strpos($str, '[') === false ? strlen($str) : strpos($str, '['))));
 			if (!isset($fields[$field_name])) $fields[$field_name] = null;
@@ -927,23 +962,6 @@ class WebserviceRequestCore
 				else
 					$i18n_available_filters[] = $fieldName;
 		
-		// Date feature : date=1
-		if (!empty($this->urlFragments['date']) && $this->urlFragments['date'])
-		{
-			if (!in_array('date_add', $available_filters))
-				$available_filters[] = 'date_add';
-			if (!in_array('date_upd', $available_filters))
-				$available_filters[] = 'date_upd';
-			if (!array_key_exists('date_add', $this->resourceConfiguration['fields']))
-				$this->resourceConfiguration['fields']['date_add'] = array('sqlId' => 'date_add');
-			if (!array_key_exists('date_upd', $this->resourceConfiguration['fields']))
-				$this->resourceConfiguration['fields']['date_upd'] = array('sqlId' => 'date_upd');
-		}
-		else
-			foreach ($available_filters as $key => $value)
-				if ($value == 'date_add' || $value == 'date_upd')
-					unset($available_filters[$key]);
-
 		//construct SQL filter
 		$sql_filter = '';
 		$sql_join = '';
@@ -1148,6 +1166,19 @@ class WebserviceRequestCore
 		$objects = array();
 		if (!isset($this->urlFragments['display'])) 
 			$this->fieldsToDisplay = 'full';
+		
+		// Check if Object is accessible for this/those id_shop
+		$assoc = Shop::getAssoTables();
+		if (array_key_exists($this->resourceConfiguration['retrieveData']['table'] ,$assoc))
+		{
+			$sql = 'SELECT 1
+					FROM '._DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type'].' ';
+			foreach (self::$shopIDs as $id_shop)
+				$OR[] = ' id_shop = '.$id_shop.' ';
+			$check = ' WHERE ('.implode('OR', $OR).') AND '.$this->resourceConfiguration['fields']['id']['sqlId'].' = '.(int)$this->urlSegment[1];
+			if (!Db::getInstance()->getValue($sql.$check))
+				$this->setError(403, 'Bad id_shop : You are not allowed to access this '.$this->resourceConfiguration['retrieveData']['className'].' ('.(int)$this->urlSegment[1].')', 131);
+		}
 		//get entity details
 		$object = new $this->resourceConfiguration['retrieveData']['className']($this->urlSegment[1]);
 		if ($object->id)
@@ -1222,6 +1253,7 @@ class WebserviceRequestCore
 	protected function executeEntityDelete()
 	{
 		$objects = array();
+		$count = 0;
 		$arr_avoid_id = array();
 		$ids = array();
 		if (isset($this->urlFragments['id']))
@@ -1253,6 +1285,7 @@ class WebserviceRequestCore
 		}
 		else 
 		{
+			$assoc = Shop::getAssoTables();
 			foreach ($objects as $object)
 			{
 				if (isset($this->resourceConfiguration['objectMethods']) && isset($this->resourceConfiguration['objectMethods']['delete']))
@@ -1262,6 +1295,12 @@ class WebserviceRequestCore
 				
 				if (!$result)
 					$arr_avoid_id[] = $object->id;
+				elseif (array_key_exists($this->resourceConfiguration['retrieveData']['table'] ,$assoc))
+				{
+					$sql = 'DELETE FROM `'._DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type'].'` 
+							WHERE '.$this->resourceConfiguration['fields']['id']['sqlId'].' = '.$object->id;
+					Db::getInstance()->Execute($sql);
+				}
 			}
 			if (!empty($arr_avoid_id))
 			{
@@ -1269,7 +1308,9 @@ class WebserviceRequestCore
 				$this->_outputEnabled = true;
 			}
 			else
+			{
 				$this->_outputEnabled = false;
+			}
 		}
 	}
 	
@@ -1315,7 +1356,7 @@ class WebserviceRequestCore
 				$this->setError(400, 'id is duplicate in request', 89);
 				return false;
 			}
-			if (count($xmlEntities) != count($ids))
+			if ($xmlEntities->count() != count($ids))
 			{
 				$this->setError(400, 'id is required when modifying a resource', 90);
 				return false;
@@ -1368,7 +1409,7 @@ class WebserviceRequestCore
 					elseif (Tools::property_exists($object, $sqlId))
 						$object->$sqlId = (string)$attributes->$fieldName;
 					else
-						$this->setError(400, 'Parameter "'.$fieldName.'" cannot be set to the object "'.$this->resourceConfiguration['retrieveData']['className'].'"', 123);
+						$this->setError(400, 'Parameter "'.$fieldName.'" can\'t be set to the object "'.$this->resourceConfiguration['retrieveData']['className'].'"', 123);
 						
 				}
 				elseif (isset($fieldProperties['required']) && $fieldProperties['required'] && !$fieldProperties['i18n'])
@@ -1406,7 +1447,7 @@ class WebserviceRequestCore
 					if (isset($this->resourceConfiguration['objectMethods']) && array_key_exists($objectMethod, $this->resourceConfiguration['objectMethods']))
 						$objectMethod = $this->resourceConfiguration['objectMethods'][$objectMethod];
 					$result = $object->{$objectMethod}();
-					if ($result)
+					if($result)
 					{
 						if (isset($attributes->associations))
 							foreach ($attributes->associations->children() as $association)
@@ -1421,15 +1462,7 @@ class WebserviceRequestCore
 										$fields = $assocItem->children();
 										$entry = array();
 										foreach ($fields as $fieldName => $fieldValue)
-										{
-											if (isset($fieldValue->language))
-											{
-												foreach ($fieldValue->language as $lang)
-													$entry[$fieldName][(int)$lang->attributes()->id] = (string)$lang;
-											}
-											else
-												$entry[$fieldName] = (string)$fieldValue;
-										}
+											$entry[$fieldName] = (string)$fieldValue;
 										$values[] = $entry;
 									}
 									$setter = $this->resourceConfiguration['associations'][$association->getName()]['setter'];
@@ -1445,7 +1478,15 @@ class WebserviceRequestCore
 									return false;
 								}
 							}
-
+						$assoc = Shop::getAssoTables();
+						if (array_key_exists($this->resourceConfiguration['retrieveData']['table'] ,$assoc))
+						{
+							// PUT nor POST is destructive, no deletion
+							$sql = 'INSERT IGNORE INTO `'._DB_PREFIX_.$this->resourceConfiguration['retrieveData']['table'].'_'.$assoc[$this->resourceConfiguration['retrieveData']['table']]['type'].'` (id_shop, '.$this->resourceConfiguration['fields']['id']['sqlId'].') VALUES ';
+							foreach (self::$shopIDs as $id)
+								$sql .= '('.$id.','.$object->id.')';
+							Db::getInstance()->Execute($sql);
+						}
 					}
 					else
 						$this->setError(500, 'Unable to save resource', 46);
@@ -1470,40 +1511,42 @@ class WebserviceRequestCore
 	protected function getSQLRetrieveFilter($sqlId, $filterValue, $tableAlias = 'main.')
 	{
 		$ret = '';
+		// "LIKE" case (=%[foo]%, =%[foo], =[foo]%)
 		preg_match('/^(.*)\[(.*)\](.*)$/', $filterValue, $matches);
 		if (count($matches) > 1)
 		{
 			if ($matches[1] == '%' || $matches[3] == '%')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` LIKE "'.$matches[1].pSQL($matches[2]).$matches[3]."\"\n";
+				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` LIKE "'.$matches[1].pSQL($matches[2]).$matches[3]."\"\n";// AND field LIKE %value%
 			elseif ($matches[1] == '' && $matches[3] == '')
 			{
+				// "OR" case
 				if (strpos($matches[2], '|') > 0)
 				{
 					$values = explode('|', $matches[2]);
 					$ret .= ' AND (';
 					$temp = '';
 					foreach ($values as $value)
-						$temp .= $tableAlias.'`'.pSQL($sqlId).'` = "'.pSQL($value).'" OR ';
+						$temp .= $tableAlias.'`'.pSQL($sqlId).'` = "'.pSQL($value).'" OR ';// AND (field = value3 OR field = value7 OR field = value9)
 					$ret .= rtrim($temp, 'OR ').')'."\n";
 				}
-				elseif (preg_match('/^([\d\.:-\s]+),([\d\.:-\s]+)$/', $matches[2], $matches3))
+				elseif (preg_match('/^([\d\.:-\s]+),([\d\.:-\s]+)$/', $matches[2], $matches3))// "AND" case
 				{
 					unset($matches3[0]);
 					if (count($matches3) > 0)
 					{
 						sort($matches3);
-						$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` BETWEEN "'.pSQL($matches3[0]).'" AND "'.pSQL($matches3[1])."\"\n";
+						$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` BETWEEN "'.$matches3[0].'" AND "'.$matches3[1]."\"\n";// AND field BETWEEN value3 AND value4
 					}
 				}
 				else
-					$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'`="'.pSQL($matches[2]).'"'."\n";
+					$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'`="'.$matches[2].'"'."\n";// AND field = value1
 			}
 			elseif ($matches[1] == '>')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` > "'.pSQL($matches[2])."\"\n";
+				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` > "'.pSQL($matches[2])."\"\n";// AND field > value3
 			elseif ($matches[1] == '<')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` < "'.pSQL($matches[2])."\"\n";
+				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` < "'.pSQL($matches[2])."\"\n";// AND field < value3
 			elseif ($matches[1] == '!')
-				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` != "'.pSQL($matches[2])."\"\n";
+				$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` != "'.pSQL($matches[2])."\"\n";// AND field IS NOT value3
 		}
 		else
 			$ret .= ' AND '.$tableAlias.'`'.pSQL($sqlId).'` '.(Validate::isFloat(pSQL($filterValue)) ? 'LIKE' : '=').' "'.pSQL($filterValue)."\"\n";

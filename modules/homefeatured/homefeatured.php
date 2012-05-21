@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class HomeFeatured extends Module
@@ -75,12 +75,12 @@ class HomeFeatured extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<p>'.$this->l('In order to add products to your homepage, just add them to the "home" category.').'</p><br />
 				<label>'.$this->l('Number of products displayed').'</label>
 				<div class="margin-form">
-					<input type="text" size="5" name="nbr" value="'.Tools::safeOutput(Tools::getValue('nbr', (int)(Configuration::get('HOME_FEATURED_NBR')))).'" />
+					<input type="text" size="5" name="nbr" value="'.Tools::getValue('nbr', (int)(Configuration::get('HOME_FEATURED_NBR'))).'" />
 					<p class="clear">'.$this->l('The number of products displayed on homepage (default: 10).').'</p>
 					
 				</div>
@@ -96,7 +96,7 @@ class HomeFeatured extends Module
 
 		$category = new Category(1, Configuration::get('PS_LANG_DEFAULT'));
 		$nb = (int)(Configuration::get('HOME_FEATURED_NBR'));
-		$products = $category->getProducts((int)($params['cookie']->id_lang), 1, ($nb ? $nb : 10));
+		$products = $category->getProducts((int)$params['cookie']->id_lang, 1, ($nb ? $nb : 10), NULL, NULL, false, true, false, 1, true, $this->shopID);
 		$smarty->assign(array(
 		'products' => $products,
 		'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),

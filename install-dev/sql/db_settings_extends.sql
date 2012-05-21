@@ -3,19 +3,20 @@ SET NAMES 'utf8';
 /* Carrier */
 INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`, `is_free`) VALUES (2, 1, 'My carrier', 1, 0, 1, 0);
 INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (2, 1);
+INSERT INTO `PREFIX_carrier_shop` (`id_carrier`, `id_shop`) VALUES (2, 1);
 INSERT INTO `PREFIX_carrier_lang` (`id_carrier`, `id_lang`, `delay`) VALUES (2, 1, 'Delivery next day!'),(2, 2, 'Livraison le lendemain !'),(2, 3, '¡Entrega día siguiente!'),(2, 4, 'Zustellung am nächsten Tag!'),(2, 5, 'Consegna il giorno dopo!');
 INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (2, 1),(2, 2);
 
 UPDATE `PREFIX_configuration` SET `value` = '2' WHERE `name` = 'PS_CARRIER_DEFAULT';
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES
-	('MB_PAY_TO_EMAIL', '', NOW(), NOW()),
-	('MB_SECRET_WORD', '', NOW(), NOW()),
+	('MB_PAY_TO_EMAIL', 'testmerchant@moneybookers.com', NOW(), NOW()),
+	('MB_SECRET_WORD', 'mbtest', NOW(), NOW()),
 	('MB_HIDE_LOGIN', 1, NOW(), NOW()),
 	('MB_ID_LOGO', 1, NOW(), NOW()),
 	('MB_ID_LOGO_WALLET', 1, NOW(), NOW()),
-	('MB_PARAMETERS', 0, NOW(), NOW()),
-	('MB_PARAMETERS_2', 0, NOW(), NOW()),
+	('MB_PARAMETERS', 1, NOW(), NOW()),
+	('MB_PARAMETERS_2', 1, NOW(), NOW()),
 	('MB_DISPLAY_MODE', 0, NOW(), NOW()),
 	('MB_CANCEL_URL', 'http://www.yoursite.com', NOW(), NOW()),
 	('MB_LOCAL_METHODS', '2', NOW(), NOW()),
@@ -42,9 +43,8 @@ INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VAL
 	('CHECKUP_SALES_GT', '2', NOW(), NOW()),
 	('CHECKUP_STOCK_LT', '1', NOW(), NOW()),
 	('CHECKUP_STOCK_GT', '3', NOW(), NOW()),
-	('FOOTER_CMS', '0_3|0_4|0_6|0_7', NOW(), NOW()),
-	('FOOTER_BLOCK_ACTIVATION', '0_3|0_4|0_6|0_7', NOW(), NOW()),
-	('FOOTER_POWEREDBY', 1, NOW(), NOW()),
+	('FOOTER_CMS', '0_3|0_4', NOW(), NOW()),
+	('FOOTER_BLOCK_ACTIVATION', '0_3|0_4', NOW(), NOW()),
 	('BLOCKADVERT_LINK', 0, NOW(), NOW()),
 	('BLOCKSTORE_IMG', 'store.jpg', NOW(), NOW());
 
@@ -58,19 +58,24 @@ INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeat
 (47, 'statsbestvouchers', 1),(48, 'statsbestsuppliers', 1),(49, 'statscarrier', 1),(50, 'statsnewsletter', 1),(51, 'statssearch', 1),(52, 'statscheckup', 1),(53, 'statsstock', 1),
 (54, 'blockstore', 1),(55, 'statsforecast', 1);
 
+INSERT INTO `PREFIX_module_shop` (`id_module`, `id_shop`) (SELECT `id_module`, 1 FROM `PREFIX_module`);
+
+
 INSERT INTO `PREFIX_hook` (`name`, `title`, `description`, `position`) VALUES
 	('myAccountBlock', 'My account block', 'Display extra informations inside the "my account" block', 1);
 
 INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES (3, 1, 1),(6, 1, 2),(4, 1, 3),(4, 4, 3),(8, 2, 1),(3, 4, 1),(6, 4, 2),(9, 6, 1),(16, 6, 2),(8, 6, 3),
 (20, 6, 4),(12, 6, 5),(54, 6, 6),(15, 7, 1),(21, 7, 2),(10, 7, 3),(24, 7, 4),(14, 7, 5),(12, 7, 6),(7, 7, 7),(17, 7, 8),(5, 8, 1),(1, 8, 2),(11, 14, 1),(13, 14, 2),(18, 14, 3),
 (19, 14, 4),(22, 14, 5),(8, 19, 1),(12, 21, 1),(25, 11, 1),(25, 21, 2),(26, 32, 1),(27, 32, 2),(28, 32, 3),(30, 32, 4),(31, 32, 5),(32, 32, 6),(33, 32, 7),(34, 33, 1),
-(35, 33, 2),(36, 33, 3),(37, 33, 4),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(42, 95, 1),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
+(35, 33, 2),(36, 33, 3),(37, 33, 4),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
 (47, 32, 14),(48, 32, 16),(49, 32, 17),(55, 32, 22),(50, 32, 18),(51, 32, 19),(51, 45, 1),(25, 25, 1),(41, 20, 2),(52, 32, 20),(53, 32, 21),(17, 9, 2),(18, 9, 3),(24, 9, 4),(9, 9, 5),
 (15, 9, 6),(5, 9, 7),(8, 9, 8),(10, 9, 9),(20, 9, 10),(11, 9, 11),(16, 9, 12),(22, 9, 13),(13, 9, 14),(14, 9, 15),(12, 9, 16),(7, 9, 17),(21, 9, 18),(10, 60, 1),(10, 61, 1),(10, 62, 1),
-(54, 9, 19),(10,66,1),(19,9,20);
+(54, 9, 19),(10,66,1);
 
 CREATE TABLE `PREFIX_pagenotfound` (
   `id_pagenotfound` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
+  `id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
   `request_uri` VARCHAR(256) NOT NULL,
   `http_referer` VARCHAR(256) NOT NULL,
   `date_add` DATETIME NOT NULL,
@@ -79,6 +84,8 @@ CREATE TABLE `PREFIX_pagenotfound` (
 
 CREATE TABLE `PREFIX_statssearch` (
 	`id_statssearch` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+	`id_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
+	`id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
 	`keywords` VARCHAR(255) NOT NULL,
 	`results` INT(6) NOT NULL DEFAULT 0,
 	`date_add` DATETIME NOT NULL,
@@ -87,6 +94,8 @@ CREATE TABLE `PREFIX_statssearch` (
 
 CREATE TABLE `PREFIX_sekeyword` (
 	`id_sekeyword` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+	`id_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
+	`id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT '1',
 	`keyword` VARCHAR(256) NOT NULL,
 	`date_add` DATETIME NOT NULL,
 	PRIMARY KEY(`id_sekeyword`)
@@ -95,11 +104,12 @@ CREATE TABLE `PREFIX_sekeyword` (
 
 CREATE TABLE `PREFIX_cms_block` (
 	`id_cms_block` int(10) unsigned NOT NULL auto_increment,
+	`id_shop` INT(11) UNSIGNED NOT NULL DEFAULT '1',
 	`id_cms_category` int(10) unsigned NOT NULL,
 	`name` varchar(40) NOT NULL,
 	`location` tinyint(1) unsigned NOT NULL,
 	`position` int(10) unsigned NOT NULL default '0',
-	`display_store` tinyint(1) unsigned NOT NULL DEFAULT '1',
+	`display_store` tinyint(1) NOT NULL DEFAULT '1',
 	PRIMARY KEY (`id_cms_block`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
@@ -173,6 +183,8 @@ INSERT INTO `PREFIX_order_history` (`id_order_history`, `id_employee`, `id_order
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'Apple Computer, Inc', NOW(), NOW(), 1);
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES(2, 'Shure Incorporated', NOW(), NOW(), 1);
 
+INSERT INTO `PREFIX_manufacturer_group_shop` (`id_manufacturer`, `id_group_shop`) (SELECT `id_manufacturer`, 1  FROM `PREFIX_manufacturer`);
+
 INSERT INTO `PREFIX_manufacturer_lang` (`id_manufacturer`, `id_lang`, `description`, `short_description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
 (1, 1, '', '', '', '', ''),
 (1, 2, '', '', '', '', ''),
@@ -181,12 +193,14 @@ INSERT INTO `PREFIX_manufacturer_lang` (`id_manufacturer`, `id_lang`, `descripti
 (1, 5, '', '', '', '', '');
 
 INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_customer`, `id_manufacturer`, `id_supplier`, `alias`, `lastname`, `firstname`, `address1`, `postcode`, `city`, `phone`, `date_add`, `date_upd`, `active`, `deleted`)
-	VALUES (1, 21, 5, 0, 1, 0, 'manufacturer', 'COOK', 'Tim', '1 Infinite Loop', '95014', 'Cupertino', '(800) 275-2273', NOW(), NOW(), 1, 0);
+	VALUES (1, 21, 5, 0, 1, 0, 'manufacturer', 'JOBS', 'STEVE', '1 Infinite Loop', '95014', 'Cupertino', '(800) 275-2273', NOW(), NOW(), 1, 0);
 INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_customer`, `id_manufacturer`, `id_supplier`, `alias`, `company`, `lastname`, `firstname`, `address1`, `address2`, `postcode`, `city`, `phone`, `date_add`, `date_upd`, `active`, `deleted`)
 	VALUES (2, 8, 0, 1, 0, 0, 'Mon adresse', 'My Company', 'DOE', 'John', '16, Main street', '2nd floor', '75000', 'Paris ', '0102030405', NOW(), NOW(), 1, 0);
 
 INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'AppleStore', NOW(), NOW(), 1);
 INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (2, 'Shure Online Store', NOW(), NOW(), 1);
+
+INSERT INTO `PREFIX_supplier_group_shop` (`id_supplier`, `id_group_shop`) (SELECT `id_supplier`, 1 FROM `PREFIX_supplier`);
 
 INSERT INTO `PREFIX_supplier_lang` (`id_supplier`, `id_lang`, `description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
 (1, 1, '', '', '', ''),
@@ -204,6 +218,7 @@ INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufa
 (8, 1, 0, 0, 1, 3, 0, 0, 1, '', 0.00, 1, 25.041806, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
 (9, 1, 2, 2, 1, 3, 0, 0, 1, '', 0.00, 1, 124.581940, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW());
 
+INSERT INTO `PREFIX_product_shop` (`id_product`, `id_shop`) (SELECT `id_product`, 1 FROM `PREFIX_product`);
 
 INSERT INTO `PREFIX_product_lang` (`id_product`, `id_lang`, `description`, `description_short`, `link_rewrite`, `meta_description`, `meta_keywords`, `meta_title`, `name`, `available_now`, `available_later`) VALUES
 (1, 1, '<p><strong><span style="font-size: small;">Curved ahead of the curve.</span></strong></p>\r\n<p>For those about to rock, we give you nine amazing colors. But that''s only part of the story. Feel the curved, all-aluminum and glass design and you won''t want to put iPod nano down.</p>\r\n<p><strong><span style="font-size: small;">Great looks. And brains, too.</span></strong></p>\r\n<p>The new Genius feature turns iPod nano into your own highly intelligent, personal DJ. It creates playlists by finding songs in your library that go great together.</p>\r\n<p><strong><span style="font-size: small;">Made to move with your moves.</span></strong></p>\r\n<p>The accelerometer comes to iPod nano. Give it a shake to shuffle your music. Turn it sideways to view Cover Flow. And play games designed with your moves in mind.</p>', '<p>New design. New features. Now in 8GB and 16GB. iPod nano rocks like never before.</p>', 'ipod-nano', '', '', '', 'iPod Nano', 'In stock', ''),
@@ -246,7 +261,7 @@ INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_currency`, `id
 (1, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft`, `nright`, `active`, `date_add`, `date_upd`, `position`) VALUES
-(2, 1, 1, 2, 3, 1, NOW(), NOW(), 0),(3, 1, 1, 4, 5, 1, NOW(), NOW(), 1),(4, 1, 1, 6, 7, 1, NOW(), NOW(), 2);
+(2, 1, 1, 2, 3, 1, NOW(), NOW(), 0),(3, 1, 1, 3, 4, 1, NOW(), NOW(), 1),(4, 1, 1, 4, 5, 1, NOW(), NOW(), 2);
 
 INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `description`, `link_rewrite`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
 (2, 1, 'iPods', 'Now that you can buy movies from the iTunes Store and sync them to your iPod, the whole world is your theater.', 'music-ipods', '', '', ''),
@@ -269,7 +284,7 @@ INSERT INTO `PREFIX_category_product` (`id_category`, `id_product`, `position`) 
 (1, 1, 0),(1, 2, 1),(1, 6, 2),(1, 7, 3),(2, 1, 0),(2, 2, 1),(2, 7, 2),(3, 8, 0),(3, 9, 1),(4, 5, 0),(4, 6, 1);
 
 INSERT INTO `PREFIX_attribute_group` (`id_attribute_group`, `is_color_group`) VALUES (1, 0),(2, 1),(3, 0);
-
+INSERT INTO `PREFIX_attribute_group_group_shop` (`id_attribute_group`, `id_group_shop`) (SELECT `id_attribute_group`, 1 FROM `PREFIX_attribute_group`);
 INSERT INTO `PREFIX_attribute_group_lang` (`id_attribute_group`, `id_lang`, `name`, `public_name`) VALUES
 (1, 1, 'Disk space', 'Disk space'),(1, 2, 'Capacité', 'Capacité'),(2, 1, 'Color', 'Color'),(2, 2, 'Couleur', 'Couleur'),(3, 1, 'ICU', 'Processor'),
 (3, 2, 'ICU', 'Processeur'),(1, 3, 'Capacidad', 'Capacidad'),(2, 3, 'Color', 'Color'),(3, 3, 'ICU', 'Procesador'),(1, 4, 'Speicherplatz', 'Disk space'),(2, 4, 'Farbe', 'Color'),(3, 4, 'ICU', 'Processor'),(1, 5, 'Spazio disco', 'Spazio disco'),(2, 5, 'Colore', 'Colore'),(3, 5, 'ICU', 'Processore');
@@ -295,6 +310,8 @@ INSERT INTO `PREFIX_scene_products` (`id_scene`, `id_product`, `x_axis`, `y_axis
 INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`) VALUES (1, 1),(2, 1),(8, 1),(9, 1),(10, 3),(11, 3),(12, 1),(13, 1);
 INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`, `color`) VALUES (3, 2, '#D2D6D5'),(4, 2, '#008CB7'),(5, 2, '#F3349E'),(6, 2, '#93D52D'),
 (7, 2, '#FD9812'),(15, 1, ''),(16, 1, ''),(17, 1, ''),(18, 2, '#7800F0'),(19, 2, '#F6EF04'),(20, 2, '#F60409'),(14, 2, '#000000');
+
+INSERT INTO `PREFIX_attribute_group_shop` (`id_attribute`, `id_group_shop`) (SELECT `id_attribute`, 1 FROM `PREFIX_attribute`);
 
 INSERT INTO `PREFIX_attribute_lang` VALUES (1, 1, '2GB'),(1, 2, '2Go'),(1, 3, '2Go'),(2, 1, '4GB'),(2, 2, '4Go'),(2, 3, '4Go'),(3, 1, 'Metal'),(3, 2, 'Metal'),(3, 3, 'Metal'),
 (4, 1, 'Blue'),(4, 2, 'Bleu'),(4, 3, 'Azul'),(5, 1, 'Pink'),(5, 2, 'Rose'),(5, 3, 'Rosa'),(6, 1, 'Green'),(6, 2, 'Vert'),(6, 3, 'Verde'),(7, 1, 'Orange'),(7, 2, 'Orange'),
@@ -354,6 +371,8 @@ INSERT INTO `PREFIX_product_attribute_combination` (`id_attribute`, `id_product_
 
 INSERT INTO `PREFIX_feature` (`id_feature`) VALUES (1), (2), (3), (4), (5);
 
+INSERT INTO `PREFIX_feature_group_shop` (`id_feature`, `id_group_shop`) (SELECT `id_feature`, 1 FROM PREFIX_feature);
+
 INSERT INTO `PREFIX_feature_lang` (`id_feature`, `id_lang`, `name`) VALUES
 (1, 1, 'Height'), (1, 2, 'Hauteur'),(2, 1, 'Width'), (2, 2, 'Largeur'),(3, 1, 'Depth'), (3, 2, 'Profondeur'),(4, 1, 'Weight'), (4, 2, 'Poids'),(5, 1, 'Headphone'), (5, 2, 'Prise casque'),
 (1, 3, 'Alto'),(2, 3, 'Ancho'),(3, 3, 'Profundo'),(4, 3, 'Peso'),(5, 3, 'Toma auriculares'),
@@ -377,6 +396,8 @@ INSERT INTO `PREFIX_image` (`id_image`, `id_product`, `position`, `cover`) VALUE
 (40, 1, 4, 0),(39, 1, 3, 0),(38, 1, 2, 0),(37, 1, 1, 1),(48, 2, 3, 0),(47, 2, 2, 0),(49, 2, 4, 0),(46, 2, 1, 1),(15, 5, 1, 1),(16, 5, 2, 0),(17, 5, 3, 0),(18, 6, 4, 0),(19, 6, 5, 0),
 (20, 6, 1, 1),(24, 7, 1, 1),(33, 8, 1, 1),(27, 7, 3, 0),(26, 7, 2, 0),(29, 7, 4, 0),(30, 7, 5, 0),(32, 7, 6, 0),(36, 9, 1, 1),(41, 1, 5, 0),(42, 1, 6, 0),(44, 1, 7, 0),(45, 1, 8, 0);
 
+INSERT INTO `PREFIX_image_shop` (`id_image`, `id_shop`) (SELECT `id_image`, 1 FROM `PREFIX_image`);
+
 INSERT INTO `PREFIX_image_lang` (`id_image`, `id_lang`, `legend`) VALUES
 (40, 2, 'iPod Nano'),(40, 3, 'iPod Nano'),(40, 4, 'iPod Nano'),(40, 5, 'iPod Nano'),(40, 1, 'iPod Nano'),(39, 2, 'iPod Nano'),(39, 3, 'iPod Nano'),(39, 1, 'iPod Nano'),(39, 4, 'iPod Nano'),(39, 5, 'iPod Nano'),
 (38, 2, 'iPod Nano'),(38, 3, 'iPod Nano'),(38, 1, 'iPod Nano'),(38, 4, 'iPod Nano'),(38, 5, 'iPod Nano'),
@@ -394,7 +415,7 @@ INSERT INTO `PREFIX_image_lang` (`id_image`, `id_lang`, `legend`) VALUES
 
 INSERT INTO `PREFIX_tag` (`id_tag`, `id_lang`, `name`) VALUES (5, 1, 'apple'),(6, 2, 'ipod'),(7, 2, 'nano'),(8, 2, 'apple'),(18, 2, 'shuffle'),
 (19, 2, 'macbook'),(20, 2, 'macbookair'),(21, 2, 'air'),(22, 1, 'superdrive'),(27, 2, 'marche'),(26, 2, 'casque'),(25, 2, 'écouteurs'),
-(24, 2, 'ipod touch tactile'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
+(24, 2, 'ipod touch tacticle'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
 (34, 3, 'shuffle'),(35, 2, 'superdrive'),(36, 3, 'superdrive'),(37, 3, 'Ipod touch');
 
 INSERT INTO `PREFIX_product_tag` (`id_product`, `id_tag`) VALUES (1, 5),(1, 6),(1, 7),(1, 8),(1, 28),(1, 29),(1, 30),(1, 31),(1, 32),(2, 6),(2, 18),(2, 28),
@@ -446,7 +467,7 @@ Cordialmente,');
 /* Block CMS module*/
 
 INSERT INTO `PREFIX_cms_block` (`id_cms_block`, `id_cms_category`, `name`, `location`, `position`) VALUES(1, 1, '', 0, 0);
-INSERT INTO `PREFIX_cms_block_page` (`id_cms_block_page`, `id_cms_block`, `id_cms`, `is_category`) VALUES(1, 1, 1, 0), (2, 1, 2, 0), (3, 1, 3, 0), (4, 1, 4, 0), (5, 1, 5, 0), (6, 1, 6, 0), (7, 1, 7, 0);
+INSERT INTO `PREFIX_cms_block_page` (`id_cms_block_page`, `id_cms_block`, `id_cms`, `is_category`) VALUES(1, 1, 1, 0), (2, 1, 2, 0), (3, 1, 3, 0), (4, 1, 4, 0), (5, 1, 5, 0);
 INSERT INTO `PREFIX_cms_block_lang` (`id_cms_block`, `id_lang`, `name`) VALUES (1, 1, 'Information'),(1, 2, 'Informations'),(1, 3, 'Informaciónes'),(1, 4, 'Information'),(1, 5, 'Informazioni');
 
 /* Currency/Country module */
@@ -747,7 +768,7 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (925, 2, 'internet'),(926, 2, 'poche'),(927, 2, 'navigateur'),(928, 2, 'safari,'),(929, 2, 'consulter'),(930, 2, 'sites'),(931, 2, 'leur'),(932, 2, 'mise'),
 (933, 2, 'page'),(934, 2, 'effectuer'),(935, 2, 'zoom'),(936, 2, 'arrière'),(937, 2, 'simple'),(938, 2, 'pression'),(939, 2, 'l''écran'),(940, 2, 'contenu'),
 (941, 2, 'coffret'),(942, 2, 'écouteurs'),(943, 2, 'câble'),(944, 2, 'dock'),(945, 2, 'chiffon'),(946, 2, 'nettoyage'),(947, 2, 'support'),(948, 2, 'guide'),
-(949, 2, 'démarrage'),(950, 2, 'tactile'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
+(949, 2, 'démarrage'),(950, 2, 'tacticle'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
 (957, 3, 'interfaz'),(958, 3, 'revolucionaria'),(959, 3, 'color'),(960, 3, 'pulgadas'),(961, 3, '(80211b'),(962, 3, 'espesor'),(963, 3, 'safari,'),
 (964, 3, 'youtube,'),(965, 3, 'music'),(966, 3, 'store,'),(967, 3, 'correo,'),(968, 3, 'mapas,'),(969, 3, 'bolsa,'),(970, 3, 'tiempo,'),(971, 3, 'notas'),
 (972, 3, 'cinco'),(973, 3, 'mano'),(974, 3, 'consulta'),(975, 3, 'correo'),(976, 3, 'formato'),(977, 3, 'html'),(978, 3, 'enriquecido,'),(979, 3, 'fotos'),
@@ -1079,13 +1100,43 @@ INSERT INTO `PREFIX_profile_lang` (`id_lang`, `id_profile`, `name`) VALUES
 (1, 3, 'Translator'),(2, 3, 'Traducteur'),(3, 3, 'Translator'),(4, 3, 'Übersetzer'),(5, 3, 'Traduttore'),
 (1, 4, 'Salesman'),(2, 4, 'Commercial'),(3, 4, 'Salesman'),(4, 4, 'Verkäufer'),(5, 4, 'Venditore');
 
-INSERT INTO `PREFIX_stock_mvt` (`id_stock_mvt`, `id_product`, `id_product_attribute`, `id_order`, `id_stock_mvt_reason`, `id_employee`, `quantity`, `date_add`, `date_upd`) VALUES
-(1, 6, 0, 0, 2, 1, 250, NOW(), NOW()),(2, 8, 0, 0, 2, 1, 1, NOW(), NOW()),(3, 9, 0, 0, 2, 1, 1, NOW(), NOW()),(4, 2, 7, 0, 2, 1, 10, NOW(), NOW()),(5, 2, 8, 0, 2, 1, 20, NOW(), NOW()),(6, 2, 9, 0, 2, 1, 30, NOW(), NOW()),(7, 2, 10, 0, 2, 1, 40, NOW(), NOW()),(8, 5, 12, 0, 2, 1, 100, NOW(), NOW()),(9, 5, 13, 0, 2, 1, 99, NOW(), NOW()),(10, 5, 14, 0, 2, 1, 50, NOW(), NOW()),(11, 5, 15, 0, 2, 1, 25, NOW(), NOW()),(12, 7, 19, 0, 2, 1, 50, NOW(), NOW()),(13, 7, 22, 0, 2, 1, 60, NOW(), NOW()),(14, 7, 23, 0, 2, 1, 70, NOW(), NOW()),(15, 1, 25, 0, 2, 1, 50, NOW(), NOW()),(16, 1, 26, 0, 2, 1, 50, NOW(), NOW()),(17, 1, 27, 0, 2, 1, 50, NOW(), NOW()),(18, 1, 28, 0, 2, 1, 50, NOW(), NOW()),(19, 1, 29, 0, 2, 1, 50, NOW(), NOW()),(20, 1, 30, 0, 2, 1, 50, NOW(), NOW()),(21, 1, 31, 0, 2, 1, 50, NOW(), NOW()),(22, 1, 32, 0, 2, 1, 50, NOW(), NOW()),(23, 1, 33, 0, 2, 1, 50, NOW(), NOW()),(24, 1, 34, 0, 2, 1, 50, NOW(), NOW()),(25, 1, 35, 0, 2, 1, 50, NOW(), NOW()),(26, 1, 36, 0, 2, 1, 50, NOW(), NOW()),(27, 1, 39, 0, 2, 1, 50, NOW(), NOW()),(28, 1, 40, 0, 2, 1, 50, NOW(), NOW()),(29, 1, 41, 0, 2, 1, 50, NOW(), NOW()),(30, 1, 42, 0, 2, 1, 50, NOW(), NOW());
-
 INSERT INTO `PREFIX_store` (`id_store`, `id_country`, `id_state`, `name`, `address1`, `address2`, `city`, `postcode`, `latitude`, `longitude`, `hours`, `phone`, `fax`, `email`, `note`, `active`, `date_add`, `date_upd`) VALUES
 (1, 21, 9, 'Dade County', '3030 SW 8th St Miami', '', 'Miami', ' 33135', 25.765005, -80.243797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:53:13', '2010-11-09 10:53:13'),
-(2, 21, 9, 'E Fort Lauderdale', '1000 Northeast 4th Ave Fort Lauderdale', '', 'Miami', ' 33304', 26.137936, -80.139435, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:56:26', '2010-11-09 10:56:26'),
-(3, 21, 9, 'Pembroke Pines', '11001 Pines Blvd Pembroke Pines', '', 'Miami', '33026', 26.009987, -80.294472, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:58:42', '2010-11-09 11:01:11'),
+(2, 21, 9, 'E Fort Lauderdale', '1000 Northeast 4th Ave Fort Lauderdale', '', 'miami', ' 33304', 26.137936, -80.139435, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:56:26', '2010-11-09 10:56:26'),
+(3, 21, 9, 'Pembroke Pines', '11001 Pines Blvd Pembroke Pines', '', 'miami', '33026', 26.009987, -80.294472, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:58:42', '2010-11-09 11:01:11'),
 (4, 21, 9, 'Coconut Grove', '2999 SW 32nd Avenue', '', ' Miami', ' 33133', 25.736296, -80.244797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:00:38', '2010-11-09 11:04:52'),
 (5, 21, 9, 'N Miami/Biscayne', '12055 Biscayne Blvd', '', 'Miami', '33181', 25.886740, -80.163292, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:11:28', '2010-11-09 11:11:28');
 
+INSERT INTO `PREFIX_store_shop` (`id_store`, `id_shop`) (SELECT `id_store`, 1 FROM `PREFIX_store`);
+
+INSERT INTO `PREFIX_stock` (`id_stock`, `id_product`, `id_product_attribute`, `id_group_shop`, `id_shop`, `quantity`) VALUES
+(1, 1, 25, 1, 1, 150),
+(2, 1, 26, 1, 1, 120),
+(3, 1, 27, 1, 1, 230),
+(4, 1, 28, 1, 1, 150),
+(5, 1, 29, 1, 1, 120),
+(6, 1, 30, 1, 1, 230),
+(7, 1, 31, 1, 1, 150),
+(8, 1, 32, 1, 1, 120),
+(9, 1, 33, 1, 1, 230),
+(10, 1, 34, 1, 1, 150),
+(11, 1, 35, 1, 1, 120),
+(12, 1, 36, 1, 1, 230),
+(13, 1, 39, 1, 1, 150),
+(14, 1, 40, 1, 1, 120),
+(15, 1, 41, 1, 1, 230),
+(16, 1, 42, 1, 1, 150),
+(17, 2, 7, 1, 1, 120),
+(18, 2, 8, 1, 1, 230),
+(19, 2, 9, 1, 1, 150),
+(20, 2, 10, 1, 1, 120),
+(21, 5, 12, 1, 1, 230),
+(22, 5, 13, 1, 1, 150),
+(23, 5, 14, 1, 1, 120),
+(24, 5, 15, 1, 1, 230),
+(25, 6, 0, 1, 1, 230),
+(26, 7, 19, 1, 1, 150),
+(27, 7, 22, 1, 1, 120),
+(28, 7, 23, 1, 1, 230),
+(29, 8, 0, 1, 1, 230),
+(30, 9, 0, 1, 1, 150);

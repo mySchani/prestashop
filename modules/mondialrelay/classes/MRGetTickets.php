@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -56,7 +56,8 @@ class MRGetTickets implements IMondialRelayWSMethod
 	
 	private $_detailedExpeditionList = array();
 	private $_webServiceKey = '';
-	private $_mondialrelay = NULL;
+	private $_markCode = '';
+	private $_mondialRelay = NULL;
 	
 	private $_resultList = array(
 		'error' => array(),
@@ -66,20 +67,22 @@ class MRGetTickets implements IMondialRelayWSMethod
 	
 	public function __construct($params)	
 	{
-		$this->_mondialrelay = new MondialRelay();
 		$this->_detailedExpeditionList = $params['detailedExpeditionList'];
-		$this->_webServiceKey = $this->_mondialrelay->account_shop['MR_KEY_WEBSERVICE'];
+		$this->_webServiceKey = Configuration::get('MR_KEY_WEBSERVICE');
+		$this->_markCode = Configuration::get('MR_CODE_MARQUE');
 	}
 	
 	public function __destruct()
 	{
-		 unset($this->_mondialrelay);
+		 unset($this->_mondialRelay);
 	}
 	
 	public function init()
-	{
-		$this->_fields['list']['Enseigne']['value'] = $this->_mondialrelay->account_shop['MR_ENSEIGNE_WEBSERVICE'];
-		$this->_fields['list']['Langue']['value'] = $this->_mondialrelay->account_shop['MR_LANGUAGE'];
+	{	
+		$this->_mondialRelay = new MondialRelay();
+		
+		$this->_fields['list']['Enseigne']['value'] = Configuration::get('MR_ENSEIGNE_WEBSERVICE');
+		$this->_fields['list']['Langue']['value'] = Configuration::get('MR_LANGUAGE');
 		
 		foreach ($this->_detailedExpeditionList as $detailedExpedition)
 		{
@@ -111,7 +114,7 @@ class MRGetTickets implements IMondialRelayWSMethod
 						$concatenationValue .= $valueDetailed['value'];
 					else if ((!strlen($valueDetailed['value']) && $valueDetailed['required']) || strlen($valueDetailed['value']))
 					{
-						$error = $this->_mondialrelay->l('This key').' ['.$paramName.'] '.$this->_mondialrelay->l('hasn\'t a valide value format').' : '.$valueDetailed['value'];
+						$error = $this->_mondialRelay->l('This key').' ['.$paramName.'] '.$this->_mondialRelay->l('hasn\'t a valide value format').' : '.$valueDetailed['value'];
 						$id_order = $this->_getOrderIdWithExpeditionNumber($rootCase['list']['Expeditions']['value']);
 						$this->_resultList['error'][$id_order][] = $error;
 					}
@@ -140,32 +143,32 @@ class MRGetTickets implements IMondialRelayWSMethod
 	private function _updateTable($id_order, $expeditionNumber, $URLA4, $URLA5, &$success)
 	{
 		$query = '
-			SELECT id FROM `'._DB_PREFIX_.'mr_history`
-			WHERE `order`='.(int)$id_order;
+			SELECT id FROM `'._DB_PREFIX_.'mr_historique`
+			WHERE `order`=\''.$id_order.'\'';
 		
 		$row = Db::getInstance()->getRow($query);
 		if ($row)
 		{
 			$query = '
-				UPDATE `'._DB_PREFIX_.'mr_history`
+				UPDATE `'._DB_PREFIX_.'mr_historique`
   			SET 
   				`exp` = \''.(int)$expeditionNumber.'\',
-  				`url_a4` = \''.pSQL((string)$URLA4).'\',
-  				`url_a5` = \''.pSQL((string)$URLA5).'\'
-  			WHERE `order` = '.(int)$id_order;
+  				`url_a4` = \''.(string)$URLA4.'\',
+  				`url_a5` = \''.(string)$URLA5.'\'
+  			WHERE `order` = \''.$id_order.'\'';
 		}
 		else
 		{
 			$query = '
-				INSERT INTO '._DB_PREFIX_.'mr_history
+				INSERT INTO '._DB_PREFIX_.'mr_historique
 				(`order`, `exp`, `url_a4`, `url_a5`)
 				VALUES (
-					'.(int)$id_order.',
-					'.(int)$expeditionNumber.',
-					\''.pSQL((string)$URLA4).'\',
-					\''.pSQL((string)$URLA5).'\')';
+					\''.(int)$id_order.'\',
+					\''.(int)$expeditionNumber.'\',
+					\''.(string)$URLA4.'\',
+					\''.(string)$URLA5.'\')';
 		}
-		Db::getInstance()->execute($query);
+		Db::getInstance()->Execute($query);
 		$success['id_mr_history'] = isset($row['id']) ? $row['id'] : Db::getInstance()->Insert_ID();
 	}
 	
@@ -180,15 +183,15 @@ class MRGetTickets implements IMondialRelayWSMethod
 		
 		$id_order = $this->_getOrderIdWithExpeditionNumber($params['Expeditions']);
 		if ($client->fault)
-			$errors[$errorTotal++] = $this->_mondialrelay->l('It seems the request isn\'t valid:').
+			$errors[$errorTotal++] = $this->_mondialRelay->l('It seems the request isn\'t valid:').
 				$result;
 				
 		$result = $result['WSI2_GetEtiquettesResult'];
 		if (($errorNumber = $result['STAT']) != 0)
 		{
-			$errors[] = $this->_mondialrelay->l('There is an error number : ').$errorNumber;
-			$errors[] = $this->_mondialrelay->l('Details : ').
-				$this->_mondialrelay->getErrorCodeDetail($errorNumber);
+			$errors[] = $this->_mondialRelay->l('There is an error number : ').$errorNumber;
+			$errors[] = $this->_mondialRelay->l('Details : ').
+				$this->_mondialRelay->getErrorCodeDetail($errorNumber);
 		}
 		else
 		{
@@ -241,7 +244,7 @@ class MRGetTickets implements IMondialRelayWSMethod
 			unset($client);
 		}
 		else
-			throw new Exception($this->_mondialrelay->l('The Mondial Relay webservice isn\'t currently reliable'));
+			throw new Exception($this->_mondialRelay->l('The Mondial Relay webservice isn\'t currently reliable'));
 	}
 	
 	/*

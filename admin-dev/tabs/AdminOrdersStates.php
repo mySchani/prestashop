@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -34,7 +34,6 @@ class AdminOrdersStates extends AdminTab
 	 	$this->lang = true;
 	 	$this->edit = true;
 	 	$this->delete = true;
-	 	$this->deleted = true;
 		$this->colorOnBackground = true;
  
 		$this->fieldImageSettings = array('name' => 'icon', 'dir' => 'os');
@@ -57,7 +56,6 @@ class AdminOrdersStates extends AdminTab
 		
 		if (Tools::isSubmit('submitAdd'.$this->table))
 		{
-			$this->deleted = false; // Don't want to historise on saving
 			$_POST['invoice'] = Tools::getValue('invoice');
 			$_POST['logable'] = Tools::getValue('logable');
 			$_POST['send_email'] = Tools::getValue('send_email');
@@ -72,22 +70,22 @@ class AdminOrdersStates extends AdminTab
 		}
 		elseif (isset($_GET['delete'.$this->table]))
 		{
-			$orderState = new OrderState((int)($_GET['id_order_state']), $cookie->id_lang);
-			if (!$orderState->isRemovable())
-				$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
-			else
-				parent::postProcess();
+		 	$orderState = new OrderState((int)($_GET['id_order_state']), $cookie->id_lang);
+		 	if (!$orderState->isRemovable())
+		 		$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
+		 	else
+		 		parent::postProcess();
 		}
 		elseif (isset($_POST['submitDelorder_state']))
 		{
-			foreach ($_POST[$this->table.'Box'] AS $selection)
-			{
-				$orderState = new OrderState((int)($selection), $cookie->id_lang);
-				if (!$orderState->isRemovable())
-				{
-					$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
-					break;
-				}
+		 	foreach ($_POST[$this->table.'Box'] AS $selection)
+		 	{
+			 	$orderState = new OrderState((int)($selection), $cookie->id_lang);
+			 	if (!$orderState->isRemovable())
+			 	{
+			 		$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
+			 		break;
+			 	}
 			}
 			if (empty($this->_errors))
 				parent::postProcess();

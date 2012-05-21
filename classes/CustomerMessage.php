@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -42,18 +42,7 @@ class CustomerMessageCore extends ObjectModel
 	protected $fieldsRequired = array('message');
 	protected $fieldsSize = array('message' => 65000);
 	protected $fieldsValidate = array('message' => 'isCleanHtml', 'id_employee' => 'isUnsignedId', 'ip_address' => 'isIp2Long');
-	
-	protected	$webserviceParameters = array(
-			'fields' => array(
-					'id_customer_thread' => array('xlink_resource' => 'customer_threads'),
-					'id_employee' => array('xlink_resource' => 'employees'),
-					'message' => array(),
-					'file_name' => array(),
-					'ip_address' => array('getter' => 'getWsIp', 'setter' => 'setWsIp'),
-					'user_agent' => array(),
-			),
-	);
-	
+
 	public	function getFields()
 	{
 	 	parent::validateFields();
@@ -65,16 +54,6 @@ class CustomerMessageCore extends ObjectModel
 		$fields['user_agent'] = pSQL($this->user_agent);
 		$fields['date_add'] = pSQL($this->date_add);
 		return $fields;
-	}
-	
-	public function getWsIp()
-	{
-		return long2ip($this->ip_address);
-	}
-	
-	public function setWsIp()
-	{
-		return ip2long($this->ip_address);
 	}
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -65,8 +65,7 @@ class OrderReturnCore extends ObjectModel
 		$fields['state'] = pSQL($this->state);
 		$fields['date_add'] = pSQL($this->date_add);
 		$fields['date_upd'] = pSQL($this->date_upd);
-		// we don't want to use nl2br now because <br> will not pass Validation::isMessage()
-		$fields['question'] = pSQL($this->question, true);
+		$fields['question'] = pSQL(nl2br2($this->question), true);
 		return $fields;
 	}
 	
@@ -101,7 +100,7 @@ class OrderReturnCore extends ObjectModel
 		}
 		/* Quantity check */
 		if ($orderDetailList)
-			foreach (array_keys($orderDetailList) AS $key)
+			foreach ($orderDetailList AS $key => $orderDetail)
 				if ($qty = (int)($productQtyList[$key]))
 					if ($products[$key]['product_quantity'] - $qty < 0)
 						return false;
@@ -109,7 +108,7 @@ class OrderReturnCore extends ObjectModel
 		if ($customizationIds)
 		{
 			$orderedCustomizations = Customization::getOrderedCustomizations((int)($order->id_cart));
-			foreach ($customizationIds AS $customizations)
+			foreach ($customizationIds AS $productId => $customizations)
 				foreach ($customizations AS $customizationId)
 				{
 					$customizationId = (int)($customizationId);
@@ -133,7 +132,7 @@ class OrderReturnCore extends ObjectModel
 		return (int)($data['total']);
 	}
 	
-	public static function getOrdersReturn($customer_id, $order_id = false, $no_denied = false)
+	static public function getOrdersReturn($customer_id, $order_id = false, $no_denied = false)
 	{
 		global $cookie;
 		
@@ -152,7 +151,7 @@ class OrderReturnCore extends ObjectModel
 		return $data;
 	}
 	
-	public static function getOrdersReturnDetail($id_order_return)
+	static public function getOrdersReturnDetail($id_order_return)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -160,7 +159,7 @@ class OrderReturnCore extends ObjectModel
 		WHERE `id_order_return` = '.(int)($id_order_return));
 	}
 	
-	public static function getOrdersReturnProducts($orderReturnId, $order)
+	static public function getOrdersReturnProducts($orderReturnId, $order)
 	{
 		$productsRet = self::getOrdersReturnDetail($orderReturnId);
 		$products = $order->getProducts();
@@ -181,7 +180,7 @@ class OrderReturnCore extends ObjectModel
 		return $resTab;
 	}
 
-	public static function getReturnedCustomizedProducts($id_order)
+	static public function getReturnedCustomizedProducts($id_order)
 	{
 		$returns = Customization::getReturnedCustomizations($id_order);
 		$order = new Order((int)($id_order));
@@ -198,7 +197,7 @@ class OrderReturnCore extends ObjectModel
 		return $returns;
 	}
 
-	public static function deleteOrderReturnDetail($id_order_return, $id_order_detail, $id_customization = 0)
+	static public function deleteOrderReturnDetail($id_order_return, $id_order_detail, $id_customization = 0)
 	{
 		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'order_return_detail` WHERE `id_order_detail` = '.(int)($id_order_detail).' AND `id_order_return` = '.(int)($id_order_return).' AND `id_customization` = '.(int)($id_customization));
 	}

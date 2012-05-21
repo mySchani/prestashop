@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14919 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -180,7 +180,7 @@ class OrderDetailCore extends ObjectModel
 		$fields['product_ean13'] = pSQL($this->product_ean13);
 		$fields['product_upc'] = pSQL($this->product_upc);
 		$fields['product_reference'] = pSQL($this->product_reference);
-		$fields['product_supplier_reference'] = pSQL($this->product_supplier_reference);
+		$fields['product_supplier_reference'] = pSQL($this->product_reference);
 		$fields['product_weight'] = (float)($this->product_weight);
 		$fields['tax_name'] = pSQL($this->tax_name);
 		$fields['tax_rate'] = (float)($this->tax_rate);
@@ -193,7 +193,7 @@ class OrderDetailCore extends ObjectModel
 		return $fields;
 	}	
 
-	public static function getDownloadFromHash($hash)
+	static public function getDownloadFromHash($hash)
 	{
 		if ($hash == '') return false;
 		$sql = 'SELECT *
@@ -204,7 +204,7 @@ class OrderDetailCore extends ObjectModel
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 	}
 
-	public static function incrementDownload($id_order_detail, $increment=1)
+	static public function incrementDownload($id_order_detail, $increment=1)
 	{
 		$sql = 'UPDATE `'._DB_PREFIX_.'order_detail`
 			SET `download_nb` = `download_nb` + '.(int)($increment).'

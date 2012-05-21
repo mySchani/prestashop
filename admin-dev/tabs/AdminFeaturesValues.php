@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -64,11 +64,8 @@ class AdminFeaturesValues extends AdminTab
 					<div id="value_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input size="33" type="text" name="value_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'value', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
-					</div>
-					<script type="text/javascript">
-						var flag_fields = \'value\';
-					</script>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'value', false, true);
+					</div>';
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'value', 'value');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -81,7 +78,6 @@ class AdminFeaturesValues extends AdminTab
 		echo '
 					</select><sup> *</sup>
 				</div>
-				'.Module::hookExec('featureValueForm', array('id_feature_value' => $obj->id)).'
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -98,16 +94,13 @@ class AdminFeaturesValues extends AdminTab
 	public function postProcess($token = NULL)
 	{
 		global $currentIndex;
-		
-		Module::hookExec('postProcessFeatureValue',
-		array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessFeatureValue to stop saving process
 
-		if (Tools::getValue('submitDel'.$this->table))
+		if(Tools::getValue('submitDel'.$this->table))
 		{
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (isset($_POST[$this->table.$_POST['groupid'].'Box']))
-				{
+		 	if ($this->tabAccess['delete'] === '1')
+		 	{
+			 	if (isset($_POST[$this->table.$_POST['groupid'].'Box']))
+			 	{
 					$object = new $this->className();
 					if ($object->deleteSelection($_POST[$this->table.$_POST['groupid'].'Box']))
 						Tools::redirectAdmin($currentIndex.'&conf=2'.'&token='.($token ? $token : $this->token));

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14516 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7320 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -37,7 +37,7 @@ class AdminCustomers extends AdminTab
 	 	$this->delete = true;
 		$this->deleted = true;
 		$this->requiredDatabase = true;
-
+		
 		$this->_select = '(YEAR(CURRENT_DATE)-YEAR(`birthday`)) - (RIGHT(CURRENT_DATE, 5)<RIGHT(`birthday`, 5)) as age, (
 			SELECT c.date_add FROM '._DB_PREFIX_.'guest g
 			LEFT JOIN '._DB_PREFIX_.'connections c ON c.id_guest = g.id_guest
@@ -59,6 +59,8 @@ class AdminCustomers extends AdminTab
 		'date_add' => array('title' => $this->l('Registration'), 'width' => 30, 'type' => 'date', 'align' => 'right'),
 		'connect' => array('title' => $this->l('Connection'), 'width' => 60, 'type' => 'datetime', 'search' => false));
 
+		$this->shopLinkType = 'shop';
+		$this->shopShareDatas = true;
 		$this->optionTitle = $this->l('Customers options');
 		$this->_fieldsOptions = array(
 			'PS_PASSWD_TIME_FRONT' => array('title' => $this->l('Regenerate password:'), 'desc' => $this->l('Security minimum time to wait to regenerate the password'),'validation' => 'isUnsignedInt', 'cast' => 'intval', 'size' => 5, 'type' => 'text', 'suffix' => ' '.$this->l('minutes'))
@@ -66,11 +68,11 @@ class AdminCustomers extends AdminTab
 
 		parent::__construct();
 	}
-
+	
 	public function postProcess()
 	{
 		global $currentIndex;
-
+		
 		if (Tools::isSubmit('submitDel'.$this->table) OR Tools::isSubmit('delete'.$this->table))
 		{
 			$deleteForm = '
@@ -96,11 +98,11 @@ class AdminCustomers extends AdminTab
 			</form>
 			<div class="clear">&nbsp;</div>';
 		}
-
+		
 		if (Tools::getValue('submitAdd'.$this->table))
 		{
 		 	$groupList = Tools::getValue('groupBox');
-
+		 	
 		 	/* Checking fields validity */
 			$this->validateRules();
 			if (!sizeof($this->_errors))
@@ -116,7 +118,7 @@ class AdminCustomers extends AdminTab
 						if (Validate::isLoadedObject($object))
 						{
 							$customer_email = strval(Tools::getValue('email'));
-
+							
 							// check if e-mail already used
 							if ($customer_email != $object->email)
 							{
@@ -125,13 +127,13 @@ class AdminCustomers extends AdminTab
 								if ($customer->id)
 									$this->_errors[] = Tools::displayError('An account already exists for this e-mail address:').' '.$customer_email;
 							}
-
+							
 							if (!is_array($groupList) OR sizeof($groupList) == 0)
 								$this->_errors[] = Tools::displayError('Customer must be in at least one group.');
 							else
 								if (!in_array(Tools::getValue('id_default_group'), $groupList))
 									$this->_errors[] = Tools::displayError('Default customer group must be selected in group box.');
-
+							
 							// Updating customer's group
 							if (!sizeof($this->_errors))
 							{
@@ -150,6 +152,8 @@ class AdminCustomers extends AdminTab
 					{
 						$object = new $this->className();
 						$this->copyFromPost($object, $this->table);
+						$shop = new Shop((int)$object->id_shop);
+						$object->id_group_shop = (int)$shop->id_group_shop;
 						if (!$object->add())
 							$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.' ('.mysql_error().')</b>';
 						elseif (($_POST[$this->identifier] = $object->id /* voluntary */) AND $this->postImage($object->id) AND !sizeof($this->_errors) AND $this->_redirect)
@@ -222,7 +226,7 @@ class AdminCustomers extends AdminTab
 				$customer = new Customer((int)Tools::getValue('id_customer'));
 				if (!Validate::isLoadedObject($customer))
 					$this->_errors[] = Tools::displayError('This customer does not exist.');
-				if (Customer::customerExists($customer->email))
+				if(Customer::customerExists($customer->email))
 					$this->_errors[] = Tools::displayError('This customer already exist as non-guest.');
 				elseif ($customer->transformToCustomer(Tools::getValue('id_lang', Configuration::get('PS_LANG_DEFAULT'))))
 					Tools::redirectAdmin($currentIndex.'&'.$this->identifier.'='.$customer->id.'&conf=3&token='.$this->token);
@@ -240,7 +244,7 @@ class AdminCustomers extends AdminTab
 			$update = Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'customer` SET newsletter = '.($customer->newsletter ? 0 : 1).' WHERE `id_customer` = '.(int)($customer->id));
 			if (!$update)
 				$this->_errors[] = Tools::displayError('An error occurred while updating customer.');
-			Tools::redirectAdmin($currentIndex.'&token='.$this->token);
+			Tools::redirectAdmin($currentIndex.'&token='.$this->token);	
 
 		}elseif (Tools::isSubmit('changeOptinVal') AND Tools::getValue('id_customer'))
 		{
@@ -253,7 +257,7 @@ class AdminCustomers extends AdminTab
 				$this->_errors[] = Tools::displayError('An error occurred while updating customer.');
 			Tools::redirectAdmin($currentIndex.'&token='.$this->token);
 		}
-
+		
 		return parent::postProcess();
 	}
 
@@ -283,7 +287,9 @@ class AdminCustomers extends AdminTab
 		}
 		else
 			$countBetterCustomers = '-';
-
+		
+		$shop = new Shop((int)$customer->id_shop);
+		
 		echo '
 		<fieldset style="width:400px;float: left"><div style="float: right"><a href="'.$currentIndex.'&addcustomer&id_customer='.$customer->id.'&token='.$this->token.'"><img src="../img/admin/edit.gif" /></a></div>
 			<span style="font-weight: bold; font-size: 14px;">'.$customer->firstname.' '.$customer->lastname.'</span>
@@ -292,7 +298,8 @@ class AdminCustomers extends AdminTab
 			'.$this->l('ID:').' '.sprintf('%06d', $customer->id).'<br />
 			'.$this->l('Registration date:').' '.Tools::displayDate($customer->date_add, (int)($cookie->id_lang), true).'<br />
 			'.$this->l('Last visit:').' '.($customerStats['last_visit'] ? Tools::displayDate($customerStats['last_visit'], (int)($cookie->id_lang), true) : $this->l('never')).'<br />
-			'.($countBetterCustomers != '-' ? $this->l('Rank: #').' '.(int)$countBetterCustomers.'<br />' : '').'
+			'.($countBetterCustomers != '-' ? $this->l('Rank: #').' '.(int)$countBetterCustomers.'<br />' : '')
+			.(Tools::isMultiShopActivated() ? '<br />'.$this->l('Shop:').' '.$shop->name : '').'
 		</fieldset>
 		<fieldset style="width:300px;float:left;margin-left:50px">
 			<div style="float: right">
@@ -308,13 +315,14 @@ class AdminCustomers extends AdminTab
 			echo '
 			<div>
 			'.$this->l('This customer is registered as').' <b>'.$this->l('guest').'</b>';
-				if (!Customer::customerExists($customer->email))
+				if(!Customer::customerExists($customer->email))
 				{
 					echo '
 					<form method="POST" action="index.php?tab=AdminCustomers&id_customer='.(int)$customer->id.'&token='.Tools::getAdminTokenLite('AdminCustomers').'">
 						<input type="hidden" name="id_lang" value="'.(int)(sizeof($orders) ? $orders[0]['id_lang'] : Configuration::get('PS_LANG_DEFAULT')).'" />
 						<p class="center"><input class="button" type="submit" name="submitGuestToCustomer" value="'.$this->l('Transform to customer').'" /></p>
-						'.$this->l('This feature generates a random password and sends an e-mail to the customer').'</form>';
+						'.$this->l('This feature generates a random password and sends an e-mail to the customer
+					</form>');
 				}
 				else
 					echo '</div><div><b style="color:red;">'.$this->l('A registered customer account exists with the same email address').'</b>';
@@ -325,7 +333,7 @@ class AdminCustomers extends AdminTab
 		echo '
 		</fieldset>
 		<div class="clear">&nbsp;</div>';
-
+		
 		echo '<fieldset style="height:190px"><legend><img src="../img/admin/cms.gif" /> '.$this->l('Add a private note').'</legend>
 			<p>'.$this->l('This note will be displayed to all the employees but not to the customer.').'</p>
 			<form action="ajax.php" method="post" onsubmit="saveCustomerNote();return false;" id="customer_note">
@@ -355,8 +363,8 @@ class AdminCustomers extends AdminTab
 				});
 			}
 		</script>';
-
-
+		
+		
 		echo '<h2>'.$this->l('Messages').' ('.sizeof($messages).')</h2>';
 		if (sizeof($messages))
 		{
@@ -470,7 +478,7 @@ class AdminCustomers extends AdminTab
 		}
 		else
 			echo $customer->firstname.' '.$customer->lastname.' '.$this->l('has not placed any orders yet');
-
+			
 		if ($products AND sizeof($products))
 		{
 			echo '<div class="clear">&nbsp;</div>
@@ -516,7 +524,7 @@ class AdminCustomers extends AdminTab
 					<td>'.$address['firstname'].' '.$address['lastname'].'</td>
 					<td>'.$address['address1'].($address['address2'] ? ' '.$address['address2'] : '').' '.$address['postcode'].' '.$address['city'].'</td>
 					<td>'.$address['country'].'</td>
-					<td>'.($address['phone'] ? ($address['phone'].($address['phone_mobile'] ? '<br />'.$address['phone_mobile'] : '')) : ($address['phone_mobile'] ? $address['phone_mobile'] : '--')).'</td>
+					<td>'.($address['phone'] ? ($address['phone'].($address['phone_mobile'] ? '<br />'.$address['phone_mobile'] : '')) : ($address['phone_mobile'] ? '<br />'.$address['phone_mobile'] : '--')).'</td>
 					<td align="center">
 						<a href="?tab=AdminAddresses&id_address='.$address['id_address'].'&addaddress&token='.$tokenAddresses.'"><img src="../img/admin/edit.gif" /></a>
 						<a href="?tab=AdminAddresses&id_address='.$address['id_address'].'&deleteaddress&token='.$tokenAddresses.'"><img src="../img/admin/delete.gif" /></a>
@@ -566,7 +574,7 @@ class AdminCustomers extends AdminTab
 		else
 			echo $customer->firstname.' '.$customer->lastname.' '.$this->l('has no discount vouchers').'.';
 		echo '<div class="clear">&nbsp;</div>';
-
+		 
 		echo '<div style="float:left">
 		<h2>'.$this->l('Carts').' ('.sizeof($carts).')</h2>';
 		if ($carts AND sizeof($carts))
@@ -602,9 +610,15 @@ class AdminCustomers extends AdminTab
 		else
 			echo $this->l('No cart available').'.';
 		echo '</div>';
-
-		$interested = Db::getInstance()->ExecuteS('SELECT DISTINCT id_product FROM '._DB_PREFIX_.'cart_product cp INNER JOIN '._DB_PREFIX_.'cart c on c.id_cart = cp.id_cart WHERE c.id_customer = '.(int)$customer->id.' AND cp.id_product NOT IN (
-		SELECT product_id FROM '._DB_PREFIX_.'orders o inner join '._DB_PREFIX_.'order_detail od ON o.id_order = od.id_order WHERE o.valid = 1 AND o.id_customer = '.(int)$customer->id.')');
+		
+		$interested = Db::getInstance()->ExecuteS('SELECT DISTINCT id_product, c.id_cart, c.id_shop 
+																FROM '._DB_PREFIX_.'cart_product cp 
+																JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = cp.id_cart)
+																WHERE c.id_customer = '.(int)$customer->id.' 
+																AND cp.id_product NOT IN (SELECT product_id 
+																									FROM '._DB_PREFIX_.'orders o 
+																									JOIN '._DB_PREFIX_.'order_detail od ON (o.id_order = od.id_order)
+																									WHERE o.valid = 1 AND o.id_customer = '.(int)$customer->id.')');
 		if (count($interested))
 		{
 			echo '<div style="float:left;margin-left:20px">
@@ -612,7 +626,7 @@ class AdminCustomers extends AdminTab
 			<table cellspacing="0" cellpadding="0" class="table">';
 			foreach ($interested as $p)
 			{
-				$product = new Product((int)$p['id_product'], false, $cookie->id_lang);
+				$product = new Product((int)$p['id_product'], false, $cookie->id_lang, (int)$p['id_shop']);
 				echo '
 				<tr '.($irow++ % 2 ? 'class="alt_row"' : '').' style="cursor: pointer" onclick="document.location = \''.$link->getProductLink((int)$product->id, $product->link_rewrite, Category::getLinkRewrite($product->id_category_default, (int)($cookie->id_lang))).'\'">
 					<td>'.(int)$product->id.'</td>
@@ -622,62 +636,62 @@ class AdminCustomers extends AdminTab
 			}
 			echo '</table></div>';
 		}
-
+		
 		echo '<div class="clear">&nbsp;</div>';
 
 		/* Last connections */
-		$connections = $customer->getLastConnections();
-	if (sizeof($connections))
-		{
-			echo '<h2>'.$this->l('Last connections').'</h2>
-			<table cellspacing="0" cellpadding="0" class="table">
-				<tr>
-					<th style="width: 200px">'.$this->l('Date').'</th>
-					<th style="width: 100px">'.$this->l('Pages viewed').'</th>
-					<th style="width: 100px">'.$this->l('Total time').'</th>
-					<th style="width: 100px">'.$this->l('Origin').'</th>
-					<th style="width: 100px">'.$this->l('IP Address').'</th>
-				</tr>';
-			foreach ($connections as $connection)
-				echo '<tr>
-						<td>'.Tools::displayDate($connection['date_add'], (int)($cookie->id_lang), true).'</td>
-						<td>'.(int)($connection['pages']).'</td>
-						<td>'.$connection['time'].'</td>
-						<td>'.($connection['http_referer'] ? preg_replace('/^www./', '', parse_url($connection['http_referer'], PHP_URL_HOST)) : $this->l('Direct link')).'</td>
-						<td>'.$connection['ipaddress'].'</td>
-					</tr>';
-			echo '</table><div class="clear">&nbsp;</div>';
-		}
-		if (sizeof($referrers))
-		{
-			echo '<h2>'.$this->l('Referrers').'</h2>
-			<table cellspacing="0" cellpadding="0" class="table">
-				<tr>
-					<th style="width: 200px">'.$this->l('Date').'</th>
-					<th style="width: 200px">'.$this->l('Name').'</th>
-				</tr>';
-			foreach ($referrers as $referrer)
-				echo '<tr>
-						<td>'.Tools::displayDate($referrer['date_add'], (int)($cookie->id_lang), true).'</td>
-						<td>'.$referrer['name'].'</td>
-					</tr>';
-			echo '</table><div class="clear">&nbsp;</div>';
-		}
-		echo '<a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to customer list').'</a><br />';
-	}
+        $connections = $customer->getLastConnections();
+        if (sizeof($connections))    
+        {
+            echo '<h2>'.$this->l('Last connections').'</h2>
+            <table cellspacing="0" cellpadding="0" class="table">
+                <tr>
+                    <th style="width: 200px">'.$this->l('Date').'</th>
+                    <th style="width: 100px">'.$this->l('Pages viewed').'</th>
+                    <th style="width: 100px">'.$this->l('Total time').'</th>
+                    <th style="width: 100px">'.$this->l('Origin').'</th>
+                    <th style="width: 100px">'.$this->l('IP Address').'</th>
+                </tr>';
+            foreach ($connections as $connection)
+                echo '<tr>
+                        <td>'.Tools::displayDate($connection['date_add'], (int)($cookie->id_lang), true).'</td>
+                        <td>'.(int)($connection['pages']).'</td>
+                        <td>'.$connection['time'].'</td>
+                        <td>'.($connection['http_referer'] ? preg_replace('/^www./', '', parse_url($connection['http_referer'], PHP_URL_HOST)) : $this->l('Direct link')).'</td>
+                        <td>'.$connection['ipaddress'].'</td>
+                    </tr>';
+            echo '</table><div class="clear">&nbsp;</div>';
+        }
+        if (sizeof($referrers))    
+        {
+            echo '<h2>'.$this->l('Referrers').'</h2>
+            <table cellspacing="0" cellpadding="0" class="table">
+                <tr>
+                    <th style="width: 200px">'.$this->l('Date').'</th>
+                    <th style="width: 200px">'.$this->l('Name').'</th>
+                </tr>';
+            foreach ($referrers as $referrer)
+                echo '<tr>
+                        <td>'.Tools::displayDate($referrer['date_add'], (int)($cookie->id_lang), true).'</td>
+                        <td>'.$referrer['name'].'</td>
+                    </tr>';
+            echo '</table><div class="clear">&nbsp;</div>';
+        }
+        echo '<a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to customer list').'</a><br />';
+    }
 
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex;
 		parent::displayForm();
-
+		
 		if (!($obj = $this->loadObject(true)))
 			return;
-
+		
 		$birthday = explode('-', $this->getFieldValue($obj, 'birthday'));
 		$customer_groups = Tools::getValue('groupBox', $obj->getGroups());
 		$groups = Group::getGroups($this->_defaultFormLanguage, true);
-
+		
 		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" autocomplete="off">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
@@ -700,17 +714,12 @@ class AdminCustomers extends AdminTab
 				<div class="margin-form">
 					<input type="text" size="33" name="firstname" value="'.htmlentities($this->getFieldValue($obj, 'firstname'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' 0-9!<>,;?=+()@#"�{}_$%:<span class="hint-pointer">&nbsp;</span></span>
-				</div>';
-				// if the customer is guest, he hasn't any password
-				if ($obj->id && !$obj->is_guest || Tools::isSubmit('add').$this->table)
-				{
-					echo '<label>'.$this->l('Password:').' </label>
-					<div class="margin-form">
-						<input type="password" size="33" name="passwd" value="" /> '.(!$obj->id ? '<sup>*</sup>' : '').'
-						<p>'.($obj->id ? $this->l('Leave blank if no change') : $this->l('5 characters min., only letters, numbers, or').' -_').'</p>
-					</div>';
-				}
-				echo '
+				</div>
+				<label>'.$this->l('Password:').' </label>
+				<div class="margin-form">
+					<input type="password" size="33" name="passwd" value="" /> '.(!$obj->id ? '<sup>*</sup>' : '').'
+					<p>'.($obj->id ? $this->l('Leave blank if no change') : $this->l('5 characters min., only letters, numbers, or').' -_').'</p>
+				</div>
 				<label>'.$this->l('E-mail address:').' </label>
 				<div class="margin-form">
 					<input type="text" size="33" name="email" value="'.htmlentities($this->getFieldValue($obj, 'email'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
@@ -815,7 +824,20 @@ class AdminCustomers extends AdminTab
 					} else
 						echo '<p>'.$this->l('No group created').'</p>';
 				echo '
-				</div>
+				</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					$shops = Shop::getShops();
+					echo '
+					<label>'.$this->l('Shop:').' </label>
+					<div class="margin-form">
+						<select name="id_shop">';
+					foreach ($shops as $shop)
+						echo '<option value="'.(int)($shop['id_shop']).'"'.($shop['id_shop'] == (int)Configuration::get('PS_SHOP_DEFAULT') ? ' selected="selected"' : '').'>'.$shop['name'].'</option>';
+					echo '
+						</select>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -824,12 +846,12 @@ class AdminCustomers extends AdminTab
 		</form>';
 	}
 
-	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL)
+	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL, $id_lang_shop = NULL)
 	{
 		global $cookie;
 		return parent::getList((int)($cookie->id_lang), !Tools::getValue($this->table.'Orderby') ? 'date_add' : NULL, !Tools::getValue($this->table.'Orderway') ? 'DESC' : NULL);
 	}
-
+	
 	public function beforeDelete($object)
 	{
 		return $object->isUsed();

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7320 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -81,10 +81,10 @@ class AdminBackup extends AdminTab
 	 */
 	public function displayForm($isMainTab = true)
 	{
-		if (is_writable(PS_ADMIN_DIR.'/backups/'))
+		if(is_writable(PS_ADMIN_DIR.'/backups/'))
 		{
-			if (!($object = $this->loadObject()))
-				return;
+		if (!($object = $this->loadObject()))
+			return;
 			if ($object->add())
 			{
 				echo '<div class="conf confirm"><img src="../img/admin/ok.gif" />&nbsp;'.$this->l('It appears that the Backup was successful, however, you must download and carefully verify the Backup file.').'</div>';
@@ -177,9 +177,9 @@ class AdminBackup extends AdminTab
 	public function displayList()
 	{
 		global $currentIndex;
-		
+
 		// Test if the backup dir is writable
-		if (!is_writable(PS_ADMIN_DIR.'/backups/'))
+		if(!is_writable(PS_ADMIN_DIR.'/backups/'))
 			$this->displayWarning($this->l('"Backups" Directory in admin directory must be writeable (CHMOD 755 / 777)'));
 
 		$this->displayErrors();
@@ -188,7 +188,7 @@ class AdminBackup extends AdminTab
 		parent::displayList();
 	}
 
-	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL)
+	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL, $id_lang_shop = NULL)
 	{
 		global $cookie;
 		
@@ -247,11 +247,11 @@ class AdminBackup extends AdminTab
 			if (preg_match('/^([\d]+-[a-z\d]+)\.sql(\.gz|\.bz2)?$/', $file, $matches) == 0)
 				continue;
 			$timestamp = (int)($matches[1]);
-			$date = date('Y-m-d H:i:s', $timestamp);
+			$date = date('Y-m-d h:i:s', $timestamp);
 			$age = time() - $timestamp;
 			if ($age < 3600)
 				$age = '< 1 '.$this->l('hour');
-			elseif ($age < 86400)
+			else if ($age < 86400)
 			{
 				$age = floor($age / 3600);
 				$age = $age.' '.(($age == 1) ? $this->l('hour') : $this->l('hours'));
@@ -293,31 +293,6 @@ class AdminBackup extends AdminTab
 		}
 		usort($this->_list, array($this, $sorter));
 		$this->_list = array_slice($this->_list, $start, $limit);
-	}
-	
-	
-	public function display() 
-	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		parent::display();
-	}
-	
-	public function postProcess()
-	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		parent::postProcess();
 	}
 	
 	public function int_sort($a, $b)

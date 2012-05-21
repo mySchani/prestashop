@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6957 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsBestCategories extends ModuleGrid
@@ -37,7 +37,7 @@ class StatsBestCategories extends ModuleGrid
 	private $_defaultSortDirection;
 	private $_emptyMessage;
 	private $_pagingMessage;
-	
+
 	function __construct()
 	{
 		$this->name = 'statsbestcategories';
@@ -45,12 +45,12 @@ class StatsBestCategories extends ModuleGrid
 		$this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
+
 		$this->_defaultSortColumn = 'totalPriceSold';
 		$this->_defaultSortDirection = 'DESC';
 		$this->_emptyMessage = $this->l('Empty recordset returned');
 		$this->_pagingMessage = $this->l('Displaying').' {0} - {1} '.$this->l('of').' {2}';
-		
+
 		$this->_columns = array(
 			array(
 				'id' => 'name',
@@ -81,18 +81,18 @@ class StatsBestCategories extends ModuleGrid
 				'align' => 'right'
 			)
 		);
-		
+
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Best categories');
 		$this->description = $this->l('A list of the best categories');
 	}
-	
+
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
 	public function hookAdminStatsModules($params)
 	{
 		$engineParams = array(
@@ -110,17 +110,49 @@ class StatsBestCategories extends ModuleGrid
 	
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
-			'.ModuleGrid::engine($engineParams).'
+			'.$this->engine($engineParams).'
 			<br /><a href="'.htmlentities($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a>
 		</fieldset>';
 		return $this->_html;
 	}
-	
+
 	public function getData()
 	{
 		$dateBetween = $this->getDate();
 		$id_lang = $this->getLang();
+		
+		// If a shop is selected, get all children categories for the shop
+		$categories = array();
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$sql = 'SELECT c.nleft, c.nright
+					FROM '._DB_PREFIX_.'category c
+					WHERE c.id_category IN (
+						SELECT s.id_category
+						FROM '._DB_PREFIX_.'shop s
+						WHERE s.id_shop IN ('.(($this->shopID) ? $this->shopID : 'SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID).')
+					)';
+			if ($result = Db::getInstance()->executeS($sql))
+			{
+				$ntreeRestriction = array();
+				foreach ($result as $row)
+					$ntreeRestriction[] = '(nleft >= ' . $row['nleft'] . ' AND nright <= ' . $row['nright'] . ')';
+				
+				if ($ntreeRestriction)
+				{
+					$sql = 'SELECT id_category
+							FROM '._DB_PREFIX_.'category
+							WHERE '.implode(' OR ', $ntreeRestriction);
+					if ($result = Db::getInstance()->executeS($sql))
+					{
+						foreach ($result as $row)
+							$categories[] = $row['id_category'];
+					}
+				}
+			}
+		}
 
+		// Get best categories
 		$this->_query = '
 		SELECT SQL_CALC_FOUND_ROWS ca.`id_category`, CONCAT(parent.name, \' > \', calang.`name`) as name,
 			IFNULL(SUM(t.`totalQuantitySold`), 0) AS totalQuantitySold,
@@ -156,6 +188,7 @@ class StatsBestCategories extends ModuleGrid
 				GROUP BY pr.`id_product`
 			) t ON t.`id_product` = pr.`id_product`
 		) t	ON t.`id_product` = capr.`id_product`
+		'.(($categories) ? 'WHERE ca.id_category IN ('.implode(', ', $categories).')' : '').'
 		GROUP BY ca.`id_category`
 		HAVING ca.`id_category` != 1';
 		if (Validate::IsName($this->_sort))

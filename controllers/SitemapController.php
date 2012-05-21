@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,20 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class SitemapControllerCore extends FrontController
 {
-	public $php_self = 'sitemap.php';
+	public function __construct()
+	{
+		$this->php_self = 'sitemap.php';
+	
+		parent::__construct();
+	}
 	
 	public function setMedia()
 	{
@@ -39,9 +44,8 @@ class SitemapControllerCore extends FrontController
 	public function process()
 	{
 		parent::process();
-		
-		self::$smarty->assign('categoriesTree', Category::getRootCategory()->recurseLiteCategTree(0));
-		self::$smarty->assign('categoriescmsTree', CMSCategory::getRecurseCategory(_USER_ID_LANG_, 1, 1, 1));
+		self::$smarty->assign('categoriesTree', Category::getRootCategory(NULL, (int)$this->id_current_shop)->recurseLiteCategTree(0));
+		self::$smarty->assign('categoriescmsTree', CMSCategory::getRecurseCategory(_USER_ID_LANG_, 1, 1, 1, (int)$this->id_current_shop));
 		self::$smarty->assign('voucherAllowed', (int)(Configuration::get('PS_VOUCHERS')));
 		$blockmanufacturer = Module::getInstanceByName('blockmanufacturer');
 		$blocksupplier = Module::getInstanceByName('blocksupplier');

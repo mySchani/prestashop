@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,30 +19,30 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsCheckUp extends Module
 {
-	function __construct()
-	{
-		$this->name = 'statscheckup';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statscheckup';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
-		parent::__construct();
-
-		$this->displayName = $this->l('Catalog evaluation');
-		$this->description = $this->l('Quick evaluation of your catalog quality.');
-	}
+        parent::__construct();
+		
+        $this->displayName = $this->l('Catalog evaluation');
+        $this->description = $this->l('Quick evaluation of your catalog quality.');
+    }
 
 	public function install()
 	{
@@ -55,25 +55,40 @@ class StatsCheckUp extends Module
     function hookAdminStatsModules()
     {
 		global $cookie, $currentIndex;
-		
+
 		if (Tools::isSubmit('submitCheckup'))
 		{
 			foreach (array('CHECKUP_DESCRIPTIONS_LT','CHECKUP_DESCRIPTIONS_GT','CHECKUP_IMAGES_LT','CHECKUP_IMAGES_GT','CHECKUP_SALES_LT','CHECKUP_SALES_GT','CHECKUP_STOCK_LT','CHECKUP_STOCK_GT') as $confname)
 				Configuration::updateValue($confname, (int)Tools::getValue($confname));
 			echo '<div class="conf confirm"><img src="../img/admin/ok.gif"> '.$this->l('Configuration updated').'</div>';
 		}
+
 		if (Tools::isSubmit('submitCheckupOrder'))
 		{
 			$cookie->checkup_order = (int)Tools::getValue('submitCheckupOrder');
 			echo '<div class="conf confirm"><img src="../img/admin/ok.gif"> '.$this->l('Configuration updated').'</div>';
 		}
+
 		if (!isset($cookie->checkup_order))
 			$cookie->checkup_order = 1;
-		
+
 		$db = Db::getInstance(_PS_USE_SQL_SLAVE_);
 		$employee = new Employee((int)($cookie->id_employee));
 		$prop30 = ((strtotime($employee->stats_date_to.' 23:59:59') - strtotime($employee->stats_date_from.' 00:00:00')) / 60 / 60 / 24) / 30;
-		$languages = $db->ExecuteS('SELECT * FROM '._DB_PREFIX_.'lang');
+
+		// Get languages
+		$sql = 'SELECT l.*
+				FROM '._DB_PREFIX_.'lang l';
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$sql .= ' LEFT JOIN '._DB_PREFIX_.'lang_shop ls ON ls.id_lang = l.id_lang';
+			if ($this->shopID)
+				$sql .= ' WHERE ls.id_shop = ' . $this->shopID;
+			else if ($this->shopGroupID)
+				$sql .= ' WHERE ls.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.')';
+		}
+		$languages = $db->ExecuteS($sql);
+
 		$arrayColors = array(
 			0 => '<img src="../modules/'.$this->name.'/red.png" alt="'.$this->l('bad').'" />',
 			1 => '<img src="../modules/'.$this->name.'/orange.png" alt="'.$this->l('average').'" />',
@@ -87,39 +102,69 @@ class StatsCheckUp extends Module
 			$divisor++;
 			$totals['description_'.$language['iso_code']] = 0;
 		}
+
 		$orderBy = 'p.id_product';
 		if ($cookie->checkup_order == 2)
 			$orderBy = 'pl.name';
 		elseif ($cookie->checkup_order == 3)
 			$orderBy = 'nbSales DESC';
-			
-		$result = $db->ExecuteS('
-		SELECT p.id_product, p.active, pl.name, (
-			SELECT COUNT(*)
-			FROM '._DB_PREFIX_.'image i
-			WHERE i.id_product = p.id_product
-		) as nbImages, (
-			SELECT SUM(od.product_quantity)
-			FROM '._DB_PREFIX_.'orders o
-			LEFT JOIN '._DB_PREFIX_.'order_detail od ON o.id_order = od.id_order
-			WHERE od.product_id = p.id_product
-			AND o.invoice_date BETWEEN '.ModuleGraph::getDateBetween().'
-		) as nbSales, IFNULL((
-			SELECT SUM(pa.quantity)
-			FROM '._DB_PREFIX_.'product_attribute pa
-			WHERE pa.id_product = p.id_product
-		), p.quantity) as stock
-		FROM '._DB_PREFIX_.'product p
-		LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
-		ORDER BY '.$orderBy);
-		
+
+		// Generate SQL restrictions for products stats per shop
+		$joinProduct = $joinImage = $whereProduct = $whereImage = $whereOrder = '';
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$joinProduct = ' LEFT JOIN '._DB_PREFIX_.'product_shop ps ON ps.id_product = p.id_product ';
+			$joinImage = ' LEFT JOIN '._DB_PREFIX_.'image_shop ishop ON ishop.id_image = i.id_image ';
+			if ($this->shopID)
+			{
+				$whereProduct = ' WHERE ps.id_shop = '.$this->shopID;
+				$whereImage = ' AND ishop.id_shop = '.$this->shopID;
+				$whereOrder = ' AND o.id_shop = '.$this->shopID;
+			}
+			else if ($this->shopGroupID)
+			{
+				$whereProduct = ' WHERE ps.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.')';
+				$whereImage = ' AND ishop.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.')';
+				$whereOrder = ' AND o.id_group_shop = '.$this->shopGroupID;
+			}
+		}
+
+		// Get products stats
+		$sql = 'SELECT p.id_product, p.active, pl.name, (
+					SELECT COUNT(*)
+					FROM '._DB_PREFIX_.'image i
+					'.$joinImage.'
+					WHERE i.id_product = p.id_product
+						'.$whereImage.'
+				) as nbImages, (
+					SELECT SUM(od.product_quantity)
+					FROM '._DB_PREFIX_.'orders o
+					LEFT JOIN '._DB_PREFIX_.'order_detail od ON o.id_order = od.id_order
+					WHERE od.product_id = p.id_product
+						AND o.invoice_date BETWEEN '.ModuleGraph::getDateBetween().'
+						'.$whereOrder.'
+				) as nbSales, IFNULL((
+					SELECT SUM(pa.quantity)
+					FROM '._DB_PREFIX_.'product_attribute pa
+					WHERE pa.id_product = p.id_product
+				), p.quantity) as stock
+				FROM '._DB_PREFIX_.'product p
+				LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
+				'.$joinProduct.'
+				'.$whereProduct.'
+				ORDER BY '.$orderBy;
+		$result = $db->ExecuteS($sql);
+
+		if (!$result)
+			return $this->l('No product found');
+
 		$arrayConf = array(
 			'DESCRIPTIONS' => array('name' => $this->l('Descriptions'), 'text' => $this->l('chars (without HTML)')),
 			'IMAGES' => array('name' => $this->l('Images'), 'text' => $this->l('images')),
 			'SALES' => array('name' => $this->l('Sales'), 'text' => $this->l('orders / month')),
 			'STOCK' => array('name' => $this->l('Stock'), 'text' => $this->l('items'))
 		);
-		
+
 		$html = '
 		<style type="text/css">
 			form.checkup input[type=text] {width:30px}
@@ -129,20 +174,20 @@ class StatsCheckUp extends Module
 			table.checkup td {padding:5px 10px}
 			table.checkup2 td {text-align:right}
 		</style>
-		<form action="'.$currentIndex.'&token='.Tools::safeOutput(Tools::getValue('token')).'&module='.$this->name.'" method="post" class="checkup">
+		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'&module='.$this->name.'" method="post" class="checkup">
 		<table class="table checkup" border="0" cellspacing="0" cellspacing="0">
 			<tr><th></th><th>'.$arrayColors[0].' '.$this->l('Not enough').'</th><th>'.$arrayColors[2].' '.$this->l('Alright').'</th></tr>';
 		foreach ($arrayConf as $conf => $translations)
 			$html .= '<tr>
 				<th>'.$translations['name'].'</th>
-				<td>'.$this->l('lower than').' <input type="text" name="CHECKUP_'.$conf.'_LT" value="'.Tools::safeOutput(Tools::getValue('CHECKUP_'.$conf.'_LT', Configuration::get('CHECKUP_'.$conf.'_LT'))).'" /> '.$translations['text'].'
-				<td>'.$this->l('greater than').' <input type="text" name="CHECKUP_'.$conf.'_GT" value="'.Tools::safeOutput(Tools::getValue('CHECKUP_'.$conf.'_GT', Configuration::get('CHECKUP_'.$conf.'_GT'))).'" /> '.$translations['text'].'
+				<td>'.$this->l('lower than').' <input type="text" name="CHECKUP_'.$conf.'_LT" value="'.Tools::getValue('CHECKUP_'.$conf.'_LT', Configuration::get('CHECKUP_'.$conf.'_LT')).'" /> '.$translations['text'].'
+				<td>'.$this->l('greater than').' <input type="text" name="CHECKUP_'.$conf.'_GT" value="'.Tools::getValue('CHECKUP_'.$conf.'_GT', Configuration::get('CHECKUP_'.$conf.'_GT')).'" /> '.$translations['text'].'
 			</tr>';
 		$html .= '</table>
 			<div><input type="submit" name="submitCheckup" class="button" value="'.$this->l('   Save   ').'" /></div>
 		</form>
 		<div class="clear">&nbsp;</div>
-		<form action="'.$currentIndex.'&token='.Tools::safeOutput(Tools::getValue('token')).'&module='.$this->name.'" method="post">
+		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'&module='.$this->name.'" method="post">
 			'.$this->l('Order by').'
 			<select name="submitCheckupOrder" onchange="this.form.submit();" style="width:100px">
 				<option value="1">'.$this->l('ID').'</option>
@@ -203,7 +248,7 @@ class StatsCheckUp extends Module
 				<td>'.$arrayColors[$scores['average']].'</td>
 			</tr>';
 		}
-		
+
 		$totals['active'] = $totals['active'] / $totals['products'];
 		$totals['active'] = ($totals['active'] < 1 ? 0 : ($totals['active'] > 1.5 ? 2 : 1));
 		$totals['images'] = $totals['images'] / $totals['products'];
@@ -219,7 +264,7 @@ class StatsCheckUp extends Module
 		}
 		$totals['average'] = array_sum($totals) / $divisor;
 		$totals['average'] = ($totals['average'] < 1 ? 0 : ($totals['average'] > 1.5 ? 2 : 1));
-		
+
 		$html .= '
 			<tr>
 				<th colspan="2"></th>
@@ -248,9 +293,7 @@ class StatsCheckUp extends Module
 		<script type="text/javascript">
 			$(document).ready(function(){$("#container").css("width", "1200px");});
 		</script>';
-		
+
         return $html;
     }
 }
-
-

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,7 +35,7 @@ include_once(dirname(__FILE__).'/LoyaltyModule.php');
 include_once(dirname(__FILE__).'/LoyaltyStateModule.php');
 
 if (!$cookie->isLogged())
-	Tools::redirect('authentication.php?back=modules/loyalty/loyalty-program.php');
+	Tools::redirect('index.php?controller=authentication&back=modules/loyalty/loyalty-program.php');
 
 Tools::addCSS(_PS_CSS_DIR_.'jquery.cluetip.css', 'all');
 Tools::addJS(array(_PS_JS_DIR_.'jquery/jquery.dimensions.js',_PS_JS_DIR_.'jquery/jquery.cluetip.js'));

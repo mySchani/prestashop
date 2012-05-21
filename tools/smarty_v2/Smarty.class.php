@@ -30,7 +30,7 @@
  * @version 2.6.20
  */
 
-/* $Id: Smarty.class.php 9847 2011-11-03 15:23:15Z bLeveque $ */
+/* $Id: Smarty.class.php 6844 2011-06-03 14:46:51Z dMetzger $ */
 
 /**
  * DIR_SEP isn't used anymore, but third party apps might
@@ -1142,27 +1142,7 @@ class Smarty
                     $this->debugging = true;
                 }
             } else {
-		
-		/* PrestaShop */
-		$this->debugging = false;
-		if ($this->request_use_auto_globals)
-		{
-			if (!isset($_COOKIE['SMARTY_DEBUG']))
-				$this->debugging = false;
-			else
-				$this->debugging = $_COOKIE['SMARTY_DEBUG'];
-		}
-		else
-		{
-			if (!isset($GLOBALS['HTTP_COOKIE_VARS']['SMARTY_DEBUG']))
-				$this->debugging = false;
-			else
-				$this->debugging = $GLOBALS['HTTP_COOKIE_VARS']['SMARTY_DEBUG'];
-		}	
-			
-		// $this->debugging = (bool)(($this->request_use_auto_globals ? @$_COOKIE['SMARTY_DEBUG'] : @$GLOBALS['HTTP_COOKIE_VARS']['SMARTY_DEBUG']);
-		
-		/* End */               
+                $this->debugging = (bool)($this->request_use_auto_globals ? @$_COOKIE['SMARTY_DEBUG'] : @$GLOBALS['HTTP_COOKIE_VARS']['SMARTY_DEBUG']);
             }
         }
 

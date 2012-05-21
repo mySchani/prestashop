@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,7 +40,7 @@ class AdminCounty extends AdminTab
 
 		$this->fieldsDisplay = array(
 		'id_county' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-		'name' => array('title' => $this->l('County'), 'width' => 130, 'filter_key' => 'a!name'),
+		'name' => array('title' => $this->l('County'), 'width' => 130, 'filter_key' => 'b!name'),
 		'state' => array('title' => $this->l('State'), 'width' => 70, 'filter_key' => 's!name'),
 		'a!active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false, 'filter_key' => 'a!active'));
 
@@ -132,7 +132,7 @@ class AdminCounty extends AdminTab
 			<fieldset><legend><img src="../img/admin/world.gif" />'.$this->l('Counties').'</legend>';
 
 				if (!isset($obj->id))
-					echo '<div class="hint clear" style="display:block;">&nbsp;'.$this->l('Save this county then you will be able to associate zipcodes').'</div><br />';
+					echo '<div class="hint clear" style="display:block;">'.$this->l('Save this county then you will be able to associate zipcodes').'</div><br />';
 
 		$countries = Country::getCountries($cookie->id_lang, true, true);
 		echo '<label>'.$this->l('Country:').' </label>

@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -44,9 +44,10 @@
 				<h5><a href="{$product->getLink()}" title="{$product->name|truncate:32:'...'|escape:'htmlall':'UTF-8'}">{$product->name|truncate:27:'...'|escape:'htmlall':'UTF-8'}</a></h5>
 				<div class="product_desc"><a href="{$product->getLink()}" title="{l s='More'}">{$product->description_short|strip_tags|truncate:130:'...'}</a></div>
 				<div class="comparison_product_infos">
-					<a href="{$product->getLink()}" title="{$product->name|escape:html:'UTF-8'}" class="product_image" >
-						<img src="{$link->getImageLink($product->link_rewrite, $product->id_image, 'home')}" alt="{$product->name|escape:html:'UTF-8'}" width="{$homeSize.width}" height="{$homeSize.height}" />
-					</a>
+				<a href="{$product->getLink()}" title="{$product->name|escape:html:'UTF-8'}" class="product_image" >
+					<img src="{$link->getImageLink($product->link_rewrite, $product->id_image, 'home')}" alt="{$product->name|escape:html:'UTF-8'}" width="{$homeSize.width}" height="{$homeSize.height}" />
+				</a>
+
 				{if isset($product->show_price) && $product->show_price && !isset($restricted_country_mode) && !$PS_CATALOG_MODE}
 					<p class="price_container"><span class="price">{convertPrice price=$product->getPrice($taxes_behavior)}</span></p>
 					<div class="product_discount">
@@ -81,11 +82,11 @@
 						</span>
 					{/if}
 				</p>
-					<a class="cmp_remove" href="{$link->getPageLink('products-comparison.php')}" rel="ajax_id_product_{$product->id}">{l s='Remove'}</a>
+					<a class="cmp_remove" href="{$request_uri|replace:$replace_id:''}">{l s='Remove'}</a>
 					<a class="button" href="{$product->getLink()}" title="{l s='View'}">{l s='View'}</a>
 					{if (!$product->hasAttributes() OR (isset($add_prod_display) AND ($add_prod_display == 1))) AND $product->minimal_quantity == 1 AND $product->customizable != 2 AND !$PS_CATALOG_MODE}
 						{if ($product->quantity > 0 OR $product->allow_oosp)}
-							<a class="exclusive ajax_add_to_cart_button" rel="ajax_id_product_{$product->id}" href="{$link->getPageLink('cart.php')}?qty=1&amp;id_product={$product->id}&amp;token={$static_token}&amp;add" title="{l s='Add to cart'}">{l s='Add to cart'}</a>
+							<a class="exclusive ajax_add_to_cart_button" rel="ajax_id_product_{$product->id}" href="{$link->getPageLink('cart', true, NULL, "qty=1&amp;id_product={$product->id}&amp;token={$static_token}&amp;add")}" title="{l s='Add to cart'}">{l s='Add to cart'}</a>
 						{else}
 							<span class="exclusive">{l s='Add to cart'}</span>
 						{/if}

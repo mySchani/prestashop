@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -93,7 +93,6 @@ class AdminReturn extends AdminTab
 				if (($id_order_return = (int)(Tools::getValue('id_order_return'))) AND Validate::isUnsignedId($id_order_return))
 				{
 					$orderReturn = new OrderReturn($id_order_return);
-					$order = new Order($orderReturn->id_order);
 					$customer = new Customer($orderReturn->id_customer);
 					$orderReturn->state = (int)(Tools::getValue('state'));
 					if ($orderReturn->save())
@@ -103,10 +102,8 @@ class AdminReturn extends AdminTab
 						'{lastname}' => $customer->lastname,
 						'{firstname}' => $customer->firstname,
 						'{id_order_return}' => $id_order_return,
-						'{state_order_return}' => (isset($orderReturnState->name[(int)$order->id_lang]) ? $orderReturnState->name[(int)$order->id_lang] : $orderReturnState->name[(int)Configuration::get('PS_LANG_DEFAULT')]));
-						Mail::Send((int)$order->id_lang, 'order_return_state', Mail::l('Your order return state has changed', (int)$order->id_lang),
-							$vars, $customer->email, $customer->firstname.' '.$customer->lastname, NULL, NULL, NULL,
-							NULL, _PS_MAIL_DIR_, true);
+						'{state_order_return}' => $orderReturnState->name[(int)(Configuration::get('PS_LANG_DEFAULT'))]);
+						Mail::Send((int)($cookie->id_lang), 'order_return_state', Mail::l('Your order return state has changed'), $vars, $customer->email, $customer->firstname.' '.$customer->lastname);
 						Tools::redirectAdmin($currentIndex.'&conf=4&token='.$this->token);
 					}
 				}
@@ -186,7 +183,7 @@ class AdminReturn extends AdminTab
 				<p style="clear: both"><a href="index.php?tab=AdminOrders&id_order='.$order->id.'&vieworder&token='.Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)($cookie->id_employee)).'">'.$this->l('View details on order page').'</a></p>
 				</div>
 				<label>'.$this->l('Customer explanation:').' </label>
-				<div class="margin-form">'.nl2br2($obj->question).'</div>
+				<div class="margin-form">'.$obj->question.'</div>
 
 				<label>'.$this->l('Status:').' </label>
 				<div class="margin-form">

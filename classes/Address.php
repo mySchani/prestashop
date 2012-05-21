@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14903 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -106,7 +106,7 @@ class AddressCore extends ObjectModel
 										'firstname' => 'isName', 'address1' => 'isAddress', 'address2' => 'isAddress', 'postcode'=>'isPostCode',
 										'city' => 'isCityName', 'other' => 'isMessage',
 										'phone' => 'isPhoneNumber', 'phone_mobile' => 'isPhoneNumber', 'deleted' => 'isBool', 'dni' => 'isDniLite');
-	protected	$exclude_copy_post = array('id_manufacturer', 'id_supplier', 'date_add', 'date_upd');
+
 	protected 	$table = 'address';
 	protected 	$identifier = 'id_address';
 	protected	$_includeVars = array('addressType' => 'table');
@@ -135,10 +135,9 @@ class AddressCore extends ObjectModel
 		/* Get and cache address country name */
 		if ($this->id)
 		{
-			$result = Db::getInstance()->getRow('
-			SELECT `name` FROM `'._DB_PREFIX_.'country_lang`
-			WHERE `id_country` = '.(int)($this->id_country).'
-			AND `id_lang` = '.($id_lang ? (int)($id_lang) : Configuration::get('PS_LANG_DEFAULT')));
+			$result = Db::getInstance()->getRow('SELECT `name` FROM `'._DB_PREFIX_.'country_lang`
+												WHERE `id_country` = '.(int)($this->id_country).'
+												AND `id_lang` = '.($id_lang ? (int)($id_lang) : Configuration::get('PS_LANG_DEFAULT')));
 			$this->country = $result['name'];
 		}
 	}
@@ -212,9 +211,9 @@ class AddressCore extends ObjectModel
 		return $fields;
 	}
 
-	public function validateController($htmlentities = true, $copy_post = false)
+	public function validateController($htmlentities = true)
 	{
-		$errors = parent::validateController($htmlentities, $copy_post);
+		$errors = parent::validateController($htmlentities);
 		if (!Configuration::get('VATNUMBER_CHECKING'))
 			return $errors;
 		include_once(_PS_MODULE_DIR_.'vatnumber/vatnumber.php');
@@ -282,7 +281,7 @@ class AddressCore extends ObjectModel
 	 * @return int
 	 * @deprecated
 	 */
-	public static function getManufacturerIdByAddress($id_address)
+	static public function getManufacturerIdByAddress($id_address)
 	{
 		Tools::displayAsDeprecated();
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
@@ -291,7 +290,7 @@ class AddressCore extends ObjectModel
 		return isset($result['id_manufacturer']) ? $result['id_manufacturer'] : false;
 	}
 
-	public static function getCountryAndState($id_address)
+	static public function getCountryAndState($id_address)
 	{
 		if (isset(self::$_idCountries[$id_address]))
 			return self::$_idCountries[$id_address];
@@ -308,7 +307,7 @@ class AddressCore extends ObjectModel
 	* @param $id_address Address id
 	* @return boolean
 	*/
-	public static function addressExists($id_address)
+	static public function addressExists($id_address)
 	{
 		$row = Db::getInstance()->getRow('
 		SELECT `id_address`
@@ -318,7 +317,7 @@ class AddressCore extends ObjectModel
 		return isset($row['id_address']);
 	}
 
-	public static function getFirstCustomerAddressId($id_customer, $active = true)
+	static public function getFirstCustomerAddressId($id_customer, $active = true)
 	{
 		return Db::getInstance()->getValue('
 			SELECT `id_address`

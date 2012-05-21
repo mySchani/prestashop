@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class CategoryControllerCore extends FrontController
 {
-	public $php_self = 'category.php';
-	
 	protected $category;
 
 	public function setMedia()
@@ -50,37 +48,43 @@ class CategoryControllerCore extends FrontController
 		$this->productSort();
 	}
 
-	public function canonicalRedirection()
-	{
-		// Automatically redirect to the canonical URL if the current in is the right one
-		// $_SERVER['HTTP_HOST'] must be replaced by the real canonical domain
-		if (Validate::isLoadedObject($this->category) && Configuration::get('PS_CANONICAL_REDIRECT') && strtoupper($_SERVER['REQUEST_METHOD']) == 'GET' && !Tools::getValue('noredirect'))
-		{
-			$currentURL = preg_replace('/[?&].*$/', '', self::$link->getCategoryLink($this->category));
-			if (!preg_match('/^'.Tools::pRegexp($currentURL, '/').'([&?].*)?$/', Tools::getProtocol().$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']))
-			{
-				header('HTTP/1.0 301 Moved');
-				header('Cache-Control: no-cache');
-				if (defined('_PS_MODE_DEV_') AND _PS_MODE_DEV_ )
-					die('[Debug] This page has moved<br />Please use the following URL instead: <a href="'.$currentURL.'">'.$currentURL.'</a>');
-				Tools::redirectLink($currentURL);
-			}
-		}
-	}
-	
 	public function preProcess()
 	{
 		if ($id_category = (int)Tools::getValue('id_category'))
-			$this->category = new Category($id_category, self::$cookie->id_lang);
+			$this->category = new Category($id_category, self::$cookie->id_lang, (int)$this->id_current_shop);
 		if (!Validate::isLoadedObject($this->category))
 		{
 			header('HTTP/1.1 404 Not Found');
 			header('Status: 404 Not Found');
 		}
 		else
-			$this->canonicalRedirection();
-		
+		{
+			// Automatically redirect to the canonical URL if the current in is the right one
+			// $_SERVER['HTTP_HOST'] must be replaced by the real canonical domain
+			$currentURL = self::$link->getCategoryLink($this->category);
+			$currentURL = preg_replace('/[?&].*$/', '', $currentURL);
+			if (!preg_match('/^'.Tools::pRegexp($currentURL, '/').'([&?].*)?$/i', Tools::getProtocol().$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']))
+			{
+				header('HTTP/1.0 301 Moved');
+				if (defined('_PS_MODE_DEV_') AND _PS_MODE_DEV_ )
+					die('[Debug] This page has moved<br />Please use the following URL instead: <a href="'.$currentURL.'">'.$currentURL.'</a>');
+				Tools::redirectLink($currentURL);
+			}
+		}
+	
 		parent::preProcess();
+		
+		if((int)(Configuration::get('PS_REWRITING_SETTINGS')))
+			if ($id_category = (int)Tools::getValue('id_category'))
+			{
+				$rewrite_infos = Category::getUrlRewriteInformations((int)$id_category);
+
+				$default_rewrite = array();
+				foreach ($rewrite_infos AS $infos)
+					$default_rewrite[$infos['id_lang']] = self::$link->getCategoryLink((int)$id_category, $infos['link_rewrite'], $infos['id_lang']);
+
+				self::$smarty->assign('lang_rewrite_urls', $default_rewrite);
+			}
 	}
 	
 	public function process()
@@ -118,8 +122,8 @@ class CategoryControllerCore extends FrontController
 				}
 
 				$this->category->description = nl2br2($this->category->description);
-				$subCategories = $this->category->getSubCategories((int)self::$cookie->id_lang);
-				self::$smarty->assign('category', $this->category);
+				$subCategories = $this->category->getSubCategories((int)(self::$cookie->id_lang));
+				self::$smarty->assign('category', $this->category);	
 				
 				if (isset($subCategories) AND !empty($subCategories) AND $subCategories)
 				{
@@ -129,10 +133,14 @@ class CategoryControllerCore extends FrontController
 						'subcategories_nb_half' => ceil(sizeof($subCategories) / 2)));
 				}
 				if ($this->category->id != 1)
-					$this->productListAssign();
-
+				{
+					$nbProducts = $this->category->getProducts(NULL, NULL, NULL, $this->orderBy, $this->orderWay, true);
+					$this->pagination((int)$nbProducts);
+					self::$smarty->assign('nb_products', (int)$nbProducts);
+					$cat_products = $this->category->getProducts((int)(self::$cookie->id_lang), (int)($this->p), (int)($this->n), $this->orderBy, $this->orderWay);
+				}
 				self::$smarty->assign(array(
-					'products' => (isset($this->cat_products) AND $this->cat_products) ? $this->cat_products : NULL,
+					'products' => (isset($cat_products) AND $cat_products) ? $cat_products : NULL,
 					'id_category' => (int)($this->category->id),
 					'id_category_parent' => (int)($this->category->id_parent),
 					'return_category_name' => Tools::safeOutput($this->category->name),
@@ -143,9 +151,6 @@ class CategoryControllerCore extends FrontController
 					'thumbSceneSize' => Image::getSize('thumb_scene'),
 					'homeSize' => Image::getSize('home')
 				));
-				
-				if (isset(self::$cookie->id_compare))
-					self::$smarty->assign('compareProducts', CompareProduct::getCompareProducts((int)self::$cookie->id_compare));
 			}
 		}
 
@@ -154,22 +159,6 @@ class CategoryControllerCore extends FrontController
 			'comparator_max_item' => (int)(Configuration::get('PS_COMPARATOR_MAX_ITEM')),
 			'suppliers' => Supplier::getSuppliers()
 		));
-	}
-	
-	public function productListAssign()
-	{
-		$hookExecuted = false;
-		Module::hookExec('productListAssign', array('nbProducts' => &$this->nbProducts, 'catProducts' => &$this->cat_products, 'hookExecuted' => &$hookExecuted));
-		if(!$hookExecuted) // The hook was not executed, standard working
-		{
-			self::$smarty->assign('categoryNameComplement', '');
-			$this->nbProducts = $this->category->getProducts(NULL, NULL, NULL, $this->orderBy, $this->orderWay, true);
-			$this->pagination((int)$this->nbProducts); // Pagination must be call after "getProducts"
-			$this->cat_products = $this->category->getProducts((int)(self::$cookie->id_lang), (int)($this->p), (int)($this->n), $this->orderBy, $this->orderWay);
-		}
-		else // Hook executed, use the override
-			$this->pagination((int)$this->nbProducts); // Pagination must be call after "getProducts"
-		self::$smarty->assign('nb_products', (int)$this->nbProducts);
 	}
 
 	public function displayContent()

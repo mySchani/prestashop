@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -38,18 +38,20 @@
 
 <script type="text/javascript">
 //<![CDATA[
-{literal}
 $(document).ready(function()
 {
 	$('#selectPrductSort').change(function()
 	{
-		var requestSortProducts = '{/literal}{$request}{literal}';
+		var requestSortProducts = '{$request}';
 		var splitData = $(this).val().split(':');
-		document.location.href = requestSortProducts + ((requestSortProducts.indexOf('?') < 0) ? '?' : '&') + 'orderby=' + splitData[0] + '&orderway=' + splitData[1];
+		{if Module::isInstalled('blocklayered')}
+			reloadContent();
+		{else}
+			document.location.href = requestSortProducts + ((requestSortProducts.indexOf('?') < 0) ? '?' : '&') + 'orderby=' + splitData[0] + '&orderway=' + splitData[1];
+		{/if}
 	});
 });
 //]]>
-{/literal}
 </script>
 
 <form id="productsSortForm" action="{$request|escape:'htmlall':'UTF-8'}">

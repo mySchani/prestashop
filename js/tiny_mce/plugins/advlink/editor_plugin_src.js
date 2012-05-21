@@ -50,7 +50,7 @@
 				longname : 'Advanced link',
 				author : 'Moxiecode Systems AB',
 				authorurl : 'http://tinymce.moxiecode.com',
-				infourl : 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advlink',
+				infourl : 'http://wiki.moxiecode.com/index.php?controller=TinyMCE:Plugins/advlink',
 				version : tinymce.majorVersion + "." + tinymce.minorVersion
 			};
 		}

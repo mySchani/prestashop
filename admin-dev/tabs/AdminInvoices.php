@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -37,9 +37,7 @@ class AdminInvoices extends AdminTab
 		$this->_fieldsOptions = array(
 			'PS_INVOICE' => array('title' => $this->l('Enable invoices:'), 'desc' => $this->l('Select whether or not to activate invoices for your shop'), 'cast' => 'intval', 'type' => 'bool'),
 			'PS_INVOICE_PREFIX' => array('title' => $this->l('Invoice prefix:'), 'desc' => $this->l('Prefix used for invoices'), 'size' => 6, 'type' => 'textLang'),
-			'PS_INVOICE_START_NUMBER' => array('title' => $this->l('Invoice number:'), 'desc' => $this->l('The next invoice will begin with this number, and then increase with each additional invoice. Set to 0 if you want to keep the current number (#').(Order::getLastInvoiceNumber() + 1).').', 'size' => 6, 'type' => 'text', 'cast' => 'intval'),
-			'PS_INVOICE_FREE_TEXT' => array('title' => $this->l('Free Text:'), 'desc' => $this->l('This text will appear at the bottom of the invoice'), 'size' => 6, 'type' => 'textareaLang',
-			'cols' => 40, 'rows' => 8)
+			'PS_INVOICE_START_NUMBER' => array('title' => $this->l('Invoice number:'), 'desc' => $this->l('The next invoice will begin with this number, and then increase with each additional invoice. Set to 0 if you want to keep the current number (#').(Order::getLastInvoiceNumber() + 1).').', 'size' => 6, 'type' => 'text', 'cast' => 'intval')
 		);
 
 		parent::__construct();
@@ -59,6 +57,7 @@ class AdminInvoices extends AdminTab
 			LIMIT 1
 		) id_order_state
 		FROM '._DB_PREFIX_.'orders o
+		WHERE o.id_shop IN('.implode(', ', Shop::getListFromContext()).')
 		GROUP BY id_order_state');
 		$statusStats = array();
 		foreach ($result as $row)

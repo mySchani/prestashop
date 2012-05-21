@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14891 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -136,13 +136,13 @@ class CountyCore extends ObjectModel
 				$from = $zip_codes[1];
 				$to   = $zip_codes[0];
 			}
-			elseif ($zip_codes[0] == $zip_codes[1])
+			else if ($zip_codes[0] == $zip_codes[1])
 			{
 				$from = $zip_codes[0];
 				$to   = 0;
 			}
 		}
-		elseif (sizeof($zip_codes) == 1)
+		else if (sizeof($zip_codes) == 1)
 		{
 			$from = $zip_codes[0];
 			$to = 0;
@@ -165,8 +165,8 @@ class CountyCore extends ObjectModel
 			SELECT DISTINCT c.`id_county` FROM `'._DB_PREFIX_.'county` c
 			LEFT JOIN `'._DB_PREFIX_.'county_zip_code` cz ON (c.`id_county` = cz.`id_county`)
 			WHERE `id_state` = '.(int)$id_state.'
-			AND cz.`from_zip_code` <= '.(int)$zip_code.'
-			AND cz.`to_zip_code` >= '.(int)$zip_code
+			AND cz.`from_zip_code` >= '.(int)$zip_code.'
+			AND cz.`to_zip_code` <= '.(int)$zip_code
 			);
 		}
 

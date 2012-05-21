@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -63,12 +63,11 @@ class StockMvtReasonCore extends ObjectModel
 		return parent::getTranslationsFields(array('name'));
 	}
 	
-	public static function getStockMvtReasons($id_lang)
+	static public function getStockMvtReasons($id_lang)
 	{
-		return Db::getInstance()->ExecuteS('
-			SELECT smrl.`name`, smr.`id_stock_mvt_reason`, smr.`sign`
-			FROM `'._DB_PREFIX_.'stock_mvt_reason` smr
-			LEFT JOIN `'._DB_PREFIX_.'stock_mvt_reason_lang` smrl ON (smr.`id_stock_mvt_reason` = smrl.`id_stock_mvt_reason` AND smrl.`id_lang` = '.(int)$id_lang.')
-		');
+		$sql = 'SELECT smrl.name, smr.id_stock_mvt_reason, smr.sign
+				FROM '._DB_PREFIX_.'stock_mvt_reason smr
+				LEFT JOIN '._DB_PREFIX_.'stock_mvt_reason_lang smrl ON (smr.id_stock_mvt_reason = smrl.id_stock_mvt_reason AND smrl.id_lang='.(int)$id_lang.')';
+		return Db::getInstance()->ExecuteS($sql);
 	}
 }

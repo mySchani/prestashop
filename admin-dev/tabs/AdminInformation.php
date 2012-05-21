@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14846 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -125,24 +125,10 @@ class AdminInformation extends AdminTab
 		return $html;
 	}
 	
-	public function postProcess()
-	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		parent::postProcess();
-	}
-	
 	public function display()
 	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-			return;
-		/* PrestaShop demo mode*/
+		global $currentIndex;
+		
 		echo '
 		<h2>'.$this->l('Information').'</h2>
 		<fieldset>
@@ -162,21 +148,21 @@ class AdminInformation extends AdminTab
 			echo '
 			<p>
 				<b>'.$this->l('Server information').':</b> 
-				'.Tools::htmlentitiesUTF8(php_uname('s')).' '.Tools::htmlentitiesUTF8(php_uname('v')).' '.Tools::htmlentitiesUTF8(php_uname('m')).'
+				'.php_uname('s').' '.php_uname('v').' '.php_uname('m').'
 			</p>';
 			
 		echo '
 			<p>
 				<b>'.$this->l('Server software Version').':</b> 
-				'.Tools::htmlentitiesUTF8($_SERVER['SERVER_SOFTWARE']).'
+				'.$_SERVER['SERVER_SOFTWARE'].'
 			</p>
 			<p>
 				<b>'.$this->l('PHP Version').':</b> 
-				'.Tools::htmlentitiesUTF8(phpversion()).'
+				'.phpversion().'
 			</p>
 			<p>
 				<b>'.$this->l('MySQL Version').':</b> 
-				'.Tools::htmlentitiesUTF8(mysql_get_server_info()).'
+				'.mysql_get_server_info().'
 			</p>';
 		if (function_exists('apache_get_modules') AND in_array('mod_instaweb', apache_get_modules()))
 			echo '<p style="color:red;font-weight:700">'.$this->l('PageSpeed module for Apache installed (mod_instaweb)').'</p>';
@@ -204,7 +190,7 @@ class AdminInformation extends AdminTab
 			echo '
 			<p>
 				<b>'.$this->l('SMTP server').':</b> 
-				'.Tools::htmlentitiesUTF8(Configuration::get('PS_MAIL_SERVER')).'
+				'.Configuration::get('PS_MAIL_SERVER').'
 			</p>
 			<p>
 				<b>'.$this->l('SMTP user').':</b> 
@@ -216,11 +202,11 @@ class AdminInformation extends AdminTab
 			</p>
 			<p>
 				<b>'.$this->l('Encryption').':</b> 
-				'.Tools::htmlentitiesUTF8(Configuration::get('PS_MAIL_SMTP_ENCRYPTION')).'
+				'.Configuration::get('PS_MAIL_SMTP_ENCRYPTION').'
 			</p>
 			<p>
 				<b>'.$this->l('Port').':</b> 
-				'.Tools::htmlentitiesUTF8(Configuration::get('PS_MAIL_SMTP_PORT')).'
+				'.Configuration::get('PS_MAIL_SMTP_PORT').'
 			</p>
 			';
 		}
@@ -229,7 +215,7 @@ class AdminInformation extends AdminTab
 			<h3>'.$this->l('Your information').'</h3>
 			<p>
 				<b>'.$this->l('Information from you').':</b> 
-				'.Tools::htmlentitiesUTF8($_SERVER['HTTP_USER_AGENT']).'
+				'.$_SERVER["HTTP_USER_AGENT"].'
 			</p>
 		</fieldset>
 		<br />
@@ -240,7 +226,7 @@ class AdminInformation extends AdminTab
 		';
 	}
 	
-	static private function check($tests)
+	static private function		check($tests)
 	{
 		$res = array();
 		foreach ($tests AS $key => $test)
@@ -248,7 +234,7 @@ class AdminInformation extends AdminTab
 		return $res;
 	}
 	
-	static private function run($ptr, $arg = 0)
+	static private function		run($ptr, $arg = 0)
 	{
 		if (call_user_func(array('self', 'test_'.$ptr), $arg))
 			return ('ok');
@@ -256,27 +242,27 @@ class AdminInformation extends AdminTab
 	}
 	
 	// Misc functions	
-	static private function test_phpversion()
+	static private function		test_phpversion()
 	{
 		return PHP_VERSION_ID >= 50000; /* PHP version > 5.0 */
 	}
 	
-	static private function test_mysql_support()
+	static private function		test_mysql_support()
 	{
 		return function_exists('mysql_connect');
 	}
 
-	static private function test_upload()
+	static private function		test_upload()
 	{
 		return  ini_get('file_uploads');
 	}
 
-	static private function test_fopen()
+	static private function		test_fopen()
 	{
 		return ini_get('allow_url_fopen');
 	}
 
-	static private function test_system($funcs)
+	static private function		test_system($funcs)
 	{
 		foreach ($funcs AS $func)
 			if (!function_exists($func))
@@ -284,17 +270,17 @@ class AdminInformation extends AdminTab
 		return true;
 	}
 
-	static private function test_gd()
+	static private function		test_gd()
 	{
 		return function_exists('imagecreatetruecolor');
 	}
 	
-	static private function test_register_globals()
+	static private function		test_register_globals()
 	{
 		return !ini_get('register_globals');
 	}
 	
-	static private function test_gz()
+	static private function		test_gz()
 	{
 		if (function_exists('gzencode'))
 			return !(@gzencode('dd') === false); 
@@ -302,14 +288,14 @@ class AdminInformation extends AdminTab
 	}
 	
 	// is_writable dirs	
-	static private function test_dir($dir, $recursive = false)
+	static private function		test_dir($dir, $recursive = false)
 	{
 		if (!is_writable($dir) OR !$dh = opendir($dir))
 			return false;
 		if ($recursive)
 		{
 			while (($file = readdir($dh)) !== false)
-				if (is_dir($dir.$file) AND $file != '.' AND $file != '..')
+				if (@filetype($dir.$file) == 'dir' AND $file != '.' AND $file != '..')
 					if (!self::test_dir($dir.$file, true))
 						return false;
 		}
@@ -318,77 +304,77 @@ class AdminInformation extends AdminTab
 	}
 	
 	// is_writable files	
-	static private function test_file($file)
+	static private function		test_file($file)
 	{
 		return (file_exists($file) AND is_writable($file));
 	}
 	
-	static private function test_config_dir($dir)
+	static private function		test_config_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static private function test_sitemap($dir)
+	static private function		test_sitemap($dir)
 	{
 		return self::test_file($dir);
 	}
 	
-	static private function test_root_dir($dir)
+	static private function		test_root_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 
-	static private function test_admin_dir($dir)
+	static private function		test_admin_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static private function test_img_dir($dir)
+	static private function		test_img_dir($dir)
 	{
 		return self::test_dir($dir, true);
 	}
 	
-	static private function test_module_dir($dir)
+	static private function		test_module_dir($dir)
 	{
 		return self::test_dir($dir, true);
 	}
 	
-	static private function test_tools_dir($dir)
+	static private function		test_tools_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static function test_cache_dir($dir)
+	static function		test_cache_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static private function test_download_dir($dir)
+	static private function		test_download_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static private function test_mails_dir($dir)
+	static private function		test_mails_dir($dir)
 	{
 		return self::test_dir($dir, true);
 	}
 	
-	static private function test_translations_dir($dir)
+	static private function		test_translations_dir($dir)
 	{
 		return self::test_dir($dir, true);
 	}
 	
-	static private function test_theme_lang_dir($dir)
+	static private function		test_theme_lang_dir($dir)
 	{
 		return self::test_dir($dir, true);
 	}
 
-	static private function test_customizable_products_dir($dir)
+	static private function		test_customizable_products_dir($dir)
 	{
 		return self::test_dir($dir);
 	}
 	
-	static private function test_virtual_products_dir($dir)
+	static private function		test_virtual_products_dir($dir)
 	{
 		return self::test_dir($dir);
 	}

@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -32,23 +32,23 @@
 	<div class="sitemap_block">
 		<h3>{l s='Our offers'}</h3>
 		<ul>
-			<li><a href="{$link->getPageLink('new-products.php')}">{l s='New products'}</a></li>
+			<li><a href="{$link->getPageLink('new-products')}">{l s='New products'}</a></li>
 			{if !$PS_CATALOG_MODE}
-			<li><a href="{$link->getPageLink('best-sales.php')}">{l s='Top sellers'}</a></li>
-			<li><a href="{$link->getPageLink('prices-drop.php')}">{l s='Price drop'}</a></li>
+			<li><a href="{$link->getPageLink('best-sales')}">{l s='Top sellers'}</a></li>
+			<li><a href="{$link->getPageLink('prices-drop')}">{l s='Price drop'}</a></li>
 			{/if}
-			{if $display_manufacturer_link OR $PS_DISPLAY_SUPPLIERS}<li><a href="{$link->getPageLink('manufacturer.php')}">{l s='Manufacturers'}</a></li>{/if}
-			{if $display_supplier_link OR $PS_DISPLAY_SUPPLIERS}<li><a href="{$link->getPageLink('supplier.php')}">{l s='Suppliers'}</a></li>{/if}
+			{if $display_manufacturer_link OR $PS_DISPLAY_SUPPLIERS}<li><a href="{$link->getPageLink('manufacturer')}', ">{l s='Manufacturers'}</a></li>{/if}
+			{if $display_supplier_link OR $PS_DISPLAY_SUPPLIERS}<li><a href="{$link->getPageLink('supplier')}', ">{l s='Suppliers'}</a></li>{/if}
 		</ul>
 	</div>
 	<div class="sitemap_block">
 		<h3>{l s='Your Account'}</h3>
 		<ul>
-			<li><a href="{$link->getPageLink('my-account.php', true)}">{l s='Your Account'}</a></li>
-			<li><a href="{$link->getPageLink('identity.php', true)}">{l s='Personal information'}</a></li>
-			<li><a href="{$link->getPageLink('addresses.php', true)}">{l s='Addresses'}</a></li>
-			{if $voucherAllowed}<li><a href="{$link->getPageLink('discount.php', true)}">{l s='Discounts'}</a></li>{/if}
-			<li><a href="{$link->getPageLink('history.php', true)}">{l s='Order history'}</a></li>
+			<li><a href="{$link->getPageLink('my-account', true)}">{l s='Your Account'}</a></li>
+			<li><a href="{$link->getPageLink('identity', true)}">{l s='Personal information'}</a></li>
+			<li><a href="{$link->getPageLink('addresses', true)}">{l s='Addresses'}</a></li>
+			{if $voucherAllowed}<li><a href="{$link->getPageLink('discount', true)}">{l s='Discounts'}</a></li>{/if}
+			<li><a href="{$link->getPageLink('history', true)}">{l s='Order history'}</a></li>
 		</ul>
 	</div>
 	<br class="clear" />
@@ -83,8 +83,8 @@
 			{foreach from=$categoriescmsTree.cms item=cms name=cmsTree}
 				<li><a href="{$cms.link|escape:'htmlall':'UTF-8'}" title="{$cms.meta_title|escape:'htmlall':'UTF-8'}">{$cms.meta_title|escape:'htmlall':'UTF-8'}</a></li>
 			{/foreach}
-			<li><a href="{$link->getPageLink('contact-form.php', true)}">{l s='Contact'}</a></li>
-			{if $display_store}<li class="last"><a href="{$link->getPageLink('stores.php')}" title="{l s='Our stores'}">{l s='Our stores'}</a></li>{/if}
+			<li><a href="{$link->getPageLink('contact', true)}">{l s='Contact'}</a></li>
+			{if $display_store}<li class="last"><a href="{$link->getPageLink('stores')}" title="{l s='Our stores'}">{l s='Our stores'}</a></li>{/if}
 		</ul>
 	</div>
 </div>

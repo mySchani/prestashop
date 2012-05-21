@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,14 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
+define('PS_ADMIN_DIR', getcwd());
 
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 include(PS_ADMIN_DIR.'/functions.php');
@@ -38,13 +37,8 @@ $errors = array();
 $id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 $iso = strtolower(Language::getIsoById((int)$id_lang));
 include(_PS_TRANSLATIONS_DIR_.$iso.'/admin.php');
-/* PrestaShop demo mode */
-if (_PS_MODE_DEMO_)
-{
-	$errors[] = Tools::displayError('This functionnality has been disabled.');
-}
-/* PrestaShop demo mode*/
-else if (isset($_POST['Submit']))
+
+if (isset($_POST['Submit']))
 {
 	$errors = array();
 	if (empty($_POST['email']))
@@ -70,8 +64,8 @@ else if (isset($_POST['Submit']))
 					$errors[] = Tools::displayError('An error occurred during your password change.');
 				else
 				{
-					if (Mail::Send((int)$id_lang, 'password', Mail::l('Your new admin password', (int)$id_lang), array('{email}' => $employee->email, '{lastname}' => $employee->lastname, '{firstname}' => $employee->firstname, '{passwd}' => $pwd), $employee->email, $employee->firstname.' '.$employee->lastname))
-						$confirmation = 'ok';
+					Mail::Send((int)$id_lang, 'password', Mail::l('Your new admin password'), array('{email}' => $employee->email, '{lastname}' => $employee->lastname, '{firstname}' => $employee->firstname, '{passwd}' => $pwd), $employee->email, $employee->firstname.' '.$employee->lastname);
+					$confirmation = 'ok';
 				}
 			}
 		}

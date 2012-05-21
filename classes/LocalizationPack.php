@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license	http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -220,11 +220,11 @@ class LocalizationPackCore
 
 				if (!$trg->save())
 				{
-					$this->_errors = Tools::displayError('This tax rule cannot be saved.');
+					$this->_errors = Tools::displayError('This tax rule can\'t be saved.');
 					return false;
 				}
 
-				foreach ($group->taxRule as $rule)
+				foreach($group->taxRule as $rule)
 				{
 					$rule_attributes = $rule->attributes();
 
@@ -261,6 +261,7 @@ class LocalizationPackCore
 							$county_behavior = (int)$rule_attributes['county_behavior'];
 					}
 
+
 					// Creation
 					$tr = new TaxRule();
 					$tr->id_tax_rules_group = $trg->id;
@@ -282,7 +283,7 @@ class LocalizationPackCore
 	{
 		if (isset($xml->currencies->currency))
 		{
-			if (!$feed = Tools::simplexml_load_file('http://www.prestashop.com/xml/currencies.xml') AND !$feed = @simplexml_load_file(dirname(__FILE__).'/../localization/currencies.xml'))
+			if (!$feed = @simplexml_load_file('http://www.prestashop.com/xml/currencies.xml') AND !$feed = @simplexml_load_file(dirname(__FILE__).'/../localization/currencies.xml'))
 			{
 				$this->_errors[] = Tools::displayError('Cannot parse the currencies XML feed.');
 				return false;
@@ -291,7 +292,7 @@ class LocalizationPackCore
 			foreach ($xml->currencies->currency AS $data)
 			{
 				$attributes = $data->attributes();
-				if (Currency::exists($attributes['iso_code']))
+				if(Currency::exists($attributes['iso_code']))
 					continue;
 				$currency = new Currency();
 				$currency->name = strval($attributes['name']);
@@ -315,8 +316,6 @@ class LocalizationPackCore
 						$this->_errors[] = Tools::displayError('An error occurred while importing the currency: ').strval($attributes['name']);
 						return false;
 					}
-
-					PaymentModule::addCurrencyPermissions($currency->id);
 				}
 			}
 
@@ -343,13 +342,11 @@ class LocalizationPackCore
 				foreach ($native_lang AS $lang)
 					$native_iso_code[] = $lang['iso_code'];
 				if ((in_array((string)$attributes['iso_code'], $native_iso_code) AND !$install_mode) OR !in_array((string)$attributes['iso_code'], $native_iso_code))
-					$errno = 0;
-					$errstr = '';
-					if (@fsockopen('www.prestashop.com', 80, $errno, $errstr, 10))
+					if(@fsockopen('www.prestashop.com', 80, $errno = 0, $errstr = '', 10))
 					{
 						if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$attributes['iso_code'])))
 						{
-							if ($content = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$lang_pack->version.'/'.$attributes['iso_code'].'.gzip'))
+							if ($content = file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$lang_pack->version.'/'.$attributes['iso_code'].'.gzip'))
 							{
 								$file = _PS_TRANSLATIONS_DIR_.$attributes['iso_code'].'.gzip';
 								if (file_put_contents($file, $content))
@@ -417,7 +414,7 @@ class LocalizationPackCore
 	protected function installModules($xml)
 	{
 		if (isset($xml->modules))
-			foreach ($xml->modules->module as $data)
+			foreach($xml->modules->module as $data)
 			{
 				$attributes = $data->attributes();
 				$name = (string)$attributes['name'];
@@ -453,7 +450,7 @@ class LocalizationPackCore
 	protected function installConfiguration($xml)
 	{
 		if (isset($xml->configurations))
-			foreach ($xml->configurations->configuration as $data)
+			foreach($xml->configurations->configuration as $data)
 			{
 				$attributes = $data->attributes();
 				$name = (string)$attributes['name'];

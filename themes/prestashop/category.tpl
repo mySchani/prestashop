@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -29,17 +29,16 @@
 
 {if isset($category)}
 	{if $category->id AND $category->active}
-
-		<h1>
-			{strip}
-				{$category->name|escape:'htmlall':'UTF-8'}
-				{if isset($categoryNameComplement)}
-					{$categoryNameComplement|escape:'htmlall':'UTF-8'}
+		<h1>{strip}
+			{$category->name|escape:'htmlall':'UTF-8'}
+			<span>
+				{if $category->id == 1 OR $nb_products == 0}{l s='There are no products.'}
+				{else}
+					{if $nb_products == 1}{l s='There is'}{else}{l s='There are'}{/if}&#160;
+					{$nb_products}&#160;
+					{if $nb_products == 1}{l s='product.'}{else}{l s='products.'}{/if}
 				{/if}
-				<span class="category-product-count">
-					{include file="$tpl_dir./category-count.tpl"}
-				</span>
-			{/strip}
+			</span>{/strip}
 		</h1>
 
 		{if $scenes}

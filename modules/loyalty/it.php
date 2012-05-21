@@ -62,11 +62,8 @@ $_MODULE['<{loyalty}prestashop>loyalty_bafd7322c6e97d25b6299b5d6fe8920b'] = 'No'
 $_MODULE['<{loyalty}prestashop>loyalty_ade45d72ab6ba1ab576d8b9deb0c2438'] = 'I punti vengono assegnati quando l\'ordine è';
 $_MODULE['<{loyalty}prestashop>loyalty_9611a682e61c503c32e2dc58fdbc8ddf'] = 'I punti vengono cancellati quando l\'ordine è';
 $_MODULE['<{loyalty}prestashop>loyalty_2a46cccdea2f18fdfdfacf99a98b758d'] = 'I buoni creati dal sistema di fidelizzazione possono essere utilizzati nelle seguenti categorie:';
-$_MODULE['<{loyalty}prestashop>loyalty_ef7de3f485174ff47f061ad27d83d0ee'] = 'selezionati';
-$_MODULE['<{loyalty}prestashop>loyalty_b56c3bda503a8dc4be356edb0cc31793'] = 'Comprimi tutto';
-$_MODULE['<{loyalty}prestashop>loyalty_5ffd7a335dd836b3373f5ec570a58bdc'] = 'Espandi tutto';
-$_MODULE['<{loyalty}prestashop>loyalty_5e9df908eafa83cb51c0a3720e8348c7'] = 'Controllare tutti i';
-$_MODULE['<{loyalty}prestashop>loyalty_9747d23c8cc358c5ef78c51e59cd6817'] = 'Deseleziona tutti';
+$_MODULE['<{loyalty}prestashop>loyalty_b718adec73e04ce3ec720dd11a06a308'] = 'ID';
+$_MODULE['<{loyalty}prestashop>loyalty_49ee3087348e8d44e1feda1917443987'] = 'Nome';
 $_MODULE['<{loyalty}prestashop>loyalty_c2a7db7dec4de1bdb143ccd790f5a62c'] = 'Segna tutte le caselle di categorie in cui buoni fedeltà sono utilizzabili';
 $_MODULE['<{loyalty}prestashop>loyalty_30e793698766edbaaf84a74d4c377f72'] = 'Progressione punti fedeltà ';
 $_MODULE['<{loyalty}prestashop>loyalty_4f2a91e15af2631ff9424564b8a45fb2'] = 'Iniziale';
@@ -100,7 +97,6 @@ $_MODULE['<{loyalty}prestashop>shopping-cart_4cd8259257033282f11cc9bbe648dff7'] 
 $_MODULE['<{loyalty}prestashop>shopping-cart_2996152bb442bf98c80c515c6055de5f'] = 'punti fedeltà';
 $_MODULE['<{loyalty}prestashop>shopping-cart_b40d5c523ee75453134b1449dd9cd13a'] = 'punto fedeltà';
 $_MODULE['<{loyalty}prestashop>shopping-cart_443c3e03e194c2a4cdb107808b051615'] = 'che può essere convertito in un buono di';
-$_MODULE['<{loyalty}prestashop>shopping-cart_2d354f4df80bbebf309f184c3953dc1d'] = 'Non disponibile per Instant ordine checkout';
 $_MODULE['<{loyalty}prestashop>shopping-cart_8cec799df06a3f5a026b31fcd95e0172'] = 'Aggiungi alcuni prodotti al carrello della spesa di raccogliere dei punti fedeltà.';
 
 ?>

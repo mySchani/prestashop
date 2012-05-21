@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class GraphGoogleChart extends ModuleGraphEngine
@@ -195,9 +195,9 @@ class GraphGoogleChart extends ModuleGraphEngine
 			{
 				if ($i == 0 && !empty($this->_titles['main']))
 					$url .= '&chtt='.urlencode($this->_titles['main'][$i]);
-				elseif ($i == 1)
+				else if ($i == 1)
 					$url .= '&chdl=';
-				elseif ($i > 1)
+				else if ($i > 1)
 					$url .= '|';
 				if ($i != 0)
 					$url .= urlencode($this->_titles['main'][$i]);

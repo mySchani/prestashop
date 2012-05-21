@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -33,11 +33,11 @@
 		<br /><br />- {l s='mail to' mod='cheque'} <span class="bold">{if $chequeAddress}{$chequeAddress}{else}___________{/if}</span>
 		<br /><br />{l s='An e-mail has been sent to you with this information.' mod='cheque'}
 		<br /><br /><span class="bold">{l s='Your order will be sent as soon as we receive your payment.' mod='cheque'}</span>
-		<br /><br />{l s='For any questions or for further information, please contact our' mod='cheque'} <a href="{$link->getPageLink('contact-form.php', true)}">{l s='customer support' mod='cheque'}</a>.
+		<br /><br />{l s='For any questions or for further information, please contact our' mod='cheque'} <a href="{$link->getPageLink('contact', true)}">{l s='customer support' mod='cheque'}</a>.
 	</p>
 {else}
 	<p class="warning">
 		{l s='We noticed a problem with your order. If you think this is an error, you can contact our' mod='cheque'} 
-		<a href="{$link->getPageLink('contact-form.php', true)}">{l s='customer support' mod='cheque'}</a>.
+		<a href="{$link->getPageLink('contact', true)}">{l s='customer support' mod='cheque'}</a>.
 	</p>
 {/if}

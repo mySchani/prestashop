@@ -6,6 +6,6 @@
 {else}
 	<p class="warning">
 		{l s='We noticed a problem with your order. If you think this is an error, you can contact our' mod='dibs'} 
-		<a href="{$link->getPageLink($DIBS_page_name, true)}">{l s='customer support' mod='dibs'}</a>.
+		<a href="{$link->getPageLink('contact', true)}">{l s='customer support' mod='dibs'}</a>.
 	</p>
 {/if}

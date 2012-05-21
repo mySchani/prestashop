@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,13 +29,13 @@ class OrderHistoryCore extends ObjectModel
 {
 	/** @var integer Order id */
 	public 		$id_order;
-
+	
 	/** @var integer Order state id */
 	public 		$id_order_state;
-
+	
 	/** @var integer Employee id for this history entry */
 	public 		$id_employee;
-
+	
 	/** @var string Object creation date */
 	public 		$date_add;
 
@@ -43,13 +43,13 @@ class OrderHistoryCore extends ObjectModel
 	public 		$date_upd;
 
 	protected $tables = array ('order_history');
-
+	
 	protected	$fieldsRequired = array('id_order', 'id_order_state');
 	protected	$fieldsValidate = array('id_order' => 'isUnsignedId', 'id_order_state' => 'isUnsignedId', 'id_employee' => 'isUnsignedId');
 
 	protected 	$table = 'order_history';
 	protected 	$identifier = 'id_order_history';
-
+	
 	protected	$webserviceParameters = array(
 		'objectsNodeName' => 'order_histories',
 		'fields' => array(
@@ -61,12 +61,12 @@ class OrderHistoryCore extends ObjectModel
 	public function getFields()
 	{
 		parent::validateFields();
-
-		$fields['id_order'] = (int)$this->id_order;
-		$fields['id_order_state'] = (int)$this->id_order_state;
-		$fields['id_employee'] = (int)$this->id_employee;
+		
+		$fields['id_order'] = (int)($this->id_order);
+		$fields['id_order_state'] = (int)($this->id_order_state);
+		$fields['id_employee'] = (int)($this->id_employee);
 		$fields['date_add'] = pSQL($this->date_add);
-
+				
 		return $fields;
 	}
 
@@ -76,7 +76,7 @@ class OrderHistoryCore extends ObjectModel
 		{
 			Hook::updateOrderStatus((int)($new_order_state), (int)($id_order));
 			$order = new Order((int)($id_order));
-
+			
 			/* Best sellers */
 			$newOS = new OrderState((int)($new_order_state), $order->id_lang);
 			$oldOrderStatus = OrderHistory::getLastOrderState((int)($id_order));
@@ -91,32 +91,31 @@ class OrderHistoryCore extends ObjectModel
 					/* If becoming unlogable => removing sale */
 					elseif (!$newOS->logable AND ($oldOrderStatus AND $oldOrderStatus->logable))
 						ProductSale::removeProductSale($product['id_product'], $product['cart_quantity']);
-					if (!$isValidated AND $newOS->logable AND isset($oldOrderStatus) AND $oldOrderStatus AND $oldOrderStatus->id == Configuration::get('PS_OS_ERROR'))
+					if (!$isValidated AND $newOS->logable AND isset($oldOrderStatus) AND $oldOrderStatus AND $oldOrderStatus->id == _PS_OS_ERROR_)
 					{
 						Product::updateQuantity($product);
 					}
 				}
-
+			
 			$this->id_order_state = (int)($new_order_state);
-
+			
 			/* Change invoice number of order ? */
 			if (!Validate::isLoadedObject($newOS) OR !Validate::isLoadedObject($order))
 				die(Tools::displayError('Invalid new order state'));
-
+			
 			/* The order is valid only if the invoice is available and the order is not cancelled */
 			$order->valid = $newOS->logable;
 			$order->update();
 
 			if ($newOS->invoice AND !$order->invoice_number)
 				$order->setInvoice();
-			// Update delivery date even if it was already set by another state change
-			if ($newOS->delivery)
+			if ($newOS->delivery AND !$order->delivery_number)
 				$order->setDelivery();
 			Hook::postUpdateOrderStatus((int)($new_order_state), (int)($id_order));
 		}
 	}
 
-	public static function getLastOrderState($id_order)
+	static public function getLastOrderState($id_order)
 	{
 		$id_order_state = Db::getInstance()->getValue('
 		SELECT `id_order_state`
@@ -131,29 +130,30 @@ class OrderHistoryCore extends ObjectModel
 	public function addWithemail($autodate = true, $templateVars = false)
 	{
 		$lastOrderState = $this->getLastOrderState($this->id_order);
-
+		
 		if (!parent::add($autodate))
 			return false;
 
 		$result = Db::getInstance()->getRow('
-		SELECT osl.`template`, c.`lastname`, c.`firstname`, osl.`name` AS osname, c.`email`
-		FROM `'._DB_PREFIX_.'order_history` oh
-		LEFT JOIN `'._DB_PREFIX_.'orders` o ON oh.`id_order` = o.`id_order`
-		LEFT JOIN `'._DB_PREFIX_.'customer` c ON o.`id_customer` = c.`id_customer`
-		LEFT JOIN `'._DB_PREFIX_.'order_state` os ON oh.`id_order_state` = os.`id_order_state`
-		LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = o.`id_lang`)
-		WHERE oh.`id_order_history` = '.(int)($this->id).' AND os.`send_email` = 1');
+			SELECT osl.`template`, c.`lastname`, c.`firstname`, osl.`name` AS osname, c.`email`
+			FROM `'._DB_PREFIX_.'order_history` oh
+				LEFT JOIN `'._DB_PREFIX_.'orders` o ON oh.`id_order` = o.`id_order`
+				LEFT JOIN `'._DB_PREFIX_.'customer` c ON o.`id_customer` = c.`id_customer`
+				LEFT JOIN `'._DB_PREFIX_.'order_state` os ON oh.`id_order_state` = os.`id_order_state`
+				LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = o.`id_lang`)
+			WHERE oh.`id_order_history` = '.(int)($this->id).'
+				AND os.`send_email` = 1');
 
 		if (isset($result['template']) AND Validate::isEmail($result['email']))
 		{
 			$topic = $result['osname'];
-			$data = array('{lastname}' => $result['lastname'], '{firstname}' => $result['firstname'], '{id_order}' => (int)$this->id_order);
+			$data = array('{lastname}' => $result['lastname'], '{firstname}' => $result['firstname'], '{id_order}' => (int)($this->id_order));
 			if ($templateVars)
 				$data = array_merge($data, $templateVars);
-			$order = new Order((int)$this->id_order);
-			$data['{total_paid}'] = Tools::displayPrice((float)$order->total_paid, new Currency((int)$order->id_currency), false);
-			$data['{order_name}'] = sprintf("#%06d", (int)$order->id);
-
+			$order = new Order((int)($this->id_order));
+			$data['{total_paid}'] = Tools::displayPrice((float)($order->total_paid), new Currency((int)($order->id_currency)), false);
+			$data['{order_name}'] = sprintf("#%06d", (int)($order->id));
+			
 			// An additional email is sent the first time a virtual item is validated
 			if ($virtualProducts = $order->getVirtualProducts() AND (!$lastOrderState OR !$lastOrderState->logable) AND $newOrderState = new OrderState($this->id_order_state, Configuration::get('PS_LANG_DEFAULT')) AND $newOrderState->logable)
 			{
@@ -179,22 +179,23 @@ class OrderHistoryCore extends ObjectModel
 				$links = $smarty->fetch(_PS_MAIL_DIR_.$iso.'/download-product.tpl');
 				$tmpArray = array('{nbProducts}' => count($virtualProducts), '{virtualProducts}' => $links);
 				$data = array_merge ($data, $tmpArray);
-				Mail::Send((int)$order->id_lang, 'download_product', Mail::l('Virtual product to download', (int)$order->id_lang), $data, $result['email'], $result['firstname'].' '.$result['lastname']);
+				global $_LANGMAIL;
+				Mail::Send((int)($order->id_lang), 'download_product', Mail::l('Virtual product to download'), $data, $result['email'], $result['firstname'].' '.$result['lastname']);
 			}
 
 			if (Validate::isLoadedObject($order))
-				Mail::Send((int)$order->id_lang, $result['template'], $topic, $data, $result['email'], $result['firstname'].' '.$result['lastname']);
+				Mail::Send((int)($order->id_lang), $result['template'], $topic, $data, $result['email'], $result['firstname'].' '.$result['lastname']);
 		}
 
 		return true;
 	}
-
+	
 	public function isValidated()
 	{
 		return Db::getInstance()->getValue('
 		SELECT COUNT(oh.`id_order_history`) AS nb
-		FROM `'._DB_PREFIX_.'order_state` os
-		LEFT JOIN `'._DB_PREFIX_.'order_history` oh ON (os.`id_order_state` = oh.`id_order_state`)
+		FROM `'._DB_PREFIX_.'order_state` os 
+		LEFT JOIN `'._DB_PREFIX_.'order_history` oh ON (os.`id_order_state` = oh.`id_order_state`) 
 		WHERE oh.`id_order` = '.(int)$this->id_order.'
 		AND os.`logable` = 1');
 	}

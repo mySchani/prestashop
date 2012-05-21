@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -181,7 +181,7 @@ class SceneCore extends ObjectModel
 	*
 	* @return array Products
 	*/
-	public static function getScenes($id_category, $id_lang = NULL, $onlyActive = true, $liteResult = true, $hideScenePosition = true)
+	static public function getScenes($id_category, $id_lang = NULL, $onlyActive = true, $liteResult = true, $hideScenePosition = true)
 	{
 		$id_lang = is_null($id_lang) ? _USER_ID_LANG_ : (int)($id_lang);
 
@@ -222,7 +222,7 @@ class SceneCore extends ObjectModel
 				$product['details'] = new Product((int)($product['id_product']), !$liteResult, (int)($id_lang));
 				$product['link'] = $link->getProductLink((int)($product['details']->id), $product['details']->link_rewrite, $product['details']->category, $product['details']->ean13);
 				$cover = Product::getCover((int)($product['details']->id));
-				if (is_array($cover))
+				if(is_array($cover))
 					$product = array_merge($cover, $product);
 			}
 		
@@ -235,7 +235,7 @@ class SceneCore extends ObjectModel
 	* @param integer $id_scene Scene id
 	* @return array Categories where scene is indexed
 	*/
-	public static function getIndexedCategories($id_scene)
+	static public function getIndexedCategories($id_scene)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT `id_category`
@@ -249,7 +249,7 @@ class SceneCore extends ObjectModel
 	  * @param string $name Scene name
 	  * @return string Name without position
 	  */
-	public static function hideScenePosition($name)
+	static public function hideScenePosition($name)
 	{
 		return preg_replace('/^[0-9]+\./', '', $name);
 	}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Blocknewsletter extends Module
@@ -60,8 +60,10 @@ class Blocknewsletter extends Module
  	 	if (parent::install() == false OR $this->registerHook('leftColumn') == false OR $this->registerHook('header') == false)
  	 		return false;
  	 	return Db::getInstance()->Execute('
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'newsletter` (
+		CREATE TABLE IF NOT EXISTS '._DB_PREFIX_.'newsletter (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
+			`id_shop` INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
+		  	`id_group_shop` INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
 			`email` varchar(255) NOT NULL,
 			`newsletter_date_add` DATETIME NULL,
 			`ip_registration_newsletter` varchar(15) NOT NULL,
@@ -101,7 +103,7 @@ class Blocknewsletter extends Module
 	private function _displayForm()
 	{
 		$this->_html .= '
-		<form method="post" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+		<form method="post" action="'.$_SERVER['REQUEST_URI'].'">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Display configuration in a new page?').'</label>
@@ -128,38 +130,56 @@ class Blocknewsletter extends Module
 		return $this->_html;
 	}
 
+	/**
+	 * Check if this mail is registered for newsletters
+	 * 
+	 * @param unknown_type $customerEmail
+	 * @return int -1 customer exists, but don't want newsletter ; 0 = not registered ; 1 = registered in block ; 2 = registered in customer
+	 */
  	private function isNewsletterRegistered($customerEmail)
  	{
- 	 	if (Db::getInstance()->getRow('SELECT `email` FROM '._DB_PREFIX_.'newsletter WHERE `email` = \''.pSQL($customerEmail).'\''))
+ 		$sql = 'SELECT `email` FROM '._DB_PREFIX_.'newsletter
+ 				WHERE `email` = \''.pSQL($customerEmail).'\'
+ 					AND id_shop = '.$this->shopID;
+ 	 	if (Db::getInstance()->getRow($sql))
  	 		return 1;
-		if (!$registered = Db::getInstance()->getRow('SELECT `newsletter` FROM '._DB_PREFIX_.'customer WHERE `email` = \''.pSQL($customerEmail).'\''))
+
+ 		$sql = 'SELECT `newsletter` FROM '._DB_PREFIX_.'customer
+ 				WHERE `email` = \''.pSQL($customerEmail).'\'
+ 				AND id_shop = '.$this->shopID;
+		if (!$registered = Db::getInstance()->getRow($sql))
 			return -1;
+
 		if ($registered['newsletter'] == '1')
 			return 2;
 		return 0;
  	}
  	
+ 	/**
+ 	 * Register in block newsletter
+ 	 */
  	private function newsletterRegistration()
  	{
 	 	if (empty($_POST['email']) OR !Validate::isEmail($_POST['email']))
 			return $this->error = $this->l('Invalid e-mail address');
+
 	 	/* Unsubscription */
 	 	elseif ($_POST['action'] == '1')
 	 	{
- 		 	$registerStatus = $this->isNewsletterRegistered(pSQL($_POST['email']));
+ 		 	$registerStatus = $this->isNewsletterRegistered($_POST['email']);
 	 	 	if ($registerStatus < 1)
 	 	 		return $this->error = $this->l('E-mail address not registered');
 	 	 	/* If the user ins't a customer */
 	 	 	elseif ($registerStatus == 1)
 	 	 	{
-			  	if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'newsletter WHERE `email` = \''.pSQL($_POST['email']).'\''))
+			  	if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'newsletter WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->shopID))
 	 	 			return $this->error = $this->l('Error during unsubscription');
 	 	 		return $this->valid = $this->l('Unsubscription successful');
 	 	 	}
 	 	 	/* If the user is a customer */
 	 	 	elseif ($registerStatus == 2)
 	 		{
-	 	 		if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 0 WHERE `email` = \''.pSQL($_POST['email']).'\''))
+	 	 		if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 0 WHERE `email` = \''.pSQL($_POST['email']).'\' AND id_shop = '.$this->shopID))
 	 	 			return $this->error = $this->l('Error during unsubscription');
 	 	 		return $this->valid = $this->l('Unsubscription successful');
 	 	 	}
@@ -167,16 +187,20 @@ class Blocknewsletter extends Module
 	 	/* Subscription */
 	 	elseif ($_POST['action'] == '0')
 	 	{
-	 	 	$registerStatus = $this->isNewsletterRegistered(pSQL($_POST['email']));
+	 	 	$registerStatus = $this->isNewsletterRegistered($_POST['email']);
 			if ($registerStatus > 0)
 				return $this->error = $this->l('E-mail address already registered');
+
 			/* If the user ins't a customer */
 			elseif ($registerStatus == -1)
 			{
 				global $cookie;
 				
-				if (!Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'newsletter (email, newsletter_date_add, ip_registration_newsletter, http_referer) VALUES (\''.pSQL($_POST['email']).'\', NOW(), \''.pSQL(Tools::getRemoteAddr()).'\', 
-					(SELECT c.http_referer FROM '._DB_PREFIX_.'connections c WHERE c.id_guest = '.(int)($cookie->id_guest).' ORDER BY c.date_add DESC LIMIT 1))'))
+				$sql = 'INSERT INTO '._DB_PREFIX_.'newsletter (id_shop, id_group_shop, email, newsletter_date_add, ip_registration_newsletter, http_referer)
+						VALUES ('.$this->shopID.', '.$this->shopGroupID.', \''.pSQL($_POST['email']).'\', NOW(), \''.pSQL(Tools::getRemoteAddr()).'\', 
+							(SELECT c.http_referer FROM '._DB_PREFIX_.'connections c WHERE c.id_guest = '.(int)($cookie->id_guest).' ORDER BY c.date_add DESC LIMIT 1)
+						)';
+				if (!Db::getInstance()->Execute($sql))
 					return $this->error = $this->l('Error during subscription');
 				$this->sendVoucher(pSQL($_POST['email']));
 
@@ -185,7 +209,11 @@ class Blocknewsletter extends Module
 			/* If the user is a customer */
 			elseif ($registerStatus == 0)
 			{
-			 	if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 1, newsletter_date_add = NOW(), `ip_registration_newsletter` = \''.pSQL(Tools::getRemoteAddr()).'\' WHERE `email` = \''.pSQL($_POST['email']).'\''))
+				$sql = 'UPDATE '._DB_PREFIX_.'customer
+						SET `newsletter` = 1, newsletter_date_add = NOW(), `ip_registration_newsletter` = \''.pSQL(Tools::getRemoteAddr()).'\'
+						WHERE `email` = \''.pSQL($_POST['email']).'\'
+							AND id_shop = '.$this->shopID;
+			 	if (!Db::getInstance()->Execute($sql))
 	 	 			return $this->error = $this->l('Error during subscription');
 				$this->sendVoucher(pSQL($_POST['email']));
 
@@ -199,7 +227,7 @@ class Blocknewsletter extends Module
 		global $cookie;
 
 		if ($discount = Configuration::get('NW_VOUCHER_CODE'))
-			return Mail::Send((int)$cookie->id_lang, 'newsletter_voucher', Mail::l('Newsletter voucher', (int)$cookie->id_lang), array('{discount}' => $discount), $email, NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+			return Mail::Send((int)($cookie->id_lang), 'newsletter_voucher', Mail::l('Newsletter voucher'), array('{discount}' => $discount), $email, NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 		return false;
 	}
 
@@ -226,7 +254,7 @@ class Blocknewsletter extends Module
 			elseif ($this->valid)
 			{
 				if (Configuration::get('NW_CONFIRMATION_EMAIL') AND isset($_POST['action']) AND (int)($_POST['action']) == 0)
-					Mail::Send((int)$params['cookie']->id_lang, 'newsletter_conf', Mail::l('Newsletter confirmation', (int)$params['cookie']->id_lang), array(), pSQL($_POST['email']), NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+					Mail::Send((int)($params['cookie']->id_lang), 'newsletter_conf', Mail::l('Newsletter confirmation'), array(), pSQL($_POST['email']), NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 				$smarty->assign(array('color' => 'green',
 										'msg' => $this->valid,
 										'nw_error' => false));

@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14009 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7448 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -140,7 +140,9 @@ function writeBookmarkLink(url, title, text, img)
 
 function writeBookmarkLinkObject(url, title, insert)
 {
-	if (window.sidebar || window.external)
+	if (window.navigator.userAgent.indexOf('Chrome') != -1)
+		return ('');
+	else if (window.sidebar || window.external)
 		return ('<a href="javascript:addBookmark(\'' + escape(url) + '\', \'' + escape(title) + '\')">' + insert + '</a>');
 	else if (window.opera && window.print)
 		return ('<a rel="sidebar" href="' + escape(url) + '" title="' + escape(title) + '">' + insert + '</a>');
@@ -162,13 +164,7 @@ function checkCustomizations()
 function emptyCustomizations()
 {
 	if(typeof(customizationFields) == 'undefined') return;
-
-	$('.customization_block .success').fadeOut(function(){
-		$(this).remove();
-	});
-	$('.customization_block .error').fadeOut(function(){
-		$(this).remove();
-	});
+	
 	for (var i = 0; i < customizationFields.length; i++)
 	{
 		$('#' + customizationFields[i][0]).html('');
@@ -210,8 +206,8 @@ function setCurrency(id_currency)
 {
 	$.ajax({
 		type: 'POST',
-		url: baseDir + 'changecurrency.php',
-		data: 'id_currency='+parseInt(id_currency),
+		url: baseDir + 'index.php',
+		data: 'controller=change-currency&id_currency='+ parseInt(id_currency),
 		success: function(msg)
 		{
 			location.reload(true);

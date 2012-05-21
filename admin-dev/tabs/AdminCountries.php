@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -50,11 +50,7 @@ class AdminCountries extends AdminTab
 		'a!active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false, 'filter_key' => 'a!active'));
 
 		$this->optionTitle = $this->l('Countries options');
-		$this->_fieldsOptions = array(
-			'PS_COUNTRY_DEFAULT' => array('title' => $this->l('Default country:'), 'desc' => $this->l('The default country used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_country', 'list' => Country::getCountries((int)($cookie->id_lang))),
-			'PS_RESTRICT_DELIVERED_COUNTRIES' => array('title' => $this->l('Restrict countries in FO by those delivered by active carriers'), 'cast' => 'intval', 'type' => 'bool', 'default' => '0')
-		);
-
+		$this->_fieldsOptions = array('PS_COUNTRY_DEFAULT' => array('title' => $this->l('Default country:'), 'desc' => $this->l('The default country used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_country', 'list' => Country::getCountries((int)($cookie->id_lang))));
 		parent::__construct();
 	}
 
@@ -215,8 +211,8 @@ class AdminCountries extends AdminTab
 			{
 				if (confirm("'.$this->l('Are you sure to apply this selection ?').'"))
 				{
-					$("#ordered_fields").val(unescape(defaultLayout.replace(/\+/g, " ")));
-				}
+				$("#ordered_fields").val(unescape(defaultLayout.replace(/\+/g, " ")));
+			}
 			}
 			
 		</script>
@@ -331,7 +327,14 @@ class AdminCountries extends AdminTab
 					<label class="t" for="display_tax_label_on"> <img src="../img/admin/enabled.gif" alt="" title="" />'.$this->l('Yes').'</label>
 					<input type="radio" name="display_tax_label" id="display_tax_label_off" value="0" '.((!$this->getFieldValue($obj, 'display_tax_label') AND $obj->id) ? 'checked="checked" ' : '').'/>
 					<label class="t" for="display_tax_label_off"> <img src="../img/admin/disabled.gif" alt="" title="" />'.$this->l('No').'</label>
-				</div>
+				</div>';
+		if (Tools::isMultiShopActivated())
+		{
+			echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+			$this->displayAssoShop();
+			echo '</div>';
+		}
+		echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>

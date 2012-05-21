@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,15 +29,12 @@ include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/../../init.php');
 include(dirname(__FILE__).'/gcheckout.php');
 
-$gcheckout = new GCheckout();
-
-if (_PS_VERSION_ >= '1.5' && !Context::getContext()->customer->isLogged(true))
-	Tools::redirect('index.php?co:q:q:qntroller=authentication&back=order.php');
-else if (_PS_VERSION_ < '1.5' && !$cookie->isLogged(true))
-	Tools::redirect('authentication.php?back=order.php');
-else if (!$gcheckout->context->cart->getOrderTotal(true, Cart::BOTH))
+if (!$cookie->isLogged(true))
+    Tools::redirect('index.php?controller=authentication&back=order.php');
+elseif (!$cart->getOrderTotal(true, Cart::BOTH))
 	Tools::displayError('Error: Empty cart');
 
+$gcheckout = new GCheckout();
 // Prepare payment
 $gcheckout->preparePayment();
 
@@ -46,3 +43,5 @@ include(dirname(__FILE__).'/../../header.php');
 echo $gcheckout->display('gcheckout.php', 'confirm.tpl');
 
 include_once(dirname(__FILE__).'/../../footer.php');
+
+

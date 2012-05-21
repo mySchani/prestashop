@@ -10,6 +10,7 @@ body{background:#EFEFEF}
 #header_search #bo_search_submit{cursor:pointer;float:left;font-weight:700;margin:7px 0 0 2px;width:79px}
 #header_quick{float:right;height:39px;margin-right:1px;width:175px}
 #header_quick #quick_select{margin:8px 0 0 20px;vertical-align:middle;width:140px}
+#header_shoplist{float: right;}
 #header_myaccount{background:url(bg-lang.png) no-repeat;display:block;float:right;height:16px;margin:8px 1px 0 0;width:16px}
 .button{background-color:#FFF6D3;border:1px solid #DFD5AF;border-left:1px solid #FFF6D3;border-top:1px solid #FFF6D3;color:#268CCD;padding:3px}
 .button[disabled=disabled]{color:#8C8C8C}
@@ -34,9 +35,9 @@ legend{background:#FFF6D3;border:1px solid #DFD5C3;font-weight:700;margin:0;padd
 #menu img{display:inline;padding:0 3px 0 6px;vertical-align:top;width:16px;height:16px}
 #menu li.active,#menu li:hover{background-position:0 -38px;white-space:nowrap;}
 #menu li.active a{color:#000}
-#submenu{background:#ECEADE;clear:both;color:#666;margin:0;padding:0;border:1px solid #999999}
+#submenu{background:#ECEADE;clear:both;color:#666;margin:0;height:32px;padding:0;border:1px solid #999999}
 .withLeftBorder{background:transparent url(separator_subnav.png) no-repeat 0 5px}
-#submenu li{display:inline;list-style:none;margin:0;background:transparent url(separator_subnav.png) no-repeat right 0;padding-left:7px;padding-right:7px;margin-top:8px;float:left;height:29px}
+#submenu li{display:inline;list-style:none;margin:0;background:transparent url(separator_subnav.png) no-repeat right 0;padding-left:7px;padding-right:7px;margin-top:8px;float:left;height:20px}
 #submenu li a{text-decoration:underline}
 #menu li{_height:32px;_padding-top:3px}
 #menu li a{_display:inline;_padding:6px 5px 4px 0}
@@ -48,7 +49,6 @@ hr {height: 1px;color:#E0D0B1;background-color:#E0D0B1}
 #content {background-color:#FFF;border-left:1px solid #999999;border-right:1px solid #999999}
 input[type="text"],input[type="password"],input[type="file"],textarea {border:1px solid #E0D0B1}
 select {border: 1px solid #E0D0B1}
-select[disabled="disabled"], input[disabled="disabled"],textarea[disabled="disabled"] {border: 1px solid #CCCCCC;color: #AAAAAA}
 .header_module{background:url(header_module.png);padding-left: 0.5em;padding-top: 0.8em;height:20px;color: #812143;border:solid 1px #CCC;}
 a.action_module{color: #268CCD;text-decoration: underline;}
 a.header_module_toggle{font-weight: bold;color: #268CCD;display:block;}

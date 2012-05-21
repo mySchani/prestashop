@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -35,11 +35,7 @@ class MCachedCore extends Cache
 		parent::__construct();
 		$this->connect();
 	}
-	public function __destruct()
-	{
-		return $this->close();
-	}
-	
+
 	public function connect()
 	{
 		$this->_memcacheObj = new Memcache();
@@ -98,15 +94,13 @@ class MCachedCore extends Cache
 		if ($this->isBlacklist($query))
 			return true;
 		$md5_query = md5($query);
-		$this->_setKeys();
 		if (isset($this->_keysCached[$md5_query]))
 			return true;
 		$key = $this->set($md5_query, $result);
-		if (preg_match_all('/('._DB_PREFIX_.'[a-z_-]*)`?.*/i', $query, $res))
+		if(preg_match_all('/('._DB_PREFIX_.'[a-z_-]*)`?.*/i', $query, $res))
 			foreach($res[1] AS $table)
-				if (!isset($this->_tablesCached[$table][$key]))
-					$this->_tablesCached[$table][$key] = true;
-		$this->_writeKeys();
+				if(!isset($this->_tablesCached[$table][$key]))
+					$this->_tablesCached[$table][$key] = true;	
 	}
 	
 	public function delete($key, $timeout = 0)
@@ -121,7 +115,6 @@ class MCachedCore extends Cache
 	{
 		if (!$this->_isConnected)
 			return false;
-		$this->_setKeys();
 		if (preg_match_all('/('._DB_PREFIX_.'[a-z_-]*)`?.*/i', $query, $res))
 			foreach ($res[1] AS $table)
 				if (isset($this->_tablesCached[$table]))
@@ -133,7 +126,6 @@ class MCachedCore extends Cache
 					}
 					unset($this->_tablesCached[$table]);
 				}
-		$this->_writeKeys();
 	}
 
 	protected function close()
@@ -145,24 +137,26 @@ class MCachedCore extends Cache
 
 	public function flush()
 	{
-		if (!$this->_isConnected)
+		if(!$this->_isConnected)
 			return false;
 		if ($this->_memcacheObj->flush())
 			return $this->_setKeys();
 		return false;
 	}
-	
-	private function _writeKeys()
+
+	public function __destruct()
 	{
+		parent::__destruct();
 		if (!$this->_isConnected)
 			return false;
 		$this->_memcacheObj->set('keysCached', $this->_keysCached, 0, 0);
 		$this->_memcacheObj->set('tablesCached', $this->_tablesCached, 0, 0);
+		$this->close();
 	}
-	
+
 	public static function addServer($ip, $port, $weight)
 	{
-		return Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'memcached_servers (ip, port, weight) VALUES(\''.pSQL($ip).'\', '.(int)$port.', '.(int)$weight.')', false);
+		return Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'memcached_servers (id_memcached_server, ip, port, weight) VALUES(\'\', \''.pSQL($ip).'\', '.(int)$port.', '.(int)$weight.')', false);
 	}
 
 	public static function getMemcachedServers()

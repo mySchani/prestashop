@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,35 +19,36 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsVisits extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
-	private $_query2 = '';
-	private $_option;
+    private $_html = '';
+    private $_query = '';
+    private $_query2 = '';
+    private $_option;
 
-	function __construct()
-	{
-		$this->name = 'statsvisits';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsvisits';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
+			
 		parent::__construct();
-
-		$this->displayName = $this->l('Visits and Visitors');
-		$this->description = $this->l('Display statistics about your visits and visitors.');
-	}
+		
+        $this->displayName = $this->l('Visits and Visitors');
+        $this->description = $this->l('Display statistics about your visits and visitors.');
+    }
 	
 	public function install()
 	{
@@ -56,26 +57,34 @@ class StatsVisits extends ModuleGraph
 	
 	public function getTotalVisits()
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT COUNT(c.`id_connections`)
-		FROM `'._DB_PREFIX_.'connections` c
-		WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(c.`id_connections`)
+				FROM `'._DB_PREFIX_.'connections` c
+				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
+					'.$this->sqlShopRestriction(false, 'c');
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
 	
 	public function getTotalGuests()
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT COUNT(DISTINCT c.`id_guest`)
-		FROM `'._DB_PREFIX_.'connections` c
-		WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(DISTINCT c.`id_guest`)
+				FROM `'._DB_PREFIX_.'connections` c
+				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
+					'.$this->sqlShopRestriction(false, 'c');
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
 	
 	public function hookAdminStatsModules($params)
 	{
+		$graphParams = array(
+			'layers' => 	2,
+			'type' => 		'line',
+			'option' => 	3,
+		);
+
 		$totalVisits = $this->getTotalVisits();
 		$totalGuests = $this->getTotalGuests();
 		if (Tools::getValue('export'))
-			$this->csvExport(array('layers' =>2, 'type' => 'line', 'option' => 3));
+			$this->csvExport(array('layers' => 2, 'type' => 'line', 'option' => 3));
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<p><center>
@@ -85,7 +94,7 @@ class StatsVisits extends ModuleGraph
 			<div style="margin-top:20px"></div>
 			<p>'.$this->l('Total visits:').' '.$totalVisits.'</p>
 			<p>'.$this->l('Total visitors:').' '.$totalGuests.'</p>
-			'.($totalVisits ? ModuleGraph::engine(array('layers' => 2, 'type' => 'line', 'option' => 3)).'<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>' : '').'
+			'.($totalVisits ? $this->engine($graphParams).'<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>' : '').'
 			
 		</fieldset>
 		<br class="clear" />
@@ -110,14 +119,16 @@ class StatsVisits extends ModuleGraph
 				$this->_titles['main'][0] = $this->l('Number of visits and unique visitors');
 				$this->_titles['main'][1] = $this->l('Visits');
 				$this->_titles['main'][2] = $this->l('Visitors');
-				$this->_query[0] = '
-					SELECT date_add, COUNT(`date_add`) as total
+				$this->_query[0] = 'SELECT date_add, COUNT(`date_add`) as total
 					FROM `'._DB_PREFIX_.'connections`
-					WHERE `date_add` BETWEEN ';
-				$this->_query[1] = '
-					SELECT date_add, COUNT(DISTINCT `id_guest`) as total
+					WHERE 1
+						'.$this->sqlShopRestriction().'
+						`date_add` BETWEEN ';
+				$this->_query[1] = 'SELECT date_add, COUNT(DISTINCT `id_guest`) as total
 					FROM `'._DB_PREFIX_.'connections`
-					WHERE `date_add` BETWEEN ';
+					WHERE 1
+						'.$this->sqlShopRestriction().'
+						`date_add` BETWEEN ';
 				break;
 		}
 	}

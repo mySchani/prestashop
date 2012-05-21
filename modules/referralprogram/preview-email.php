@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -49,15 +49,8 @@ $file = str_replace('{email}', $customer->email, $file);
 $file = str_replace('{firstname_friend}', 'XXXXX', $file);
 $file = str_replace('{lastname_friend}', 'xxxxxx', $file);
 $file = str_replace('{link}', 'authentication.php?create_account=1', $file);
-
-$discount_type = (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE'));
-if ($discount_type == 1)
-{
-	$file = str_replace('{discount}', Discount::display((float)(Configuration::get('REFERRAL_PERCENTAGE')), $discount_type, new Currency($cookie->id_currency)), $file);
-}
-else
-{
-	$file = str_replace('{discount}', Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_' . $cookie->id_currency)), $discount_type, new Currency($cookie->id_currency)), $file);
-}
+$file = str_replace('{discount}', Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_' . $cookie->id_currency)), (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE')), new Currency($cookie->id_currency)), $file);
 
 echo $file;
+
+

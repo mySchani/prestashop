@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14632 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7451 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -62,6 +62,8 @@ class AdminOrders extends AdminTab
 		'osname' => array('title' => $this->l('Status'), 'widthColumn' => 230, 'type' => 'select', 'select' => $statesArray, 'filter_key' => 'os!id_order_state', 'filter_type' => 'int', 'width' => 200),
 		'date_add' => array('title' => $this->l('Date'), 'width' => 35, 'align' => 'right', 'type' => 'datetime', 'filter_key' => 'a!date_add'),
 		'id_pdf' => array('title' => $this->l('PDF'), 'callback' => 'printPDFIcons', 'orderby' => false, 'search' => false));
+ 		$this->shopLinkType = 'shop';
+ 		$this->shopShareDatas = true;
 		parent::__construct();
 	}
 
@@ -97,9 +99,7 @@ class AdminOrders extends AdminTab
 						'{lastname}' => $customer->lastname,
 						'{id_order}' => (int)($order->id)
 					);
-					@Mail::Send((int)$order->id_lang, 'in_transit', Mail::l('Package in transit', (int)$order->id_lang), $templateVars,
-						$customer->email, $customer->firstname.' '.$customer->lastname, NULL, NULL, NULL, NULL,
-						_PS_MAIL_DIR_, true);
+					@Mail::Send((int)($order->id_lang), 'in_transit', Mail::l('Package in transit'), $templateVars, $customer->email, $customer->firstname.' '.$customer->lastname);
 				}
 			}
 			else
@@ -123,13 +123,13 @@ class AdminOrders extends AdminTab
 					$order = new Order((int)$order->id);
 					$carrier = new Carrier((int)($order->id_carrier), (int)($order->id_lang));
 					$templateVars = array();
-					if ($history->id_order_state == Configuration::get('PS_OS_SHIPPING') AND $order->shipping_number)
+					if ($history->id_order_state == _PS_OS_SHIPPING_ AND $order->shipping_number)
 						$templateVars = array('{followup}' => str_replace('@', $order->shipping_number, $carrier->url));
-					elseif ($history->id_order_state == Configuration::get('PS_OS_CHEQUE'))
+					elseif ($history->id_order_state == _PS_OS_CHEQUE_)
 						$templateVars = array(
 							'{cheque_name}' => (Configuration::get('CHEQUE_NAME') ? Configuration::get('CHEQUE_NAME') : ''),
 							'{cheque_address_html}' => (Configuration::get('CHEQUE_ADDRESS') ? nl2br(Configuration::get('CHEQUE_ADDRESS')) : ''));
-					elseif ($history->id_order_state == Configuration::get('PS_OS_BANKWIRE'))
+					elseif ($history->id_order_state == _PS_OS_BANKWIRE_)
 						$templateVars = array(
 							'{bankwire_owner}' => (Configuration::get('BANK_WIRE_OWNER') ? Configuration::get('BANK_WIRE_OWNER') : ''),
 							'{bankwire_details}' => (Configuration::get('BANK_WIRE_DETAILS') ? nl2br(Configuration::get('BANK_WIRE_DETAILS')) : ''),
@@ -185,9 +185,7 @@ class AdminOrders extends AdminTab
 							if (Validate::isLoadedObject($order))
 							{
 								$varsTpl = array('{lastname}' => $customer->lastname, '{firstname}' => $customer->firstname, '{id_order}' => $message->id_order, '{message}' => (Configuration::get('PS_MAIL_TYPE') == 2 ? $message->message : nl2br2($message->message)));
-								if (@Mail::Send((int)($order->id_lang), 'order_merchant_comment',
-									Mail::l('New message regarding your order', (int)($order->id_lang)), $varsTpl, $customer->email,
-									$customer->firstname.' '.$customer->lastname, NULL, NULL, NULL, NULL, _PS_MAIL_DIR_, true))
+								if (@Mail::Send((int)($order->id_lang), 'order_merchant_comment', Mail::l('New message regarding your order'), $varsTpl, $customer->email, $customer->firstname.' '.$customer->lastname))
 									Tools::redirectAdmin($currentIndex.'&id_order='.$id_order.'&vieworder&conf=11'.'&token='.$this->token);
 							}
 						}
@@ -202,7 +200,7 @@ class AdminOrders extends AdminTab
 		/* Cancel product from order */
 		elseif (Tools::isSubmit('cancelProduct') AND Validate::isLoadedObject($order = new Order((int)(Tools::getValue('id_order')))))
 		{
-			if ($this->tabAccess['delete'] === '1')
+		 	if ($this->tabAccess['delete'] === '1')
 			{
 				$productList = Tools::getValue('id_order_detail');
 				$customizationList = Tools::getValue('id_customization');
@@ -212,14 +210,14 @@ class AdminOrders extends AdminTab
 				$full_product_list = $productList;
 				$full_quantity_list = $qtyList;
 
-				if ($customizationList)
-				{
-					foreach ($customizationList as $key => $id_order_detail)
-					{
-						$full_product_list[$id_order_detail] = $id_order_detail;
-						$full_quantity_list[$id_order_detail] += $customizationQtyList[$key];
-					}
-				}
+                if ($customizationList)
+                {
+    				foreach ($customizationList as $key => $id_order_detail)
+	    			{
+	    			    $full_product_list[$id_order_detail] = $id_order_detail;
+	    			    $full_quantity_list[$id_order_detail] = $customizationQtyList[$key];
+	    			}
+	    		}
 
 				if ($productList OR $customizationList)
 				{
@@ -279,7 +277,7 @@ class AdminOrders extends AdminTab
 								{
 									$updProductAttributeID = !empty($orderDetail->product_attribute_id) ? (int)($orderDetail->product_attribute_id) : NULL;
 									$newProductQty = Product::getQuantity((int)($orderDetail->product_id), $updProductAttributeID);
-									$product = get_object_vars(new Product((int)($orderDetail->product_id), false, (int)($cookie->id_lang)));
+									$product = get_object_vars(new Product((int)($orderDetail->product_id), false, (int)$cookie->id_lang, (int)$order->id_shop));
 									if (!empty($orderDetail->product_attribute_id))
 									{
 										$updProduct['quantity_attribute'] = (int)($newProductQty);
@@ -324,9 +322,7 @@ class AdminOrders extends AdminTab
 						else
 						{
 							Module::hookExec('orderSlip', array('order' => $order, 'productList' => $full_product_list, 'qtyList' => $full_quantity_list));
-							@Mail::Send((int)$order->id_lang, 'credit_slip', Mail::l('New credit slip regarding your order', (int)$order->id_lang),
-							$params, $customer->email, $customer->firstname.' '.$customer->lastname, NULL, NULL, NULL, NULL,
-							_PS_MAIL_DIR_, true);
+							@Mail::Send((int)($order->id_lang), 'credit_slip', Mail::l('New credit slip regarding your order'), $params, $customer->email, $customer->firstname.' '.$customer->lastname);
 						}
 					}
 
@@ -340,9 +336,7 @@ class AdminOrders extends AdminTab
 							$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 							$params['{voucher_amount}'] = Tools::displayPrice($voucher->value, $currency, false);
 							$params['{voucher_num}'] = $voucher->name;
-							@Mail::Send((int)$order->id_lang, 'voucher', Mail::l('New voucher regarding your order', (int)$order->id_lang),
-							$params, $customer->email, $customer->firstname.' '.$customer->lastname, NULL, NULL, NULL,
-							NULL, _PS_MAIL_DIR_, true);
+							@Mail::Send((int)($order->id_lang), 'voucher', Mail::l('New voucher regarding your order'), $params, $customer->email, $customer->firstname.' '.$customer->lastname);
 						}
 					}
 				}
@@ -425,8 +419,9 @@ class AdminOrders extends AdminTab
 						<input type="hidden" name="productName" id="productName" value="'.$product['product_name'].'" />';
 				if ((!$order->hasBeenDelivered() OR Configuration::get('PS_ORDER_RETURN')) AND (int)(($customization['quantity_returned']) < (int)($customization['quantity'])))
 					echo '
-						<input type="checkbox" name="id_customization['.$customizationId.']" id="id_customization['.$customizationId.']" value="'.$id_order_detail.'" onchange="setCancelQuantity(this, \''.$customizationId.'\', \''.(int)($customization['quantity'] - $customization['quantity_refunded']).'\')" '.(((int) ($customization['quantity_returned'] + $customization['quantity_refunded']) >= (int)($customization['quantity'])) ? 'disabled="disabled" ' : '').'/>';
+						<input type="checkbox" name="id_customization['.$customizationId.']" id="id_customization['.$customizationId.']" value="'.$id_order_detail.'" onchange="setCancelQuantity(this, \''.$customizationId.'\', \''.$customization['quantity'].'\')" '.(((int)($customization['quantity_returned'] + $customization['quantity_refunded']) >= (int)($customization['quantity'])) ? 'disabled="disabled" ' : '').'/>';
 				else
+					echo '--';
 				echo '
 					</td>
 					<td class="cancelQuantity">';
@@ -573,7 +568,7 @@ class AdminOrders extends AdminTab
 			{
 				echo '
 				'.$this->l('This order has been placed by a').' <b>'.$this->l('guest').'</b>';
-				if (!Customer::customerExists($customer->email))
+				if(!Customer::customerExists($customer->email))
 				{
 					echo '<form method="POST" action="index.php?tab=AdminCustomers&id_customer='.(int)$customer->id.'&token='.Tools::getAdminTokenLite('AdminCustomers').'">
 						<input type="hidden" name="id_lang" value="'.(int)$order->id_lang.'" />
@@ -597,7 +592,7 @@ class AdminOrders extends AdminTab
 		if (sizeof($sources))
 		{
 			echo '<br />
-			<fieldset style="width: 400px;"><legend><img src="../img/admin/tab-stats.gif" /> '.$this->l('Sources').'</legend><ul '.(sizeof($sources) > 3 ? 'style="height: 200px; overflow-y: scroll; width: 360px;"' : '').'>';
+			<fieldset style="width: 400px;"><legend><img src="../img/admin/tab-stats.gif" /> '.$this->l('Sources').'</legend><ul '.(sizeof($sources) > 3 ? 'style="overflow-y: scroll; height: 200px"' : '').'>';
 			foreach ($sources as $source)
 				echo '<li>
 						'.Tools::displayDate($source['date_add'], (int)($cookie->id_lang), true).'<br />
@@ -659,7 +654,15 @@ class AdminOrders extends AdminTab
 		echo '
 		<br />
 		<fieldset style="width: 400px">
-			<legend><img src="../img/admin/details.gif" /> '.$this->l('Order details').'</legend>
+			<legend><img src="../img/admin/details.gif" /> '.$this->l('Order details').'</legend>';
+		if (Tools::isMultiShopActivated())
+		{
+			$shop = new Shop((int)$order->id_shop);
+			echo '
+			<label>'.$this->l('Shop:').' </label>
+			<div style="margin: 2px 0 1em 190px;">'.$shop->name.'</div>';
+		}
+		echo '
 			<label>'.$this->l('Original cart:').' </label>
 			<div style="margin: 2px 0 1em 190px;"><a href="?tab=AdminCarts&id_cart='.$cart->id.'&viewcart&token='.Tools::getAdminToken('AdminCarts'.(int)(Tab::getIdFromClassName('AdminCarts')).(int)($cookie->id_employee)).'">'.$this->l('Cart #').sprintf('%06d', $cart->id).'</a></div>
 			<label>'.$this->l('Payment mode:').' </label>
@@ -731,16 +734,16 @@ class AdminOrders extends AdminTab
 							'.($order->hasBeenDelivered() ? '<th style="width: 20px; text-align: center">'.$this->l('Returned').'</th>' : '').'
 							<th style="width: 30px; text-align: center">'.$this->l('Stock').'</th>
 							<th style="width: 90px; text-align: center">'.$this->l('Total').' <sup>*</sup></th>
-							<th colspan="2" style="width: 120px;"><img src="../img/admin/delete.gif" alt="'.$this->l('Products').'" /> '.(($order->hasBeenDelivered() || $order->hasBeenShipped()) ? $this->l('Return') : ($order->hasBeenPaid() ? $this->l('Refund') : $this->l('Cancel'))).'</th>';
+							<th colspan="2" style="width: 120px;"><img src="../img/admin/delete.gif" alt="'.$this->l('Products').'" /> '.($order->hasBeenDelivered() ? $this->l('Return') : ($order->hasBeenPaid() ? $this->l('Refund') : $this->l('Cancel'))).'</th>';
 		echo '
 						</tr>';
 						$tokenCatalog = Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee));
 						foreach ($products as $k => $product)
 						{
-							if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
-								$product_price = $product['product_price'] + $product['ecotax'];
-							else
-								$product_price = $product['product_price_wt'];
+					        if ($order->getTaxCalculationMethod() == PS_TAX_EXC)
+                                $product_price = $product['product_price'] + $product['ecotax'];
+                            else
+                                $product_price = $product['product_price_wt'];
 
 							$image = array();
 							if (isset($product['product_attribute_id']) AND (int)($product['product_attribute_id']))
@@ -771,8 +774,9 @@ class AdminOrders extends AdminTab
 							// Normal display
 							if ($product['product_quantity'] > $product['customizationQuantityTotal'])
 							{
-								$quantity = $product['product_quantity'] - $product['customizationQuantityTotal'];
+								$productObj = new Product($product['product_id']);
 								$imageObj = new Image($image['id_image']);
+
 								echo '
 								<tr'.((isset($image['id_image']) AND isset($products[$k]['image_size'])) ? ' height="'.($products[$k]['image_size'][1] + 7).'"' : '').'>
 									<td align="center">'.(isset($image['id_image']) ? cacheImage(_PS_IMG_DIR_.'p/'.$imageObj->getExistingImgPath().'.jpg',
@@ -783,10 +787,10 @@ class AdminOrders extends AdminTab
 										.($product['product_supplier_reference'] ? $this->l('Ref Supplier:').' '.$product['product_supplier_reference'] : '')
 										.'</a></td>
 									<td align="center">'.Tools::displayPrice($product_price, $currency, false).'</td>
-									<td align="center" class="productQuantity" '.($quantity > 1 && $product['customizationQuantityTotal'] > 0 ? 'style="font-weight:700;font-size:1.1em;color:red"' : '').'>'.(int)$quantity.'</td>
+									<td align="center" class="productQuantity">'.((int)($product['product_quantity']) - $product['customizationQuantityTotal']).'</td>
 									'.($order->hasBeenPaid() ? '<td align="center" class="productQuantity">'.(int)($product['product_quantity_refunded']).'</td>' : '').'
 									'.($order->hasBeenDelivered() ? '<td align="center" class="productQuantity">'.(int)($product['product_quantity_return']).'</td>' : '').'
-									<td align="center" class="productQuantity">'.(int)$stock['quantity'].'</td>
+									<td align="center" class="productQuantity">'.$productObj->getStock($product['product_attribute_id']).'</td>
 									<td align="center">'.Tools::displayPrice(Tools::ps_round($product_price, 2) * ((int)($product['product_quantity']) - $product['customizationQuantityTotal']), $currency, false).'</td>
 									<td align="center" class="cancelCheck">
 										<input type="hidden" name="totalQtyReturn" id="totalQtyReturn" value="'.(int)($product['product_quantity_return']).'" />
@@ -861,18 +865,18 @@ class AdminOrders extends AdminTab
 		$slips = OrderSlip::getOrdersSlip($order->id_customer, $order->id);
 		echo '
 		<div style="float: left">
-			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&token='.$this->token.'" method="post" onsubmit="if (getE(\'visibility\').checked == true) return confirm(\''.$this->l('Do you want to send this message to the customer?', __CLASS__, true, false).'\');">
+			<form action="'.$_SERVER['REQUEST_URI'].'&token='.$this->token.'" method="post" onsubmit="if (getE(\'visibility\').checked == true) return confirm(\''.$this->l('Do you want to send this message to the customer?', __CLASS__, true, false).'\');">
 			<fieldset style="width: 400px;">
 				<legend style="cursor: pointer;" onclick="$(\'#message\').slideToggle();$(\'#message_m\').slideToggle();return false"><img src="../img/admin/email_edit.gif" /> '.$this->l('New message').'</legend>
-				<div id="message_m" style="display: '.(Tools::getValue('message') ? 'none' : 'block').'; overflow: auto; width: 400px;">
+				<div id="message_m" style="display: '.(Tools::getValue('message') ? 'none' : 'block').'">
 					<a href="#" onclick="$(\'#message\').slideToggle();$(\'#message_m\').slideToggle();return false"><b>'.$this->l('Click here').'</b> '.$this->l('to add a comment or send a message to the customer').'</a>
 				</div>
 				<div id="message" style="display: '.(Tools::getValue('message') ? 'block' : 'none').'">
 					<select name="order_message" id="order_message" onchange="orderOverwriteMessage(this, \''.$this->l('Do you want to overwrite your existing message?').'\')">
 						<option value="0" selected="selected">-- '.$this->l('Choose a standard message').' --</option>';
 		$orderMessages = OrderMessage::getOrderMessages((int)($order->id_lang));
-		foreach ($orderMessages AS $orderMessage)
-			echo '		<option value="'.htmlentities($orderMessage['message'], ENT_COMPAT, 'UTF-8').'">'.$orderMessage['name'].'</option>';
+        foreach ($orderMessages AS $orderMessage)
+            echo '		<option value="'.htmlentities($orderMessage['message'], ENT_COMPAT, 'UTF-8').'">'.$orderMessage['name'].'</option>';
 		echo '		</select><br /><br />
 					<b>'.$this->l('Display to consumer?').'</b>
 					<input type="radio" name="visibility" id="visibility" value="0" /> '.$this->l('Yes').'
@@ -896,7 +900,7 @@ class AdminOrders extends AdminTab
 			{
 				echo '<div style="overflow:auto; width:400px;" '.($message['is_new_for_me'] ?'class="new_message"':'').'>';
 				if ($message['is_new_for_me'])
-					echo '<a class="new_message" title="'.$this->l('Mark this message as \'viewed\'').'" href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&token='.$this->token.'&messageReaded='.(int)($message['id_message']).'"><img src="../img/admin/enabled.gif" alt="" /></a>';
+					echo '<a class="new_message" title="'.$this->l('Mark this message as \'viewed\'').'" href="'.$_SERVER['REQUEST_URI'].'&token='.$this->token.'&messageReaded='.(int)($message['id_message']).'"><img src="../img/admin/enabled.gif" alt="" /></a>';
 				echo $this->l('At').' <i>'.Tools::displayDate($message['date_add'], (int)($cookie->id_lang), true);
 				echo '</i> '.$this->l('from').' <b>'.(($message['elastname']) ? ($message['efirstname'].' '.$message['elastname']) : ($message['cfirstname'].' '.$message['clastname'])).'</b>';
 				echo ((int)($message['private']) == 1 ? '<span style="color:red; font-weight:bold;">'.$this->l('Private:').'</span>' : '');
@@ -948,6 +952,7 @@ class AdminOrders extends AdminTab
 			'avoid' => array()
 			//'avoid' => array('address2')
 		);
+		
 		return AddressFormat::generateAddress($addressDelivery, $patternRules, '<br />');
 	}
 

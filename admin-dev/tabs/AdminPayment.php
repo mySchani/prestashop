@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,35 +28,34 @@
 class AdminPayment extends AdminTab
 {
 	public $paymentModules = array();
-
+	
 	public function __construct()
 	{
-		$modules_infos = PaymentModule::getInstalledPaymentModules();
-		foreach ($modules_infos AS $module_infos)
-		{
-			$module = Module::getInstanceByName($module_infos['name']);
-			if (!$module)
-				continue;
+		global $cookie;
+		/* Get all modules then select only payment ones*/
 
+		$modules = Module::getModulesOnDisk();
+		foreach ($modules AS $module)
+			
 			if ($module->tab == 'payments_gateways')
 			{
-				if ($module->id)
+				if($module->id)
 				{
-					if (!get_class($module) == 'SimpleXMLElement')
+					if(!get_class($module) == 'SimpleXMLElement')
 						$module->country = array();
-					$countries = DB::getInstance()->ExecuteS('SELECT id_country FROM '._DB_PREFIX_.'module_country WHERE id_module = '.(int)($module->id));
+					$countries = DB::getInstance()->ExecuteS('SELECT id_country FROM '._DB_PREFIX_.'module_country WHERE id_module = '.(int)$module->id.' AND `id_shop`='.Shop::getCurrentShop(true));
 					foreach ($countries as $country)
 						$module->country[] = $country['id_country'];
-
-					if (!get_class($module) == 'SimpleXMLElement')
+						
+					if(!get_class($module) == 'SimpleXMLElement')
 						$module->currency = array();
-					$currencies = DB::getInstance()->ExecuteS('SELECT id_currency FROM '._DB_PREFIX_.'module_currency WHERE id_module = '.(int)($module->id));
+					$currencies = DB::getInstance()->ExecuteS('SELECT id_currency FROM '._DB_PREFIX_.'module_currency WHERE id_module = '.(int)$module->id.' AND `id_shop`='.Shop::getCurrentShop(true));
 					foreach ($currencies as $currency)
 						$module->currency[] = $currency['id_currency'];
-
-					if (!get_class($module) == 'SimpleXMLElement')
+						
+					if(!get_class($module) == 'SimpleXMLElement')
 						$module->group = array();
-					$groups = DB::getInstance()->ExecuteS('SELECT id_group FROM '._DB_PREFIX_.'module_group WHERE id_module = '.(int)($module->id));
+					$groups = DB::getInstance()->ExecuteS('SELECT id_group FROM '._DB_PREFIX_.'module_group WHERE id_module = '.(int)$module->id.' AND `id_shop`='.Shop::getCurrentShop(true));
 					foreach ($groups as $group)
 						$module->group[] = $group['id_group'];
 				}
@@ -69,10 +68,10 @@ class AdminPayment extends AdminTab
 
 				$this->paymentModules[] = $module;
 			}
-		}
+	
 		parent::__construct();
 	}
-
+	
 	public function postProcess()
 	{
 		if (Tools::isSubmit('submitModulecountry'))
@@ -82,42 +81,41 @@ class AdminPayment extends AdminTab
 		elseif (Tools::isSubmit('submitModulegroup'))
 			$this->saveRestrictions('group');
 	}
-
+	
 	private function saveRestrictions($type)
 	{
-		global $currentIndex;
-		Db::getInstance()->Execute('TRUNCATE '._DB_PREFIX_.'module_'.$type.'');
+		global $currentIndex, $cookie;
+		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'module_'.$type.' WHERE id_shop='.Shop::getCurrentShop(true));
 		foreach ($this->paymentModules as $module)
 			if ($module->active AND isset($_POST[$module->name.'_'.$type.'']))
 				foreach ($_POST[$module->name.'_'.$type.''] as $selected)
-					$values[] = '('.(int)($module->id).', '.(int)($selected).')';
-
+					$values[] = '('.(int)$module->id.', '.Shop::getCurrentShop(true).', '.(int)$selected.')';
 		if (sizeof($values))
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'module_'.$type.' (`id_module`, `id_'.$type.'`) VALUES '.implode(',', $values));
+			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'module_'.$type.' (`id_module`, `id_shop`, `id_'.$type.'`) VALUES '.implode(',', $values));
 		Tools::redirectAdmin($currentIndex.'&conf=4'.'&token='.$this->token);
 	}
 
 	public function display()
 	{
 		global $cookie;
-
+		
 		$displayRestrictions = false;
-
+		
 		$currencies = Currency::getCurrencies();
 		$countries = Country::getCountries((int)($cookie->id_lang));
 		$groups = Group::getGroups((int)($cookie->id_lang));
-
+		
 		$tokenModules = Tools::getAdminToken('AdminModules'.(int)(Tab::getIdFromClassName('AdminModules')).(int)($cookie->id_employee));
 		echo '<h2 class="space">'.$this->l('Payment modules list').'</h2>';
 		if (isset($this->paymentModules[0]))
-			echo '<input type="button" class="button" onclick="document.location=\'index.php?tab=AdminModules&token='.$tokenModules.'&module_name='.$this->paymentModules[0]->name.'&tab_module=payments_gateways\'" value="'.$this->l('Click to see the list of payment modules.').'" /><br>';
-
+		echo '<input type="button" class="button" onclick="document.location=\'index.php?tab=AdminModules&token='.$tokenModules.'&module_name='.$this->paymentModules[0]->name.'&tab_module=payments_gateways\'" value="'.$this->l('Click to see the list of payment modules.').'" /><br>';
+		
 		foreach ($this->paymentModules as $module)
 			if ($module->active)
 				$displayRestrictions= true;
 		if ($displayRestrictions)
 		{
-
+		
 			echo '<br /><h2 class="space">'.$this->l('Payment module restrictions').'</h2>';
 			$textCurrencies = $this->l('Please mark the checkbox(es) for the currency or currencies for which you want the payment module(s) to be available.');
 			$textCountries = $this->l('Please mark the checkbox(es) for the country or countries for which you want the payment module(s) to be available.');
@@ -135,7 +133,7 @@ class AdminPayment extends AdminTab
 		}
 
 	}
-
+	
 	public function displayModuleRestrictions($items, $title, $nameId, $desc, $icon)
 	{
 		global $currentIndex;
@@ -145,7 +143,7 @@ class AdminPayment extends AdminTab
 		<form action="'.$currentIndex.'&token='.$this->token.'" method="post" id="form_'.$nameId.'">
 			<fieldset>
 				<legend><img src="../img/admin/'.$icon.'.gif" />'.$title.'</legend>
-				<p>'.$desc.'<p>
+				<p>'.$desc.'<br />'.$this->youEditFieldFor().'<p>
 				<table cellpadding="0" cellspacing="0" class="table">
 					<tr>
 						<th style="width: 200px">'.$title.'</th>';
@@ -188,16 +186,16 @@ class AdminPayment extends AdminTab
 					if ($nameId == 'country' && isset($module->limited_countries) &&
 						count($module->limited_countries))
 					{
-						if (in_array(strtoupper($item['iso_code']), array_map('strtoupper', $module->limited_countries)))
+						if (in_array($item['iso_code'], $module->limited_countries))
 							echo '<input  type="checkbox" name="'.$module->name.'_'.
 								$nameId.'[]" value="'.$item['id_'.$nameId].'"'.
-								(in_array($item['id_'.$nameId.''], $value) ?
+								(in_array($item['id_'.$nameId.''], $value) ? 
 								' checked="checked"' : '').' />';
 						else
 							echo '--';
 					}
-					elseif ($nameId != 'currency' OR ($nameId == 'currency' AND $module->currencies AND $module->currencies_mode == 'checkbox'))
-
+					else if ($nameId != 'currency' OR ($nameId == 'currency' AND $module->currencies AND $module->currencies_mode == 'checkbox'))
+						
 						echo '
 							<input type="checkbox" name="'.$module->name.'_'.$nameId.'[]" value="'.$item['id_'.$nameId].'"'.(in_array($item['id_'.$nameId.''], $value) ? ' checked="checked"' : '').' />';
 					elseif ($nameId == 'currency' AND $module->currencies AND $module->currencies_mode == 'radio')
@@ -220,7 +218,7 @@ class AdminPayment extends AdminTab
 			foreach ($this->paymentModules as $module)
 				if ($module->active)
 					echo '
-					<td style="text-align: center">'.(($module->currencies AND $module->currencies_mode == 'radio') ? '<input type="radio" name="'.$module->name.'_'.$nameId.'[]" value="-1"'.((is_array($module->currency) AND in_array(-1, $module->currency)) ? ' checked="checked"' : '').' />' : '--').'</td>';
+					<td style="text-align: center">'.(($module->currencies AND $module->currencies_mode == 'radio') ? '<input type="radio" name="'.$module->name.'_'.$nameId.'[]" value="-1"'.(in_array(-1, $module->{$nameId}) ? ' checked="checked"' : '').' />' : '--').'</td>';
 			echo '
 				</tr>';
 			echo '
@@ -229,7 +227,7 @@ class AdminPayment extends AdminTab
 			foreach ($this->paymentModules as $module)
 				if ($module->active)
 					echo '
-					<td style="text-align: center">'.(($module->currencies AND $module->currencies_mode == 'radio') ? '<input type="radio" name="'.$module->name.'_'.$nameId.'[]" value="-2"'.((is_array($module->currency) AND in_array(-2, $module->currency)) ? ' checked="checked"' : '').' />' : '--').'</td>';
+					<td style="text-align: center">'.(($module->currencies AND $module->currencies_mode == 'radio') ? '<input type="radio" name="'.$module->name.'_'.$nameId.'[]" value="-2"'.(in_array(-2, $module->{$nameId}) ? ' checked="checked"' : '').' />' : '--').'</td>';
 			echo '
 				</tr>';
 		}
@@ -240,6 +238,6 @@ class AdminPayment extends AdminTab
 		</form>';
 
 	}
-
+	
 }
 

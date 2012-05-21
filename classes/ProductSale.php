@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7484 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,7 +31,7 @@ class ProductSaleCore
 	** Fill the `product_sale` SQL table with data from `order_detail`
 	** @return bool True on success
 	*/
-	public static function fillProductSales()
+	static public function fillProductSales()
 	{
 		return Db::getInstance()->Execute('
 		REPLACE INTO '._DB_PREFIX_.'product_sale
@@ -44,13 +44,14 @@ class ProductSaleCore
 	** Get number of actives products sold
 	** @return int number of actives products listed in product_sales
 	*/
-	public static function getNbSales()
+	static public function getNbSales($id_shop = false)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 			SELECT COUNT(ps.`id_product`) AS nb
 			FROM `'._DB_PREFIX_.'product_sale` ps
+			'.($id_shop ? 'LEFT JOIN '._DB_PREFIX_.'product_shop pss ON (pss.id_product = ps.id_product)' : '').'
 			LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = ps.`id_product`
-			WHERE p.`active` = 1');
+			WHERE p.`active` = 1'.($id_shop ? ' AND pss.id_shop='.(int)$id_shop : ''));
 		return (int)($result['nb']);
 	}
 
@@ -62,7 +63,7 @@ class ProductSaleCore
 	** @param integer $nbProducts Number of products to return (optional)
 	** @return array from Product::getProductProperties
 	*/
-	public static function getBestSales($id_lang, $pageNumber = 0, $nbProducts = 10, $orderBy=NULL, $orderWay=NULL)
+	static public function getBestSales($id_lang, $pageNumber = 0, $nbProducts = 10, $orderBy=NULL, $orderWay=NULL, $id_shop = false)
 	{
 		if ($pageNumber < 0) $pageNumber = 0;
 		if ($nbProducts < 1) $nbProducts = 10;
@@ -80,6 +81,7 @@ class ProductSaleCore
 			DATEDIFF(p.`date_add`, DATE_SUB(NOW(), INTERVAL '.(Validate::isUnsignedInt(Configuration::get('PS_NB_DAYS_NEW_PRODUCT')) ? Configuration::get('PS_NB_DAYS_NEW_PRODUCT') : 20).' DAY)) > 0 AS new
 		FROM `'._DB_PREFIX_.'product_sale` ps
 		LEFT JOIN `'._DB_PREFIX_.'product` p ON ps.`id_product` = p.`id_product`
+		'.($id_shop ? 'LEFT JOIN `'._DB_PREFIX_.'product_shop` pss ON (pss.`id_product` = p.`id_product`)' : '').'
 		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)($id_lang).')
 		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
 		LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)($id_lang).')
@@ -89,6 +91,7 @@ class ProductSaleCore
 	                                           	   AND tr.`id_state` = 0)
 	    LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)
 		WHERE p.`active` = 1
+		'.($id_shop ? ' AND pss.id_shop='.(int)$id_shop : '').'
 		AND p.`id_product` IN (
 			SELECT cp.`id_product`
 			FROM `'._DB_PREFIX_.'category_group` cg
@@ -113,36 +116,37 @@ class ProductSaleCore
 	** @param integer $nbProducts Number of products to return (optional)
 	** @return array keys : id_product, link_rewrite, name, id_image, legend, sales, ean13, upc, link
 	*/
-	public static function getBestSalesLight($id_lang, $pageNumber = 0, $nbProducts = 10)
+	static public function getBestSalesLight($id_lang, $pageNumber = 0, $nbProducts = 10, $id_shop = null)
 	{
 	 	global $link;
 
 		if ($pageNumber < 0) $pageNumber = 0;
 		if ($nbProducts < 1) $nbProducts = 10;
-		
+		if (is_null($id_shop)) $id_shop = Shop::getCurrentShop();
+
 		$groups = FrontController::getCurrentCustomerGroups();
 		$sqlGroups = (count($groups) ? 'IN ('.implode(',', $groups).')' : '= 1');
 
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT p.id_product, pl.`link_rewrite`, pl.`name`, pl.`description_short`, i.`id_image`, il.`legend`, ps.`quantity` AS sales, p.`ean13`, p.`upc`, cl.`link_rewrite` AS category
-		FROM `'._DB_PREFIX_.'product_sale` ps
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON ps.`id_product` = p.`id_product`
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.')
-		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
-		LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (cl.`id_category` = p.`id_category_default` AND cl.`id_lang` = '.(int)$id_lang.')
-		WHERE p.`active` = 1
-		AND p.`id_product` IN (
-			SELECT cp.`id_product`
-			FROM `'._DB_PREFIX_.'category_group` cg
-			LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_category` = cg.`id_category`)
-			WHERE cg.`id_group` '.$sqlGroups.'
-		)
-		ORDER BY sales DESC
-		LIMIT '.(int)($pageNumber * $nbProducts).', '.(int)($nbProducts));
-
-		if (!$result)
-			return false;
+		$sql = 'SELECT p.id_product, pl.`link_rewrite`, pl.`name`, pl.`description_short`, i.`id_image`, il.`legend`, ps.`quantity` AS sales, p.`ean13`, p.`upc`, cl.`link_rewrite` AS category
+				FROM `'._DB_PREFIX_.'product_sale` ps
+				LEFT JOIN `'._DB_PREFIX_.'product` p ON ps.`id_product` = p.`id_product`
+				'.($id_shop ? 'LEFT JOIN `'._DB_PREFIX_.'product_shop` pss ON (pss.`id_product` = p.`id_product`)' : '').'
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.`id_product` = pl.`id_product` AND pl.`id_lang` = '.(int)$id_lang.(($id_shop) ? ' AND pl.id_shop = '.(int)$id_shop : '').')
+				LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
+				LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
+				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (cl.`id_category` = p.`id_category_default` AND cl.`id_lang` = '.(int)$id_lang.(($id_shop) ? ' AND cl.id_shop = '.(int)$id_shop : '').')
+				WHERE p.`active` = 1
+					'.($id_shop ? ' AND pss.id_shop='.(int)$id_shop  : '').'
+					AND p.`id_product` IN (
+						SELECT cp.`id_product`
+						FROM `'._DB_PREFIX_.'category_group` cg
+						LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_category` = cg.`id_category`)
+						WHERE cg.`id_group` '.$sqlGroups.'
+					)
+				ORDER BY sales DESC
+				LIMIT '.(int)($pageNumber * $nbProducts).', '.(int)($nbProducts);
+		if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql))
+			return $result;
 
 		foreach ($result AS &$row)
 		{
@@ -152,7 +156,7 @@ class ProductSaleCore
 		return $result;
 	}
 
-	public static function addProductSale($product_id, $qty = 1)
+	static public function addProductSale($product_id, $qty = 1)
 	{
 		return Db::getInstance()->Execute('
 			INSERT INTO '._DB_PREFIX_.'product_sale
@@ -161,7 +165,7 @@ class ProductSaleCore
 			ON DUPLICATE KEY UPDATE `quantity` = `quantity` + '.(int)($qty).', `sale_nbr` = `sale_nbr` + 1, `date_upd` = NOW()');
 	}
 
-	public static function getNbrSales($id_product)
+	static public function getNbrSales($id_product)
 	{
 		$result = Db::getInstance()->getRow('SELECT `sale_nbr` FROM '._DB_PREFIX_.'product_sale WHERE `id_product` = '.(int)($id_product));
 		if (!$result OR empty($result) OR !key_exists('sale_nbr', $result))
@@ -169,7 +173,7 @@ class ProductSaleCore
 		return (int)($result['sale_nbr']);
 	}
 
-	public static function removeProductSale($id_product, $qty = 1)
+	static public function removeProductSale($id_product, $qty = 1)
 	{
 		$nbrSales = self::getNbrSales($id_product);
 		if ($nbrSales > 1)

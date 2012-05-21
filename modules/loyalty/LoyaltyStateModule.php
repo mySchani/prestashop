@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class LoyaltyStateModule extends ObjectModel
@@ -59,20 +59,20 @@ class LoyaltyStateModule extends ObjectModel
 		return parent::getTranslationsFields(array('name'));
 	}
 
-	public static function getDefaultId() { return 1; }
-	public static function getValidationId() { return 2; }
-	public static function getCancelId() { return 3; }
-	public static function getConvertId() { return 4; }
-	public static function getNoneAwardId() { return 5; }
+	static public function getDefaultId() { return 1; }
+	static public function getValidationId() { return 2; }
+	static public function getCancelId() { return 3; }
+	static public function getConvertId() { return 4; }
+	static public function getNoneAwardId() { return 5; }
 
-	public static function insertDefaultData()
+	static public function insertDefaultData()
 	{
 		$loyaltyModule = new Loyalty();
 		$languages = Language::getLanguages();
 		
 		$defaultTranslations = array('default' => array('id_loyalty_state' => (int)LoyaltyStateModule::getDefaultId(), 'default' => $loyaltyModule->getL('Awaiting validation'), 'en' => 'Awaiting validation', 'fr' => 'En attente de validation'));
-		$defaultTranslations['validated'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getValidationId(), 'id_order_state' => Configuration::get('PS_OS_DELIVERED'), 'default' => $loyaltyModule->getL('Available'), 'en' => 'Available', 'fr' => 'Disponible');
-		$defaultTranslations['cancelled'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getCancelId(), 'id_order_state' => Configuration::get('PS_OS_CANCELED'), 'default' => $loyaltyModule->getL('Cancelled'), 'en' => 'Cancelled', 'fr' => 'Annulés');
+		$defaultTranslations['validated'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getValidationId(), 'id_order_state' => _PS_OS_DELIVERED_, 'default' => $loyaltyModule->getL('Available'), 'en' => 'Available', 'fr' => 'Disponible');
+		$defaultTranslations['cancelled'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getCancelId(), 'id_order_state' => _PS_OS_CANCELED_, 'default' => $loyaltyModule->getL('Cancelled'), 'en' => 'Cancelled', 'fr' => 'Annulés');
 		$defaultTranslations['converted'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getConvertId(), 'default' => $loyaltyModule->getL('Already converted'), 'en' => 'Already converted', 'fr' => 'Déjà convertis');
 		$defaultTranslations['none_award'] = array('id_loyalty_state' => (int)LoyaltyStateModule::getNoneAwardId(), 'default' => $loyaltyModule->getL('Unavailable on discounts'), 'en' => 'Unavailable on discounts', 'fr' => 'Non disponbile sur produits remisés');
 		

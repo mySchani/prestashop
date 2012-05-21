@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,7 +32,7 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function add($id_lang, $name)
+	static public function add($id_lang, $name)
 	{
 		if (!Validate::isUnsignedId($id_lang) ||
 			!Validate::isMessage($name))
@@ -49,7 +49,7 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function addToProduct($id_product_comment_criterion, $id_product)
+	static public function addToProduct($id_product_comment_criterion, $id_product)
 	{
 		if (!Validate::isUnsignedId($id_product_comment_criterion) ||
 			!Validate::isUnsignedId($id_product))
@@ -66,14 +66,14 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function addGrade($id_product_comment, $id_product_comment_criterion, $grade)
+	static public function addGrade($id_product_comment, $id_product_comment_criterion, $grade)
 	{
 		if (!Validate::isUnsignedId($id_product_comment) ||
 			!Validate::isUnsignedId($id_product_comment_criterion))
 			die(Tools::displayError());
 		if ($grade < 0)
 			$grade = 0;
-		elseif ($grade > 10)
+		else if ($grade > 10)
 			$grade = 10;
 		return (Db::getInstance()->Execute('
 		INSERT INTO `'._DB_PREFIX_.'product_comment_grade`
@@ -88,7 +88,7 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function update($id_product_comment_criterion, $id_lang, $name)
+	static public function update($id_product_comment_criterion, $id_lang, $name)
 	{
 		if (!Validate::isUnsignedId($id_product_comment_criterion) ||
 			!Validate::isUnsignedId($id_lang) ||
@@ -106,7 +106,7 @@ class ProductCommentCriterion
 	 *
 	 * @return array Criterion
 	 */
-	public static function getByProduct($id_product, $id_lang)
+	static public function getByProduct($id_product, $id_lang)
 	{
 		if (!Validate::isUnsignedId($id_product) ||
 			!Validate::isUnsignedId($id_lang))
@@ -124,7 +124,7 @@ class ProductCommentCriterion
 	 *
 	 * @return array Criterions
 	 */
-	public static function get($id_lang)
+	static public function get($id_lang)
 	{
 		if (!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
@@ -140,7 +140,7 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function deleteByProduct($id_product)
+	static public function deleteByProduct($id_product)
 	{
 		if (!Validate::isUnsignedId($id_product))
 			die(Tools::displayError());
@@ -154,7 +154,7 @@ class ProductCommentCriterion
 	 *
 	 * @return boolean succeed
 	 */
-	public static function delete($id_product_comment_criterion)
+	static public function delete($id_product_comment_criterion)
 	{
 		if (!Validate::isUnsignedId($id_product_comment_criterion))
 			die(Tools::displayError());

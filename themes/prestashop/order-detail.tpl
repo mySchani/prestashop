@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,17 +18,19 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14424 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7455 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{if !isset($smarty.get.ajax)}
-<div class="block-center" id="block-history">
-	<div id="block-order-detail">
-{/if}
-<form action="{if isset($opc) && $opc}{$link->getPageLink('order-opc.php', true)}{else}{$link->getPageLink('order.php', true)}{/if}" method="post" class="submit">
+<script type="text/javascript">
+// <![CDATA[
+		
+//]]>
+</script>
+
+<form action="{if isset($opc) && $opc}{$link->getPageLink('order-opc', true)}{else}{$link->getPageLink('order', true)}{/if}" method="post" class="submit">
 	<div>
 		<input type="hidden" value="{$order->id}" name="id_order"/>
 		<h4>
@@ -71,10 +73,14 @@
 {if $invoice AND $invoiceAllowed}
 <p>
 	<img src="{$img_dir}icon/pdf.gif" alt="" class="icon" />
-	<a href="{$link->getPageLink('pdf-invoice.php', true)}?id_order={$order->id|intval}{if $is_guest}&secure_key={$order->secure_key}{/if}">{l s='Download your invoice as a .PDF file'}</a>
+	{if $is_guest}
+		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order=$order->id&amp;secure_key=$order->secure_key")}" >{l s='Download your invoice as a .PDF file'}</a>
+	{else}
+		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order=$order->id")}" >{l s='Download your invoice as a .PDF file'}</a>
+	{/if}
 </p>
 {/if}
-{if $order->recyclable && isset($isRecyclable) && $isRecyclable}
+{if $order->recyclable}
 <p><img src="{$img_dir}icon/recyclable.gif" alt="" class="icon" />&nbsp;{l s='You have given permission to receive your order in recycled packaging.'}</p>
 {/if}
 {if $order->gift}
@@ -82,7 +88,7 @@
 	<p>{l s='Message:'} {$order->gift_message|nl2br}</p>
 {/if}
 <br />
-<ul class="address item" {if $order->isVirtual()}style="display:none;"{/if}>
+<ul class="address item">
 	<li class="address_title">{l s='Invoice'}</li>
 	{foreach from=$inv_adr_fields name=inv_loop item=field_item}
 		{if $field_item eq "company" && isset($address_invoice->company)}<li class="address_company">{$address_invoice->company|escape:'htmlall':'UTF-8'}</li>
@@ -95,7 +101,7 @@
 	
 	{/foreach}
 </ul>
-<ul class="address alternate_item {if $order->isVirtual()}full_width{/if}">
+<ul class="address alternate_item">
 	<li class="address_title">{l s='Delivery'}</li>
 	{foreach from=$dlv_adr_fields name=dlv_loop item=field_item}
 		{if $field_item eq "company" && isset($address_delivery->company)}<li class="address_company">{$address_delivery->company|escape:'htmlall':'UTF-8'}</li>
@@ -108,7 +114,7 @@
 	{/foreach}
 </ul>
 {$HOOK_ORDERDETAILDISPLAYED}
-{if !$is_guest}<form action="{$link->getPageLink('order-follow.php', true)}" method="post">{/if}
+{if !$is_guest}<form action="{$link->getPageLink('order-follow', true)}" method="post">{/if}
 <div id="order-detail-content" class="table_block">
 	<table class="std">
 		<thead>
@@ -236,13 +242,19 @@
 						<td><label for="cb_{$product.id_order_detail|intval}">{if $product.product_reference}{$product.product_reference|escape:'htmlall':'UTF-8'}{else}--{/if}</label></td>
 						<td class="bold">
 							<label for="cb_{$product.id_order_detail|intval}">
-								{if $product.download_hash && $invoice && $product.product_quantity_refunded == 0 && $product.product_quantity_return == 0}
-									<a href="{$link->getPageLink('get-file.php', true)}?key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}{if isset($is_guest) && $is_guest}&id_order={$order->id}&secure_key={$order->secure_key}{/if}" title="{l s='download this product'}">
+								{if $product.download_hash && $invoice}
+									{if isset($is_guest) && $is_guest}
+									<a href="{$link->getPageLink('get-file', true, NULL, "key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}&amp;id_order={$order->id}&secure_key={$order->secure_key}")}" title="{l s='download this product'}">
+									{else}
+										<a href="{$link->getPageLink('get-file', true, NULL, "key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}")}" title="{l s='download this product'}">
+									{/if}
 										<img src="{$img_dir}icon/download_product.gif" class="icon" alt="{l s='Download product'}" />
 									</a>
-									<a href="{$link->getPageLink('get-file.php', true)}?key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}{if isset($is_guest) && $is_guest}&id_order={$order->id}&secure_key={$order->secure_key}{/if}" title="{l s='download this product'}">
-										{$product.product_name|escape:'htmlall':'UTF-8'}
-									</a>
+									{if isset($is_guest) && $is_guest}
+										<a href="{$link->getPageLink('get-file', true, NULL, "key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}&id_order={$order->id}&secure_key={$order->secure_key}")}" title="{l s='download this product'}"> {$product.product_name|escape:'htmlall':'UTF-8'} 	</a>
+									{else}
+									<a href="{$link->getPageLink('get-file', true, NULL, "key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}")}" title="{l s='download this product'}"> {$product.product_name|escape:'htmlall':'UTF-8'} 	</a>
+									{/if}
 								{else}
 									{$product.product_name|escape:'htmlall':'UTF-8'}
 								{/if}
@@ -343,7 +355,7 @@
 			</ol>
 		</div>
 	{/if}
-	<form action="{$link->getPageLink('order-detail.php', true)}" method="post" class="std" id="sendOrderMessage">
+	<form action="{$link->getPageLink('order-detail', true)}" method="post" class="std" id="sendOrderMessage">
 		<p class="bold">{l s='Add a message:'}</p>
 		<p>{l s='If you would like to add a comment about your order, please write it below.'}</p>
 		<p class="textarea">
@@ -355,9 +367,5 @@
 		</p>
 	</form>
 {else}
-<p><img src="{$img_dir}icon/infos.gif" alt="" class="icon" />&nbsp;{l s='You cannot make a merchandise return with a guest account'}</p>
-{/if}
-{if !isset($smarty.get.ajax)}
-	</div>
-</div>
+<p><img src="{$img_dir}icon/infos.gif" alt="" class="icon" />&nbsp;{l s='You can\'t make a merchandise return with a guest account'}</p>
 {/if}

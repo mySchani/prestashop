@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,23 +19,28 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class AuthControllerCore extends FrontController
 {
-	public $ssl = true;
-	public $php_self = 'authentication.php';
+	public function __construct()
+	{
+		$this->ssl = true;
+		$this->php_self = 'authentication.php';
+
+		parent::__construct();
+	}
 
 	public function preProcess()
 	{
 		parent::preProcess();
 
 		if (self::$cookie->isLogged() AND !Tools::isSubmit('ajax'))
-			Tools::redirect('my-account.php');
+			Tools::redirect('index.php?controller=my-account');
 
 		if (Tools::getValue('create_account'))
 		{
@@ -83,11 +88,6 @@ class AuthControllerCore extends FrontController
 			$_POST['firstname'] = $_POST['customer_firstname'];
 			if (!Tools::getValue('phone') AND !Tools::getValue('phone_mobile'))
 				$this->errors[] = Tools::displayError('You must register at least one phone number');
-
-			if (!@checkdate(Tools::getValue('months'), Tools::getValue('days'), Tools::getValue('years')) AND !(Tools::getValue('months') == '' AND Tools::getValue('days') == '' AND Tools::getValue('years') == ''))
-				$this->errors[] = Tools::displayError('Invalid date of birth');
-			$customer->birthday = (empty($_POST['years']) ? '' : (int)($_POST['years']).'-'.(int)($_POST['months']).'-'.(int)($_POST['days']));
-
 			$this->errors = array_unique(array_merge($this->errors, $customer->validateControler()));
 			/* Preparing address */
 			$address = new Address();
@@ -97,7 +97,7 @@ class AuthControllerCore extends FrontController
 			$this->errors = array_unique(array_merge($this->errors, $address->validateControler()));
 
 			/* US customer: normalize the address */
-			if ($address->id_country == Country::getByIso('US'))
+			if($address->id_country == Country::getByIso('US'))
 			{
 				include_once(_PS_TAASC_PATH_.'AddressStandardizationSolution.php');
 				$normalize = new AddressStandardizationSolution;
@@ -128,17 +128,19 @@ class AuthControllerCore extends FrontController
 				$this->errors[] = Tools::displayError('Identification number is incorrect or has already been used.');
 			elseif (!Country::isNeedDniByCountryId($address->id_country))
 				$address->dni = NULL;
-
+			if (!@checkdate(Tools::getValue('months'), Tools::getValue('days'), Tools::getValue('years')) AND !(Tools::getValue('months') == '' AND Tools::getValue('days') == '' AND Tools::getValue('years') == ''))
+				$this->errors[] = Tools::displayError('Invalid date of birth');
 			if (!sizeof($this->errors))
 			{
-				if (Customer::customerExists(Tools::getValue('email')))
+				if (Customer::customerExists(Tools::getValue('email'), false, true, (int)$this->id_current_group_shop, (int)$this->id_current_shop))
 					$this->errors[] = Tools::displayError('An account is already registered with this e-mail, please fill in the password or request a new one.');
 				if (Tools::isSubmit('newsletter'))
 				{
 					$customer->ip_registration_newsletter = pSQL(Tools::getRemoteAddr());
 					$customer->newsletter_date_add = pSQL(date('Y-m-d H:i:s'));
 				}
-			
+
+				$customer->birthday = (empty($_POST['years']) ? '' : (int)($_POST['years']).'-'.(int)($_POST['months']).'-'.(int)($_POST['days']));
 				if (!sizeof($this->errors))
 				{
 					if (!$country = new Country($address->id_country, Configuration::get('PS_LANG_DEFAULT')) OR !Validate::isLoadedObject($country))
@@ -164,7 +166,7 @@ class AuthControllerCore extends FrontController
 							{
 								if (!$customer->is_guest)
 								{
-									if (!Mail::Send((int)self::$cookie->id_lang, 'account', Mail::l('Welcome!', (int)self::$cookie->id_lang),
+									if (!Mail::Send((int)(self::$cookie->id_lang), 'account', Mail::l('Welcome!'),
 									array('{firstname}' => $customer->firstname, '{lastname}' => $customer->lastname, '{email}' => $customer->email, '{passwd}' => Tools::getValue('passwd')), $customer->email, $customer->firstname.' '.$customer->lastname))
 										$this->errors[] = Tools::displayError('Cannot send email');
 								}
@@ -200,7 +202,7 @@ class AuthControllerCore extends FrontController
 								}
 								if ($back = Tools::getValue('back'))
 									Tools::redirect($back);
-								Tools::redirect('my-account.php');
+								Tools::redirect('index.php?controller=my-account');
 							}
 						}
 					}
@@ -250,7 +252,6 @@ class AuthControllerCore extends FrontController
 				}
 				else
 				{
-					self::$cookie->id_compare = isset(self::$cookie->id_compare) ? self::$cookie->id_compare: CompareProduct::getIdCompareByIdCustomer($customer->id);
 					self::$cookie->id_customer = (int)($customer->id);
 					self::$cookie->customer_lastname = $customer->lastname;
 					self::$cookie->customer_firstname = $customer->firstname;
@@ -259,20 +260,18 @@ class AuthControllerCore extends FrontController
 					self::$cookie->passwd = $customer->passwd;
 					self::$cookie->email = $customer->email;
 					if (Configuration::get('PS_CART_FOLLOWING') AND (empty(self::$cookie->id_cart) OR Cart::getNbProducts(self::$cookie->id_cart) == 0))
-						self::$cookie->id_cart = (int)(Cart::lastNoneOrderedCart((int)($customer->id)));
+						self::$cookie->id_cart = (int)Cart::lastNoneOrderedCart((int)$customer->id);
 					/* Update cart address */
 					self::$cart->id_carrier = 0;
 					self::$cart->id_address_delivery = Address::getFirstCustomerAddressId((int)($customer->id));
 					self::$cart->id_address_invoice = Address::getFirstCustomerAddressId((int)($customer->id));
-					// If a logged guest logs in as a customer, the cart secure key was already set and needs to be updated
-					self::$cart->secure_key = $customer->secure_key;
 					self::$cart->update();
 					Module::hookExec('authentication');
 					if (!Tools::isSubmit('ajax'))
 					{
 						if ($back = Tools::getValue('back'))
 							Tools::redirect($back);
-						Tools::redirect('my-account.php');
+						Tools::redirect('index.php?controller=my-account');
 					}
 				}
 			}
@@ -309,11 +308,7 @@ class AuthControllerCore extends FrontController
 			}*/
 			if (!isset($selectedCountry))
 				$selectedCountry = (int)(Configuration::get('PS_COUNTRY_DEFAULT'));
-			if (Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES'))
-				$countries = Carrier::getDeliveredCountries((int)self::$cookie->id_lang, true, true);
-			else
-				$countries = Country::getCountries((int)self::$cookie->id_lang, true);
-
+			$countries = Country::getCountries((int)(self::$cookie->id_lang), true, NULL, $this->id_current_shop);
 
 			self::$smarty->assign(array(
 				'countries' => $countries,
@@ -371,11 +366,7 @@ class AuthControllerCore extends FrontController
 			self::$smarty->assign('back', Tools::safeOutput($back));
 			if (strpos($back, 'order.php') !== false)
 			{
-				if (Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES'))
-					$countries = Carrier::getDeliveredCountries((int)self::$cookie->id_lang, true, true);
-				else
-					$countries = Country::getCountries((int)self::$cookie->id_lang, true);
-
+				$countries = Country::getCountries((int)(self::$cookie->id_lang), true);
 				self::$smarty->assign(array(
 					'inOrderProcess' => true,
 					'PS_GUEST_CHECKOUT_ENABLED' => Configuration::get('PS_GUEST_CHECKOUT_ENABLED'),
@@ -397,20 +388,20 @@ class AuthControllerCore extends FrontController
 	protected function processAddressFormat()
 	{
 		$addressItems = array();
-		$addressFormat = AddressFormat::getOrderedAddressFields(Configuration::get('PS_COUNTRY_DEFAULT'), false, true);
+		$addressFormat = AddressFormat::getOrderedAddressFields(Configuration::get('PS_COUNTRY_DEFAULT'));
 		$requireFormFieldsList = AddressFormat::$requireFormFieldsList;
-
+		
 		foreach ($addressFormat as $addressline)
 			foreach (explode(' ', $addressline) as $addressItem)
 				$addressItems[] = trim($addressItem);
-
+		
 		// Add missing require fields for a new user susbscription form
 		foreach($requireFormFieldsList as $fieldName)
 			if (!in_array($fieldName, $addressItems))
 				$addressItems[] = trim($fieldName);
-
+				
 		foreach (array('inv', 'dlv') as $addressType)
 			self::$smarty->assign(array($addressType.'_adr_fields' => $addressFormat, $addressType.'_all_fields' => $addressItems));
+		}
 	}
-}
 

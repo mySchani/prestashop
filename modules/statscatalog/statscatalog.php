@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsCatalog extends Module
@@ -33,107 +33,109 @@ class StatsCatalog extends Module
 	private $_join = '';
 	private $_where = '';
 
-	function __construct()
-	{
-		$this->name = 'statscatalog';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statscatalog';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
+		
+        parent::__construct();
+		
+        $this->displayName = $this->l('Catalog statistics');
+        $this->description = $this->l('General statistics about your catalog.');
+    }
 
-		parent::__construct();
-
-		$this->displayName = $this->l('Catalog statistics');
-		$this->description = $this->l('General statistics about your catalog.');
-	}
-	
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
 	public function getQuery1()
 	{
-		return DB::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(DISTINCT p.`id_product`) AS total, SUM(p.`price`) / COUNT(`price`) AS average_price, COUNT(DISTINCT i.`id_image`) AS images
-		FROM `'._DB_PREFIX_.'product` p
-		LEFT JOIN `'._DB_PREFIX_.'image` i ON i.`id_product` = p.`id_product`
-		'.$this->_join.'
-		WHERE p.`active` = 1
-		'.$this->_where);
+		$sql = 'SELECT COUNT(DISTINCT p.`id_product`) AS total, SUM(p.`price`) / COUNT(`price`) AS average_price, COUNT(DISTINCT i.`id_image`) AS images
+				FROM `'._DB_PREFIX_.'product` p
+				LEFT JOIN `'._DB_PREFIX_.'image` i ON i.`id_product` = p.`id_product`
+				'.$this->_join.'
+				WHERE p.`active` = 1
+					'.$this->_where;
+		return DB::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 	}
-		
+
 	public function getTotalPageViewed()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT SUM(pv.`counter`) AS viewed
-		FROM `'._DB_PREFIX_.'product` p 
-		LEFT JOIN `'._DB_PREFIX_.'page` pa ON p.`id_product` = pa.`id_object`
-		LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON (pt.`id_page_type` = pa.`id_page_type` AND pt.`name` = \'product.php\')
-		LEFT JOIN `'._DB_PREFIX_.'page_viewed` pv ON pv.`id_page` = pa.`id_page`
-		'.$this->_join.'
-		WHERE p.`active` = 1 '.$this->_where);
+		$sql = 'SELECT SUM(pv.`counter`) AS viewed
+				FROM `'._DB_PREFIX_.'product` p 
+				LEFT JOIN `'._DB_PREFIX_.'page` pa ON p.`id_product` = pa.`id_object`
+				LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON (pt.`id_page_type` = pa.`id_page_type` AND pt.`name` = \'product.php\')
+				LEFT JOIN `'._DB_PREFIX_.'page_viewed` pv ON pv.`id_page` = pa.`id_page`
+				'.$this->_join.'
+				WHERE p.`active` = 1
+					'.$this->_where;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return isset($result['viewed']) ? $result['viewed'] : 0;
 	}
-	
+
 	public function getTotalProductViewed()
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT COUNT(DISTINCT pa.`id_object`)
-		FROM `'._DB_PREFIX_.'page_viewed` pv
-		LEFT JOIN `'._DB_PREFIX_.'page` pa ON pv.`id_page` = pa.`id_page`
-		LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = pa.`id_page_type`
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = pa.`id_object`
-		'.$this->_join.'
-		WHERE pt.`name` = \'product.php\'
-		AND p.`active` = 1
-		'.$this->_where);
+		$sql = 'SELECT COUNT(DISTINCT pa.`id_object`)
+				FROM `'._DB_PREFIX_.'page_viewed` pv
+				LEFT JOIN `'._DB_PREFIX_.'page` pa ON pv.`id_page` = pa.`id_page`
+				LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = pa.`id_page_type`
+				LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = pa.`id_object`
+				'.$this->_join.'
+				WHERE pt.`name` = \'product.php\'
+					AND p.`active` = 1
+					'.$this->_where;
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
-	
+
 	public function getTotalBought()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT SUM(od.`product_quantity`) AS bought
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = od.`product_id`
-		'.$this->_join.'
-		WHERE o.valid = 1
-		'.$this->_where);
+		$sql = 'SELECT SUM(od.`product_quantity`) AS bought
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
+				LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = od.`product_id`
+				'.$this->_join.'
+				WHERE o.valid = 1
+					'.$this->_where;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return isset($result['bought']) ? $result['bought'] : 0;
 	}
-	
+
 	public function getProductsNB($id_lang)
 	{
-		$precalc = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT p.`id_product`
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = od.`product_id`
-		'.$this->_join.'
-		WHERE o.valid = 1
-		'.$this->_where.'
-		AND p.`active` = 1
-		GROUP BY p.`id_product`');
-			
+		$sql = 'SELECT p.`id_product`
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
+				LEFT JOIN `'._DB_PREFIX_.'product` p ON p.`id_product` = od.`product_id`
+				'.$this->_join.'
+				WHERE o.valid = 1
+					'.$this->_where.'
+					AND p.`active` = 1
+				GROUP BY p.`id_product`';
+		$precalc = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
+
 		$precalc2 = array();
 		foreach ($precalc as $array)
 			$precalc2[] = (int)($array['id_product']);
-		
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT p.id_product, pl.name, pl.link_rewrite
-		FROM `'._DB_PREFIX_.'product` p
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.id_lang = '.(int)($id_lang).')
-		'.$this->_join.'
-		WHERE p.`active` = 1
-		'.(sizeof($precalc2) ? 'AND p.`id_product` NOT IN ('.implode(',', $precalc2).')' : '').'
-		'.$this->_where);
+
+		$sql = 'SELECT p.id_product, pl.name, pl.link_rewrite
+				FROM `'._DB_PREFIX_.'product` p
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.id_lang = '.(int)($id_lang).')
+				'.$this->_join.'
+				WHERE p.`active` = 1
+					'.(sizeof($precalc2) ? 'AND p.`id_product` NOT IN ('.implode(',', $precalc2).')' : '').'
+					'.$this->_where;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
 		return array('total' => Db::getInstance(_PS_USE_SQL_SLAVE_)->NumRows(), 'result' => $result);
 	}
-	
+
 	public function hookAdminStatsModules($params)
 	{
 		global $cookie;
+
 		$categories = Category::getCategories((int)($cookie->id_lang), true, false);
 		$productToken = Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee));
 		$currency = Currency::getCurrency(Configuration::get('PS_CURRENCY_DEFAULT'));
@@ -142,23 +144,32 @@ class StatsCatalog extends Module
 		
 		if ($id_category = (int)(Tools::getValue('id_category')))
 		{
-			$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = p.`id_product`)';
-			$this->_where = 'AND cp.`id_category` = '.$id_category;
+			$this->_join = ' LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = p.`id_product`)';
+			$this->_where = ' AND cp.`id_category` = '.$id_category;
 		}
 		
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$this->_join .= ' LEFT JOIN '._DB_PREFIX_.'product_shop ps ON ps.id_product = p.id_product';
+			if ($this->shopID)
+				$this->_where .= ' AND ps.id_shop = ' . $this->shopID;
+			else if ($this->shopGroupID)
+				$this->_where .= ' AND ps.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.')';
+		}
+
 		$result1 = $this->getQuery1(true);
 		$total = $result1['total'];
 		$averagePrice = $result1['average_price'];
 		$totalPictures = $result1['images'];
 		$averagePictures = $total ? $totalPictures / $total : 0;
-		
+
 		$neverBought = $this->getProductsNB((int)($cookie->id_lang));
 		$totalNB = $neverBought['total'];
 		$productsNB = $neverBought['result'];
-		
+
 		$totalBought = $this->getTotalBought();
 		$averagePurchase = $total ? ($totalBought / $total) : 0;
-		
+
 		$totalPageViewed = $this->getTotalPageViewed();
 		$averageViewed = $total ? ($totalPageViewed / $total) : 0;		
 		$conversion = number_format((float)($totalPageViewed ? ($totalBought / $totalPageViewed) : 0), 2, '.', '');
@@ -166,7 +177,7 @@ class StatsCatalog extends Module
 			$conversion .= ' (1 '.$this->l('purchase').' / '.$conversionReverse.' '.$this->l('visits').')';
 
 		$totalNV = $total - $this->getTotalProductViewed();
-		
+
 		$html = '
 		<script type="text/javascript" language="javascript">$(\'#calendar\').slideToggle();</script>
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
@@ -202,7 +213,7 @@ class StatsCatalog extends Module
 				'.$this->l('Average conversion rate for the product page. It is possible to purchase a product without viewing the product page, so this rate can be greater than 1.').'
 			</div>
 		</fieldset>';
-		
+
 		if (sizeof($productsNB) AND sizeof($productsNB) < 50)
 		{
 			$html .= '
@@ -225,11 +236,9 @@ class StatsCatalog extends Module
 		}
 		return $html;
 	}
-	
+
 	private function returnLine($label, $data)
 	{
 		return '<tr><td>'.$label.'</td><td style="color:green;font-weight:bold;padding-left:20px;">'.$data.'</td></tr>';
 	}
 }
-
-

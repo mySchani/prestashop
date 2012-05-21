@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7097 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 require (_PS_MODULE_DIR_.'trustedshops/lib/AbsTrustedShops.php');
@@ -39,37 +38,26 @@ class TrustedShops extends Module
 	 * @var array
 	 */
 	private static $objects_list = array();
-
 	private $errors = array();
-
 	private $warnings = array();
-
 	public $limited_countries = array();
-
 	private $confirmations = array();
-
-	public static $seal_displayed = false;
 
 	public function __construct()
 	{
 		global $smarty;
-
 		$this->name = 'trustedshops';
 		$this->tab = 'payment_security';
-		$this->version = '1.3.4';
-		$this->author = 'PrestaShop';
+		$this->version = 1.2;
 
 		parent::__construct();
-
-		/** Backward compatibility */
-		require(_PS_MODULE_DIR_.$this->name.'/backward_compatibility/backward.php');
 
 		if (empty(self::$objects_list))
 		{
 			TSBuyerProtection::setTranslationObject($this);
 			$obj_ts_rating = new TrustedShopsRating();
 			$obj_ts_buyerprotection = new TSBuyerProtection();
-			$obj_ts_buyerprotection->_setEnvApi(TSBuyerProtection::ENV_MOD);
+			$obj_ts_buyerprotection->_setEnvApi(TSBuyerProtection::ENV_PROD);
 			self::$objects_list = array($obj_ts_rating, $obj_ts_buyerprotection);
 			self::$objects_list[0]->setModuleName($this->name);
 			self::$objects_list[0]->setSmarty($smarty);
@@ -81,49 +69,44 @@ class TrustedShops extends Module
 		foreach (self::$objects_list as $object)
 		{
 			$this->limited_countries = array_merge($this->limited_countries, $object->limited_countries);
-
-			if (!empty($object->warnings))
+			if(!empty($object->warnings))
 				$this->warnings = array_merge($this->warnings, $object->warnings);
 		}
 
 		if (!empty($this->warnings))
 			$this->warning = implode(',<br />', $this->warnings).'.';
 
-		$this->displayName = $this->l('Trusted Shops trust solutions');
-		$this->description = $this->l('Build confidence in your online shop with the Trusted Shops quality seal, buyer protection and customer rating.');
+		$this->displayName = $this->l('Trusted Shops Customer Rating');
+		$this->description = $this->l('Boost consumer confidence and turn more shoppers into buyers.');
 		$this->confirmUninstall = $this->l('Are you sure you want to delete all your settings?');
 	}
 
 	public function install()
 	{
 		$return = true;
-
 		foreach (self::$objects_list as $object)
 		{
 			$return = $object->install();
-
 			if (!$return)
 				break;
 		}
-
 		$return = ($return) ? (parent::install() AND $this->registerHook('orderConfirmation') AND $this->registerHook('newOrder') AND $this->registerHook('rightColumn') AND $this->registerHook('paymentTop') AND $this->registerHook('orderConfirmation')) : $return;
-		$id_hook = _PS_VERSION_ < '1.5' ? Hook::get('payment') : Hook::getIdByName('payment');
+		$id_hook = Hook::get('payment');
 		$this->updatePosition($id_hook, 0, 1);
-
 		return $return;
 	}
 
 	public function uninstall()
 	{
+		$return = true;
 		foreach (self::$objects_list as $object)
 		{
 			$return = $object->uninstall();
-
 			if (!$return)
-				return false;
+				break;
 		}
-
-		return parent::uninstall();
+		$return = ($return) ? parent::uninstall() : $return;
+		return $return;
 	}
 
 	public function getContent()
@@ -131,13 +114,12 @@ class TrustedShops extends Module
 		$out = '<h2>'.$this->displayName.'</h2>';
 		$tabs = array();
 
-		foreach (self::$objects_list as $key => $object)
+		foreach (self::$objects_list as $key=>$object)
 		{
 			$object->id_tab = $key;
 			$tabs['title'][] = $object->tab_name;
 			$tabs['content'][] = $object->getContent();
 		}
-
 		// Display Title Tabs
 		$out .= '<ul id="menuTabs">';
 		foreach($tabs['title'] as $key=>$title)
@@ -152,14 +134,12 @@ class TrustedShops extends Module
 
 		// Check If each object (display as Tab) contains errors message of
 		$this->checkObjectsErrorsOrConfirmations();
-
-		return (empty($this->errors) ? $this->displayConfirmations() : $this->displayErrors()).$out;
+		return ( !empty($this->errors) ? $this->displayErrors() : $this->displayConfirmations() ).$out;
 	}
 
 	private function displayCSSJSTab()
 	{
 		$id_tab = isset($_GET['id_tab']) ? (int)$_GET['id_tab'] : 0;
-
 		return '
 		<style>
 			#menuTabs { float: left; padding: 0; text-align: left; margin:0}
@@ -195,33 +175,26 @@ class TrustedShops extends Module
 	{
 		foreach (self::$objects_list as $object)
 		{
-			if (!empty($object->errors))
+			if(!empty($object->errors))
 				$this->errors = array_merge($this->errors, $object->errors);
-
-			if (!empty($object->confirmations))
+			if(!empty($object->confirmations))
 				$this->confirmations = array_merge($this->confirmations, $object->confirmations);
 		}
 	}
-
 	private function displayConfirmations()
 	{
 		$html = '';
-
-		if (!empty($this->confirmations))
+		if(!empty($this->confirmations))
 			foreach ($this->confirmations as $confirmations)
 				$html .= $this->displayConfirmation($confirmations);
-
 		return $html;
 	}
-
 	private function displayErrors()
 	{
 		$html = '';
-
-		if (!empty($this->errors))
+		if(!empty($this->errors))
 			foreach ($this->errors as $error)
 				$html .= $this->displayError($error);
-
 		return $html;
 	}
 
@@ -252,28 +225,13 @@ class TrustedShops extends Module
 
 	private function dynamicHook($params, $hook_name)
 	{
-
-		if (!$this->active)
+		if(!$this->active)
 			return '';
-
 		$return = '';
-
 		foreach (self::$objects_list as $object)
 			if (method_exists($object, $hook_name))
 				$return .= $object->{$hook_name}($params);
-
 		return $return;
-	}
-
-	public static function display_seal()
-	{
-		if (!TrustedShops::$seal_displayed)
-		{
-			Context::getContext()->smarty->assign('ts_module_dir', __PS_BASE_URI__.'modules/trustedshops/');
-			TrustedShops::$seal_displayed = true;
-			return Context::getContext()->smarty->fetch(dirname(__FILE__).'/seal_of_approval.tpl');
-		}
-		return '';
 	}
 }
 

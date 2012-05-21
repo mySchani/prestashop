@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -67,16 +67,7 @@ class AttributeGroupCore extends ObjectModel
 	
 	public function add($autodate = true, $nullValues = false)
 	{
-		$return = parent::add($autodate, true);
-		Module::hookExec('afterSaveAttributeGroup', array('id_attribute_group' => $this->id));
-		return $return;
-	}
-	
-	public function update($nullValues = false)
-	{
-		$return = parent::update($nullValues);
-		Module::hookExec('afterSaveAttributeGroup', array('id_attribute_group' => $this->id));
-		return $return;
+	 	return parent::add($autodate, true);
 	}
 	
 	/**
@@ -90,7 +81,7 @@ class AttributeGroupCore extends ObjectModel
 		return parent::getTranslationsFields(array('name', 'public_name'));
 	}
 
-	public static function cleanDeadCombinations()
+	static public function cleanDeadCombinations()
 	{
 		$attributeCombinations = Db::getInstance()->ExecuteS('SELECT pac.`id_attribute`, pa.`id_product_attribute` FROM `'._DB_PREFIX_.'product_attribute` pa LEFT JOIN `'._DB_PREFIX_.'product_attribute_combination` pac ON (pa.`id_product_attribute` = pac.`id_product_attribute`)');
 		$toRemove = array();
@@ -120,10 +111,7 @@ class AttributeGroupCore extends ObjectModel
 	 	/* Also delete related attributes */
 		if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'attribute_lang` WHERE `id_attribute` IN (SELECT id_attribute FROM `'._DB_PREFIX_.'attribute` WHERE `id_attribute_group` = '.(int)($this->id).')') === false OR Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'attribute` WHERE `id_attribute_group` = '.(int)($this->id)) === false)
 			return false;
-		$return = parent::delete();
-		if($return)
-			Module::hookExec('afterDeleteAttributeGroup', array('id_attribute_group' => $this->id));
-		return $return;
+		return parent::delete();
 	}
 	
 	/**
@@ -133,7 +121,7 @@ class AttributeGroupCore extends ObjectModel
 	 * @param boolean $id_attribute_group Attribute group id
 	 * @return array Attributes
 	 */
-	public static function getAttributes($id_lang, $id_attribute_group)
+	static public function getAttributes($id_lang, $id_attribute_group)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -149,7 +137,7 @@ class AttributeGroupCore extends ObjectModel
 	 * @param integer $id_lang Language id
 	 * @return array Attributes groups
 	 */
-	public static function getAttributesGroups($id_lang)
+	static public function getAttributesGroups($id_lang)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *

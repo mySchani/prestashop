@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -83,8 +83,9 @@ class AdminCustomerThreads extends AdminTab
 			'status' => array('title' => $this->l('Status'), 'width' => 50, 'type' => 'select', 'select' => $statusArray, 'icon' => $imagesArray, 'align' => 'center', 'filter_key' => 'a!status', 'filter_type' => 'string'),
 			'employee' => array('title' => $this->l('Employee'), 'width' => 100, 'filter_key' => 'employee', 'tmpTableFilter' => true),
 			'messages' => array('title' => $this->l('Messages'), 'width' => 50, 'filter_key' => 'messages', 'tmpTableFilter' => true, 'maxlength' => 0),
-			'date_upd' => array('title' => $this->l('Last message'), 'width' => 90, 'havingFilter' => true)
+			'date_upd' => array('title' => $this->l('Last message'), 'width' => 90)
 		);
+		$this->shopLinkType = 'shop';
 
 		parent::__construct();
 	}
@@ -129,14 +130,11 @@ class AdminCustomerThreads extends AdminTab
 					'{messages}' => $output,
 					'{employee}' => $currentEmployee->firstname.' '.$currentEmployee->lastname,
 					'{comment}' => stripslashes($_POST['message_forward']));
-					if (Mail::Send((int)($cookie->id_lang), 'forward_msg', Mail::l('Fwd: Customer message', (int)($cookie->id_lang)), $params,
+					Mail::Send((int)($cookie->id_lang), 'forward_msg', Mail::l('Fwd: Customer message'), $params,
 						$employee->email, $employee->firstname.' '.$employee->lastname,
-						$currentEmployee->email, $currentEmployee->firstname.' '.$currentEmployee->lastname,
-						NULL, NULL, _PS_MAIL_DIR_, true))
-					{
-						$cm->message = $this->l('Message forwarded to').' '.$employee->firstname.' '.$employee->lastname."\n".$this->l('Comment:').' '.$_POST['message_forward'];
-						$cm->add();
-					}
+						$currentEmployee->email, $currentEmployee->firstname.' '.$currentEmployee->lastname);
+					$cm->message = $this->l('Message forwarded to').' '.$employee->firstname.' '.$employee->lastname."\n".$this->l('Comment:').' '.$_POST['message_forward'];
+					$cm->add();
 				}
 				elseif (($email = Tools::getValue('email')) AND Validate::isEmail($email))
 				{
@@ -144,14 +142,11 @@ class AdminCustomerThreads extends AdminTab
 					'{messages}' => $output,
 					'{employee}' => $currentEmployee->firstname.' '.$currentEmployee->lastname,
 					'{comment}' => stripslashes($_POST['message_forward']));
-					if (Mail::Send((int)($cookie->id_lang), 'forward_msg', Mail::l('Fwd: Customer message', (int)($cookie->id_lang)), $params,
+					Mail::Send((int)($cookie->id_lang), 'forward_msg', Mail::l('Fwd: Customer message'), $params,
 						$email, NULL,
-						$currentEmployee->email, $currentEmployee->firstname.' '.$currentEmployee->lastname,
-						NULL, NULL, _PS_MAIL_DIR_, true))
-					{
-						$cm->message = $this->l('Message forwarded to').' '.$email."\n".$this->l('Comment:').' '.$_POST['message_forward'];
-						$cm->add();
-					}
+						$currentEmployee->email, $currentEmployee->firstname.' '.$currentEmployee->lastname);
+					$cm->message = $this->l('Message forwarded to').' '.$email."\n".$this->l('Comment:').' '.$_POST['message_forward'];
+					$cm->add();
 				}
 				else
 					echo '<div class="alert error">'.Tools::displayError('Email invalid.').'</div>';
@@ -166,7 +161,7 @@ class AdminCustomerThreads extends AdminTab
 				$cm->ip_address = ip2long($_SERVER['REMOTE_ADDR']);
 				if (isset($_FILES) AND !empty($_FILES['joinFile']['name']) AND $_FILES['joinFile']['error'] != 0)
 					$this->_errors[] = Tools::displayError('An error occurred with the file upload.');
-				elseif ($cm->add())
+				else if ($cm->add())
 				{
 					$fileAttachment = NULL;
 					if (!empty($_FILES['joinFile']['name']))
@@ -176,19 +171,16 @@ class AdminCustomerThreads extends AdminTab
 						$fileAttachment['mime'] = $_FILES['joinFile']['type'];
 					}
 					$params = array(
-					'{reply}' => nl2br2(Tools::getValue('reply_message')),
-					'{link}' => $link->getPageLink('contact-form.php', true).'?id_customer_thread='.(int)($ct->id).'&token='.$ct->token);
-					if (Mail::Send((int)$ct->id_lang, 'reply_msg', Mail::l('An answer to your message is available', (int)$ct->id_lang), 
-						$params, Tools::getValue('msg_email'), NULL, NULL, NULL, $fileAttachment, NULL, 
-						_PS_MAIL_DIR_, true))
-					{
-						$ct->status = 'closed';
-						$ct->update();
-					}
+						'{reply}' => nl2br2(Tools::getValue('reply_message')),
+						'{link}' => Tools::url($link->getPageLink('contact', true), 'id_customer_thread='.(int)($ct->id).'&token='.$ct->token),
+					);
+					Mail::Send($ct->id_lang, 'reply_msg', Mail::l('An answer to your message is available'), $params, Tools::getValue('msg_email'), NULL, NULL, NULL, $fileAttachment);
+					$ct->status = 'closed';
+					$ct->update();
 					Tools::redirectAdmin($currentIndex.'&id_customer_thread='.(int)$id_customer_thread.'&viewcustomer_thread&token='.Tools::getValue('token'));
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred, your message was not sent. Please contact your system administrator.');
+					$this->_errors[] = Tools::displayError('An error occurred, your message was not sent.  Please contact your system administrator.');
 			}
 		}
 
@@ -201,7 +193,7 @@ class AdminCustomerThreads extends AdminTab
 
 		if (isset($_GET['filename']) AND file_exists(_PS_UPLOAD_DIR_.$_GET['filename']))
 			self::openUploadedFile();
-		elseif (isset($_GET['view'.$this->table]))
+		else if (isset($_GET['view'.$this->table]))
 			$this->viewcustomer_thread();
 		else
 		{
@@ -303,7 +295,7 @@ class AdminCustomerThreads extends AdminTab
 		
 		if (!$email)
 		{
-			if (!empty($message['id_product']) AND empty($message['id_employee']))
+			if (!empty($message['id_product']) AND empty($message['employee_name']))
 				$id_order_product = Db::getInstance()->getValue('
 				SELECT o.id_order
 				FROM '._DB_PREFIX_.'orders o
@@ -313,8 +305,8 @@ class AdminCustomerThreads extends AdminTab
 				ORDER BY o.date_add DESC');
 			
 			$output = '
-			<fieldset style="'.(!empty($message['id_employee']) ? 'background: rgb(255,236,242);' : '').'width:600px;margin-top:10px">
-				<legend '.(empty($message['id_employee']) ? '' : 'style="background:rgb(255,210,225)"').'>'.(
+			<fieldset style="'.(!empty($message['employee_name']) ? 'background: rgb(255,236,242);' : '').'width:600px;margin-top:10px">
+				<legend '.(empty($message['employee_name']) ? '' : 'style="background:rgb(255,210,225)"').'>'.(
 					!empty($message['employee_name'])
 					? '<img src="../img/t/AdminCustomers.gif" alt="'.Configuration::get('PS_SHOP_NAME').'" /> '.Configuration::get('PS_SHOP_NAME').' - '.$message['employee_name']
 					: '<img src="'.__PS_BASE_URI__.'img/admin/tab-customers.gif" alt="'.Configuration::get('PS_SHOP_NAME').'" /> '.(
@@ -324,12 +316,12 @@ class AdminCustomerThreads extends AdminTab
 					)
 				).'</legend>
 				<div style="font-size:11px">'.(
-						(!empty($message['id_customer']) AND empty($message['id_employee']))
+						(!empty($message['id_customer']) AND empty($message['employee_name']))
 						? '<b>'.$this->l('Customer ID:').'</b> <a href="index.php?tab=AdminCustomers&id_customer='.(int)($message['id_customer']).'&viewcustomer&token='.$customersToken.'" title="'.$this->l('View customer').'">'.(int)($message['id_customer']).' <img src="../img/admin/search.gif" alt="'.$this->l('view').'" /></a><br />'
 						: ''
 					).'
 					<b>'.$this->l('Sent on:').'</b> '.Tools::displayDate($message['date_add'], (int)($cookie->id_lang), true).'<br />'.(
-						empty($message['id_employee'])
+						empty($message['employee_name'])
 						? '<b>'.$this->l('Browser:').'</b> '.strip_tags($message['user_agent']).'<br />'
 						: ''
 					).(
@@ -337,11 +329,11 @@ class AdminCustomerThreads extends AdminTab
 						? '<b>'.$this->l('File attachment').'</b> <a href="index.php?tab=AdminCustomerThreads&id_customer_thread='.$message['id_customer_thread'].'&viewcustomer_thread&token='.Tools::getAdminToken('AdminCustomerThreads'.(int)(Tab::getIdFromClassName('AdminCustomerThreads')).(int)($cookie->id_employee)).'&filename='.$message['file_name'].'" title="'.$this->l('View file').'"><img src="../img/admin/search.gif" alt="'.$this->l('view').'" /></a><br />'
 						: ''
 					).(
-						(!empty($message['id_order']) AND empty($message['id_employee']))
+						(!empty($message['id_order']) AND empty($message['employee_name']))
 						? '<b>'.$this->l('Order #').'</b> <a href="index.php?tab=AdminOrders&id_order='.(int)($message['id_order']).'&vieworder&token='.Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)($cookie->id_employee)).'" title="'.$this->l('View order').'">'.(int)($message['id_order']).' <img src="../img/admin/search.gif" alt="'.$this->l('view').'" /></a><br />'
 						: ''
 					).(
-						(!empty($message['id_product']) AND empty($message['id_employee']))
+						(!empty($message['id_product']) AND empty($message['employee_name']))
 						? '<b>'.$this->l('Product #').'</b> <a href="index.php?tab=AdminOrders&id_order='.(int)($id_order_product).'&vieworder&token='.Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)($cookie->id_employee)).'" title="'.$this->l('View order').'">'.(int)($message['id_product']).' <img src="../img/admin/search.gif" alt="'.$this->l('view').'" /></a><br />'
 						: ''
 					).'<br />
@@ -458,7 +450,7 @@ class AdminCustomerThreads extends AdminTab
 		LEFT JOIN '._DB_PREFIX_.'customer c ON (IFNULL(ct.id_customer, ct.email) = IFNULL(c.id_customer, c.email))
 		WHERE ct.id_customer_thread = '.(int)Tools::getValue('id_customer_thread').'
 		ORDER BY cm.date_add DESC');
-	
+
 		echo '<div style="float:right">';
 
 		$nextThread = Db::getInstance()->getValue('
@@ -485,33 +477,33 @@ class AdminCustomerThreads extends AdminTab
 
 		if ($thread->status != "closed")
 			echo $this->displayButton('
-			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=2&id_customer_thread='.(int)Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
+			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=2&id_customer_thread='.Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
 				<img src="../img/admin/msg-ok.png" style="margin-bottom:10px" />
 				<br />'.$this->l('Set this message as handled').'
 			</a>');
 			
 		if ($thread->status != "pending1")
 			echo $this->displayButton('
-			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=3&id_customer_thread='.(int)Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
+			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=3&id_customer_thread='.Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
 				<img src="../img/admin/msg-pending.png" style="margin-bottom:10px" />
 				<br />'.$this->l('Declare this message').'<br />'.$this->l('as "pending 1"').'<br />'.$this->l('(will be answered later)').'
 			</a>');
 		else
 			echo $this->displayButton('
-			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=1&id_customer_thread='.(int)Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
+			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=1&id_customer_thread='.Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
 				<img src="../img/admin/msg-is-pending.png" style="margin-bottom:10px" />
 				<br />'.$this->l('Click here to disable pending status').'
 			</a>');
 			
 		if ($thread->status != "pending2")
 			echo $this->displayButton('
-			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=4&id_customer_thread='.(int)Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
+			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=4&id_customer_thread='.Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
 				<img src="../img/admin/msg-pending.png" style="margin-bottom:10px" />
 				<br />'.$this->l('Declare this message').'<br />'.$this->l('as "pending 2"').'<br />'.$this->l('(will be answered later)').'
 			</a>');
 		else
 			echo $this->displayButton('
-			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=1&id_customer_thread='.(int)Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
+			<a href="'.$currentIndex.'&viewcustomer_thread&setstatus=1&id_customer_thread='.Tools::getValue('id_customer_thread').'&viewmsg&token='.$this->token.'">
 				<img src="../img/admin/msg-is-pending.png" style="margin-bottom:10px" />
 				<br />'.$this->l('Click here to disable pending status').'
 			</a>');

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -50,7 +50,7 @@ class SearchEngineCore extends ObjectModel
 		if (!isset($parsedUrl['host']) OR !isset($parsedUrl['query']))
 			return false;
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('SELECT `server`, `getvar` FROM `'._DB_PREFIX_.'search_engine`');
-		foreach ($result as $row)
+		foreach ($result as $index => $row)
 		{
 			$host =& $row['server'];
 			$varname =& $row['getvar'];

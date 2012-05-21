@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,9 +31,7 @@ include_once('mondialrelay.php');
 if (Tools::getValue('secure_key') != Configuration::get('MONDIAL_RELAY_SECURE_KEY'))
 	exit;
 
-$account_shop = MondialRelay::getAccountDetail();
-
-$expeditions = Db::getInstance()->executeS('
+$expeditions = Db::getInstance()->ExecuteS('
 SELECT ms.`exp_number`, ms.`id_cart`, o.`id_order`
 FROM `'._DB_PREFIX_.'mr_selected` ms
 LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_cart` = ms.`id_cart`) 
@@ -43,11 +41,11 @@ if (empty($expeditions))
 	exit;
 
 $params = array(
-'Enseigne' => $account_shop['MR_ENSEIGNE_WEBSERVICE'],
+'Enseigne' => Configuration::get('MR_ENSEIGNE_WEBSERVICE'),
 'Langue' => 'FR'
 );
 
-require_once(dirname(__FILE__).'/lib/nusoap/nusoap.php');
+require_once('kit_mondialrelay/tools/nusoap/lib/nusoap.php');
 $client_mr = new nusoap_client("http://www.mondialrelay.fr/webservice/Web_Services.asmx?WSDL", true);
 $client_mr->soap_defencoding = 'UTF-8';
 $client_mr->decode_utf8 = false;
@@ -56,10 +54,10 @@ foreach ($expeditions as $expedition)
 {
 	if ($expedition['id_order'] == NULL)
 		continue;
-	if (OrderHistory::getLastOrderState((int)($expedition['id_order']))->id == Configuration::get('PS_OS_DELIVERED'))
+	if (OrderHistory::getLastOrderState((int)($expedition['id_order']))->id == _PS_OS_DELIVERED_)
 		continue;
 	$params['Expedition'] = $expedition['exp_number'];
-	$params['Security'] = strtoupper(md5($params['Enseigne'].$params['Expedition'].'FR'.$account_shop['MR_KEY_WEBSERVICE']));
+	$params['Security'] = strtoupper(md5($params['Enseigne'].$params['Expedition'].'FR'.Configuration::get('MR_KEY_WEBSERVICE')));
 	
 	$is_delivered = 0;
 	$result_mr = $client_mr->call('WSI2_TracingColisDetaille', $params, 'http://www.mondialrelay.fr/webservice/', 'http://www.mondialrelay.fr/webservice/WSI2_TracingColisDetaille');
@@ -72,7 +70,7 @@ foreach ($expeditions as $expedition)
 	{
 		$history = new OrderHistory();
 		$history->id_order = (int)($expedition['id_order']);
-		$history->changeIdOrderState((int)(Configuration::get('PS_OS_DELIVERED')), (int)($expedition['id_order']));
+		$history->changeIdOrderState((int)(_PS_OS_DELIVERED_), (int)($expedition['id_order']));
 		$history->addWithemail();
 	}
 }

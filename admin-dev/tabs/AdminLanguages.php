@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,13 +29,13 @@ class AdminLanguages extends AdminTab
 {
 	public function __construct()
 	{
-		$this->table = 'lang';
-		$this->className = 'Language';
-		$this->lang = false;
-		$this->edit = true;
-		$this->delete = true;
-		
-		$this->fieldImageSettings = array(array('name' => 'flag', 'dir' => 'l'), array('name' => 'no-picture', 'dir' => 'p'));
+	 	$this->table = 'lang';
+	 	$this->className = 'Language';
+	 	$this->lang = false;
+	 	$this->edit = true;
+	 	$this->delete = true;
+ 		
+ 		$this->fieldImageSettings = array(array('name' => 'flag', 'dir' => 'l'), array('name' => 'no-picture', 'dir' => 'p'));
 		
 		$this->fieldsDisplay = array(
 		'id_lang' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
@@ -43,8 +43,6 @@ class AdminLanguages extends AdminTab
 		'name' => array('title' => $this->l('Name'), 'width' => 120),
 		'iso_code' => array('title' => $this->l('ISO code'), 'width' => 70, 'align' => 'center'),
 		'language_code' => array('title' => $this->l('Language code'), 'width' => 70, 'align' => 'center'),
-		'date_format_lite' => array('title' => $this->l('Date format')),
-		'date_format_full' => array('title' => $this->l('Date format (full)')),
 		'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool'));
 	
 		$this->optionTitle = $this->l('Languages options');
@@ -90,6 +88,7 @@ class AdminLanguages extends AdminTab
 				}
 				unlink($tmpName);
 			}
+
 	}
 	
 	/**
@@ -100,7 +99,7 @@ class AdminLanguages extends AdminTab
 	 */
 	private function deleteNoPictureImages($id_language)
 	{
-		$language = Language::getIsoById($id_language);
+	 	$language = Language::getIsoById($id_language);
 		$imagesTypes = ImageType::getImagesTypes('products');
 		$dirs = array(_PS_PROD_IMG_DIR_, _PS_CAT_IMG_DIR_, _PS_MANU_IMG_DIR_, _PS_SUPP_IMG_DIR_, _PS_MANU_IMG_DIR_);
 		foreach ($dirs AS $dir)
@@ -118,14 +117,7 @@ class AdminLanguages extends AdminTab
 		return !sizeof($this->_errors) ? true : false;
 	}
 
-	protected function copyFromPost(&$object, $table)
-	{
-		if($object->id AND  ($object->iso_code != $_POST['iso_code']))
-			if(Validate::isLanguageIsoCode($_POST['iso_code']))
-				$object->moveToIso($_POST['iso_code']);
-		parent::copyFromPost($object, $table);
-	}
-	
+
 	public function postProcess()
 	{
 		global $currentIndex, $cookie;
@@ -133,7 +125,7 @@ class AdminLanguages extends AdminTab
 		if (isset($_GET['delete'.$this->table]))
 		{
 			if ($this->tabAccess['delete'] === '1') 	
-			{
+		 	{
 				if (Validate::isLoadedObject($object = $this->loadObject()) AND isset($this->fieldImageSettings))
 				{
 					// English is needed by the system (ex. translations)
@@ -152,9 +144,9 @@ class AdminLanguages extends AdminTab
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
-		elseif (Tools::getValue('submitDel'.$this->table) AND isset($_POST[$this->table.'Box']))
+		elseif(Tools::getValue('submitDel'.$this->table) AND isset($_POST[$this->table.'Box']))
 		{
-			if ($this->tabAccess['delete'] === '1')
+		 	if ($this->tabAccess['delete'] === '1')
 			{
 				if (in_array(Configuration::get('PS_LANG_DEFAULT'), $_POST[$this->table.'Box']))
 					$this->_errors[] = $this->l('you cannot delete the default language');
@@ -342,27 +334,17 @@ class AdminLanguages extends AdminTab
 				<input type="hidden" value="'._PS_VERSION_.'" name="ps_version" id="ps_version" />
 				<label>'.$this->l('Name:').' </label>
 				<div class="margin-form">
-					<input type="text" size="8" maxlength="32" name="name" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'name')).'" /> <sup>*</sup>
+					<input type="text" size="8" maxlength="32" name="name" value="'.htmlentities($this->getFieldValue($obj, 'name'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 				</div>
 				<label>'.$this->l('ISO code:').' </label>
 				<div class="margin-form">
-					<input type="text" size="4" maxlength="2" name="iso_code" id="iso_code" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'iso_code')).'" onKeyUp="checkLangPack();" /> <sup>*</sup>
+					<input type="text" size="4" maxlength="2" name="iso_code" id="iso_code" value="'.htmlentities($this->getFieldValue($obj, 'iso_code'), ENT_COMPAT, 'UTF-8').'" onKeyUp="checkLangPack();" /> <sup>*</sup>
 					<p>'.$this->l('2-letter ISO code (e.g., fr, en, de)').'</p>
 				</div>
 				<label>'.$this->l('Language code:').' </label>
 				<div class="margin-form">
-					<input type="text" size="10" maxlength="5" name="language_code" id="language_code" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'language_code')).'"/> <sup>*</sup>
+					<input type="text" size="10" maxlength="5" name="language_code" id="language_code" value="'.htmlentities($this->getFieldValue($obj, 'language_code'), ENT_COMPAT, 'UTF-8').'"/> <sup>*</sup>
 					<p>'.$this->l('Full language code (e.g., en-us, pt-br)').'</p>
-				</div>
-				<label>'.$this->l('Date format:').' </label>
-				<div class="margin-form">
-					<input type="text" size="15" name="date_format_lite" id="date_format_lite" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'date_format_lite')).'"/> <sup>*</sup>
-					<p>'.$this->l('Date format, lite (e.g., Y-m-d, d/m/Y)').'</p>
-				</div>
-				<label>'.$this->l('Date format (full):').' </label>
-				<div class="margin-form">
-					<input type="text" size="25" name="date_format_full" id="date_format_full" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'date_format_full')).'"/> <sup>*</sup>
-					<p>'.$this->l('Date format, full (e.g., Y-m-d H:i:s, d/m/Y H:i)').'</p>
 				</div>
 				<label>'.$this->l('Flag:').' </label>
 				<div class="margin-form">
@@ -374,14 +356,6 @@ class AdminLanguages extends AdminTab
 					<input type="file" name="no-picture" /> <sup>*</sup>
 					<p>'.$this->l('Image displayed when "no picture found"').'</p>
 				</div>
-				<label>'.$this->l('Is RTL language:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="is_rtl" id="is_rtl_on" value="1" '.(($this->getFieldValue($obj, 'is_rtl')) ? 'checked="checked" ' : '').'/>
-					<label class="t" for="is_rtl_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Yes').'" /></label>
-					<input type="radio" name="is_rtl" id="active_off" value="0" '.((!$this->getFieldValue($obj, 'is_rtl')) ? 'checked="checked" ' : '').'/>
-					<label class="t" for="is_rtl_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('No').'" /></label>
-					<p>'.$this->l('To active if this language is a right to left language').' '.$this->l('(Experimental: your theme must be compliant with RTL language)').'</p>
-				</div>
 				<label>'.$this->l('Status:').' </label>
 				<div class="margin-form">
 					<input type="radio" name="active" id="active_on" value="1" '.((!$obj->id OR $this->getFieldValue($obj, 'active')) ? 'checked="checked" ' : '').'/>
@@ -390,7 +364,14 @@ class AdminLanguages extends AdminTab
 					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p>'.$this->l('Allow or disallow this language to be selected by the customer').'</p>
 				</div>
-				<p id="resultCheckLangPack"><img src="'._PS_IMG_.'admin/ajax-loader.gif" alt="" /> '.$this->l('Check if a language pack is available for this ISO code...').'</p>
+				<p id="resultCheckLangPack"><img src="'._PS_IMG_.'admin/ajax-loader.gif" alt="" /> '.$this->l('Check if a language pack is available for this ISO code...').'</p>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+					$this->displayAssoShop();
+					echo '</div>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>

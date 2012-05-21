@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,29 +19,17 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-/** remove the uncompatible module gridextjs (1.4.0.8 upgrade)
- */
 function gridextjs_deprecated()
 {
-	// if exists, use _PS_MODULE_DIR_ or _PS_ROOT_DIR_
-	// instead of guessing the modules dir
-	if (defined('_PS_MODULE_DIR_'))
-		$gridextjs_path = _PS_MODULE_DIR_ . 'gridextjs';
-	else
-		if (defined('_PS_ROOT_DIR_'))
-			$gridextjs_path = _PS_ROOT_DIR_ . '/modules/gridextjs';
-		else
-			$gridextjs_path = dirname(__FILE__).'/../../modules/gridextjs';
+    if (file_exists(dirname(__FILE__).'/../../modules/gridextjs'))
+    	return rename(dirname(__FILE__).'/../../modules/gridextjs', dirname(__FILE__).'/../../modules/gridextjs.deprecated');
 
-	if (file_exists($gridextjs_path))
-		return rename($gridextjs_path, str_replace('gridextjs', 'gridextjs.deprecated', $gridextjs_path));
-
-	return true;
+    return true;
 }
 

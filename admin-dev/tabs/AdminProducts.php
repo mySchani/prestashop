@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,8 +28,8 @@ include_once(PS_ADMIN_DIR.'/tabs/AdminProfiles.php');
 
 class AdminProducts extends AdminTab
 {
-	protected $maxImageSize = NULL;
-	protected $maxFileSize  = NULL;
+	protected $maxImageSize = 2000000;
+	protected $maxFileSize  = 10000000;
 
 	private $_category;
 
@@ -45,8 +45,6 @@ class AdminProducts extends AdminTab
 		$this->view = false;
 		$this->duplicate = true;
 		$this->imageType = 'jpg';
-		$this->maxImageSize = (Configuration::get('PS_LIMIT_UPLOAD_IMAGE_VALUE') * 1000000);
-		$this->maxFileSize = (Configuration::get('PS_LIMIT_UPLOAD_FILE_VALUE') * 1000000);
 
 		$this->fieldsDisplay = array(
 			'id_product' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 20),
@@ -62,12 +60,13 @@ class AdminProducts extends AdminTab
 		/* Join categories table */
 		$this->_category = AdminCatalog::getCurrentCategory();
 		$this->_join = '
+		LEFT JOIN '._DB_PREFIX_.'stock stock ON stock.id_product = a.id_product AND stock.id_product_attribute = 0 '.Shop::sqlSharedStock('stock').'
 		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = a.`id_product` AND i.`cover` = 1)
 		LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = a.`id_product`)
 		LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (a.`id_tax_rules_group` = tr.`id_tax_rules_group` AND tr.`id_country` = '.(int)Country::getDefaultCountryId().' AND tr.`id_state` = 0)
-		LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)';
+	    LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)';
 		$this->_filter = 'AND cp.`id_category` = '.(int)($this->_category->id);
-		$this->_select = 'cp.`position`, i.`id_image`, (a.`price` * ((100 + (t.`rate`))/100)) AS price_final';
+		$this->_select = 'cp.`position`, i.`id_image`, (a.`price` * ((100 + (t.`rate`))/100)) AS price_final, stock.quantity AS quantity';
 
 		parent::__construct();
 	}
@@ -84,7 +83,7 @@ class AdminProducts extends AdminTab
 				if (!empty($word_item) && $word_item != '')
 					$out[] = $word_item;
 			}
-			return ((count($out) > 0) ? implode(', ', $out) : '');
+			return ((count($out) > 0) ? implode(',', $out) : '');
 		}
 		else
 			return '';
@@ -93,7 +92,6 @@ class AdminProducts extends AdminTab
 	protected function copyFromPost(&$object, $table)
 	{
 		parent::copyFromPost($object, $table);
-
 		if (get_class($object) != 'Product')
 			return;
 
@@ -119,7 +117,7 @@ class AdminProducts extends AdminTab
 		$object->online_only = Tools::isSubmit('online_only');
 	}
 
-	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL)
+	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL, $id_lang_shop = NULL)
 	{
 		global $cookie;
 
@@ -130,14 +128,14 @@ class AdminProducts extends AdminTab
 			$orderBy = 'id_'.$this->table;
 			$orderWay = 'ASC';
 		}
-		parent::getList($id_lang, $orderBy, $orderWay, $start, $limit);
+		parent::getList($id_lang, $orderBy, $orderWay, $start, $limit, $id_lang_shop);
 
 		/* update product quantity with attributes ...*/
+		$nb = count($this->_list);
 		if ($this->_list)
 		{
-			$nb = count ($this->_list);
-			for ($i = 0; $i < $nb; $i++)
-				Attribute::updateQtyProduct($this->_list[$i]);
+			
+
 			/* update product final price */
 			for ($i = 0; $i < $nb; $i++)
 				$this->_list[$i]['price_tmp'] = Product::getPriceStatic($this->_list[$i]['id_product'], true, NULL, 6, NULL, false, true, 1, true);
@@ -145,7 +143,7 @@ class AdminProducts extends AdminTab
 
 		if ($orderByPriceFinal == 'price_final')
 		{
-			if (strtolower($orderWayPriceFinal) == 'desc')
+			if(strtolower($orderWayPriceFinal) == 'desc')
 				uasort($this->_list, 'cmpPriceDesc');
 			else
 				uasort($this->_list, 'cmpPriceAsc');
@@ -159,22 +157,10 @@ class AdminProducts extends AdminTab
 
 	public function deleteVirtualProduct()
 	{
-		if (!($id_product_download = ProductDownload::getIdFromIdProduct((int)Tools::getValue('id_product'))) && !Tools::getValue('file'))
+		if (!($id_product_download = ProductDownload::getIdFromIdProduct(intval(Tools::getValue('id_product')))))
 			return false;
-
-		// case 1: product has been saved and product download entry has been created
-		if ($id_product_download)
-		{
-			$productDownload = new ProductDownload((int)($id_product_download));
-			return $productDownload->delete(true);
-		}
-		// case 2: product has not been created yet
-		else
-		{
-			$file = Tools::getValue('file');
-			if (file_exists(_PS_DOWNLOAD_DIR_.$file))
-				return unlink(_PS_DOWNLOAD_DIR_.$file);
-		}
+		$productDownload = new ProductDownload((int)($id_product_download));
+		return $productDownload->deleteFile();
 	}
 
 	/**
@@ -183,14 +169,14 @@ class AdminProducts extends AdminTab
 	 * @param mixed $token
 	 * @return void
 	 */
-	public function postProcess($token = null)
+	public function postProcess($token = NULL)
 	{
 		global $cookie, $currentIndex;
 
-		// Add a new product
-		if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay') ||  Tools::isSubmit('submitAddProductAndPreview'))
+		/* Add a new product */
+		if (Tools::isSubmit('submitAddproduct') OR Tools::isSubmit('submitAddproductAndStay') OR  Tools::isSubmit('submitAddProductAndPreview'))
 		{
-			if ((Tools::getValue('id_product') && $this->tabAccess['edit'] === '1') || ($this->tabAccess['add'] === '1' && !Tools::isSubmit('id_product')))
+			if ((Tools::getValue('id_product') AND $this->tabAccess['edit'] === '1') OR ($this->tabAccess['add'] === '1' AND !Tools::isSubmit('id_product')))
 				$this->submitAddproduct($token);
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
@@ -213,13 +199,13 @@ class AdminProducts extends AdminTab
 
 				$languages = Language::getLanguages(false);
 				$is_attachment_name_valid = false;
-				foreach ($languages as $language)
+				foreach ($languages AS $language)
 				{
 					$attachment_name_lang = Tools::getValue('attachment_name_'.(int)($language['id_lang']));
 					if (strlen($attachment_name_lang ) > 0)
 						$is_attachment_name_valid = true;
 
-					if (!Validate::isGenericName(Tools::getValue('attachment_name_'.(int)($language['id_lang']))))
+					if(!Validate::isGenericName(Tools::getValue('attachment_name_'.(int)($language['id_lang']))))
 						$this->_errors[] = Tools::displayError('Invalid Name');
 					elseif (Tools::strlen(Tools::getValue('attachment_name_'.(int)($language['id_lang']))) > 32)
 						$this->_errors[] = Tools::displayError('Name is too long');
@@ -231,7 +217,7 @@ class AdminProducts extends AdminTab
 
 				if (empty($this->_errors))
 				{
-					if (isset($_FILES['attachment_file']) && is_uploaded_file($_FILES['attachment_file']['tmp_name']))
+					if (isset($_FILES['attachment_file']) AND is_uploaded_file($_FILES['attachment_file']['tmp_name']))
 					{
 						if ($_FILES['attachment_file']['size'] > (Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024 * 1024))
 							$this->_errors[] = $this->l('File too large, maximum size allowed:').' '.(Configuration::get('PS_ATTACHMENT_MAXIMUM_SIZE') * 1024).' '.$this->l('kb').'. '.$this->l('File size you\'re trying to upload is:').number_format(($_FILES['attachment_file']['size']/1024), 2, '.', '').$this->l('kb');
@@ -243,15 +229,15 @@ class AdminProducts extends AdminTab
 							@unlink($_FILES['attachment_file']['tmp_name']);
 						}
 					}
-					elseif ((int)$_FILES['attachment_file']['error'] === 1)
+					else if ((int)$_FILES['attachment_file']['error'] === 1)
 					{
-						$max_upload = (int)ini_get('upload_max_filesize');
-						$max_post = (int)ini_get('post_max_size');
+						$max_upload = (int)(ini_get('upload_max_filesize'));
+						$max_post = (int)(ini_get('post_max_size'));
 						$upload_mb = min($max_upload, $max_post);
 						$this->_errors[] = $this->l('the File').' <b>'.$_FILES['attachment_file']['name'].'</b> '.$this->l('exceeds the size allowed by the server, this limit is set to').' <b>'.$upload_mb.$this->l('Mb').'</b>';
 					}
 
-					if (empty($this->_errors) && isset($uniqid))
+					if(empty($this->_errors) && isset($uniqid))
 					{
 						$attachment = new Attachment();
 						foreach ($languages AS $language)
@@ -264,7 +250,7 @@ class AdminProducts extends AdminTab
 						$attachment->file = $uniqid;
 						$attachment->mime = $_FILES['attachment_file']['type'];
 						$attachment->file_name = pSQL($_FILES['attachment_file']['name']);
-						if (empty($attachment->mime) OR Tools::strlen($attachment->mime) > 128)
+						if (empty($attachment->mime) OR Tools::strlen($attachment->mime) > 64)
 							$this->_errors[] = Tools::displayError('Invalid file extension');
 						if (!Validate::isGenericName($attachment->file_name))
 							$this->_errors[] = Tools::displayError('Invalid file name');
@@ -306,7 +292,6 @@ class AdminProducts extends AdminTab
 					if ($product->add()
 					AND Category::duplicateProductCategories($id_product_old, $product->id)
 					AND ($combinationImages = Product::duplicateAttributes($id_product_old, $product->id)) !== false
-					AND GroupReduction::duplicateReduction($id_product_old, $product->id)
 					AND Product::duplicateAccessories($id_product_old, $product->id)
 					AND Product::duplicateFeatures($id_product_old, $product->id)
 					AND Product::duplicateSpecificPrices($id_product_old, $product->id)
@@ -323,7 +308,7 @@ class AdminProducts extends AdminTab
 						else
 						{
 							Hook::addProduct($product);
-							Search::indexation(false, $product->id);
+							Search::indexation(false);
 							Tools::redirectAdmin($currentIndex.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&conf=19&token='.($token ? $token : $this->token));
 						}
 					}
@@ -376,7 +361,7 @@ class AdminProducts extends AdminTab
 						}
 						elseif ($object->delete())
 							Tools::redirectAdmin($currentIndex.'&conf=1&token='.($token ? $token : $this->token).$category_url);
-						$this->_errors[] = Tools::displayError('An error occurred during deletion: this product is contained in an order.');
+						$this->_errors[] = Tools::displayError('An error occurred during deletion.');
 					}
 				}
 				else
@@ -434,14 +419,6 @@ class AdminProducts extends AdminTab
 		/* Product images management */
 		elseif (($id_image = (int)(Tools::getValue('id_image'))) AND Validate::isUnsignedId($id_image) AND Validate::isLoadedObject($image = new Image($id_image)))
 		{
-			/* PrestaShop demo mode */
-			if (_PS_MODE_DEMO_)
-			{
-				$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-				return;
-			}
-			/* PrestaShop demo mode*/
-
 			if ($this->tabAccess['edit'] === '1')
 			{
 				/* Delete product image */
@@ -532,25 +509,23 @@ class AdminProducts extends AdminTab
 							else
 							{
 								$product->updateProductAttribute($id_product_attribute,
-								Tools::getValue('attribute_wholesale_price'),
-								Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
-								Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
-								Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
-								Tools::getValue('attribute_ecotax'),
-								false,
-								Tools::getValue('id_image_attr'),
-								Tools::getValue('attribute_reference'),
-								Tools::getValue('attribute_supplier_reference'),
-								Tools::getValue('attribute_ean13'),
-								Tools::getValue('attribute_default'),
-								Tools::getValue('attribute_location'),
-								Tools::getValue('attribute_upc'),
-								Tools::getValue('attribute_minimal_quantity'));
+									Tools::getValue('attribute_wholesale_price'),
+									Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
+									Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
+									Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
+									Tools::getValue('attribute_ecotax'),
+									false,
+									Tools::getValue('id_image_attr'),
+									Tools::getValue('attribute_reference'),
+									Tools::getValue('attribute_supplier_reference'),
+									Tools::getValue('attribute_ean13'),
+									Tools::getValue('attribute_default'),
+									Tools::getValue('attribute_location'),
+									Tools::getValue('attribute_upc'),
+									Tools::getValue('minimal_quantity'));
 								if ($id_reason = (int)Tools::getValue('id_mvt_reason') AND (int)Tools::getValue('attribute_mvt_quantity') > 0 AND $id_reason > 0)
 								{
-									$reason = new StockMvtReason((int)$id_reason);
-									$qty = Tools::getValue('attribute_mvt_quantity') * $reason->sign;
-									if (!$product->addStockMvt($qty, $id_reason, (int)$id_product_attribute, NULL, $cookie->id_employee))
+									if (!$product->addStockMvt(Tools::getValue('attribute_mvt_quantity'), $id_reason, $id_product_attribute, NULL, $cookie->id_employee))
 										$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
 								}
 								Hook::updateProductAttribute((int)$id_product_attribute);
@@ -567,13 +542,20 @@ class AdminProducts extends AdminTab
 							if ($product->productAttributeExists($_POST['attribute_combinaison_list']))
 								$this->_errors[] = Tools::displayError('This combination already exists.');
 							else
-							{
-								$id_product_attribute = $product->addCombinationEntity(Tools::getValue('attribute_wholesale_price'),
-								Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'), Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
-								Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
-								Tools::getValue('attribute_ecotax'), Tools::getValue('attribute_quantity'),	Tools::getValue('id_image_attr'), Tools::getValue('attribute_reference'),
-								Tools::getValue('attribute_supplier_reference'), Tools::getValue('attribute_ean13'), Tools::getValue('attribute_default'), Tools::getValue('attribute_location'), Tools::getValue('attribute_upc'), Tools::getValue('attribute_minimal_quantity'));
-							}
+								$id_product_attribute = $product->addCombinationEntity(
+									Tools::getValue('attribute_wholesale_price'),
+									Tools::getValue('attribute_price') * Tools::getValue('attribute_price_impact'),
+									Tools::getValue('attribute_weight') * Tools::getValue('attribute_weight_impact'),
+									Tools::getValue('attribute_unity') * Tools::getValue('attribute_unit_impact'),
+                                	Tools::getValue('attribute_ecotax'),
+                                	Tools::getValue('attribute_quantity'),
+                                	Tools::getValue('id_image_attr'),
+                                	Tools::getValue('attribute_reference'),
+                                	Tools::getValue('attribute_supplier_reference'),
+                                	Tools::getValue('attribute_ean13'),
+                                	Tools::getValue('attribute_default'),
+                                	Tools::getValue('attribute_location'),
+                                	Tools::getValue('attribute_upc'));
 						}
 						else
 							$this->_errors[] = Tools::displayError('You do not have permission to').'<hr>'.Tools::displayError('Edit here.');
@@ -598,14 +580,15 @@ class AdminProducts extends AdminTab
 			{
 				if (($id_product = (int)(Tools::getValue('id_product'))) AND Validate::isUnsignedId($id_product) AND Validate::isLoadedObject($product = new Product($id_product)))
 				{
-					$product->deleteAttributeCombinaison((int)(Tools::getValue('id_product_attribute')));
+					$product->deleteAttributeCombinaison(Tools::getValue('id_product_attribute'));
 					$product->checkDefaultAttributes();
 					$product->updateQuantityProductWithAttributeQuantity();
 					if (!$product->hasAttributes())
 					{
 						$product->cache_default_attribute = 0;
 						$product->update();
-					}else
+					}
+					else
 						Product::updateDefaultAttribute($id_product);
 
 					Tools::redirectAdmin($currentIndex.'&add'.$this->table.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&tabs=3&id_product='.$product->id.'&token='.($token ? $token : $this->token));
@@ -764,7 +747,7 @@ class AdminProducts extends AdminTab
 					if (!$specificPrice->add())
 						$this->_errors = Tools::displayError('An error occurred while updating the specific price.');
 					else
-						Tools::redirectAdmin($currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$id_product.'&add'.$this->table.'&tabs=2&conf=3&token='.($token ? $token : $this->token));
+						Tools::redirectAdmin($currentIndex.'&id_product='.$id_product.'&add'.$this->table.'&tabs=2&conf=3&token='.($token ? $token : $this->token));
 				}
 			}
 			else
@@ -784,7 +767,7 @@ class AdminProducts extends AdminTab
 					if (!$specificPrice->delete())
 						$this->_errors[] = Tools::displayError('An error occurred while deleting the specific price');
 					else
-						Tools::redirectAdmin($currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=1&token='.($token ? $token : $this->token));
+						Tools::redirectAdmin($currentIndex.'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=1&token='.($token ? $token : $this->token));
 				}
 			}
 			else
@@ -806,7 +789,7 @@ class AdminProducts extends AdminTab
 			elseif (!SpecificPrice::setSpecificPriority((int)($obj->id), $priorities))
 				$this->_errors[] = Tools::displayError('An error occurred while setting priorities.');
 			else
-				Tools::redirectAdmin($currentIndex.(Tools::getValue('id_category') ? '&id_category='.Tools::getValue('id_category') : '').'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=4&token='.($token ? $token : $this->token));
+				Tools::redirectAdmin($currentIndex.'&id_product='.$obj->id.'&add'.$this->table.'&tabs=2&conf=4&token='.($token ? $token : $this->token));
 		}
 		/* Customization management */
 		elseif (Tools::isSubmit('submitCustomizationConfiguration'))
@@ -939,7 +922,6 @@ class AdminProducts extends AdminTab
 		/* Adding a new product image */
 		elseif (isset($_FILES['image_product']['name']) && $_FILES['image_product']['name'] != NULL )
 		{
-
 			if ($error = checkImageUploadError($_FILES['image_product']))
 				$this->_errors[] = $error;
 
@@ -991,7 +973,6 @@ class AdminProducts extends AdminTab
 
 		// Unzip the file to a subdirectory
 		$subdir = _PS_TMP_IMG_DIR_.uniqid().'/';
-
 		try
 		{
 			if (!Tools::ZipExtract($zipfile, $subdir))
@@ -1028,7 +1009,7 @@ class AdminProducts extends AdminTab
 					throw new Exception(Tools::displayError('Image is too large').' ('.(filesize($subdir.$file) / 1000).Tools::displayError('kB').'). '.Tools::displayError('Maximum allowed:').' '.($this->maxImageSize / 1000).Tools::displayError('kB'));
 				}
 
-				$ext = (substr($file, -4) == 'jpeg') ? '.jpeg' : substr($file, -4);
+				$ext = substr($file, -4);
 				$type = (isset($types[$ext]) ? $types[$ext] : '');
 				if (!isPicture(array('tmp_name' => $subdir.$file, 'type' => $type)))
 				{
@@ -1036,17 +1017,14 @@ class AdminProducts extends AdminTab
 					throw new Exception(Tools::displayError('Image format not recognized, allowed formats are: .gif, .jpg, .png'));
 				}
 
-				if (!$new_path = $image->getPathForCreation())
-					throw new Exception(Tools::displayError('An error occurred during new folder creation'));
-
-				if (!imageResize($subdir.$file, $new_path.'.'.$image->image_format))
+				if (!imageResize($subdir.$file, _PS_PROD_IMG_DIR_.$image->getImgPath().'.jpg'))
 				{
 					$image->delete();
 					throw new Exception(Tools::displayError('An error occurred while resizing image.'));
 				}
 
 				foreach ($imagesTypes AS $k => $imageType)
-					if (!imageResize($image->getPathForCreation().'.jpg', $image->getPathForCreation().'-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
+					if (!imageResize($subdir.$file, _PS_PROD_IMG_DIR_.$image->getImgPath().'-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
 					{
 						$image->delete();
 						throw new Exception(Tools::displayError('An error occurred while copying image.').' '.stripslashes($imageType['name']));
@@ -1082,18 +1060,17 @@ class AdminProducts extends AdminTab
 		else
 		{
 			$image = new Image($id_image);
-
-			if (!$new_path = $image->getPathForCreation())
-				$this->_errors[] = Tools::displayError('An error occurred during new folder creation');
+			if (!(Configuration::get('PS_LEGACY_IMAGES') && file_exists(_PS_PROD_IMG_DIR_.$id_product.'-'.$id_image.'.jpg')))	
+				$image->createImgFolder();
 			if (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($_FILES['image_product']['tmp_name'], $tmpName))
 				$this->_errors[] = Tools::displayError('An error occurred during the image upload');
-			elseif (!imageResize($tmpName, $new_path.'.'.$image->image_format))
+			elseif (!imageResize($tmpName, _PS_PROD_IMG_DIR_.$image->getExistingImgPath().'.'.$image->image_format))
 				$this->_errors[] = Tools::displayError('An error occurred while copying image.');
-			elseif ($method == 'auto')
+			elseif($method == 'auto')
 			{
 				$imagesTypes = ImageType::getImagesTypes('products');
 				foreach ($imagesTypes AS $k => $imageType)
-					if (!imageResize($tmpName, $new_path.'-'.stripslashes($imageType['name']).'.'.$image->image_format, $imageType['width'], $imageType['height'], $image->image_format))
+					if (!imageResize($tmpName, _PS_PROD_IMG_DIR_.$image->getExistingImgPath().'-'.stripslashes($imageType['name']).'.'.$image->image_format, $imageType['width'], $imageType['height'], $image->image_format))
 						$this->_errors[] = Tools::displayError('An error occurred while copying image:').' '.stripslashes($imageType['name']);
 			}
 
@@ -1142,12 +1119,10 @@ class AdminProducts extends AdminTab
 		}
 
 		/* Check description short size without html */
-		$limit = (int)Configuration::get('PS_PRODUCT_SHORT_DESC_LIMIT');
-		if ($limit <= 0) $limit = 400;
 		foreach ($languages AS $language)
 			if ($value = Tools::getValue('description_short_'.$language['id_lang']))
-				if (Tools::strlen(strip_tags($value)) > $limit)
-					$this->_errors[] = $this->l('the field').' <b>'.call_user_func(array($className, 'displayFieldName'), 'description_short').' ('.$language['name'].')</b> '.$this->l('is too long').' : '.$limit.' '.$this->l('chars max').' ('.$this->l('count now').' '.Tools::strlen(strip_tags($value)).')';
+				if (Tools::strlen(strip_tags($value)) > 400)
+					$this->_errors[] = $this->l('the field').' <b>'.call_user_func(array($className, 'displayFieldName'), 'description_short').' ('.$language['name'].')</b> '.$this->l('is too long').' : 400 '.$this->l('chars max').' ('.$this->l('count now').' '.Tools::strlen(strip_tags($value)).')';
 		/* Check multilingual fields sizes */
 		foreach ($rules['sizeLang'] AS $fieldLang => $maxLength)
 			foreach ($languages AS $language)
@@ -1185,29 +1160,28 @@ class AdminProducts extends AdminTab
 
 		if (!sizeof($this->_errors))
 		{
-			$id = (int)(Tools::getValue('id_'.$this->table));
+			$id = (int)Tools::getValue('id_'.$this->table);
 			$tagError = true;
 
 			/* Update an existing product */
 			if (isset($id) AND !empty($id))
 			{
-				$object = new $this->className($id);
+				$object = new $this->className($id, false, NULL, Shop::getCurrentShop(true));
 				if (Validate::isLoadedObject($object))
 				{
 					$this->_removeTaxFromEcotax();
 					$this->copyFromPost($object, $this->table);
 					if ($object->update())
 					{
-						if ($id_reason = (int)Tools::getValue('id_mvt_reason') AND (int)Tools::getValue('mvt_quantity') > 0 AND $id_reason > 0)
+						if ($id_reason = (int)Tools::getValue('id_mvt_reason') AND Tools::getValue('mvt_quantity') > 0 AND $id_reason > 0)
 						{
-							$reason = new StockMvtReason((int)$id_reason);
-							$qty = Tools::getValue('mvt_quantity') * $reason->sign;
-							if (!$object->addStockMvt($qty, (int)$id_reason, NULL, NULL, (int)$cookie->id_employee))
+							if (!$object->addStockMvt(Tools::getValue('mvt_quantity'), $id_reason, NULL, NULL, (int)$cookie->id_employee))
 								$this->_errors[] = Tools::displayError('An error occurred while updating qty.');
 						}
 						$this->updateAccessories($object);
 						$this->updateDownloadProduct($object);
-
+						$this->updateAssoShop((int)$object->id);
+						
 						if (!$this->updatePackItems($object))
 							$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
 						elseif (!$object->updateCategories($_POST['categoryBox'], true))
@@ -1216,9 +1190,9 @@ class AdminProducts extends AdminTab
 							$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
 						elseif ($id_image = $this->addProductImage($object, Tools::getValue('resizer')))
 						{
-							$currentIndex .= '&image_updated='.(int)Tools::getValue('id_image');
+							$currentIndex .= '&image_updated='.(int)(Tools::getValue('id_image'));
 							Hook::updateProduct($object);
-							Search::indexation(false, $object->id);
+							Search::indexation(false);
 							if (Tools::getValue('resizer') == 'man' && isset($id_image) AND is_int($id_image) AND $id_image)
 								Tools::redirectAdmin($currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&edit='.strval(Tools::getValue('productCreated')).'&id_image='.$id_image.'&imageresize&toconf=4&submitAddAndStay='.((Tools::isSubmit('submitAdd'.$this->table.'AndStay') OR Tools::getValue('productCreated') == 'on') ? 'on' : 'off').'&token='.(($token ? $token : $this->token)));
 
@@ -1231,14 +1205,10 @@ class AdminProducts extends AdminTab
 									$admin_dir = dirname($_SERVER['PHP_SELF']);
 									$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
 									$token = Tools::encrypt('PreviewProduct'.$object->id);
-									if (strpos($preview_url, '?') === false)
-										$preview_url .= '?';
-									else
-										$preview_url .= '&';
-									$preview_url .= 'adtoken='.$token.'&ad='.$admin_dir;
+									$preview_url .= $object->active ? '' : '?adtoken='.$token.'&ad='.$admin_dir;
 								}
 								Tools::redirectAdmin($preview_url);
-							} elseif (Tools::isSubmit('submitAdd'.$this->table.'AndStay') OR ($id_image AND $id_image !== true)) // Save and stay on same form
+							} else if (Tools::isSubmit('submitAdd'.$this->table.'AndStay') OR ($id_image AND $id_image !== true)) // Save and stay on same form
 							// Save and stay on same form
 							if (Tools::isSubmit('submitAdd'.$this->table.'AndStay'))
 								Tools::redirectAdmin($currentIndex.'&id_product='.$object->id.'&id_category='.(!empty($_REQUEST['id_category'])?$_REQUEST['id_category']:'1').'&addproduct&conf=4&tabs='.(int)(Tools::getValue('tabs')).'&token='.($token ? $token : $this->token));
@@ -1262,6 +1232,7 @@ class AdminProducts extends AdminTab
 				$this->copyFromPost($object, $this->table);
 				if ($object->add())
 				{
+					$this->updateAssoShop((int)$object->id);
 					$this->updateAccessories($object);
 					if (!$this->updatePackItems($object))
 						$this->_errors[] = Tools::displayError('An error occurred while adding products to the pack.');
@@ -1270,23 +1241,25 @@ class AdminProducts extends AdminTab
 					{
 						if (!$object->updateCategories($_POST['categoryBox']))
 							$this->_errors[] = Tools::displayError('An error occurred while linking object.').' <b>'.$this->table.'</b> '.Tools::displayError('To categories');
-						elseif (!$this->updateTags($languages, $object))
+						else if (!$this->updateTags($languages, $object))
 							$this->_errors[] = Tools::displayError('An error occurred while adding tags.');
 						elseif ($id_image = $this->addProductImage($object))
 						{
+							$object->setStock($object->quantity);
+							
 							Hook::addProduct($object);
-							Search::indexation(false, $object->id);
+							Search::indexation(false);
 
 							// Save and preview
 							if (Tools::isSubmit('submitAddProductAndPreview'))
 							{
 								$preview_url = ($link->getProductLink($this->getFieldValue($object, 'id'), $this->getFieldValue($object, 'link_rewrite', (int)($cookie->id_lang)), Category::getLinkRewrite($this->getFieldValue($object, 'id_category_default'), (int)($cookie->id_lang))));
-								if (!$object->active)
+								if (!$obj->active)
 								{
 									$admin_dir = dirname($_SERVER['PHP_SELF']);
 									$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
 									$token = Tools::encrypt('PreviewProduct'.$object->id);
-									$preview_url .= '&adtoken='.$token.'&ad='.$admin_dir;
+									$preview_url .= $object->active ? '' : '?adtoken='.$token.'&ad='.$admin_dir;
 								}
 
 								Tools::redirectAdmin($preview_url);
@@ -1313,14 +1286,14 @@ class AdminProducts extends AdminTab
 
 	private function _removeTaxFromEcotax()
 	{
-		$ecotaxTaxRate = Tax::getProductEcotaxRate();
+	    $ecotaxTaxRate = Tax::getProductEcotaxRate();
 		if ($ecotax = Tools::getValue('ecotax'))
 			$_POST['ecotax'] = Tools::ps_round(Tools::getValue('ecotax') / (1 + $ecotaxTaxRate / 100), 6);
 	}
 
 	private function _applyTaxToEcotax($product)
 	{
-		$ecotaxTaxRate = Tax::getProductEcotaxRate();
+	    $ecotaxTaxRate = Tax::getProductEcotaxRate();
 		if ($product->ecotax)
 			$product->ecotax = Tools::ps_round($product->ecotax * (1 + $ecotaxTaxRate / 100), 2);
 	}
@@ -1366,7 +1339,6 @@ class AdminProducts extends AdminTab
 			$download->nb_days_accessible  = Tools::getValue('virtual_product_nb_days');
 			$download->nb_downloadable     = Tools::getValue('virtual_product_nb_downloable');
 			$download->active              = 1;
-
 			if ($download->save())
 				return true;
 		}
@@ -1428,10 +1400,12 @@ class AdminProducts extends AdminTab
 	public function display($token = NULL)
 	{
 		global $currentIndex, $cookie;
-
+		
+		$id_shop = Shop::getCurrentShop(true);
+		
 		if (($id_category = (int)Tools::getValue('id_category')))
 			$currentIndex .= '&id_category='.$id_category;
-		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : NULL, !$cookie->__get($this->table.'Orderway') ? 'ASC' : NULL);
+		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : NULL, !$cookie->__get($this->table.'Orderway') ? 'ASC' : NULL, 0, NULL, $id_shop);
 		$id_category = (Tools::getValue('id_category',1));
 		if (!$id_category)
 			$id_category = 1;
@@ -1441,7 +1415,9 @@ class AdminProducts extends AdminTab
 			echo '<a href="'.$currentIndex.'&id_category='.$id_category.'&add'.$this->table.'&token='.($token!=NULL ? $token : $this->token).'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add a new product').'</a>';
 		echo '<div style="margin:10px;">';
 		$this->displayList($token);
+		$this->displayAssoShop();
 		echo '</div>';
+		
 	}
 
 	/**
@@ -1554,6 +1530,7 @@ class AdminProducts extends AdminTab
 
 		if (!($obj = $this->loadObject(true)))
 			return;
+
 		$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 
 		if ($obj->id)
@@ -1572,7 +1549,7 @@ class AdminProducts extends AdminTab
 			});
 			function updateMvtStatus(id_mvt_reason)
 			{
-				if (id_mvt_reason == -1)
+				if(id_mvt_reason == -1)
 					return $(\'#mvt_sign\').hide();
 				if ($(\'#id_mvt_reason option:selected\').attr(\'rel\') == -1)
 					$(\'#mvt_sign\').html(\'<img src="../img/admin/arrow_down.png" /> '.$this->l('Decrease your stock').'\');
@@ -1611,18 +1588,14 @@ class AdminProducts extends AdminTab
 					function loadTab(id) {';
 		if ($obj->id)
 		{
-			echo '	if (toload[id]) {
+			echo ' 	if (toload[id]) {
 							toload[id] = false;
-							$.ajax({
-								url: "'.dirname($currentIndex).'/ajax.php",
-								data: {
+							$.post(
+								"'.dirname($currentIndex).'/ajax.php", {
 									ajaxProductTab: id, id_product: '.$obj->id.',
 									token: \''.Tools::getValue('token').'\',
-									id_category: '.(int)(Tools::getValue('id_category')).'
-								},
-								cache: false,
-								type: \'POST\',
-								success: function(rep) {
+									id_category: '.(int)(Tools::getValue('id_category')).'},
+								function(rep) {
 									$("#step" + id).html(rep);var languages = new Array();
 									if (id == 3)
 										populate_attrs();
@@ -1641,7 +1614,7 @@ class AdminProducts extends AdminTab
 										});
 									}
 								}
-							})
+							)
 						}';
 		}
 		echo '	}
@@ -1697,14 +1670,12 @@ class AdminProducts extends AdminTab
 		$specificPrices = SpecificPrice::getByProductId((int)($obj->id));
 		$specificPricePriorities = SpecificPrice::getPriority((int)($obj->id));
 		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
-
 		$taxRate = TaxRulesGroup::getTaxesRate($obj->id_tax_rules_group, Configuration::get('PS_COUNTRY_DEFAULT'), 0, 0);
 
 		$tmp = array();
 		foreach ($shops as $shop)
 			$tmp[$shop['id_shop']] = $shop;
 		$shops = $tmp;
-
 		$tmp = array();
 		foreach ($currencies as $currency)
 			$tmp[$currency['id_currency']] = $currency;
@@ -1726,6 +1697,7 @@ class AdminProducts extends AdminTab
 		<table style="text-align: center;width:100%" class="table" cellpadding="0" cellspacing="0">
 			<thead>
 				<tr>
+					<th class="cell border" style="width: 12%;">'.$this->l('Shop').'</th>
 					<th class="cell border" style="width: 12%;">'.$this->l('Currency').'</th>
 					<th class="cell border" style="width: 11%;">'.$this->l('Country').'</th>
 					<th class="cell border" style="width: 13%;">'.$this->l('Group').'</th>
@@ -1760,6 +1732,7 @@ class AdminProducts extends AdminTab
 					$period = $this->l('From').' '.($specificPrice['from'] != '0000-00-00 00:00:00' ? $specificPrice['from'] : '0000-00-00 00:00:00').'<br />'.$this->l('To').' '.($specificPrice['to'] != '0000-00-00 00:00:00' ? $specificPrice['to'] : '0000-00-00 00:00:00');
 				echo '
 				<tr '.($i%2 ? 'class="alt_row"' : '').'>
+					<td class="cell border">'.($specificPrice['id_shop'] ? $shops[$specificPrice['id_shop']]['name'] : $this->l('All shops')).'</td>
 					<td class="cell border">'.($specificPrice['id_currency'] ? $currencies[$specificPrice['id_currency']]['name'] : $this->l('All currencies')).'</td>
 					<td class="cell border">'.($specificPrice['id_country'] ? $countries[$specificPrice['id_country']]['name'] : $this->l('All countries')).'</td>
 					<td class="cell border">'.($specificPrice['id_group'] ? $groups[$specificPrice['id_group']]['name'] : $this->l('All groups')).'</td>
@@ -1768,7 +1741,7 @@ class AdminProducts extends AdminTab
 					<td class="cell border">'.$period.'</td>
 					<td class="cell border">'.$specificPrice['from_quantity'].'</th>
 					<td class="cell border"><b>'.Tools::displayPrice(Tools::ps_round((float)($this->_getFinalPrice($specificPrice, (float)($obj->price), $taxRate)), 2), $current_specific_currency).'</b></td>
-					<td class="cell border"><a href="'.$currentIndex.(Tools::getValue('id_category') ? '&id_category='.(int)Tools::getValue('id_category') : '').'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&id_specific_price='.(int)($specificPrice['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a></td>
+					<td class="cell border"><a href="'.$currentIndex.'&id_product='.(int)(Tools::getValue('id_product')).'&updateproduct&deleteSpecificPrice&id_specific_price='.(int)($specificPrice['id_specific_price']).'&token='.Tools::getValue('token').'"><img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /></a></td>
 				</tr>';
 				$i++;
 			}
@@ -1799,27 +1772,34 @@ class AdminProducts extends AdminTab
 		echo '
 		<hr />
 		<h4>'.$this->l('Priorities management').'</h4>
-
 		<div class="hint clear" style="display:block;">
 				'.$this->l('Sometimes one customer could fit in multiple rules, priorities allows you to define which rule to apply.').'
 		</div>
 	<br />
 		<label>'.$this->l('Priorities:').'</label>
 		<div class="margin-form">
-			<input type="hidden" name="specificPricePriority[]" value="id_shop" />
 			<select name="specificPricePriority[]">
+				<option value="id_shop"'.($specificPricePriorities[0] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
+				<option value="id_currency"'.($specificPricePriorities[0] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
+				<option value="id_country"'.($specificPricePriorities[0] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
+				<option value="id_group"'.($specificPricePriorities[0] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
+			</select>
+			<select name="specificPricePriority[]">
+				<option value="id_shop"'.($specificPricePriorities[1] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
 				<option value="id_currency"'.($specificPricePriorities[1] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
 				<option value="id_country"'.($specificPricePriorities[1] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
 				<option value="id_group"'.($specificPricePriorities[1] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
 			</select>
 			&gt;
 			<select name="specificPricePriority[]">
+				<option value="id_shop"'.($specificPricePriorities[2] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
 				<option value="id_currency"'.($specificPricePriorities[2] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
 				<option value="id_country"'.($specificPricePriorities[2] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
 				<option value="id_group"'.($specificPricePriorities[2] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
 			</select>
 			&gt;
 			<select name="specificPricePriority[]">
+				<option value="id_shop"'.($specificPricePriorities[3] == 'id_shop' ? ' selected="selected"' : '').'>'.$this->l('Shop').'</option>
 				<option value="id_currency"'.($specificPricePriorities[3] == 'id_currency' ? ' selected="selected"' : '').'>'.$this->l('Currency').'</option>
 				<option value="id_country"'.($specificPricePriorities[3] == 'id_country' ? ' selected="selected"' : '').'>'.$this->l('Country').'</option>
 				<option value="id_group"'.($specificPricePriorities[3] == 'id_group' ? ' selected="selected"' : '').'>'.$this->l('Group').'</option>
@@ -1840,7 +1820,7 @@ class AdminProducts extends AdminTab
 	{
 		if (!($product = $this->loadObject()))
 			return;
-
+		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
 		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
 
 		echo '
@@ -1850,20 +1830,27 @@ class AdminProducts extends AdminTab
 			<input type="hidden" name="sp_id_shop" value="0" />
 			<label>'.$this->l('For:').'</label>
 			<div class="margin-form">
+				<select name="sp_id_shop">
+					<option value="0">'.$this->l('All shops').'</option>';
+				foreach ($shops as $shop)
+					echo '<option value="'.(int)($shop['id_shop']).'">'.Tools::htmlentitiesUTF8($shop['name']).'</option>';
+				echo '
+				</select>
+	            &gt;
 				<select name="sp_id_currency" id="spm_currency_0" onchange="changeCurrencySpecificPrice(0);">
 					<option value="0">'.$this->l('All currencies').'</option>';
 				foreach ($currencies as $currency)
 					echo '<option value="'.(int)($currency['id_currency']).'">'.Tools::htmlentitiesUTF8($currency['name']).'</option>';
 				echo '
 				</select>
-				&gt;
+	            &gt;
 				<select name="sp_id_country">
 					<option value="0">'.$this->l('All countries').'</option>';
 				foreach ($countries as $country)
 					echo '<option value="'.(int)($country['id_country']).'">'.Tools::htmlentitiesUTF8($country['name']).'</option>';
 				echo '
 				</select>
-				&gt;
+	            &gt;
 				<select name="sp_id_group">
 					<option value="0">'.$this->l('All groups').'</option>';
 				foreach ($groups as $group)
@@ -1891,7 +1878,7 @@ class AdminProducts extends AdminTab
 				<span id="spm_currency_sign_pre_0" style="font-weight:bold; color:#000000; font-size:12px">'.($defaultCurrency->format == 1 ? ' '.$defaultCurrency->sign : '').'</span>
 				<input type="text" name="sp_price" value="0" size="11" />
 				<span id="spm_currency_sign_post_0" style="font-weight:bold; color:#000000; font-size:12px">'.($defaultCurrency->format == 2 ? ' '.$defaultCurrency->sign : '').'</span>
-				<span id="sp_current_ht_price" > ('.$this->l('Current:').' '.Tools::displayPrice((float)$product->price, $defaultCurrency).')</span>
+				<span id="sp_current_ht_price" > ('.$this->l('Current:').' '.Tools::displayPrice((float)($product->price), $defaultCurrency).')</span>
 				<div class="hint clear" style="display:block;">
 					'.$this->l('You can set this value at 0 in order to apply the default price').'
 				</div>
@@ -1899,7 +1886,7 @@ class AdminProducts extends AdminTab
 
 			<label>'.$this->l('Apply a discount of:').'</label>
 			<div class="margin-form">
-				<input type="text" name="sp_reduction" value="0.00" size="11" />
+	    		<input type="text" name="sp_reduction" value="0.00" size="11" />
 				<select name="sp_reduction_type">
 					<option selected="selected">---</option>
 					<option value="amount">'.$this->l('Amount').'</option>
@@ -1912,7 +1899,8 @@ class AdminProducts extends AdminTab
 				<input type="submit" name="submitPriceAddition" value="'.$this->l('Add').'" class="button" />
 			</div>
 		</div>
-		<hr />';
+		<hr />
+		';
 		include_once('functions.php');
 		includeDatepicker(array('sp_from', 'sp_to'), true);
 	}
@@ -2119,18 +2107,8 @@ class AdminProducts extends AdminTab
 
 		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
 		$iso = Language::getIsoById((int)($cookie->id_lang));
-		$has_attribute = false;
-		$qty_state = 'readonly';
-		$qty = Attribute::getAttributeQty($this->getFieldValue($obj, 'id_product'));
-		if ($qty === false) {
-			if (Validate::isLoadedObject($obj))
-				$qty = $this->getFieldValue($obj, 'quantity');
-			else
-				$qty = 1;
-			$qty_state = '';
-		}
-		else
-			$has_attribute = true;
+		$has_attribute = $obj->hasAttributes();
+		$qty = $obj->getStock();
 		$cover = Product::getCover($obj->id);
 		$this->_applyTaxToEcotax($obj);
 
@@ -2143,7 +2121,6 @@ class AdminProducts extends AdminTab
 					updateFriendlyURL();
 					$.ajax({
 						url: "'.dirname($currentIndex).'/ajax.php",
-						cache: false,
 						dataType: "json",
 						data: "ajaxProductManufacturers=1",
 						success: function(j) {
@@ -2161,7 +2138,6 @@ class AdminProducts extends AdminTab
 					});
 					$.ajax({
 						url: "'.dirname($currentIndex).'/ajax.php",
-						cache: false,
 						dataType: "json",
 						data: "ajaxProductSuppliers=1",
 						success: function(j) {
@@ -2177,7 +2153,7 @@ class AdminProducts extends AdminTab
 						}
 
 					});
-					if ($(\'#available_for_order\').is(\':checked\')){
+					if($(\'#available_for_order\').is(\':checked\')){
 						$(\'#show_price\').attr(\'checked\', \'checked\');
 						$(\'#show_price\').attr(\'disabled\', \'disabled\');
 					}
@@ -2220,7 +2196,7 @@ class AdminProducts extends AdminTab
 			echo '		<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 								<input size="43" type="text" id="name_'.$language['id_lang'].'" name="name_'.$language['id_lang'].'"
 								value="'.stripslashes(htmlspecialchars($this->getFieldValue($obj, 'name', $language['id_lang']))).'"'.((!$obj->id) ? ' onkeyup="if (isArrowKey(event)) return; copy2friendlyURL();"' : '').' onkeyup="if (isArrowKey(event)) return; updateCurrentText();" onchange="updateCurrentText();" /><sup> *</sup>
-								<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+								<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 							</div>';
 		echo '		</td>
 					</tr>
@@ -2231,7 +2207,7 @@ class AdminProducts extends AdminTab
 							<span class="hint" name="help_box">'.$this->l('Special characters allowed:').' .-_#\<span class="hint-pointer">&nbsp;</span></span>
 						</td>
 					</tr>
-					<tr>
+                	<tr>
 						<td class="col-left">'.$this->l('Supplier Reference:').'</td>
 						<td style="padding-bottom:5px;">
 							<input size="55" type="text" name="supplier_reference" value="'.htmlentities($this->getFieldValue($obj, 'supplier_reference'), ENT_COMPAT, 'UTF-8').'" style="width: 130px; margin-right: 44px;" />
@@ -2292,10 +2268,15 @@ class AdminProducts extends AdminTab
 							<label for="active_off" class="t"><img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" style="float:left; padding:0px 5px 0px 5px" />'.$this->l('Disabled').($obj->active ? '' : ' (<a href="'.$preview_url.'" alt="" target="_blank">'.$this->l('View product in shop').'</a>)').'</label>
 						</td>
 					</tr>
+					<tr id="shop_association">
+					<td style="vertical-align:top;text-align:right;padding-right:10px;font-weight:bold;'.(!Tools::isMultiShopActivated() ? 'display:none;' : '').'">'.$this->l('Shop association:').'</td><td style="padding-bottom:5px;">';
+					$this->displayAssoShop();
+					echo '</td>
+					</tr>
 					<tr id="product_options" '.(!$obj->active ? 'style="display:none"' : '').'>
 						<td style="vertical-align:top;text-align:right;padding-right:10px;font-weight:bold;">'.$this->l('Options:').'</td>
 						<td style="padding-bottom:5px;">
-							<input style="float: left;" type="checkbox" name="available_for_order" id="available_for_order" value="1" '.($this->getFieldValue($obj, 'available_for_order') ? 'checked="checked" ' : '').' onclick="if ($(this).is(\':checked\')){$(\'#show_price\').attr(\'checked\', \'checked\');$(\'#show_price\').attr(\'disabled\', \'disabled\');}else{$(\'#show_price\').attr(\'disabled\', \'\');}"/>
+							<input style="float: left;" type="checkbox" name="available_for_order" id="available_for_order" value="1" '.($this->getFieldValue($obj, 'available_for_order') ? 'checked="checked" ' : '').' onclick="if($(this).is(\':checked\')){$(\'#show_price\').attr(\'checked\', \'checked\');$(\'#show_price\').attr(\'disabled\', \'disabled\');}else{$(\'#show_price\').attr(\'disabled\', \'\');}"/>
 							<label for="available_for_order" class="t"><img src="../img/admin/products.gif" alt="'.$this->l('available for order').'" title="'.$this->l('available for order').'" style="float:left; padding:0px 5px 0px 5px" />'.$this->l('available for order').'</label>
 							<br class="clear" />
 							<input style="float: left;" type="checkbox" name="show_price" id="show_price" value="1" '.($this->getFieldValue($obj, 'show_price') ? 'checked="checked" ' : '').' />
@@ -2354,17 +2335,17 @@ class AdminProducts extends AdminTab
 		$productDownload = new ProductDownload($id_product_download);
 
 ?>
-	<script type="text/javascript">
-	// <![CDATA[
-		ThickboxI18nImage = '<?php echo $this->l('Image') ?>';
-		ThickboxI18nOf = '<?php echo $this->l('of') ?>';
-		ThickboxI18nClose = '<?php echo $this->l('Close') ?>';
-		ThickboxI18nOrEscKey = '<?php echo $this->l('(or "Esc")') ?>';
-		ThickboxI18nNext = '<?php echo $this->l('Next >') ?>';
-		ThickboxI18nPrev = '<?php echo $this->l('< Previous') ?>';
-		tb_pathToImage = '../img/loadingAnimation.gif';
-	//]]>
-	</script>
+    <script type="text/javascript">
+    // <![CDATA[
+    	ThickboxI18nImage = '<?php echo $this->l('Image') ?>';
+    	ThickboxI18nOf = '<?php echo $this->l('of') ?>';
+    	ThickboxI18nClose = '<?php echo $this->l('Close') ?>';
+    	ThickboxI18nOrEscKey = '<?php echo $this->l('(or "Esc")') ?>';
+    	ThickboxI18nNext = '<?php echo $this->l('Next >') ?>';
+    	ThickboxI18nPrev = '<?php echo $this->l('< Previous') ?>';
+    	tb_pathToImage = '../img/loadingAnimation.gif';
+    //]]>
+    </script>
 	<script type="text/javascript" src="<?php echo _PS_JS_DIR_ ?>jquery/thickbox-modified.js"></script>
 	<script type="text/javascript" src="<?php echo _PS_JS_DIR_ ?>jquery/ajaxfileupload.js"></script>
 	<script type="text/javascript" src="<?php echo _PS_JS_DIR_ ?>date.js"></script>
@@ -2414,7 +2395,7 @@ class AdminProducts extends AdminTab
 					var msg = data.getAttribute("msg");
 					var fileName = data.getAttribute("filename");
 
-					if (result == "error")
+					if(result == "error")
 					{
 						$("#upload-confirmation").html('<p>error: ' + msg + '</p>');
 					}
@@ -2423,8 +2404,6 @@ class AdminProducts extends AdminTab
 						$('#virtual_product_file').remove();
 						$('#virtual_product_file_label').hide();
 						$('#file_missing').hide();
-						new_href = $('#delete_downloadable_product').attr('href').replace('%26deleteVirtualProduct%3Dtrue', '%26file%3D'+msg+'%26deleteVirtualProduct%3Dtrue');
-						$('#delete_downloadable_product').attr('href', new_href);
 						$('#delete_downloadable_product').show();
 						$('#virtual_product_name').attr('value', fileName);
 						$('#upload-confirmation').html(
@@ -2453,34 +2432,30 @@ class AdminProducts extends AdminTab
 	?>
 	<tr>
 		<td colspan="2">
-			<p><input type="checkbox" id="is_virtual_good" name="is_virtual_good" value="true" onclick="toggleVirtualProduct(this);" <?php if (($productDownload->id OR Tools::getValue('is_virtual_good')=='true') AND $productDownload->active) echo 'checked="checked"' ?> />
+			<p><input type="checkbox" id="is_virtual_good" name="is_virtual_good" value="true" onclick="toggleVirtualProduct(this);" <?php if(($productDownload->id OR Tools::getValue('is_virtual_good')=='true') AND $productDownload->active) echo 'checked="checked"' ?> />
 			<label for="is_virtual_good" class="t bold" style="color: black;"><?php echo $this->l('Is this a downloadable product?') ?></label></p>
-			<div id="virtual_good" <?php if (!$productDownload->id OR !$productDownload->active) echo 'style="display:none;"' ?> >
-	<?php if (!ProductDownload::checkWritableDir()): ?>
+			<div id="virtual_good" <?php if(!$productDownload->id OR !$productDownload->active) echo 'style="display:none;"' ?> >
+	<?php if(!ProductDownload::checkWritableDir()): ?>
 		<p class="alert">
 			<?php echo $this->l('Your download repository is not writable.'); ?><br/>
 			<?php echo realpath(_PS_DOWNLOAD_DIR_); ?>
 		</p>
 	<?php else: ?>
-			<?php if ($productDownload->id) echo '<input type="hidden" id="virtual_product_id" name="virtual_product_id" value="'.$productDownload->id.'" />' ?>
+			<?php if($productDownload->id) echo '<input type="hidden" id="virtual_product_id" name="virtual_product_id" value="'.$productDownload->id.'" />' ?>
 				<p class="block">
-	<?php if (!$productDownload->checkFile()): ?>
+	<?php if(!$productDownload->checkFile()): ?>
 
 				<div style="padding:5px;width:50%;float:left;margin-right:20px;border-right:1px solid #E0D0B1">
-		<?php if ($productDownload->id): ?>
+		<?php if($productDownload->id): ?>
 					<p class="alert" id="file_missing">
 						<?php echo $this->l('This product is missing') ?>:<br/>
 						<?php echo realpath(_PS_DOWNLOAD_DIR_) .'/'. $productDownload->physically_filename ?>
 					</p>
 		<?php endif; ?>
-					<p><?php
-						$max_upload = (int)ini_get('upload_max_filesize');
-						$max_post = (int)ini_get('post_max_size');
-						$upload_mb = min($max_upload, $max_post);
-					echo $this->l('Your server\'s maximum upload file size is') . ':&nbsp;'.$upload_mb.$this->l('Mb') ?></p>
+					<p><?php echo $this->l('Your server\'s maximum upload file size is') . ':&nbsp;' . ini_get('upload_max_filesize') ?></p>
 					<?php if (!strval(Tools::getValue('virtual_product_filename'))): ?>
 					<label id="virtual_product_file_label" for="virtual_product_file" class="t"><?php echo $this->l('Upload a file') ?></label>
-					<p><input type="file" id="virtual_product_file" name="virtual_product_file" onchange="uploadFile();" /></p>
+					<p><input type="file" id="virtual_product_file" name="virtual_product_file" onchange="uploadFile();" maxlength="<?php echo $this->maxFileSize ?>" /></p>
 					<?php endif; ?>
 					<div id="upload-confirmation">
 					<?php if ($up_filename = strval(Tools::getValue('virtual_product_filename'))): ?>
@@ -2501,7 +2476,7 @@ class AdminProducts extends AdminTab
 				</p>
 
 				</div>
-				<div id="virtual_good_more" style="<?php if (!$productDownload->id OR !$productDownload->active) echo 'display:none;' ?>padding:5px;width:40%;float:left;margin-left:10px">
+				<div id="virtual_good_more" style="<?php if(!$productDownload->id OR !$productDownload->active) echo 'display:none;' ?>padding:5px;width:40%;float:left;margin-left:10px">
 
 				<p class="block">
 					<label for="virtual_product_nb_downloable" class="t"><?php echo $this->l('Number of downloads') ?></label>
@@ -2547,7 +2522,7 @@ class AdminProducts extends AdminTab
 					<tr>
 						<td class="col-left">'.$this->l('Pre-tax retail price:').'</td>
 						<td style="padding-bottom:5px;">
-							'.($currency->format % 2 != 0 ? $currency->sign.' ' : '').'<input size="11" maxlength="14" id="priceTE" name="price" type="text" value="'.htmlentities($this->getFieldValue($obj, 'price'), ENT_COMPAT, 'UTF-8').'" onchange="this.value = this.value.replace(/,/g, \'.\');" onkeyup="if (isArrowKey(event)) return; calcPriceTI();" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').'<sup> *</sup>
+							'.($currency->format % 2 != 0 ? $currency->sign.' ' : '').'<input size="11" maxlength="14" id="priceTE" name="price" type="text" value="'.$this->getFieldValue($obj, 'price').'" onchange="this.value = this.value.replace(/,/g, \'.\');" onkeyup="if(isArrowKey(event)) return; calcPriceTI();" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').'<sup> *</sup>
 							<span style="margin-left:2px">'.$this->l('The pre-tax retail price to sell this product').'</span>
 						</td>
 					</tr>';
@@ -2561,7 +2536,7 @@ class AdminProducts extends AdminTab
 
 					foreach ($tax_rules_groups AS $tax_rules_group)
 					{
-						$tax_rate = (array_key_exists($tax_rules_group['id_tax_rules_group'], $taxesRatesByGroup) ?  $taxesRatesByGroup[$tax_rules_group['id_tax_rules_group']] : 0);
+    					$tax_rate = (array_key_exists($tax_rules_group['id_tax_rules_group'], $taxesRatesByGroup) ?  $taxesRatesByGroup[$tax_rules_group['id_tax_rules_group']] : 0);
 						echo 'taxesArray['.$tax_rules_group['id_tax_rules_group'].']='.$tax_rate."\n";
 					}
 					echo '
@@ -2573,7 +2548,7 @@ class AdminProducts extends AdminTab
 						<td style="padding-bottom:5px;">
 					<span '.(Tax::excludeTaxeOption() ? 'style="display:none;"' : '' ).'>
 					 <select onChange="javascript:calcPriceTI(); unitPriceWithTax(\'unit\');" name="id_tax_rules_group" id="id_tax_rules_group" '.(Tax::excludeTaxeOption() ? 'disabled="disabled"' : '' ).'>
-						 <option value="0">'.$this->l('No Tax').'</option>';
+					     <option value="0">'.$this->l('No Tax').'</option>';
 
 						foreach ($tax_rules_groups AS $tax_rules_group)
 							echo '<option value="'.$tax_rules_group['id_tax_rules_group'].'" '.(($this->getFieldValue($obj, 'id_tax_rules_group') == $tax_rules_group['id_tax_rules_group']) ? ' selected="selected"' : '').'>'.Tools::htmlentitiesUTF8($tax_rules_group['name']).'</option>';
@@ -2597,7 +2572,7 @@ class AdminProducts extends AdminTab
 					<tr>
 						<td class="col-left">'.$this->l('Eco-tax (tax incl.):').'</td>
 						<td style="padding-bottom:5px;">
-							'.($currency->format % 2 != 0 ? $currency->sign.' ' : '').'<input size="11" maxlength="14" id="ecotax" name="ecotax" type="text" value="'.$this->getFieldValue($obj, 'ecotax').'" onkeyup="if (isArrowKey(event))return; calcPriceTE(); this.value = this.value.replace(/,/g, \'.\'); if (parseInt(this.value) > getE(\'priceTE\').value) this.value = getE(\'priceTE\').value; if (isNaN(this.value)) this.value = 0;" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').'
+							'.($currency->format % 2 != 0 ? $currency->sign.' ' : '').'<input size="11" maxlength="14" id="ecotax" name="ecotax" type="text" value="'.$this->getFieldValue($obj, 'ecotax').'" onkeyup="if(isArrowKey(event))return; calcPriceTE(); this.value = this.value.replace(/,/g, \'.\'); if (parseInt(this.value) > getE(\'priceTE\').value) this.value = getE(\'priceTE\').value; if (isNaN(this.value)) this.value = 0;" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').'
 							<span style="margin-left:10px">('.$this->l('already included in price').')</span>
 						</td>
 					</tr>';
@@ -2618,8 +2593,8 @@ class AdminProducts extends AdminTab
 					<tr id="tr_unit_price">
 						<td class="col-left">'.$this->l('Unit price without tax:').'</td>
 						<td style="padding-bottom:5px;">
-							'.($currency->format % 2 != 0 ? ' '.$currency->sign : '').' <input size="11" maxlength="14" id="unit_price" name="unit_price" type="text" value="'.($this->getFieldValue($obj, 'unit_price_ratio') != 0 ? Tools::ps_round($this->getFieldValue($obj, 'price') / $this->getFieldValue($obj, 'unit_price_ratio'), 2) : 0).'" onkeyup="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, \'.\'); unitPriceWithTax(\'unit\');"/>'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').' '.$this->l('per').' <input size="6" maxlength="10" id="unity" name="unity" type="text" value="'.(Validate::isCleanHtml($this->getFieldValue($obj, 'unity')) ? htmlentities($this->getFieldValue($obj, 'unity'), ENT_QUOTES, 'UTF-8') : '').'" onkeyup="if (isArrowKey(event)) return ;unitySecond();" onchange="unitySecond();"/>'.
-							(Configuration::get('PS_TAX') && $default_country->display_tax_label ? '<span style="margin-left:15px">'.$this->l('or').' '.($currency->format % 2 != 0 ? ' '.$currency->sign : '').'<span id="unit_price_with_tax">0.00</span>'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').' '.$this->l('per').' <span id="unity_second">'.(Validate::isCleanHtml($this->getFieldValue($obj, 'unity')) ? htmlentities($this->getFieldValue($obj, 'unity'), ENT_QUOTES, 'UTF-8') : '').'</span> '.$this->l('with tax') : '').'</span>
+							'.($currency->format % 2 != 0 ? ' '.$currency->sign : '').' <input size="11" maxlength="14" id="unit_price" name="unit_price" type="text" value="'.($this->getFieldValue($obj, 'unit_price_ratio') != 0 ? Tools::ps_round($this->getFieldValue($obj, 'price') / $this->getFieldValue($obj, 'unit_price_ratio'), 2) : 0).'" onkeyup="if (isArrowKey(event)) return ;this.value = this.value.replace(/,/g, \'.\'); unitPriceWithTax(\'unit\');"/>'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').' '.$this->l('per').' <input size="6" maxlength="10" id="unity" name="unity" type="text" value="'.htmlentities($this->getFieldValue($obj, 'unity'), ENT_QUOTES, 'UTF-8').'" onkeyup="if (isArrowKey(event)) return ;unitySecond();" onchange="unitySecond();"/>'.
+							(Configuration::get('PS_TAX') && $default_country->display_tax_label ? '<span style="margin-left:15px">'.$this->l('or').' '.($currency->format % 2 != 0 ? ' '.$currency->sign : '').'<span id="unit_price_with_tax">0.00</span>'.($currency->format % 2 == 0 ? ' '.$currency->sign : '').' '.$this->l('per').' <span id="unity_second">'.$this->getFieldValue($obj, 'unity').'</span> '.$this->l('with tax') : '').'</span>
 							<p>'.$this->l('Eg. $15 per Lb').'</p>
 						</td>
 					</tr>
@@ -2650,11 +2625,6 @@ class AdminProducts extends AdminTab
 						</td>
 					</tr>
 					<tr><td colspan="2" style="padding-bottom:5px;"><hr style="width:100%;" /></td></tr>';
-
-
-				if ((int)Configuration::get('PS_STOCK_MANAGEMENT'))
-				{
-
 					if (!$has_attribute)
 					{
 						if ($obj->id)
@@ -2669,7 +2639,7 @@ class AdminProducts extends AdminTab
 							foreach ($reasons AS $reason)
 								echo '<option rel="'.$reason['sign'].'" value="'.$reason['id_stock_mvt_reason'].'" '.(Configuration::get('PS_STOCK_MVT_REASON_DEFAULT') == $reason['id_stock_mvt_reason'] ? 'selected="selected"' : '').'>'.$reason['name'].'</option>';
 							echo '</select>
-									<input id="mvt_quantity" type="text" name="mvt_quantity" size="3" maxlength="10" value="0"/>&nbsp;&nbsp;
+									<input id="mvt_quantity" type="text" name="mvt_quantity" size="3" maxlength="6" value="0"/>&nbsp;&nbsp;
 									<span style="display:none;" id="mvt_sign"></span>
 								</td>
 							</tr>
@@ -2683,54 +2653,36 @@ class AdminProducts extends AdminTab
 						else
 							echo '<tr><td class="col-left">'.$this->l('Initial stock:').'</td>
 									<td style="padding-bottom:5px;">
-										<input size="3" maxlength="10" name="quantity" type="text" value="0" />
+										<input size="3" maxlength="6" name="quantity" type="text" value="0" />
 									</td>';
 						echo  '<tr>
 								<td class="col-left">'.$this->l('Minimum quantity:').'</td>
 									<td style="padding-bottom:5px;">
-										<input size="3" maxlength="10" name="minimal_quantity" id="minimal_quantity" type="text" value="'.($this->getFieldValue($obj, 'minimal_quantity') ? $this->getFieldValue($obj, 'minimal_quantity') : 1).'" />
+										<input size="3" maxlength="6" name="minimal_quantity" id="minimal_quantity" type="text" value="'.($this->getFieldValue($obj, 'minimal_quantity') ? $this->getFieldValue($obj, 'minimal_quantity') : 1).'" />
 										<p>'.$this->l('The minimum quantity to buy this product (set to 1 to disable this feature)').'</p>
 									</td>
 								</tr>';
 					}
 
-					if ($obj->id)
-						echo '
-							<tr><td class="col-left">'.$this->l('Quantity in stock:').'</td>
-								<td style="padding-bottom:5px;"><b>'.$qty.'</b><input type="hidden" name="quantity" value="'.$qty.'" /></td>
-							</tr>
-						';
-					if ($has_attribute)
-						echo '<tr>
-								<td class="col-left">&nbsp;</td>
-								<td>
-									<div class="hint clear" style="display: block;width: 70%;">'.$this->l('You used combinations, for this reason you cannot edit your stock quantity here, but in the Combinations tab').'</div>
-								</td>
-							</tr>';
-				}
-				else
-				{
-					echo '<tr>
-							<td colspan="2">'.$this->l('The stock management is disabled').'</td>
-						</tr>';
-
-					echo  '
-						<tr>
-							<td class="col-left">'.$this->l('Minimum quantity:').'</td>
-							<td style="padding-bottom:5px;">
-								<input size="3" maxlength="10" name="minimal_quantity" id="minimal_quantity" type="text" value="'.($this->getFieldValue($obj, 'minimal_quantity') ? $this->getFieldValue($obj, 'minimal_quantity') : 1).'" />
-								<p>'.$this->l('The minimum quantity to buy this product (set to 1 to disable this feature)').'</p>
-							</td>
+				if ($obj->id)
+					echo '
+						<tr><td class="col-left">'.$this->l('Quantity in stock:').'</td>
+							<td style="padding-bottom:5px;"><b>'.$qty.'</b><input type="hidden" name="quantity" value="'.$qty.'" /></td>
 						</tr>
 					';
-				}
-
+				if ($has_attribute)
+					echo '<tr>
+							<td class="col-left">&nbsp;</td>
+							<td>
+								<div class="hint clear" style="display: block;width: 70%;">'.$this->l('You used combinations, for this reason you can\'t edit your stock quantity here, but in the Combinations tab').'</div>
+							</td>
+						</tr>';
 				echo '
 					<tr><td colspan="2" style="padding-bottom:5px;"><hr style="width:100%;" /></td></tr>
 					<tr>
 						<td class="col-left">'.$this->l('Additional shipping cost:').'</td>
 						<td style="padding-bottom:5px;">
-							<input type="text" name="additional_shipping_cost" value="'.Tools::safeOutput($this->getFieldValue($obj, 'additional_shipping_cost')).'" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '');
+							<input type="text" name="additional_shipping_cost" value="'.($this->getFieldValue($obj, 'additional_shipping_cost')).'" />'.($currency->format % 2 == 0 ? ' '.$currency->sign : '');
 							if ($default_country->display_tax_label)
 								echo ' ('.$this->l('tax excl.').')';
 
@@ -2744,7 +2696,7 @@ class AdminProducts extends AdminTab
 			echo '		<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 								<input size="30" type="text" id="available_now_'.$language['id_lang'].'" name="available_now_'.$language['id_lang'].'"
 								value="'.stripslashes(htmlentities($this->getFieldValue($obj, 'available_now', $language['id_lang']), ENT_COMPAT, 'UTF-8')).'" />
-								<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+								<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 							</div>';
 		echo '			</td>
 					</tr>
@@ -2755,7 +2707,7 @@ class AdminProducts extends AdminTab
 			echo '		<div  class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 								<input size="30" type="text" id="available_later_'.$language['id_lang'].'" name="available_later_'.$language['id_lang'].'"
 								value="'.stripslashes(htmlentities($this->getFieldValue($obj, 'available_later', $language['id_lang']), ENT_COMPAT, 'UTF-8')).'" />
-								<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+								<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 							</div>';
 			echo '	</td>
 					</tr>
@@ -2772,56 +2724,8 @@ class AdminProducts extends AdminTab
 							<br /><input type="radio" name="out_of_stock" id="out_of_stock_3" value="2" '.($this->getFieldValue($obj, 'out_of_stock') == 2 ? 'checked="checked"' : '').'/> <label for="out_of_stock_3" class="t" id="label_out_of_stock_3">'.$this->l('Default:').' <i>'.$this->l(((int)(Configuration::get('PS_ORDER_OUT_OF_STOCK')) ? 'Allow orders' : 'Deny orders')).'</i> ('.$this->l('as set in').' <a href="index.php?tab=AdminPPreferences&token='.Tools::getAdminToken('AdminPPreferences'.(int)(Tab::getIdFromClassName('AdminPPreferences')).(int)($cookie->id_employee)).'"  onclick="return confirm(\''.$this->l('Are you sure you want to delete entered product information?', __CLASS__, true, false).'\');">'.$this->l('Preferences').'</a>)</label>
 						</td>
 					</tr>
-					<tr>
-						<td colspan="2" style="padding-bottom:5px;">
-							<hr style="width:100%;" />
-						</td>
-					</tr>
-					<tr>
-						<td class="col-left"><label for="id_category_default" class="t">'.$this->l('Default category:').'</label></td>
-						<td>
-						<div id="no_default_category" style="color: red;font-weight: bold;display: none;">'.$this->l('Please check a category in order to select the default category.').'</div>
-						<script type="text/javascript">
-							var post_selected_cat;
-						</script>';
-						$default_category = Tools::getValue('id_category', 1);
-						if (!$obj->id)
-						{
-							$selectedCat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->_defaultFormLanguage);
-							echo '
-							<script type="text/javascript">
-								post_selected_cat = \''.implode(',', array_keys($selectedCat)).'\';
-							</script>';
-						}
-						else
-						{
-							if (Tools::isSubmit('categoryBox'))
-								$selectedCat = Category::getCategoryInformations(Tools::getValue('categoryBox', array($default_category)), $this->_defaultFormLanguage);
-							else
-								$selectedCat = Product::getProductCategoriesFull($obj->id, $this->_defaultFormLanguage);
-						}
-
-						echo '<select id="id_category_default" name="id_category_default">';
-						foreach($selectedCat AS $cat)
-							echo '<option value="'.$cat['id_category'].'" '.($obj->id_category_default == $cat['id_category'] ? 'selected' : '').'>'.$cat['name'].'</option>';
-						echo '</select>
-						</td>
-					</tr>
-					<tr id="tr_categories">
-						<td colspan="2">
-						';
-					// Translations are not automatic for the moment ;)
-					$trads = array(
-						 'Home' => $this->l('Home'),
-						 'selected' => $this->l('selected'),
-						 'Collapse All' => $this->l('Collapse All'),
-						 'Expand All' => $this->l('Expand All'),
-						 'Check All' => $this->l('Check All'),
-						 'Uncheck All'  => $this->l('Uncheck All')
-					);
-					echo Helper::renderAdminCategorieTree($trads, $selectedCat).'
-						</td>
-					</tr>
+					<tr><td colspan="2" style="padding-bottom:5px;"><hr style="width:100%;" /></td></tr>
+					<tr id="tr_categories"></tr>
 					<tr><td colspan="2" style="padding-bottom:5px;"><hr style="width:100%;" /></td></tr>
 					<tr><td colspan="2">
 						<span onclick="$(\'#seo\').slideToggle();" style="cursor: pointer"><img src="../img/admin/arrow.gif" alt="'.$this->l('SEO').'" title="'.$this->l('SEO').'" style="float:left; margin-right:5px;"/>'.$this->l('Click here to improve product\'s rank in search engines (SEO)').'</span><br />
@@ -2830,11 +2734,11 @@ class AdminProducts extends AdminTab
 								<tr>
 									<td class="col-left">'.$this->l('Meta title:').'</td>
 									<td class="translatable">';
-		foreach ($this->_languages AS $language)
+		foreach ($this->_languages as $language)
 			echo '					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 											<input size="55" type="text" id="meta_title_'.$language['id_lang'].'" name="meta_title_'.$language['id_lang'].'"
 											value="'.htmlentities($this->getFieldValue($obj, 'meta_title', $language['id_lang']), ENT_COMPAT, 'UTF-8').'" />
-											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 										</div>';
 		echo '						<p class="clear">'.$this->l('Product page title; leave blank to use product name').'</p>
 									</td>
@@ -2846,7 +2750,7 @@ class AdminProducts extends AdminTab
 			echo '					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 											<input size="55" type="text" id="meta_description_'.$language['id_lang'].'" name="meta_description_'.$language['id_lang'].'"
 											value="'.htmlentities($this->getFieldValue($obj, 'meta_description', $language['id_lang']), ENT_COMPAT, 'UTF-8').'" />
-											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 										</div>';
 		echo '						<p class="clear">'.$this->l('A single sentence for HTML header').'</p>
 									</td>
@@ -2858,7 +2762,7 @@ class AdminProducts extends AdminTab
 			echo '					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 											<input size="55" type="text" id="meta_keywords_'.$language['id_lang'].'" name="meta_keywords_'.$language['id_lang'].'"
 											value="'.htmlentities($this->getFieldValue($obj, 'meta_keywords', $language['id_lang']), ENT_COMPAT, 'UTF-8').'" />
-											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+											<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 										</div>';
 		echo '						<p class="clear">'.$this->l('Keywords for HTML header, separated by a comma').'</p>
 									</td>
@@ -2871,7 +2775,7 @@ class AdminProducts extends AdminTab
 			echo '					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 											<input size="55" type="text" id="link_rewrite_'.$language['id_lang'].'" name="link_rewrite_'.$language['id_lang'].'"
 											value="'.htmlentities($this->getFieldValue($obj, 'link_rewrite', $language['id_lang']), ENT_COMPAT, 'UTF-8').'" onkeyup="if (isArrowKey(event)) return ;updateFriendlyURL();" onchange="updateFriendlyURL();" /><sup> *</sup>
-											<span class="hint" name="help_box">'.$this->l('Only letters and the "less" character are allowed').'<span class="hint-pointer">&nbsp;</span></span>
+											<span class="hint" name="help_box">'.$this->l('Only letters and the "less" character are allowed').($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 										</div>';
 		}
 		echo '						<p class="clear" style="padding:10px 0 0 0">'.'<a style="cursor:pointer" class="button" onmousedown="updateFriendlyURLByName();">'.$this->l('Generate').'</a>&nbsp;'.$this->l('Friendly-url from product\'s name.').'<br /><br />';
@@ -2883,22 +2787,24 @@ class AdminProducts extends AdminTab
 					</td></tr>
 					<tr><td colspan="2" style="padding-bottom:5px;"><hr style="width:100%;" /></td></tr>
 					<tr>
-						<td class="col-left">'.$this->l('Short description:').'<br /><br /><i>('.$this->l('appears in the product lists and on the top of the product page').')</i></td>
+						<td class="col-left">'.$this->l('Short description:').'<br /><br /><i>('.$this->l('appears in search results').')</i></td>
 						<td style="padding-bottom:5px;" class="translatable">';
 		foreach ($this->_languages as $language)
 			echo '		<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').';float: left;">
 								<textarea class="rte" cols="100" rows="10" id="description_short_'.$language['id_lang'].'" name="description_short_'.$language['id_lang'].'">'.htmlentities(stripslashes($this->getFieldValue($obj, 'description_short', $language['id_lang'])), ENT_COMPAT, 'UTF-8').'</textarea>
 							</div>';
-		echo '		</td>
+		echo '<p class="clear">'.($obj->id ? $this->youEditFieldFor() : '').'</p>	
+			</td>
 					</tr>
 					<tr>
-						<td class="col-left">'.$this->l('Description:').'<br /><br /><i>('.$this->l('appears in the body of the product page').')</i></td>
+						<td class="col-left">'.$this->l('Description:').'</td>
 						<td style="padding-bottom:5px;" class="translatable">';
 		foreach ($this->_languages as $language)
 			echo '		<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').';float: left;">
 								<textarea class="rte" cols="100" rows="20" id="description_'.$language['id_lang'].'" name="description_'.$language['id_lang'].'">'.htmlentities(stripslashes($this->getFieldValue($obj, 'description', $language['id_lang'])), ENT_COMPAT, 'UTF-8').'</textarea>
 							</div>';
-		echo '		</td>
+		echo '<p class="clear">'.($obj->id ? $this->youEditFieldFor() : '').'</p>
+					</td>
 					</tr>';
 				echo '
 					<tr>
@@ -2933,15 +2839,15 @@ class AdminProducts extends AdminTab
 						<td style="padding-bottom:5px;">
 							<div id="divAccessories">';
 					foreach ($accessories as $accessory)
-						echo htmlentities($accessory['name'], ENT_COMPAT, 'UTF-8').(!empty($accessory['reference']) ? ' ('.$accessory['reference'].')' : '').' <span onclick="delAccessory('.$accessory['id_product'].');" style="cursor: pointer;"><img src="../img/admin/delete.gif" class="middle" alt="" /></span><br />';
+						echo $accessory['name'].(!empty($accessory['reference']) ? ' ('.$accessory['reference'].')' : '').' <span onclick="delAccessory('.$accessory['id_product'].');" style="cursor: pointer;"><img src="../img/admin/delete.gif" class="middle" alt="" /></span><br />';
 					echo '</div>
 							<input type="hidden" name="inputAccessories" id="inputAccessories" value="';
 					foreach ($accessories as $accessory)
-						echo (int)$accessory['id_product'].'-';
+						echo $accessory['id_product'].'-';
 					echo '" />
 							<input type="hidden" name="nameAccessories" id="nameAccessories" value="';
 					foreach ($accessories as $accessory)
-						echo htmlentities($accessory['name'], ENT_COMPAT, 'UTF-8').'¤';
+						echo $accessory['name'].'¤';
 
 					echo '" />
 							<script type="text/javascript">
@@ -3004,10 +2910,18 @@ class AdminProducts extends AdminTab
 			<script type="text/javascript" src="'.__PS_BASE_URI__.'js/tinymce.inc.js"></script>
 			<script type="text/javascript">
 					toggleVirtualProduct(getE(\'is_virtual_good\'));
-					unitPriceWithTax(\'unit\');
-			</script>';
+					unitPriceWithTax(\'unit\');';
 		$categoryBox = Tools::getValue('categoryBox', array());
-
+		echo '
+		$(function() {
+			$.ajax({
+				type: \'POST\',
+				url: \'ajax_category_list.php\',
+				data: \''.(sizeof($categoryBox) > 0 ? 'categoryBox='.serialize($categoryBox).'&' : '').'id_product='.$obj->id.'&id_category_default='.($this->getFieldValue($obj, 'id_category_default') ? $this->getFieldValue($obj, 'id_category_default') : Tools::getValue('id_category', 1)).'&id_category='.(int)(Tools::getValue('id_category')).'&token='.$this->token.'\',
+				async : true,
+				success: function(msg) { $(\'#tr_categories\').replaceWith(msg); }
+			});
+		});</script>';
 	}
 
 	function displayFormImages($obj, $token = NULL)
@@ -3105,15 +3019,33 @@ class AdminProducts extends AdminTab
 								<tr>
 									<th style="width: 100px;">'.$this->l('Image').'</th>
 									<th>&nbsp;</th>
-									<th>'.$this->l('Position').'</th>
+									<th>'.$this->l('Position').'</th>';
+						if (Tools::isMultiShopActivated())
+						{
+							$shops = Shop::getShops();
+							echo '<script type="text/javascript">
+											$(window).ready(function() {
+												$(\'.image_shop\').change(function() {
+													$.post("'.dirname($currentIndex).'/ajax.php",
+														{updateProductImageShopAsso: 1, id_image:$(this).attr("name"), id_shop: $(this).val(), active:$(this).attr("checked")});
+												});
+											});
+										</script>';
+							foreach ($shops as $shop)
+								echo '<th>'.$shop['name'].'</th>';
+						}	
+						echo '
 									<th>'.$this->l('Cover').'</th>
 									<th>'.$this->l('Action').'</th>
 								</tr>';
 
 						foreach ($images AS $k => $image)
 						{
+							if(Tools::isMultiShopActivated())
+								$imgObj = new Image((int)$image['id_image']);
 							$image_obj = new Image($image['id_image']);
 							$img_path = $image_obj->getExistingImgPath();
+
 							echo  $this->_positionJS().'
 							<tr>
 								<td style="padding: 4px;"><a href="'._THEME_PROD_DIR_.$img_path.'.jpg" target="_blank">
@@ -3138,8 +3070,11 @@ class AdminProducts extends AdminTab
 								echo '
 									<span>[ <a onclick="return hideLink();" href="'.$currentIndex.'&id_image='.$image['id_image'].'&imgPosition='.$image['position'].'&imgDirection=1&token='.($token ? $token : $this->token).'"><img src="../img/admin/up.gif" alt="" border="0"></a> ]</span>
 									<span>[ <a onclick="return hideLink();" href="'.$currentIndex.'&id_image='.$image['id_image'].'&imgPosition='.$image['position'].'&imgDirection=0&token='.($token ? $token : $this->token).'"><img src="../img/admin/down.gif" alt="" border="0"></a> ]</span>';
-							echo '
-								</td>
+							echo '</td>';
+							if(Tools::isMultiShopActivated())
+								foreach ($shops AS $shop)
+									echo '<td class="center"><input type="checkbox" class="image_shop" name="'.(int)$image['id_image'].'" value="'.(int)$shop['id_shop'].'" '.($imgObj->isAssociatedToShop($shop['id_shop']) ? 'checked="1"' : '').' /></td>';
+							echo '	
 								<td class="center"><a href="'.$currentIndex.'&id_image='.$image['id_image'].'&coverImage&token='.($token ? $token : $this->token).'"><img src="../img/admin/'.($image['cover'] ? 'enabled.gif' : 'forbbiden.gif').'" alt="" /></a></td>
 								<td class="center">
 									<a href="'.$currentIndex.'&id_image='.$image['id_image'].'&editImage&tabs=1&token='.($token ? $token : $this->token).'"><img src="../img/admin/edit.gif" alt="'.$this->l('Modify this image').'" title="'.$this->l('Modify this image').'" /></a>
@@ -3211,7 +3146,7 @@ class AdminProducts extends AdminTab
 		$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 		$attributes_groups = AttributeGroup::getAttributesGroups((int)($cookie->id_lang));
 		$default_country = new Country((int)Configuration::get('PS_COUNTRY_DEFAULT'));
-
+		
 		$images = Image::getImages((int)($cookie->id_lang), $obj->id);
 		if ($obj->id)
 			{
@@ -3334,7 +3269,7 @@ class AdminProducts extends AdminTab
 		echo'
 		  <tr id="initial_stock_attribute">
 				<td style="width:150px;vertical-align:top;text-align:right;padding-right:10px;font-weight:bold;" class="col-left">'.$this->l('Initial stock:').'</td>
-				<td><input type="text" name="attribute_quantity" size="3" maxlength="10" value="0"/></td>
+				<td><input type="text" name="attribute_quantity" size="3" maxlength="6" value="0"/></td>
 		  </tr>
 		  </tr>
 			<tr id="stock_mvt_attribute" style="display:none;">
@@ -3346,7 +3281,7 @@ class AdminProducts extends AdminTab
 			foreach ($reasons AS $reason)
 				echo '<option rel="'.$reason['sign'].'" value="'.$reason['id_stock_mvt_reason'].'" '.(Configuration::get('PS_STOCK_MVT_REASON_DEFAULT') == $reason['id_stock_mvt_reason'] ? 'selected="selected"' : '').'>'.$reason['name'].'</option>';
 			echo '</select>
-					<input type="text" name="attribute_mvt_quantity" size="3" maxlength="10" value="0"/>&nbsp;&nbsp;
+					<input type="text" name="attribute_mvt_quantity" size="3" maxlength="6" value="0"/>&nbsp;&nbsp;
 					<span style="display:none;" id="mvt_sign"></span>
 					<br />
 					<div class="hint clear" style="display: block;width: 70%;">'.$this->l('Choose the reason and enter the quantity that you want to increase or decrease in your stock').'</div>
@@ -3355,7 +3290,7 @@ class AdminProducts extends AdminTab
 			<tr>
 			<td style="width:150px;vertical-align:top;text-align:right;padding-right:10px;font-weight:bold;" class="col-left">'.$this->l('Minimum quantity:').'</td>
 				<td style="padding-bottom:5px;">
-					<input size="3" maxlength="10" name="attribute_minimal_quantity" id="attribute_minimal_quantity" type="text" value="'.($this->getFieldValue($obj, 'attribute_minimal_quantity') ? $this->getFieldValue($obj, 'attribute_minimal_quantity') : 1).'" />
+					<input size="3" maxlength="6" name="minimal_quantity" id="minimal_quantity" type="text" value="'.($this->getFieldValue($obj, 'minimal_quantity') ? $this->getFieldValue($obj, 'minimal_quantity') : 1).'" />
 					<p>'.$this->l('The minimum quantity to buy this product (set to 1 to disable this feature)').'</p>
 				</td>
 			</tr>
@@ -3427,10 +3362,10 @@ class AdminProducts extends AdminTab
 						$combArray[$combinaison['id_product_attribute']]['weight'] = $combinaison['weight'];
 						$combArray[$combinaison['id_product_attribute']]['unit_impact'] = $combinaison['unit_price_impact'];
 						$combArray[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
-						$combArray[$combinaison['id_product_attribute']]['supplier_reference'] = $combinaison['supplier_reference'];
-						$combArray[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
+                        $combArray[$combinaison['id_product_attribute']]['supplier_reference'] = $combinaison['supplier_reference'];
+                        $combArray[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
 						$combArray[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
-						$combArray[$combinaison['id_product_attribute']]['attribute_minimal_quantity'] = $combinaison['minimal_quantity'];
+						$combArray[$combinaison['id_product_attribute']]['minimal_quantity'] = $combinaison['minimal_quantity'];
 						$combArray[$combinaison['id_product_attribute']]['location'] = $combinaison['location'];
 						$combArray[$combinaison['id_product_attribute']]['quantity'] = $combinaison['quantity'];
 						$combArray[$combinaison['id_product_attribute']]['id_image'] = isset($combinationImages[$combinaison['id_product_attribute']][0]['id_image']) ? $combinationImages[$combinaison['id_product_attribute']][0]['id_image'] : 0;
@@ -3473,7 +3408,7 @@ class AdminProducts extends AdminTab
 							<a style="cursor: pointer;">
 							<img src="../img/admin/edit.gif" alt="'.$this->l('Modify this combination').'"
 							onclick="javascript:fillCombinaison(\''.$product_attribute['wholesale_price'].'\', \''.$product_attribute['price'].'\', \''.$product_attribute['weight'].'\', \''.$product_attribute['unit_impact'].'\', \''.$product_attribute['reference'].'\', \''.$product_attribute['supplier_reference'].'\', \''.$product_attribute['ean13'].'\',
-							\''.$product_attribute['quantity'].'\', \''.($attrImage ? $attrImage->id : 0).'\', Array('.$jsList.'), \''.$id_product_attribute.'\', \''.$product_attribute['default_on'].'\', \''.$product_attribute['ecotax'].'\', \''.$product_attribute['location'].'\', \''.$product_attribute['upc'].'\', \''.$product_attribute['attribute_minimal_quantity'].'\'); calcImpactPriceTI();" /></a>&nbsp;
+							\''.$product_attribute['quantity'].'\', \''.($attrImage ? $attrImage->id : 0).'\', Array('.$jsList.'), \''.$id_product_attribute.'\', \''.$product_attribute['default_on'].'\', \''.$product_attribute['ecotax'].'\', \''.$product_attribute['location'].'\', \''.$product_attribute['upc'].'\', \''.$product_attribute['minimal_quantity'].'\'); calcImpactPriceTI();" /></a>&nbsp;
 							'.(!$product_attribute['default_on'] ? '<a href="'.$currentIndex.'&defaultProductAttribute&id_product_attribute='.$id_product_attribute.'&id_product='.$obj->id.'&'.(Tools::isSubmit('id_category') ? 'id_category='.(int)(Tools::getValue('id_category')).'&' : '&').'token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">
 							<img src="../img/admin/asterisk.gif" alt="'.$this->l('Make this the default combination').'" title="'.$this->l('Make this combination the default one').'"></a>' : '').'
 							<a href="'.$currentIndex.'&deleteProductAttribute&id_product_attribute='.$id_product_attribute.'&id_product='.$obj->id.'&'.(Tools::isSubmit('id_category') ? 'id_category='.(int)(Tools::getValue('id_category')).'&' : '&').'token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" onclick="return confirm(\''.$this->l('Are you sure?', __CLASS__, true, false).'\');">
@@ -3750,39 +3685,32 @@ class AdminProducts extends AdminTab
 	private function addPackItem()
 	{
 		return '
+
 			function addPackItem()
 			{
-				if ($(\'#curPackItemId\').val() == \'\' || $(\'#curPackItemName\').val() == \'\')
-				{
-					alert(\''.$this->l('Thanks to select at least one product.').'\');
-					return false;
-				}
-				else if ($(\'#curPackItemId\').val() == \'\' || $(\'#curPackItemQty\').val() == \'\')
-				{
-					alert(\''.$this->l('Thanks to set a quantity to add a product.').'\');
-					return false;
-				}
 
-				var lineDisplay = $(\'#curPackItemQty\').val()+ \'x \' +$(\'#curPackItemName\').val();
+			if ($(\'#curPackItemId\').val() == \'\' || $(\'#curPackItemName\').val() == \'\') return false;
 
-				var divContent = $(\'#divPackItems\').html();
-				divContent += lineDisplay;
-				divContent += \'<span onclick="delPackItem(\' + $(\'#curPackItemId\').val() + \');" style="cursor: pointer;"><img src="../img/admin/delete.gif" /></span><br />\';
+			var lineDisplay = $(\'#curPackItemQty\').val()+ \'x \' +$(\'#curPackItemName\').val();
 
-				// QTYxID-QTYxID
-				var line = $(\'#curPackItemQty\').val()+ \'x\' +$(\'#curPackItemId\').val();
+			var divContent = $(\'#divPackItems\').html();
+			divContent += lineDisplay;
+			divContent += \'<span onclick="delPackItem(\' + $(\'#curPackItemId\').val() + \');" style="cursor: pointer;"><img src="../img/admin/delete.gif" /></span><br />\';
+
+			// QTYxID-QTYxID
+			var line = $(\'#curPackItemQty\').val()+ \'x\' +$(\'#curPackItemId\').val();
 
 
-				$(\'#inputPackItems\').val($(\'#inputPackItems\').val() + line  + \'-\');
-				$(\'#divPackItems\').html(divContent);
-				$(\'#namePackItems\').val($(\'#namePackItems\').val() + lineDisplay + \'Â¤\');
+			$(\'#inputPackItems\').val($(\'#inputPackItems\').val() + line  + \'-\');
+			$(\'#divPackItems\').html(divContent);
+			$(\'#namePackItems\').val($(\'#namePackItems\').val() + lineDisplay + \'¤\');
 
-				$(\'#curPackItemId\').val(\'\');
-				$(\'#curPackItemName\').val(\'\');
+			$(\'#curPackItemId\').val(\'\');
+			$(\'#curPackItemName\').val(\'\');
 
-				$(\'#curPackItemName\').setOptions({
-					extraParams: {excludeIds :  getSelectedIds()}
-				});
+			$(\'#curPackItemName\').setOptions({
+				extraParams: {excludeIds :  getSelectedIds()}
+			});
 			}
 		';
 	}
@@ -3873,5 +3801,35 @@ class AdminProducts extends AdminTab
 		);
 		return $trad[$key];
 	}
+
+	/**
+	 * Load class object using identifier in $_GET (if possible)
+	 * otherwise return an empty object, or die
+	 *
+	 * @param boolean $opt Return an empty object if load fail
+	 * @return object
+	 */
+	protected function loadObject($opt = false)
+	{
+		global $cookie;
+		if ($id = (int)(Tools::getValue($this->identifier)) AND Validate::isUnsignedId($id))
+		{
+			if (!$this->_object)
+				$this->_object = new $this->className($id, false, NULL, (int)Shop::getCurrentShop(true));
+			if (Validate::isLoadedObject($this->_object))
+				return $this->_object;
+			$this->_errors[] = Tools::displayError('Object cannot be loaded (not found)');
+		}
+		elseif ($opt)
+		{
+			$this->_object = new $this->className();
+			return $this->_object;
+		}
+		else
+			$this->_errors[] = Tools::displayError('Object cannot be loaded (identifier missing or invalid)');
+
+		$this->displayErrors();
+	}
+
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,14 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
+
   
 class StatsBestManufacturers extends ModuleGrid
 {
@@ -103,38 +104,41 @@ class StatsBestManufacturers extends ModuleGrid
 	
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
-			'.ModuleGrid::engine($engineParams).'
-			<br /><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a>
+			'.$this->engine($engineParams).'
+			<br /><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a>
 		</fieldset>';
 		return $this->_html;
 	}
 	
 	public function getTotalCount()
 	{
-		return Db::getInstance()->getValue('
-		SELECT COUNT(DISTINCT(m.id_manufacturer))
-		FROM '._DB_PREFIX_.'order_detail od
-		LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
-		LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_order = od.id_order)
-		LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
-		WHERE o.invoice_date BETWEEN '.$this->getDate().' AND o.valid = 1
-		AND m.id_manufacturer IS NOT NULL');
+		$sql = 'SELECT COUNT(DISTINCT(m.id_manufacturer))
+				FROM '._DB_PREFIX_.'order_detail od
+				LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
+				LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_order = od.id_order)
+				LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
+				WHERE o.invoice_date BETWEEN '.$this->getDate()
+					.$this->sqlShopRestriction(false, 'o').
+					'AND o.valid = 1
+					AND m.id_manufacturer IS NOT NULL';
+		return Db::getInstance()->getValue($sql);
 	}
 	
 	public function getData()
 	{	
 		$this->_totalCount = $this->getTotalCount();
 
-		$this->_query = '
-		SELECT m.name, SUM(od.product_quantity) as quantity, ROUND(SUM(od.product_quantity * od.product_price) / c.conversion_rate, 2) as sales
-		FROM '._DB_PREFIX_.'order_detail od
-		LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
-		LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_order = od.id_order)
-		LEFT JOIN '._DB_PREFIX_.'currency c ON (c.id_currency = o.id_currency)
-		LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
-		WHERE o.invoice_date BETWEEN '.$this->getDate().' AND o.valid = 1
-		AND m.id_manufacturer IS NOT NULL
-		GROUP BY p.id_manufacturer';
+		$this->_query = 'SELECT m.name, SUM(od.product_quantity) as quantity, ROUND(SUM(od.product_quantity * od.product_price) / c.conversion_rate, 2) as sales
+				FROM '._DB_PREFIX_.'order_detail od
+				LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
+				LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_order = od.id_order)
+				LEFT JOIN '._DB_PREFIX_.'currency c ON (c.id_currency = o.id_currency)
+				LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
+				WHERE '.$this->sqlShopRestriction(false, 'o').'
+					o.invoice_date BETWEEN '.$this->getDate().'
+					AND o.valid = 1
+					AND m.id_manufacturer IS NOT NULL
+				GROUP BY p.id_manufacturer';
 		if (Validate::IsName($this->_sort))
 		{
 			$this->_query .= ' ORDER BY `'.$this->_sort.'`';

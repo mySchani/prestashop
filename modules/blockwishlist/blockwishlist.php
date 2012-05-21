@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class BlockWishList extends Module
@@ -54,13 +54,13 @@ class BlockWishList extends Module
 	{
 		if (!file_exists(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
 			return (false);
-		elseif (!$sql = file_get_contents(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
+		else if (!$sql = file_get_contents(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
 			return (false);
 		$sql = str_replace(array('PREFIX_', 'ENGINE_TYPE'), array(_DB_PREFIX_, _MYSQL_ENGINE_), $sql);
 		$sql = preg_split("/;\s*[\r\n]+/", $sql);
 		foreach ($sql AS $query)
-			if ($query)
-				if (!Db::getInstance()->Execute(trim($query)))
+			if($query)
+				if(!Db::getInstance()->Execute(trim($query)))
 					return false;
 		if (!parent::install() OR
 						!$this->registerHook('rightColumn') OR
@@ -117,7 +117,7 @@ class BlockWishList extends Module
 		if (!$id_customer)
 			$id_customer = $customers[0]['id_customer'];
 		$this->_html .= '<br />
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" id="listing">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post" id="listing">
 			<fieldset>
 				<legend><img src="'.$this->_path.'img/icon/package_go.png" alt="" title="" />'.$this->l('Listing').'</legend>
 
@@ -303,7 +303,7 @@ class BlockWishList extends Module
 			$this->_html .= $customer->lastname.' '.$customer->firstname.' '.$this->l('No wishlist.');
 		else
 		{
-			$this->_html .= '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" id="listing">';
+			$this->_html .= '<form action="'.$_SERVER['REQUEST_URI'].'" method="post" id="listing">';
 	
 			$id_wishlist = (int)(Tools::getValue('id_wishlist'));
 			if (!$id_wishlist)

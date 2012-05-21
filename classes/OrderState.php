@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,51 +19,48 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14628 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderStateCore extends ObjectModel
 {
-	/** @var string Name */
+ 	/** @var string Name */
 	public 		$name;
-
-	/** @var string Template name if there is any e-mail to send */
+	
+	/** @var string Template name if there is any e-mail to send */	
 	public 		$template;
-
+	
 	/** @var boolean Send an e-mail to customer ? */
 	public 		$send_email;
-
+	
 	/** @var boolean Allow customer to view and download invoice when order is at this state */
 	public		$invoice;
-
+	
 	/** @var string Display state in the specified color */
 	public		$color;
-
+	
 	public		$unremovable;
 
 	/** @var boolean Log authorization */
 	public		$logable;
-
+	
 	/** @var boolean Delivery */
 	public		$delivery;
 
 	/** @var boolean Hidden */
 	public		$hidden;
 
-	/** @var boolean deleted */
-	public $deleted;
-
-	protected $fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
-	protected $fieldsRequiredLang = array('name');
-	protected $fieldsSizeLang = array('name' => 64, 'template' => 64);
-	protected $fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
-
+ 	protected 	$fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
+	protected 	$fieldsRequiredLang = array('name');
+ 	protected 	$fieldsSizeLang = array('name' => 64, 'template' => 64);
+ 	protected 	$fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
+	
 	protected 	$table = 'order_state';
 	protected 	$identifier = 'id_order_state';
-
+	
 	protected	$webserviceParameters = array(
 		'fields' => array(
 			'unremovable' => array(),
@@ -72,10 +69,6 @@ class OrderStateCore extends ObjectModel
 		),
 	);
 	
-	const FLAG_NO_HIDDEN	= 1; /* 001 */
-	const FLAG_LOGABLE		= 2; /* 010 */
-	const FLAG_DELIVERY		= 4; /* 100 */
-
 	public function getFields()
 	{
 		parent::validateFields();
@@ -86,10 +79,9 @@ class OrderStateCore extends ObjectModel
 		$fields['logable'] = (int)($this->logable);
 		$fields['delivery'] = (int)($this->delivery);
 		$fields['hidden'] = (int)($this->hidden);
-		$fields['deleted'] = (int)$this->deleted;
 		return $fields;
 	}
-
+	
 	/**
 	* Check then return multilingual fields for database interaction
 	*
@@ -100,20 +92,19 @@ class OrderStateCore extends ObjectModel
 		parent::validateFieldsLang();
 		return parent::getTranslationsFields(array('name', 'template'));
 	}
-
+	
 	/**
 	* Get all available order states
 	*
 	* @param integer $id_lang Language id for state name
 	* @return array Order states
 	*/
-	public static function getOrderStates($id_lang)
+	static public function getOrderStates($id_lang)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'order_state` os
 		LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = '.(int)($id_lang).')
-		WHERE os.`deleted` = 0
 		ORDER BY `name` ASC');
 	}
 
@@ -123,7 +114,7 @@ class OrderStateCore extends ObjectModel
 	* @param integer $id_order_state State ID
 	* @return boolean availability
 	*/
-	public static function invoiceAvailable($id_order_state)
+	static public function invoiceAvailable($id_order_state)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `invoice` AS ok
@@ -131,10 +122,11 @@ class OrderStateCore extends ObjectModel
 		WHERE `id_order_state` = '.(int)($id_order_state));
 		return $result['ok'];
 	}
-
+	
 	public function isRemovable()
 	{
 	 	return !($this->unremovable);
 	}
 }
+
 

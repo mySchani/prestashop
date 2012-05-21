@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14905 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -71,9 +71,9 @@ class CombinationCore extends ObjectModel
 		'ean13' => 'isEan13',
 		'upc' => 'isUpc',
 		'wholesale_price' => 'isPrice',
-		'price' => 'isNegativePrice',
+		'price' => 'isPrice',
 		'ecotax' => 'isPrice',
-		'quantity' => 'isInt',
+		'quantity' => 'isUnsignedInt',
 		'weight' => 'isFloat',
 		'default_on' => 'isBool',
 	);
@@ -150,7 +150,7 @@ class CombinationCore extends ObjectModel
 		$result = Db::getInstance()->executeS('SELECT id_attribute AS id from `'._DB_PREFIX_.'product_attribute_combination` WHERE id_product_attribute = '.(int)$this->id);
 		return $result;
 	}
-	
+
 	public function getWsImages()
 	{
 		return Db::getInstance()->ExecuteS('
@@ -158,8 +158,8 @@ class CombinationCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'product_attribute_image`
 		WHERE `id_product_attribute` = '.(int)($this->id).'
 		');
-	}
-	
+}
+
 	public function setWsImages($values)
 	{
 		if (Db::getInstance()->Execute('
@@ -169,7 +169,7 @@ class CombinationCore extends ObjectModel
 		$sqlValues = array();
 		foreach ($values as $value)
 			$sqlValues[] = '('.(int)$this->id.', '.(int)$value['id'].')';
-		Db::getInstance()->Execute('
+		$result = Db::getInstance()->Execute('
 			INSERT INTO `'._DB_PREFIX_.'product_attribute_image` (`id_product_attribute`, `id_image`)
 			VALUES '.implode(',', $sqlValues)
 		);

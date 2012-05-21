@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: RSS1.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: RSS1.php 6844 2011-06-03 14:46:51Z dMetzger $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -25,7 +25,7 @@
  * This class handles RSS1.0 feeds.
  * 
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  * @todo    Find a Relax NG URI we can use
  */
@@ -35,7 +35,7 @@ class XML_Feed_Parser_RSS1 extends XML_Feed_Parser_Type
      * The URI of the RelaxNG schema used to (optionally) validate the feed 
      * @var string
      */
-    protected $relax = 'rss10.rng';
+    private $relax = 'rss10.rnc';
 
     /**
      * We're likely to use XPath, so let's keep it global
@@ -121,7 +121,9 @@ class XML_Feed_Parser_RSS1 extends XML_Feed_Parser_Type
     {
         $this->model = $model;
         if ($strict) {
-            if (! $this->relaxNGValidate()) {
+            $validate = $this->model->relaxNGValidate(self::getSchemaDir . 
+                DIRECTORY_SEPARATOR . $this->relax);
+            if (! $validate) {
                 throw new XML_Feed_Parser_Exception('Failed required validation');
             }
         }

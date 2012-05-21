@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14604 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,12 +36,13 @@ class AdminDiscounts extends AdminTab
 	 	$this->lang = true;
 	 	$this->edit = true;
 	 	$this->delete = true;
-	 	$this->_select = 'dtl.`name` AS discount_type, 
+	 	$this->_select = 'dtl.`name` AS discount_type, s.name shop_name,
 		IF(a.id_discount_type = 1, CONCAT(a.value, " %"),
 		IF(a.id_discount_type = 2, CONCAT(a.value, " ", c.sign),
 		"--")) as strvalue';
 	 	$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'currency` c ON (c.`id_currency` = a.`id_currency`)
 						LEFT JOIN `'._DB_PREFIX_.'discount_type` dt ON (dt.`id_discount_type` = a.`id_discount_type`)
+						LEFT JOIN `'._DB_PREFIX_.'shop` s ON (s.`id_shop` = a.`id_shop`)
 						LEFT JOIN `'._DB_PREFIX_.'discount_type_lang` dtl ON (dt.`id_discount_type` = dtl.`id_discount_type` AND dtl.`id_lang` = '.(int)($cookie->id_lang).')';
 		
 		$typesArray = array();
@@ -52,6 +53,7 @@ class AdminDiscounts extends AdminTab
 		$this->fieldsDisplay = array(
 		'id_discount' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'name' => array('title' => $this->l('Code'), 'width' => 85, 'prefix' => '<span class="discount_name">', 'suffix' => '</span>', 'filter_key' => 'a!name'),
+		'shop_name' => array('title' => $this->l('Shop'), 'width' => 85, 'filter_key' => 's!name'),
 		'description' => array('title' => $this->l('Description'), 'width' => 100, 'filter_key' => 'b!description'),
 		'discount_type' => array('title' => $this->l('Type'), 'type' => 'select', 'select' => $typesArray, 'filter_key' => 'dt!id_discount_type'),
 		'strvalue' => array('title' => $this->l('Value'), 'width' => 50, 'align' => 'right', 'filter_key' => 'a!value'),
@@ -118,6 +120,8 @@ class AdminDiscounts extends AdminTab
 								$object->update();
 								$objectNew = new $this->className();
 								$this->copyFromPost($objectNew, $this->table);
+								$shop = new Shop((int)$objectNew->id_shop);
+								$objectNew->id_group_shop = (int)$shop->id_group_shop;
 								$result = $objectNew->add();
 								if (Validate::isLoadedObject($objectNew))
 									$this->afterDelete($objectNew, $object->id);
@@ -127,15 +131,8 @@ class AdminDiscounts extends AdminTab
 								if (($categories = Tools::getValue('categoryBox')) === false OR (!empty($categories) AND !is_array($categories)))
 									$this->_errors[] = Tools::displayError('Please set a category for this voucher.');
 								$this->copyFromPost($object, $this->table);
-								
-								if ($object->id_discount_type == 3)
-								{
-									$object->id_currency = 0;
-									$object->value = 0;
-								}
-								elseif ($object->id_discount_type == 1)
-									$object->id_currency = 0;
-								
+								$shop = new Shop((int)$objectNew->id_shop);
+								$objectNew->id_group_shop = (int)$shop->id_group_shop;
 								$result = $object->update(true, false, $categories);
 							}
 							if (!$result)
@@ -163,6 +160,8 @@ class AdminDiscounts extends AdminTab
 					{
 						$object = new $this->className();
 						$this->copyFromPost($object, $this->table);
+						$shop = new Shop((int)$objectNew->id_shop);
+						$objectNew->id_group_shop = (int)$shop->id_group_shop;
 						$categories = Tools::getValue('categoryBox', null);
 						if (!$object->add(true, false, $categories))
 							$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
@@ -306,11 +305,7 @@ class AdminDiscounts extends AdminTab
 				</div>
 				<label>'.$this->l('Minimum amount').'</label>
 				<div class="margin-form">
-					<input type="text" size="15" name="minimal" value="'.($this->getFieldValue($obj, 'minimal') ? (float)($this->getFieldValue($obj, 'minimal')) : '0').'" onkeyup="javascript:this.value = this.value.replace(/,/g, \'.\'); " /> <sup>*</sup>&nbsp;
-					<select name="include_tax" id="include_tax" style="vertical-align: middle;">
-						<option value="0" '.($obj->include_tax == 0 ? 'selected="selected"' : '').'>'.$this->l('tax excl.').'</option>
-						<option value="1" '.($obj->include_tax == 1 ? 'selected="selected"' : '').'>'.$this->l('tax incl.').'</option>
-					</select>
+					<input type="text" size="15" name="minimal" value="'.($this->getFieldValue($obj, 'minimal') ? (float)($this->getFieldValue($obj, 'minimal')) : '0').'" onkeyup="javascript:this.value = this.value.replace(/,/g, \'.\'); " /> <sup>*</sup>
 					<p class="clear">'.$this->l('0 if not applicable').'</p>
 				</div>
 				<div class="margin-form">
@@ -325,6 +320,15 @@ class AdminDiscounts extends AdminTab
 						<label class="t" for="cumulable_reduction_on"> '.$this->l('Cumulative with price reductions').'</label>
 					</p>
 				</div>
+				<label for="id_shop">'.$this->l('Shop:').'</label>
+				<div class="margin-form">
+					<select name="id_shop" id="id_shop">';
+			$shops = Shop::getShops();
+			foreach ($shops AS $shop)
+				echo	'<option value="'.$shop['id_shop'].'" '.($this->getFieldValue($obj, 'id_shop') == $shop['id_shop'] ? 'selected="selected"' : '').'>'.$shop['name'].'</option>';
+			echo	'</select>
+				</div>
+				</label>
 				<label>'.$this->l('To be used by:').' </label>
 								<div class="margin-form">
 					<input type="hidden" name="id_customer" value="0">
@@ -392,9 +396,9 @@ class AdminDiscounts extends AdminTab
 										}
 										if (obj.customers.length >= 50)
 										{
-											formDiscount.id_target.options[groups_length+i].text = "'.$this->l('Too many results...',__CLASS__ , true, false).'";
-											formDiscount.id_target.options[groups_length+i].value = "_";
-											formDiscount.id_target.options[groups_length+i].className = "customers_filtered";
+											formDiscount.id_target.options[groups_length+50+i].text = "'.$this->l('Too many results...',__CLASS__ , true, false).'";
+											formDiscount.id_target.options[groups_length+50+i].value = "_";
+											formDiscount.id_target.options[groups_length+50+i].className = "customers_filtered";
 										}
 									}
 									$(".groups_filtered").appendTo($("#id_target_group"));
@@ -406,7 +410,7 @@ class AdminDiscounts extends AdminTab
 										else
 											formDiscount.id_target.options.selectedIndex = 2;
 									}
-									else if (filterValue)
+									else if(filterValue)
 										for (i = 0; i < (customers_length + groups_length); i++)
 											if (formDiscount.id_target.options[i+1].value == filterValue)
 												formDiscount.id_target.options.selectedIndex = i + 1;
@@ -496,3 +500,5 @@ class AdminDiscounts extends AdminTab
 					self::recurseCategoryForInclude($id_obj, $indexedCategories, $categories, $categories[$id_category][$key], $key, $id_category_default, $has_suite);
 	}
 }
+
+

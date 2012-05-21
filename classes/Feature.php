@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -67,7 +67,7 @@ class FeatureCore extends ObjectModel
 	 * @return array Array with feature's data
 	 * @static
 	 */
-	public static function getFeature($id_lang, $id_feature)
+	static public function getFeature($id_lang, $id_feature)
 	{
 		return Db::getInstance()->getRow('
 		SELECT *
@@ -83,7 +83,7 @@ class FeatureCore extends ObjectModel
 	 * @return array Multiple arrays with feature's data
 	 * @static
 	 */
-	public static function getFeatures($id_lang)
+	static public function getFeatures($id_lang)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *
@@ -111,42 +111,36 @@ class FeatureCore extends ObjectModel
 
 	public function add($autodate = true, $nullValues = false)
 	{
-		$return = parent::add($autodate, true);
-		Module::hookExec('afterSaveFeature', array('id_feature' => $this->id));
-		return $return;
+		return parent::add($autodate, true);
 	}
 
 	public function delete()
 	{
-		/* Also delete related attributes */
+	 	/* Also delete related attributes */
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'feature_value_lang` WHERE `id_feature_value` IN (SELECT id_feature_value FROM `'._DB_PREFIX_.'feature_value` WHERE `id_feature` = '.(int)($this->id).')');
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'feature_value` WHERE `id_feature` = '.(int)($this->id));
 		/* Also delete related products */
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'feature_product` WHERE `id_feature` = '.(int)($this->id));
-		$return = parent::delete();
-		if ($return)
-			Module::hookExec('afterDeleteFeature', array('id_feature' => $this->id));
-		return $return;
+		return parent::delete();
 	}
-
+	
 	public function update($nullValues = false)
 	{
-		$this->clearCache();
-		
-		$result = 1;
-		$fields = $this->getTranslationsFieldsChild();
+	 	$this->clearCache();
+	 	
+	 	$result = 1;
+	 	$fields = $this->getTranslationsFieldsChild();
 		foreach ($fields as $field)
 		{
-			foreach (array_keys($field) as $key)
-				if (!Validate::isTableOrIdentifier($key))
-					die(Tools::displayError());
+			foreach ($field as $key => $value)
+			 	if (!Validate::isTableOrIdentifier($key))
+	 				die(Tools::displayError());
 			$mode = Db::getInstance()->getRow('SELECT `id_lang` FROM `'.pSQL(_DB_PREFIX_.$this->table).'_lang` WHERE `'.pSQL($this->identifier).
 			'` = '.(int)($this->id).' AND `id_lang` = '.(int)($field['id_lang']));
 			$result *= (!Db::getInstance()->NumRows()) ? Db::getInstance()->AutoExecute(_DB_PREFIX_.$this->table.'_lang', $field, 'INSERT') : 
 			Db::getInstance()->AutoExecute(_DB_PREFIX_.$this->table.'_lang', $field, 'UPDATE', '`'.
 			pSQL($this->identifier).'` = '.(int)($this->id).' AND `id_lang` = '.(int)($field['id_lang']));
 		}
-		Module::hookExec('afterSaveFeature', array('id_feature' => $this->id));
 		return $result;
 	}
 	
@@ -157,7 +151,7 @@ class FeatureCore extends ObjectModel
 	* @return int Number of feature
 	* @static
 	*/
-	public static function nbFeatures($id_lang)
+	static public function nbFeatures($id_lang)
 	{
 		$result = Db::getInstance()->getRow('
 		SELECT COUNT(ag.`id_feature`) as nb
@@ -174,7 +168,7 @@ class FeatureCore extends ObjectModel
 	* @param integer $id_product Product id	
 	* @param array $value Feature Value		
 	*/	
-	public static function addFeatureImport($name)
+	static public function addFeatureImport($name)
 	{
 		$rq = Db::getInstance()->getRow('SELECT `id_feature` FROM '._DB_PREFIX_.'feature_lang WHERE `name` = \''.pSQL($name).'\' GROUP BY `id_feature`');
 		if (!empty($rq))

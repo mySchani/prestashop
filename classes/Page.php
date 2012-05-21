@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6946 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -46,56 +46,62 @@ class PageCore extends ObjectModel
 		return $fields;
 	}
 	
+	/**
+	 * @return int Current page ID
+	 */
 	public static function getCurrentId()
 	{
 		$phpSelf = isset($_SERVER['PHP_SELF']) ? substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__)) : '';
+		$pageTypeID = Page::getPageTypeByName($phpSelf);
 		
 		// Some pages must be distinguished in order to record exactly what is being seen
 		$specialArray = array(
 			'product.php' => 'id_product',
 			'category.php' => 'id_category',
 			'order.php' => 'step',
-			'manufacturer.php' => 'id_manufacturer');
+			'manufacturer.php' => 'id_manufacturer',
+		);
+
+		$where = '';
+		$insertData = array(
+			'id_page_type' =>	$pageTypeID,
+		);
+
 		if (array_key_exists($phpSelf, $specialArray))
 		{
-			$id_object = Tools::getValue($specialArray[$phpSelf]);
-			$result = Db::getInstance()->getRow('
-			SELECT p.`id_page`
-			FROM `'._DB_PREFIX_.'page` p
-			LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.`id_page_type` = pt.`id_page_type`
-			WHERE pt.`name` = \''.pSQL($phpSelf).'\'
-			AND p.`id_object` = '.(int)($id_object));
-			if ($result['id_page'])
-				return $result['id_page'];
-			else
-			{
-				Db::getInstance()->Execute('
-				INSERT INTO `'._DB_PREFIX_.'page` (`id_page_type`,`id_object`)
-				VALUES ((SELECT pt.`id_page_type` FROM `'._DB_PREFIX_.'page_type` pt WHERE pt.`name` = \''.pSQL($phpSelf).'\'),
-						'.(int)($id_object).')');
-				return Db::getInstance()->Insert_ID();
-			}
+			$objectID = Tools::getValue($specialArray[$phpSelf]);
+			$where = ' AND `id_object` = '.(int)$objectID;
+			$insertData['id_object'] = $objectID;
 		}
-		else
-		{
-			$result = Db::getInstance()->getRow('
-			SELECT p.`id_page`
-			FROM `'._DB_PREFIX_.'page` p
-			LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON p.`id_page_type` = pt.`id_page_type`
-			WHERE pt.`name` = \''.pSQL($phpSelf).'\'');
-			if ($result['id_page'])
-				return $result['id_page'];
-			else
-			{
-				Db::getInstance()->Execute('
-				INSERT INTO `'._DB_PREFIX_.'page_type` (`name`)
-				VALUES (\''.pSQL($phpSelf).'\')');
-				Db::getInstance()->Execute('
-				INSERT INTO `'._DB_PREFIX_.'page` (`id_page_type`)
-				VALUES ('.(int)(Db::getInstance()->Insert_ID()).')');
-				return Db::getInstance()->Insert_ID();
-			}
-		}
+		
+		$sql = 'SELECT `id_page`
+				FROM `'._DB_PREFIX_.'page`
+				WHERE `id_page_type` = '.(int)$pageTypeID.$where;
+		$result = Db::getInstance()->getRow($sql);
+		if ($result['id_page'])
+			return $result['id_page'];
+
+		Db::getInstance()->autoExecute(_DB_PREFIX_.'page', $insertData, 'INSERT');
+		return Db::getInstance()->Insert_ID();
+	}
+	
+	/**
+	 * Return page type ID from page name
+	 * 
+	 * @param string $name Page name (E.g. product.php)
+	 */
+	public static function getPageTypeByName($name)
+	{
+		$sql = 'SELECT id_page_type
+				FROM '._DB_PREFIX_.'page_type
+				WHERE name = \''.pSQL($name).'\'';
+		if ($value = Db::getInstance()->getValue($sql))
+			return $value;
+			
+		Db::getInstance()->autoExecute(_DB_PREFIX_.'page_type', array(
+			'name' =>	$name,
+		), 'INSERT');
+		return Db::getInstance()->Insert_ID();
 	}
 	
 	public static function setPageViewed($id_page)
@@ -103,18 +109,21 @@ class PageCore extends ObjectModel
 		$id_date_range = DateRange::getCurrentRange();
 		
 		// Try to increment the visits counter
-		Db::getInstance()->Execute('
-		UPDATE `'._DB_PREFIX_.'page_viewed`
-		SET `counter` = `counter` + 1
-		WHERE `id_date_range` = '.(int)($id_date_range).'
-		AND `id_page` = '.(int)($id_page));
-		
+		$sql = 'UPDATE `'._DB_PREFIX_.'page_viewed`
+				SET `counter` = `counter` + 1
+				WHERE `id_date_range` = '.(int)$id_date_range.'
+					AND `id_page` = '.(int)$id_page.'
+					AND `id_shop` = ' . Shop::getCurrentShop();
+		Db::getInstance()->Execute($sql);
+
 		// If no one has seen the page in this date range, it is added
 		if (Db::getInstance()->Affected_Rows() == 0)
-			Db::getInstance()->Execute('
-			INSERT INTO `'._DB_PREFIX_.'page_viewed` (`id_date_range`,`id_page`,`counter`)
-			VALUES ('.(int)($id_date_range).','.(int)($id_page).',1)');
+			Db::getInstance()->autoExecute(_DB_PREFIX_.'page_viewed', array(
+				'id_date_range' =>	(int)$id_date_range,
+				'id_page' =>		(int)$id_page,
+				'counter' =>		1,
+				'id_shop' =>		Shop::getCurrentShop(),
+				'id_group_shop' =>	Shop::getCurrentGroupShop(),
+			), 'INSERT');
 	}
 }
-
-

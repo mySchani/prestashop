@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7077 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -47,6 +47,6 @@
 			<input type="hidden" name="payerID" value="{$payerID|escape:'htmlall'|stripslashes}" />
 			<input type="submit" id="submitLogin" name="submitLogin" class="button" value="{l s='Log in' mod='paypal'}" />
 		</p>
-		<p class="lost_password center"><a href="password.php">{l s='Forgot your password?' mod='paypal'}</a></p>
+		<p class="lost_password center"><a href="{$link->getPageLink('password')}">{l s='Forgot your password?' mod='paypal'}</a></p>
 	</fieldset>
 </form>

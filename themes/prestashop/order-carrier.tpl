@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7444 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,6 +27,7 @@
 {if !$opc}
 	<script type="text/javascript">
 	//<![CDATA[
+		var baseDir = '{$base_dir_ssl}';
 		var orderProcess = 'order';
 		var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
 		var currencyRate = '{$currencyRate|floatval}';
@@ -35,24 +36,20 @@
 		var txtProduct = "{l s='product'}";
 		var txtProducts = "{l s='products'}";
 
-		var msg = "{l s='You must agree to the terms of service before continuing.' js=1}";
-		{literal}
-		function acceptCGV()
+	var msg = "{l s='You must agree to the terms of service before continuing.' js=1}";
+	{literal}
+	function acceptCGV()
+	{
+		if ($('#cgv').length && !$('input#cgv:checked').length)
 		{
-			if ($('#cgv').length && !$('input#cgv:checked').length)
-			{
-				alert(msg);
-				return false;
-			}
-			else
-				return true;
+			alert(msg);
+			return false;
 		}
-		{/literal}
+		else
+			return true;
+	}
+	{/literal}
 	//]]>
-	</script>
-{else}
-	<script type="text/javascript">
-		var txtFree = "{l s='Free!'}";
 	</script>
 {/if}
 
@@ -61,8 +58,7 @@
 {literal}
 // <![CDATA[
     $('document').ready( function(){
-		if ($('input#gift').is(':checked'))
-			$('p#gift_div').show();
+        $('#gift_div').toggle('slow');
     });
 //]]>
 {/literal}
@@ -82,7 +78,7 @@
 
 {include file="$tpl_dir./errors.tpl"}
 
-<form id="form" action="{$link->getPageLink('order.php', true)}" method="post" onsubmit="return acceptCGV();">
+<form id="form" action="{$link->getPageLink('order', true)}" method="post" onsubmit="return acceptCGV();">
 {else}
 <div id="opc_delivery_methods" class="opc-main-block">
 	<div id="opc_delivery_methods-overlay" class="opc-overlay" style="display: none;"></div>
@@ -101,7 +97,7 @@
 	<input id="input_virtual_carrier" class="hidden" type="hidden" name="id_carrier" value="0" />
 {else}
 	<h3 class="carrier_title">{l s='Choose your delivery method'}</h3>
-
+	
 	<div id="HOOK_BEFORECARRIER">{if isset($carriers)}{$HOOK_BEFORECARRIER}{/if}</div>
 	{if isset($isVirtualCart) && $isVirtualCart}
 	<p class="warning">{l s='No carrier needed for this order'}</p>
@@ -127,7 +123,7 @@
 			{foreach from=$carriers item=carrier name=myLoop}
 				<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{else}item{/if}">
 					<td class="carrier_action radio">
-						<input type="radio" name="id_carrier" value="{$carrier.id_carrier|intval}" id="id_carrier{$carrier.id_carrier|intval}"  {if $opc}onclick="updateCarrierSelectionAndGift();"{/if} {if !($carrier.is_module AND $opc AND !$isLogged)}{if $carrier.id_carrier == $checked}checked="checked"{/if}{else}disabled="disabled"{/if} />
+						<input type="radio" name="id_carrier" value="{$carrier.id_carrier|intval}" id="id_carrier{$carrier.id_carrier|intval}"  {if $opc}onclick="updateCarrierSelectionAndGift();"{/if} {if !($carrier.is_module AND $opc AND !$isLogged)}{if $carrier.id_carrier == $checked || $carriers|@count == 1}checked="checked"{/if}{else}disabled="disabled"{/if} />
 					</td>
 					<td class="carrier_name">
 						<label for="id_carrier{$carrier.id_carrier|intval}">
@@ -152,7 +148,7 @@
 		</tbody>
 	</table>
 	<div style="display: none;" id="extra_carrier"></div>
-
+	
 		{if $giftAllowed}
 		<h3 class="gift_title">{l s='Gift'}</h3>
 		<p class="checkbox">
@@ -180,7 +176,15 @@
 	<p class="cart_navigation submit">
 		<input type="hidden" name="step" value="3" />
 		<input type="hidden" name="back" value="{$back}" />
-		<a href="{$link->getPageLink('order.php', true)}{if !$is_guest}?step=1{if $back}&back={$back}{/if}{/if}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
+		{if !$is_guest}
+			{if $back}
+				<a href="{$link->getPageLink('order', true, NULL, "step=1&amp;back={$back}")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
+			{else}
+				<a href="{$link->getPageLink('order', true, NULL, "step=1")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
+			{/if}
+		{else}
+				<a href="{$link->getPageLink('order', true)}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
+		{/if}
 		<input type="submit" name="processCarrier" value="{l s='Next'} &raquo;" class="exclusive" />
 	</p>
 </form>

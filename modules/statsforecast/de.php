@@ -3,7 +3,7 @@
 global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{statsforecast}prestashop>statsforecast_240c994d8b61c7bd68ac1c5182bbdb2e'] = 'Statistik Startseite';
-$_MODULE['<{statsforecast}prestashop>statsforecast_b53bb8c5ac3b77a4667498709efba55d'] = 'Alle Beträge verstehen sich zzgl. MwSt';
+$_MODULE['<{statsforecast}prestashop>statsforecast_b53bb8c5ac3b77a4667498709efba55d'] = 'Alle Beträge verstehen sich zzgl. MsWst.';
 $_MODULE['<{statsforecast}prestashop>statsforecast_1ee1c44c2dc81681f961235604247b81'] = 'Modus:';
 $_MODULE['<{statsforecast}prestashop>statsforecast_03727ac48595a24daed975559c944a44'] = 'Tag';
 $_MODULE['<{statsforecast}prestashop>statsforecast_d2ce009594dcc60befa6a4e6cbeb71fc'] = 'Woche';

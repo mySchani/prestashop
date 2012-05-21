@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,13 +29,13 @@ class OrderMessageCore extends ObjectModel
 {
 	/** @var string name name */
 	public 		$name;
-
+	
 	/** @var string message content */
 	public 		$message;
-
+	
 	/** @var string Object creation date */
 	public 		$date_add;
-
+	
 	protected	$fieldsRequired = array();
 	protected	$fieldsValidate = array();
 	protected   $fieldsSize = array();
@@ -43,17 +43,18 @@ class OrderMessageCore extends ObjectModel
 	protected	$fieldsRequiredLang = array('name', 'message');
 	protected	$fieldsSizeLang = array('name' => 128, 'message' => 1200);
 	protected	$fieldsValidateLang = array('name' => 'isGenericName', 'message' => 'isMessage');
-
+	
 	protected 	$table = 'order_message';
 	protected 	$identifier = 'id_order_message';
-
+	
 	protected	$webserviceParameters = array(
 			'fields' => array(
 			'id' => array('sqlId' => 'id_discount_type', 'xlink_resource' => 'order_message_lang'),
+			'date_add' => array('sqlId' => 'date_add')
 		)
 	);
-
-
+	
+	
 	public function getFields()
 	{
 		parent::validateFields();
@@ -66,7 +67,7 @@ class OrderMessageCore extends ObjectModel
 		return parent::getTranslationsFields(array('name', 'message'));
 	}
 
-	public static function getOrderMessages($id_lang)
+	static public function getOrderMessages($id_lang)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT om.id_order_message, oml.name, oml.message

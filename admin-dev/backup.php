@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,14 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
+define('PS_ADMIN_DIR', getcwd());
 
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 
@@ -40,7 +39,7 @@ $tabAccess = Profile::getProfileAccess($cookie->profile, Tab::getIdFromClassName
 if ($tabAccess['view'] !== '1')
 	die (Tools::displayError('You do not have permission to view here'));
 
-$backupdir = realpath(PS_ADMIN_DIR . '/backups/');
+$backupdir = realpath( PS_ADMIN_DIR . '/backups/');
 
 if ($backupdir === false)
 	die (Tools::displayError('Backups directory does not exist.'));
@@ -55,11 +54,11 @@ if ($backupfile === false OR strncmp($backupdir, $backupfile, strlen($backupdir)
 	die (Tools::displayError());
 
 if (substr($backupfile, -4) == '.bz2')
-	$contentType = 'application/x-bzip2';
-elseif (substr($backupfile, -3) == '.gz')
-	$contentType = 'application/x-gzip';
+    $contentType = 'application/x-bzip2';
+else if (substr($backupfile, -3) == '.gz')
+    $contentType = 'application/x-gzip';
 else
-	$contentType = 'text/x-sql';
+    $contentType = 'text/x-sql';
 $fp = @fopen($backupfile, 'r');
 
 if ($fp === false)

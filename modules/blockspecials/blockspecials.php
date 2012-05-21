@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,25 +19,24 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
-
+	
 class BlockSpecials extends Module
 {
 	private $_html = '';
 	private $_postErrors = array();
 
-    	function __construct()
-	{
-		$this->name = 'blockspecials';
-		$this->tab = 'pricing_promotion';
-		$this->version = 0.8;
+    function __construct()
+    {
+        $this->name = 'blockspecials';
+        $this->tab = 'pricing_promotion';
+        $this->version = 0.8;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -66,7 +65,7 @@ class BlockSpecials extends Module
 	public function displayForm()
 	{
 		return '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Always display block').'</label>
@@ -86,24 +85,24 @@ class BlockSpecials extends Module
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-
+		
 		global $smarty;
-		if (!$special = Product::getRandomSpecial((int)($params['cookie']->id_lang)) AND !Configuration::get('PS_BLOCK_SPECIALS_DISPLAY'))
+		if (!$special = Product::getRandomSpecial((int)($params['cookie']->id_lang), false, false, $this->shopID) AND !Configuration::get('PS_BLOCK_SPECIALS_DISPLAY'))
 			return;
 		$smarty->assign(array(
 			'special' => $special,
 			'priceWithoutReduction_tax_excl' => Tools::ps_round($special['price_without_reduction'], 2),
 			'mediumSize' => Image::getSize('medium')
 		));
-
+		
 		return $this->display(__FILE__, 'blockspecials.tpl');
 	}
-
+		
 	public function hookLeftColumn($params)
 	{
 		return $this->hookRightColumn($params);
 	}
-
+		
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))

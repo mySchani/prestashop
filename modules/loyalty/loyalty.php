@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 /*
@@ -260,7 +260,7 @@ class Loyalty extends Module
 			id_language = Number('.$defaultLanguage.');
 		</script>
 		<h2>'.$this->l('Loyalty Program').'</h2>
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset>
 				<legend>'.$this->l('Settings').'</legend>
 				
@@ -324,19 +324,20 @@ class Loyalty extends Module
 				</div>
 				<div class="clear"></div>
 				<label>'.$this->l('Vouchers created by the loyalty system can be used in the following categories :').'</label>';
+
+		$html .=	'<table cellspacing="0" cellpadding="0" class="table">
+						<tr>
+							<th><input type="checkbox" name="checkme" class="noborder" onclick="checkDelBoxes(this.form, \'categoryBox[]\', this.checked)" /></th>						
+							<th>'.$this->l('ID').'</th>
+							<th style="width: 400px">'.$this->l('Name').'</th>
+						</tr>';
 		$index = explode(',', Configuration::get('PS_LOYALTY_VOUCHER_CATEGORY'));
-		$indexedCategories =  isset($_POST['categoryBox']) ? $_POST['categoryBox'] : $index;
-		// Translations are not automatic for the moment ;)
-		$trads = array(
-			 'Home' => $this->l('Home'), 
-			 'selected' => $this->l('selected'), 
-			 'Collapse All' => $this->l('Collapse All'), 
-			 'Expand All' => $this->l('Expand All'), 
-			 'Check All' => $this->l('Check All'), 
-			 'Uncheck All'  => $this->l('Uncheck All')
-		);
-		$html .= '<div class="margin-form">'.Helper::renderAdminCategorieTree($trads, $indexedCategories).'</div>';
-		 $html .= '
+		$indexedCategories =  isset($_POST['categoryBox']) ? $_POST['categoryBox'] : array();
+		foreach ($indexedCategories AS $k => $row)
+			$index[] = (int)$row['id_category'];
+		
+		$html .= $this->recurseCategoryForInclude((int)(Tools::getValue($this->identifier)), $index, $categories, $categories[0][1], 1, NULL);
+		$html .= '				</table>
 				<p style="padding-left:200px;">'.$this->l('Mark the box(es) of categories in which loyalty vouchers are usable.').'</p>
 				<div class="clear"></div>
 				<h3 style="margin-top:20px">'.$this->l('Loyalty points progression').'</h3>
@@ -526,13 +527,7 @@ class Loyalty extends Module
 		if (Validate::isLoadedObject($params['cart']))
 		{
 			$points = LoyaltyModule::getCartNbPoints($params['cart']);
-			$smarty->assign(array(
-				 'points' => (int)$points, 
-				 'voucher' => LoyaltyModule::getVoucherValue((int)$points),
-				 'guest_checkout' => (int)Configuration::get('PS_GUEST_CHECKOUT_ENABLED')
-			));
-		} else {
-			$smarty->assign(array('points' => 0));
+			$smarty->assign(array('points' => (int)$points, 'voucher' => LoyaltyModule::getVoucherValue((int)$points)));
 		}
 		
 		return $this->display(__FILE__, 'shopping-cart.tpl');
@@ -550,7 +545,7 @@ class Loyalty extends Module
 		$loyalty->id_customer = (int)$params['customer']->id;
 		$loyalty->id_order = (int)$params['order']->id;
 		$loyalty->points = LoyaltyModule::getOrderNbPoints($params['order']);
-		if (!Configuration::get('PS_LOYALTY_NONE_AWARD') AND (int)$loyalty->points == 0)
+		if ((int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND (int)($loyalty->points) == 0)
 			$loyalty->id_loyalty_state = LoyaltyStateModule::getNoneAwardId();
 		else
 			$loyalty->id_loyalty_state = LoyaltyStateModule::getDefaultId();
@@ -575,7 +570,7 @@ class Loyalty extends Module
 		{
 			if (!Validate::isLoadedObject($loyalty = new LoyaltyModule(LoyaltyModule::getByOrderId($order->id))))
 				return false;
-			if ((int)Configuration::get('PS_LOYALTY_NONE_AWARD') AND $loyalty->id_loyalty_state == LoyaltyStateModule::getNoneAwardId())
+			if ((int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND $loyalty->id_loyalty_state == LoyaltyStateModule::getNoneAwardId())
 				return true;
 
 			if ($newOrder->id == $this->loyaltyStateValidation->id_order_state)

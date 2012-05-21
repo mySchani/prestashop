@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -87,11 +87,11 @@ $smarty->assign(array(
 	'shipping_address' => $shippingAddress,
 	'shipping_country' => $shippingCountry,
 	'shipping_state' => $shippingState,
-	'amount' => (float)($cart->getOrderTotal(true, PayPal::BOTH_WITHOUT_SHIPPING)),
+	'amount' => (float)($cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING)),
 	'customer' => $customer,
-	'total' => (float)($cart->getOrderTotal(true, PayPal::BOTH)),
-	'shipping' => Tools::ps_round((float)($cart->getOrderShippingCost()) + (float)($cart->getOrderTotal(true, PayPal::ONLY_WRAPPING)), 2),
-	'discount' => $cart->getOrderTotal(true, PayPal::ONLY_DISCOUNTS),
+	'total' => (float)($cart->getOrderTotal(true, Cart::BOTH)),
+	'shipping' => Tools::ps_round((float)($cart->getOrderShippingCost()) + (float)($cart->getOrderTotal(true, Cart::ONLY_WRAPPING)), 2),
+	'discount' => $cart->getOrderTotal(true, Cart::ONLY_DISCOUNTS),
 	'business' => $business,
 	'currency_module' => $currency_module,
 	'cart_id' => (int)($cart->id).'_'.pSQL($cart->secure_key),
@@ -99,15 +99,9 @@ $smarty->assign(array(
 	'paypal_id' => (int)($paypal->id),
 	'header' => $header,
 	'template' => 'Template'.Configuration::get('PAYPAL_TEMPLATE'),
-	'url' => PayPal::getShopDomain(true, true).__PS_BASE_URI__,
+	'url' => Tools::getShopDomain(true, true).__PS_BASE_URI__,
 	'paymentaction' => (Configuration::get('PAYPAL_CAPTURE') ? 'authorization' : 'sale')
 ));
-
-
-if (substr(_PS_VERSION_, 0, 3) == '1.3')
-	$smarty->assign('jquery', 'jquery-1.2.6.pack.js');
-else
-	$smarty->assign('jquery', 'jquery-1.4.4.min.js');
 
 
 if (is_file(_PS_THEME_DIR_.'modules/paypal/integral_evolution/redirect.tpl'))

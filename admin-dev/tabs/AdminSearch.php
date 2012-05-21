@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,19 +28,6 @@
 
 class AdminSearch extends AdminTab
 {
-	public function	searchIP($query)
-	{
-		if (!ip2long(trim($query)))
-			return;
-			
-		$this->_list['customers'] = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT DISTINCT c.*
-		FROM `'._DB_PREFIX_.'customer` c
-		LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.id_customer = c.id_customer
-		LEFT JOIN `'._DB_PREFIX_.'connections` co ON g.id_guest = co.id_guest
-		WHERE co.`ip_address` = \''.ip2long(trim($query)).'\'');
-	}
-	
 	/**
 	* Search a specific string in the products and categories
 	*
@@ -63,7 +50,7 @@ class AdminSearch extends AdminTab
 	*
 	* @params string $query String to find in the catalog
 	*/
-	public function searchCustomer($query)
+	public function	searchCustomer($query)
 	{
 		$this->_list['customers'] = Customer::searchByName($query);
 	}
@@ -135,7 +122,9 @@ class AdminSearch extends AdminTab
 					'reference' => array('title' => $this->l('Reference')),
 					'name' => array('title' => $this->l('Name')),
 					'price' => array('title' => $this->l('Price')),
+					'tax' => array('title' => $this->l('Tax')),
 					'stock' => array('title' => $this->l('Stock')),
+					'weight' => array('title' => $this->l('Weight')),
 					'status' => array('title' => $this->l('Status')),
 					'action' => array('title' => $this->l('Actions'))
 				));
@@ -150,7 +139,7 @@ class AdminSearch extends AdminTab
 			}
 
 			/* Customer */
-			if (!$searchType OR $searchType == 2 OR $searchType == 6)
+			if (!$searchType OR $searchType == 2)
 			{
 				$this->fieldsDisplay['customers'] = (array(
 					'ID' => array('title' => $this->l('ID')),
@@ -164,19 +153,13 @@ class AdminSearch extends AdminTab
 					'actions' => array('title' => $this->l('Actions'))
 				));
 
-				if (!$searchType OR $searchType == 2)
-				{
-					/* Handle customer ID */
-					if ($searchType AND (int)$query AND Validate::isUnsignedInt((int)$query))
-						if ($customer = new Customer((int)$query) AND Validate::isLoadedObject($customer))
-							Tools::redirectAdmin('index.php?tab=AdminCustomers&id_customer='.(int)($customer->id).'&viewcustomer'.'&token='.Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)($cookie->id_employee)));
+				/* Handle customer ID */
+				if ($searchType AND (int)$query AND Validate::isUnsignedInt((int)$query))
+					if ($customer = new Customer((int)$query) AND Validate::isLoadedObject($customer))
+						Tools::redirectAdmin('index.php?tab=AdminCustomers&id_customer='.(int)($customer->id).'&viewcustomer'.'&token='.Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)($cookie->id_employee)));
 
-					/* Normal customer search */
-					$this->searchCustomer($query);
-				}
-				
-				if ($searchType == 6)
-					$this->searchIP($query);
+				/* Normal customer search */
+				$this->searchCustomer($query);
 			}
 
 			/* Order */
@@ -202,9 +185,6 @@ class AdminSearch extends AdminTab
 					Tools::redirectAdmin('index.php?tab=AdminCarts&id_cart='.(int)($cart->id).'&viewcart'.'&token='.Tools::getAdminToken('AdminCarts'.(int)(Tab::getIdFromClassName('AdminCarts')).(int)($cookie->id_employee)));
 				$this->_errors[] = Tools::displayError('No cart found with this ID:').' '.Tools::htmlentitiesUTF8($query);
 			}
-			
-			/* IP */
-			// 6 - but it is included in the customer block
 		}
 	}
 
@@ -246,7 +226,9 @@ class AdminSearch extends AdminTab
 					<td>'.$product['reference'].'</td>
 					<td><a href="'.$currentIndex.'?tab=AdminCatalog&id_product='.$product['id_product'].'&addproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">'.stripslashes($product['nameh']).'</a></td>
 					<td>'.Tools::displayPrice($product['price'], $currency).'</td>
+					<td>'.stripslashes($product['tax_name']).'</td>
 					<td align="center">'.$product['quantity'].'</td>
+					<td align="center">'.$product['weight'].' '.Configuration::get('PS_WEIGHT_UNIT').'</td>
 					<td align="center"><a href="'.$currentIndex.'?tab=AdminCatalog&id_product='.$product['id_product'].'&status&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">
 					<img src="../img/admin/'.($product['active'] ? 'enabled.gif' : 'forbbiden.gif').'" alt="" /></a></td>
 					<td>

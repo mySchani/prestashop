@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -51,6 +51,7 @@ class AdminCarts extends AdminTab
 			'total' => array('title' => $this->l('Total'), 'callback' => 'getOrderTotalUsingTaxCalculationMethod', 'orderby' => false, 'search' => false, 'width' => 50, 'align' => 'right', 'prefix' => '<b>', 'suffix' => '</b>', 'currency' => true),
 			'carrier' => array('title' => $this->l('Carrier'), 'width' => 25, 'align' => 'center', 'callback' => 'replaceZeroByShopName', 'filter_key' => 'ca!name'),
 			'date_add' => array('title' => $this->l('Date'), 'width' => 90, 'align' => 'right', 'type' => 'datetime', 'filter_key' => 'a!date_add'));
+ 		$this->shopLinkType = 'shop';
 
 		parent::__construct();
 	}
@@ -170,12 +171,9 @@ class AdminCarts extends AdminTab
 								SELECT id_image
 								FROM '._DB_PREFIX_.'image
 								WHERE id_product = '.(int)($product['id_product']).' AND cover = 1');
-						 	$stock = Db::getInstance()->getRow('
-							SELECT '.($product['id_product_attribute'] ? 'pa' : 'p').'.quantity
-							FROM '._DB_PREFIX_.'product p
-							'.($product['id_product_attribute'] ? 'LEFT JOIN '._DB_PREFIX_.'product_attribute pa ON p.id_product = pa.id_product' : '').'
-							WHERE p.id_product = '.(int)($product['id_product']).'
-							'.($product['id_product_attribute'] ? 'AND pa.id_product_attribute = '.(int)($product['id_product_attribute']) : ''));
+						 	
+							$productObj = new Product($product['id_product']);
+								
 							/* Customization display */
 							$this->displayCustomizedDatas($customizedDatas, $product, $currency, $image, $tokenCatalog, $stock);
 							if ($product['cart_quantity'] > $product['customizationQuantityTotal'])
@@ -192,10 +190,10 @@ class AdminCarts extends AdminTab
 										.'</a></td>
 									<td align="center">'.Tools::displayPrice($product_price, $currency, false).'</td>
 									<td align="center" class="productQuantity">'.((int)($product['cart_quantity']) - $product['customizationQuantityTotal']).'</td>
-									<td align="center" class="productQuantity">'.(int)($stock['quantity']).'</td>
+									<td align="center" class="productQuantity">'.$productObj->getStock(isset($product['id_product_attribute']) ? $product['id_product_attribute'] : 0).'</td>
 									<td align="right">'.Tools::displayPrice($product_total, $currency, false).'</td>
 								</tr>';
-							}
+						}
 						}
 					echo '
 					<tr class="cart_total_product">
@@ -247,7 +245,7 @@ class AdminCarts extends AdminTab
 			</table>';
 			}
 				echo '<div style="float:left; margin-top:15px;">'.
-				$this->l('According to the group of this customer, prices are printed:').' <b>'.($order->getTaxCalculationMethod() == PS_TAX_EXC ? $this->l('tax excluded.') : $this->l('tax included.')).'</b>
+				$this->l('According to the group of this customer, prices are printed:').' '.($order->getTaxCalculationMethod() == PS_TAX_EXC ? $this->l('tax excluded.') : $this->l('tax included.')).'
 				</div></div>';
 
 				// Cancel product
@@ -263,21 +261,21 @@ class AdminCarts extends AdminTab
 
 		if (is_array($customizedDatas) AND isset($customizedDatas[(int)($product['id_product'])][(int)($product['id_product_attribute'])]))
 		{
-			if ($image = new Image($image['id_image']))
-				echo '
-					<tr>
-						<td align="center">'.(isset($image->id_image) ? cacheImage(_PS_IMG_DIR_.'p/'.$image->getExistingImgPath().'.jpg',
-						'product_mini_'.(int)($product['id_product']).(isset($product['id_product_attribute']) ? '_'.(int)($product['id_product_attribute']) : '').'.jpg', 45, 'jpg') : '--').'</td>
-						<td><a href="index.php?tab=AdminCatalog&id_product='.$product['id_product'].'&updateproduct&token='.$tokenCatalog.'">
-							<span class="productName">'.$product['name'].'</span>'.(isset($product['attributes']) ? '<br />'.$product['attributes'] : '').'<br />
-							'.($product['reference'] ? $this->l('Ref:').' '.$product['reference'] : '')
-							.(($product['reference'] AND $product['supplier_reference']) ? ' / '.$product['supplier_reference'] : '')
-							.'</a></td>
-						<td align="center">'.Tools::displayPrice($product['price_wt'], $currency, false).'</td>
-						<td align="center" class="productQuantity">'.$product['customizationQuantityTotal'].'</td>
-						<td align="center" class="productQuantity">'.(int)($stock['quantity']).'</td>
-						<td align="right">'.Tools::displayPrice($product['total_customization_wt'], $currency, false).'</td>
-					</tr>';
+			$image = new Image($image['id_image']);
+			echo '
+			<tr>
+				<td align="center">'.(isset($image['id_image']) ? cacheImage(_PS_IMG_DIR_.'p/'.$image->getExistingImgPath().'.jpg',
+				'product_mini_'.(int)($product['id_product']).(isset($product['id_product_attribute']) ? '_'.(int)($product['id_product_attribute']) : '').'.jpg', 45, 'jpg') : '--').'</td>
+				<td><a href="index.php?tab=AdminCatalog&id_product='.$product['id_product'].'&updateproduct&token='.$tokenCatalog.'">
+					<span class="productName">'.$product['name'].'</span><br />
+					'.($product['reference'] ? $this->l('Ref:').' '.$product['reference'] : '')
+					.(($product['reference'] AND $product['supplier_reference']) ? ' / '.$product['supplier_reference'] : '')
+					.'</a></td>
+				<td align="center">'.Tools::displayPrice($product['price_wt'], $currency, false).'</td>
+				<td align="center" class="productQuantity">'.$product['customizationQuantityTotal'].'</td>
+				<td align="center" class="productQuantity">'.(int)($stock['quantity']).'</td>
+				<td align="right">'.Tools::displayPrice($product['total_customization_wt'], $currency, false).'</td>
+			</tr>';
 			foreach ($customizedDatas[(int)($product['id_product'])][(int)($product['id_product_attribute'])] AS $customization)
 			{
 				echo '
@@ -287,7 +285,7 @@ class AdminCarts extends AdminTab
 					if ($type == _CUSTOMIZE_FILE_)
 					{
 						$i = 0;
-						echo '<ul style="margin: 0; padding: 0; list-style-type: none;">';
+						echo '<ul style="margin: 4px 0px 4px 0px; padding: 0px; list-style-type: none;">';
 						foreach ($datas AS $data)
 							echo '<li style="display: inline; margin: 2px;">
 									<a href="displayImage.php?img='.$data['value'].'&name='.(int)($order->id).'-file'.++$i.'" target="_blank"><img src="'._THEME_PROD_PIC_DIR_.$data['value'].'_small" alt="" /></a>
@@ -297,9 +295,9 @@ class AdminCarts extends AdminTab
 					elseif ($type == _CUSTOMIZE_TEXTFIELD_)
 					{
 						$i = 0;
-						echo '<ul style="margin-bottom: 4px; padding: 0; list-style-type: none;">';
+						echo '<ul style="margin: 0px 0px 4px 0px; padding: 0px 0px 0px 6px; list-style-type: none;">';
 						foreach ($datas AS $data)
-							echo '<li>'.($data['name'] ? $data['name'] : $this->l('Text #').++$i).$this->l(':').' <b>'.$data['value'].'</b></li>';
+							echo '<li>'.($data['name'] ? $data['name'] : $this->l('Text #').++$i).$this->l(':').' '.$data['value'].'</li>';
 						echo '</ul>';
 					}
 				echo '</td>

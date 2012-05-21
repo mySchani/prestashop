@@ -5,10 +5,7 @@ if (file_exists($configPath))
 {
 	include('../../../config/config.inc.php');
 	if (!Tools::getValue('token') || Tools::getValue('token') != Configuration::get('EBAY_SECURITY_TOKEN'))
-		die('ERROR : INVALID TOKEN');
-
-	// Fix for limit db sql request in time
-	sleep(1);
+		die('ERROR :X');
 
 	$currentPath = Db::getInstance()->getRow('
 	SELECT ecc.`id_ebay_category`, ec.`id_category_ref`, ec.`id_category_ref_parent`, ec.`level`

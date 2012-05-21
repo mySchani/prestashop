@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,15 +18,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7077 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
 <!-- MODULE Block specials -->
 <div id="special_block_right" class="block products_block exclusive blockspecials">
-	<h4><a href="{$link->getPageLink('prices-drop.php')}" title="{l s='Specials' mod='blockspecials'}">{l s='Specials' mod='blockspecials'}</a></h4>
+	<h4><a href="{$link->getPageLink('prices-drop')}" title="{l s='Specials' mod='blockspecials'}">{l s='Specials' mod='blockspecials'}</a></h4>
 	<div class="block_content">
 
 {if $special}
@@ -48,7 +48,7 @@
 			</li>
 		</ul>
 		<p>
-			<a href="{$link->getPageLink('prices-drop.php')}" title="{l s='All specials' mod='blockspecials'}" class="button_large">{l s='All specials' mod='blockspecials'}</a>
+			<a href="{$link->getPageLink('prices-drop')}" title="{l s='All specials' mod='blockspecials'}" class="button_large">{l s='All specials' mod='blockspecials'}</a>
 		</p>
 {else}
 		<p>{l s='No specials at this time' mod='blockspecials'}</p>
@@ -56,3 +56,4 @@
 	</div>
 </div>
 <!-- /MODULE Block specials -->
+

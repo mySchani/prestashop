@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,13 +18,19 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14489 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{capture name=path}<a href="{$link->getPageLink('my-account.php', true)}">{l s='My account' mod='loyalty'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='My loyalty points' mod='loyalty'}{/capture}
+<script type="text/javascript">
+//<![CDATA[
+	var baseDir = '{$base_dir_ssl}';
+//]]>
+</script>
+
+{capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account' mod='loyalty'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='My loyalty points' mod='loyalty'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
 <h2>{l s='My loyalty points' mod='loyalty'}</h2>
@@ -168,7 +174,7 @@
 	<div id="block-order-detail" class="hidden">&nbsp;</div>
 </div>
 
-{if $minimalLoyalty > 0}<p>{l s='The minimum order amount in order to use these vouchers is:' mod='loyalty'} {convertPrice price=$minimalLoyalty}</p>{/if}
+{if $minimalLoyalty > 0}<p>{l s='The minimum order amount in order to use these vouchers is:'} {convertPrice price=$minimalLoyalty}</p>{/if}
 
 <script type="text/javascript">
 {literal}
@@ -194,6 +200,6 @@ $(document).ready(function()
 {/if}
 
 <ul class="footer_links">
-	<li><a href="{$link->getPageLink('my-account.php', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account.php', true)}">{l s='Back to Your Account' mod='loyalty'}</a></li>
+	<li><a href="{$link->getPageLink('my-account', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account', true)}">{l s='Back to Your Account' mod='loyalty'}</a></li>
 	<li><a href="{$base_dir}"><img src="{$img_dir}icon/home.gif" alt="" class="icon" /></a><a href="{$base_dir}">{l s='Home' mod='loyalty'}</a></li>
 </ul>

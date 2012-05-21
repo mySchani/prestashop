@@ -9,13 +9,13 @@
 	 *
 	 */
 	require_once(dirname(__FILE__) . DIRECTORY_SEPARATOR . "inc" . DIRECTORY_SEPARATOR . "config.php");
-	if (CONFIG_SYS_VIEW_ONLY || !CONFIG_OPTIONS_EDITABLE)
+	if(CONFIG_SYS_VIEW_ONLY || !CONFIG_OPTIONS_EDITABLE)
 	{
 		die(SYS_DISABLED);
 	}
 		//$session->gc();
 		$_GET['path'] = empty($_GET['path'])?CONFIG_SYS_ROOT_PATH . "ajax_image_editor_demo.jpg":$_GET['path'];
-		if (!empty($_GET['path']) && file_exists($_GET['path']) && is_file($_GET['path']) && isUnderRoot($_GET['path']))
+		if(!empty($_GET['path']) && file_exists($_GET['path']) && is_file($_GET['path']) && isUnderRoot($_GET['path']))
 		{
 				$path = $_GET['path'];
 		}else 
@@ -24,11 +24,11 @@
 		}
 		require_once(CLASS_HISTORY);
 		$history = new History($path, $session);
-		if (CONFIG_SYS_DEMO_ENABLE)
+		if(CONFIG_SYS_DEMO_ENABLE)
 		{
 			$sessionImageInfo = $history->getLastestRestorable();
 			$originalSessionImageInfo = $history->getOriginalImage();
-			if (sizeof($originalSessionImageInfo))
+			if(sizeof($originalSessionImageInfo))
 			{
 				$path = backslashToSlash($session->getSessionDir() . $originalSessionImageInfo['info']['name']);
 			}
@@ -104,7 +104,7 @@
 	<fieldset id="modes">
 		<legend>Modes</legend>
 		<form name="formAction" id="formAction" method="post" action="<?php echo appendQueryString(CONFIG_URL_IMAGE_UNDO, makeQueryString(array('path'))); ?>">
-			<input type="hidden" name="file_path" id="file_path" value="<?php echo Tools::safeOutput($_GET['path']); ?>" />
+			<input type="hidden" name="file_path" id="file_path" value="<?php echo $_GET['path']; ?>" />
 			
 			<p><label><?php echo IMG_MODE_RESIZE; ?></label> <input type="radio" name="mode" value="resize" class="input" checked="checked"  onclick="return changeMode();"/>
 			<label><?php echo IMG_MODE_CROP; ?></label> <input type="radio" name="mode" value="crop" class="input" onclick="return changeMode();" />
@@ -130,7 +130,7 @@
 			<p><input type="hidden" name="mode" id="image_mode" value="" />
       <input type="hidden" name="new_name" id="hidden_new_name" value="" />
       <input type="hidden" name="save_to" id="hidden_save_to" value="" />
-			<input type="hidden" name="path" id="path" value="<?php echo Tools::safeOutput($_GET['path']); ?>"  />
+			<input type="hidden" name="path" id="path" value="<?php echo $_GET['path']; ?>"  />
 			<input type="hidden" name="flip_angle" id="flip_angle" value="" />
 			<label><?php echo IMG_LBL_WIDTH; ?></label> <input type="text" name="width" id="width" value="" class="input imageInput"  />
 			<label><?php echo IMG_LBL_HEIGHT; ?></label> <input type="text" name="height" id="height" value="" class="input imageInput" />

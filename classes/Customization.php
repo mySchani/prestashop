@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,7 +28,7 @@
 class CustomizationCore
 {
 
-	public static function getReturnedCustomizations($id_order)
+	static public function getReturnedCustomizations($id_order)
 	{
 		if (($result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 			SELECT ore.`id_order_return`, ord.`id_order_detail`, ord.`id_customization`, ord.`product_quantity`
@@ -42,7 +42,7 @@ class CustomizationCore
 		return $customizations;
 	}
 
-	public static function getOrderedCustomizations($id_cart)
+	static public function getOrderedCustomizations($id_cart)
 	{
 		if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('SELECT `id_customization`, `quantity` FROM `'._DB_PREFIX_.'customization` WHERE `id_cart` = '.(int)($id_cart)))
 			return false;
@@ -52,7 +52,7 @@ class CustomizationCore
 		return $customizations;
 	}
 
-	public static function countCustomizationQuantityByProduct($customizations)
+	static public function countCustomizationQuantityByProduct($customizations)
 	{
 		$total = array();
 		foreach ($customizations AS $customization)
@@ -60,7 +60,7 @@ class CustomizationCore
 		return $total;
 	}
 
-	public static function getLabel($id_customization, $id_lang)
+	static public function getLabel($id_customization, $id_lang)
 	{
 		if (!$id_customization || !$id_lang)
 			return false;
@@ -82,8 +82,8 @@ class CustomizationCore
 		$in_values  = '';
 		foreach($ids_customizations as $key => $id_customization)
 		{
-			if ($key > 0) $in_values .= ',';
-			$in_values .= (int)($id_customization);
+			if ($key > 0) $in_values += ',';
+			$in_values += (int)($id_customization);
 		}
 
 		if (!empty($in_values))

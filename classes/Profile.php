@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -58,7 +58,7 @@ class ProfileCore extends ObjectModel
 	*
 	* @return array Profiles
 	*/
-	public static function getProfiles($id_lang)
+	static public function getProfiles($id_lang)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT p.`id_profile`, `name`
@@ -72,7 +72,7 @@ class ProfileCore extends ObjectModel
 	*
 	* @return string Profile
 	*/
-	public static function getProfile($id_profile, $id_lang = NULL)
+	static public function getProfile($id_profile, $id_lang = NULL)
 	{
 		if ($id_lang == NULL)
 			$id_lang = Configuration::get('PS_LANG_DEFAULT');

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -71,9 +71,9 @@ class AdminRangeWeight extends AdminTab
 		
 		if (!($obj = $this->loadObject(true)))
 			return;
-		
+
 		$carrierArray = array();
-		$carriers = Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
+		$carriers = Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
 		$id_carrier = Tools::getValue('id_carrier', $obj->id_carrier);
 		foreach ($carriers AS $carrier)
 			if (!$carrier['is_free'])

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,39 +19,39 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class StoresControllerCore extends FrontController
 {
-	public $php_self = 'stores.php';
-
+	public function __construct()
+	{
+		$this->php_self = 'stores.php';
+	
+		parent::__construct();
+	}
+	
 	public function preProcess()
 	{
 		global $smarty, $cookie;
-		
-		if(!extension_loaded('Dom'))
-		{
-			$this->errors[] = Tools::displayError('Dom extension is not loaded.');
-			$smarty->assign('errors', $this->errors);
-		}
 		
 		$simplifiedStoreLocator = Configuration::get('PS_STORES_SIMPLIFIED');
 		$distanceUnit = Configuration::get('PS_DISTANCE_UNIT');
 		if (!in_array($distanceUnit, array('km', 'mi')))
 			$distanceUnit = 'km';
-		
+			
 		if ($simplifiedStoreLocator)
 		{
 			$stores = Db::getInstance()->ExecuteS('
 			SELECT s.*, cl.name country, st.iso_code state
-			FROM '._DB_PREFIX_.'store s
+			FROM '._DB_PREFIX_.'store_shop ss
+			LEFT JOIN '._DB_PREFIX_.'store s ON (ss.id_store = s.id_store)
 			LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 			LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
-			WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang));
+			WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang).' AND ss.id_shop='.(int)$this->id_current_shop);
 			
 			foreach ($stores AS &$store)
 				$store['has_picture'] = file_exists(_PS_STORE_IMG_DIR_.(int)($store['id_store']).'.jpg');
@@ -62,10 +62,11 @@ class StoresControllerCore extends FrontController
 			{		
 				$stores = Db::getInstance()->ExecuteS('
 				SELECT s.*, cl.name country, st.iso_code state
-				FROM '._DB_PREFIX_.'store s
+				FROM '._DB_PREFIX_.'store_shop ss
+				LEFT JOIN '._DB_PREFIX_.'store s ON (ss.id_store = s.id_store)
 				LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 				LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
-				WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang));
+				WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang).' AND ss.id_shop='.(int)$this->id_current_shop);
 			}
 			else
 			{
@@ -75,10 +76,11 @@ class StoresControllerCore extends FrontController
 				$stores = Db::getInstance()->ExecuteS('
 				SELECT s.*, cl.name country, st.iso_code state,
 				('.(int)($multiplicator).' * acos(cos(radians('.(float)(Tools::getValue('latitude')).')) * cos(radians(latitude)) * cos(radians(longitude) - radians('.(float)(Tools::getValue('longitude')).')) + sin(radians('.(float)(Tools::getValue('latitude')).')) * sin(radians(latitude)))) distance, cl.id_country id_country
-				FROM '._DB_PREFIX_.'store s
+				FROM '._DB_PREFIX_.'store_shop ss
+				LEFT JOIN '._DB_PREFIX_.'store s ON (ss.id_store = s.id_store)
 				LEFT JOIN '._DB_PREFIX_.'country_lang cl ON (cl.id_country = s.id_country)
 				LEFT JOIN '._DB_PREFIX_.'state st ON (st.id_state = s.id_state)
-				WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang).'
+				WHERE s.active = 1 AND cl.id_lang = '.(int)($cookie->id_lang).' AND ss.id_shop='.(int)$this->id_current_shop.'
 				HAVING distance < '.(int)($distance).'
 				ORDER BY distance ASC
 				LIMIT 0,20');
@@ -157,7 +159,7 @@ class StoresControllerCore extends FrontController
 		$out = '';
 		$out_datas = array();
 
-		$address_datas = AddressFormat::getOrderedAddressFields($store['id_country'], false, true);
+		$address_datas = AddressFormat::getOrderedAddressFields($store['id_country']);
 		$state = (isset($store['id_state'])) ? new State($store['id_state']) : NULL;
 		
 		foreach ($address_datas as $data_line)
@@ -193,7 +195,7 @@ class StoresControllerCore extends FrontController
 		self::$smarty->assign(array(
 			'defaultLat' => (float)Configuration::get('PS_STORES_CENTER_LAT'),
 			'defaultLong' => (float)Configuration::get('PS_STORES_CENTER_LONG'),
-			'searchUrl' => $link->getPageLink('stores.php')
+			'searchUrl' => $link->getPageLink('stores')
 		));
 	}
 

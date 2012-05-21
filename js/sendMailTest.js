@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14009 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -50,18 +50,17 @@ function verifyMail(testMsg, testSubject)
 		{
 		   url: "ajax_send_mail_test.php",
 		   cache: false,
-		   type : "POST",
 		   data:
-		   {	"mailMethod" 	: (($("input#PS_MAIL_METHOD").val() == 2) ? "smtp" : "native"),
-				"smtpSrv"   	: $("input#PS_MAIL_SERVER").val(),
-				"testEmail" 	: $("#testEmail").val(),
-		   		"smtpLogin" 	: $("input#PS_MAIL_USER").val(),
-		   		"smtpPassword" 	: $("input#PS_MAIL_PASSWD").val(),
-				"smtpPort" 		: $("input#PS_MAIL_SMTP_PORT").val(),
-				"smtpEnc" 		: $("select#PS_MAIL_SMTP_ENCRYPTION").val(),
-				"testMsg" 		: textMsg,
-				"testSubject" 	: textSubject
-			},
+				"mailMethod="+(($("input#PS_MAIL_METHOD").val() == 2) ? "smtp" : "native")+
+				"&smtpSrv="+ $("input#PS_MAIL_SERVER").val()+
+				"&testEmail="+ $("#testEmail").val()+
+		   		"&smtpLogin="+ $("input#PS_MAIL_USER").val()+
+		   		"&smtpPassword="+ $("input#PS_MAIL_PASSWD").val()+
+				"&smtpPort="+ $("input#PS_MAIL_SMTP_PORT").val()+
+				"&smtpEnc="+ $("select#PS_MAIL_SMTP_ENCRYPTION").val()+
+				"&testMsg="+textMsg+
+				"&testSubject="+textSubject
+			,
 		   success: function(ret)
 		   {
 				if (ret == "ok")
@@ -72,7 +71,7 @@ function verifyMail(testMsg, testSubject)
 				else
 				{
 					mailIsOk = false;
-					$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(textSendError + '<br />' + ret);
+					$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(textSendError);
 				}
 		   }
 		 }

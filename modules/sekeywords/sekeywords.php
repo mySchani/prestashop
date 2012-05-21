@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class SEKeywords extends ModuleGraph
@@ -34,31 +34,31 @@ class SEKeywords extends ModuleGraph
 	private $_query = '';
 	private $_query2 = '';
 
-    function __construct()
+    public function __construct()
     {
         $this->name = 'sekeywords';
         $this->tab = 'analytics_stats';
         $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
-		$this->_query = '
-		SELECT sek.`keyword`, COUNT(TRIM(sek.`keyword`)) as occurences
-		FROM `'._DB_PREFIX_.'sekeyword` sek
-		WHERE '.(Configuration::get('SEK_FILTER_KW') == '' ? '1' : 'sek.`keyword` REGEXP \''.pSQL(Configuration::get('SEK_FILTER_KW')).'\'').'
-		AND sek.`date_add` BETWEEN ';
-		$this->_query2 = '
-		GROUP BY TRIM(sek.`keyword`)
-		HAVING occurences > '.(int)Configuration::get('SEK_MIN_OCCURENCES').'
-		ORDER BY occurences DESC';
 
         parent::__construct();
-		
+
+		$this->_query = 'SELECT `keyword`, COUNT(TRIM(`keyword`)) as occurences
+				FROM `'._DB_PREFIX_.'sekeyword`
+				WHERE '.(Configuration::get('SEK_FILTER_KW') == '' ? '1' : '`keyword` REGEXP \''.pSQL(Configuration::get('SEK_FILTER_KW')).'\'')
+					.$this->sqlShopRestriction().
+					'AND `date_add` BETWEEN ';
+
+		$this->_query2 = 'GROUP BY TRIM(`keyword`)
+				HAVING occurences > '.(int)Configuration::get('SEK_MIN_OCCURENCES').'
+				ORDER BY occurences DESC';
+
         $this->displayName = $this->l('Search engine keywords');
         $this->description = $this->l('Display which keywords have led visitors to your website.');
     }
 
-	function install()
+	public function install()
 	{
 		if (!parent::install() OR !$this->registerHook('top') OR !$this->registerHook('AdminStatsModules'))
 			return false;
@@ -67,32 +67,32 @@ class SEKeywords extends ModuleGraph
 		return Db::getInstance()->Execute('
 		CREATE TABLE `'._DB_PREFIX_.'sekeyword` (
 			id_sekeyword INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+			id_shop INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
+			id_group_shop INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
 			keyword VARCHAR(256) NOT NULL,
 			date_add DATETIME NOT NULL,
 			PRIMARY KEY(id_sekeyword)
 		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8');
 	}
-	
-    function uninstall()
+
+    public function uninstall()
     {
         if (!parent::uninstall())
 			return false;
 		return (Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'sekeyword`'));
     }
-	
-	function hookTop($params)
+
+	public function hookTop($params)
 	{
 		if (!isset($_SERVER['HTTP_REFERER']) OR strstr($_SERVER['HTTP_REFERER'], Tools::getHttpHost(false, false)))
 			return;
-		if (!Validate::isAbsoluteUrl($_SERVER['HTTP_REFERER']))
-			return;
+
 		if ($keywords = $this->getKeywords($_SERVER['HTTP_REFERER']))
-			Db::getInstance()->Execute('
-			INSERT INTO `'._DB_PREFIX_.'sekeyword` (`keyword`,`date_add`)
-			VALUES (\''.pSQL(Tools::strtolower(trim($keywords))).'\',\''.pSQL(date('Y-m-d H:i:s')).'\')');
+			Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'sekeyword` (`keyword`, `date_add`, `id_shop`, `id_group_shop`)
+										VALUES (\''.pSQL(Tools::strtolower(trim($keywords))).'\', NOW(), '.$this->shopID.', '.$this->shopGroupID.')');
 	}
-	
-	function hookAdminStatsModules()
+
+	public function hookAdminStatsModules()
 	{
 		if (Tools::isSubmit('submitSEK'))
 		{
@@ -100,13 +100,14 @@ class SEKeywords extends ModuleGraph
 			Configuration::updateValue('SEK_MIN_OCCURENCES', (int)Tools::getValue('SEK_MIN_OCCURENCES'));
 			Tools::redirectAdmin('index.php?tab=AdminStats&token='.Tools::getValue('token').'&module='.$this->name);
 		}
+
 		if (Tools::getValue('export'))
-				$this->csvExport(array('type' => 'pie'));
+			$this->csvExport(array('type' => 'pie'));
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.ModuleGraph::getDateBetween().$this->_query2);
 		$total = count($result);
 		$this->_html = '<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 		'.$total.' '.($total == 1 ? $this->l('keyword matches your query.') : $this->l('keywords match your query.')).'<div class="clear">&nbsp;</div>';
-		if ($result AND count($result))
+		if ($result AND $total)
 		{
 			$table = '
 			<div style="overflow-y: scroll; height: 600px;">
@@ -122,9 +123,9 @@ class SEKeywords extends ModuleGraph
 				$table .= '<tr><td>'.$keyword.'</td><td style="text-align: right">'.$occurences.'</td></tr>';
 			}
 			$table .= '</tbody></table></div>';
-			$this->_html .= '<center>'.ModuleGraph::engine(array('type' => 'pie')).'</center>
+			$this->_html .= '<center>'.$this->engine(array('type' => 'pie')).'</center>
 			<br class="clear" />
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=language"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br class="clear" />
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=language"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br class="clear" />
 			<form action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'" method="post">
 				'.$this->l('Filter by keyword').' <input type="text" name="SEK_FILTER_KW" value="'.Tools::htmlentitiesUTF8(Configuration::get('SEK_FILTER_KW')).'" />
 				'.$this->l('and min occurrences').' <input type="text" name="SEK_MIN_OCCURENCES" value="'.(int)(Configuration::get('SEK_MIN_OCCURENCES')).'" />
@@ -144,12 +145,18 @@ class SEKeywords extends ModuleGraph
 		</fieldset>';
 		return $this->_html;
 	}
-	
-	function getKeywords($url)
+
+	public function getKeywords($url)
 	{
 		if (!Validate::isAbsoluteUrl($url))
 			return false;
+
 		$parsedUrl = parse_url($url);
+		if (!isset($parsedUrl['query']) && isset($parsedUrl['fragment']))
+			$parsedUrl['query'] = $parsedUrl['fragment'];
+		if (!isset($parsedUrl['query']))
+			return false;
+
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('SELECT `server`, `getvar` FROM `'._DB_PREFIX_.'search_engine`');
 		foreach ($result as $index => $row)
 		{
@@ -158,8 +165,6 @@ class SEKeywords extends ModuleGraph
 			if (strstr($parsedUrl['host'], $host))
 			{
 				$kArray = array();
-				if (!isset($parsedUrl['query']))
-					return false;
 				preg_match('/[^a-z]'.$varname.'=.+\&'.'/U', $parsedUrl['query'], $kArray);
 				if (!isset($kArray[0]) OR empty($kArray[0]))
 					preg_match('/[^a-z]'.$varname.'=.+$'.'/', $parsedUrl['query'], $kArray);
@@ -170,7 +175,7 @@ class SEKeywords extends ModuleGraph
 			}
 		}
 	}
-	
+
 	protected function getData($layers)
 	{
 		$this->_titles['main'] = $this->l('10 first keywords');
@@ -193,5 +198,3 @@ class SEKeywords extends ModuleGraph
 		}
 	}
 }
-
-

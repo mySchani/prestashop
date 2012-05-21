@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -46,11 +46,6 @@ class CMSCore extends ObjectModel
 	protected $table = 'cms';
 	protected $identifier = 'id_cms';
 	
-	protected	$webserviceParameters = array(
-		'objectNodeName' => 'content',
-		'objectsNodeName' => 'content_management_system',
-	);
-
 	public function getFields() 
 	{ 
 		parent::validateFields();
@@ -109,7 +104,7 @@ class CMSCore extends ObjectModel
 		return false;
 	}
 
-	public static function getLinks($id_lang, $selection = NULL, $active = true)
+	public static function getLinks($id_lang, $selection = NULL, $active = true, $id_shop = false)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT c.id_cms, cl.link_rewrite, cl.meta_title
@@ -210,7 +205,7 @@ class CMSCore extends ObjectModel
 			AND `id_cms_category`='.(int)($movedCms['id_cms_category'])));
 	}
 	
-	public static function cleanPositions($id_category)
+	static public function cleanPositions($id_category)
 	{
 		$result = Db::getInstance()->ExecuteS('
 		SELECT `id_cms`
@@ -229,12 +224,12 @@ class CMSCore extends ObjectModel
 		return true;
 	}
 	
-	public static function getLastPosition($id_category)
+	static public function getLastPosition($id_category)
 	{
 		return (Db::getInstance()->getValue('SELECT MAX(position)+1 FROM `'._DB_PREFIX_.'cms` WHERE `id_cms_category` = '.(int)($id_category)));
 	}
 	
-	public static function getCMSPages($id_lang = NULL, $id_cms_category = NULL, $active = true)
+	static public function getCMSPages($id_lang = NULL, $id_cms_category = NULL, $active = true)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT *

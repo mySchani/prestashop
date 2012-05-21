@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Watermark extends Module
@@ -97,17 +97,17 @@ class Watermark extends Module
 		
 		if (empty($transparency))
 			$this->_postErrors[] = $this->l('Transparency required.');
-		elseif ($transparency < 0 || $transparency > 100)
+		elseif($transparency < 0 || $transparency > 100)
 			$this->_postErrors[] = $this->l('Transparency is not in allowed range.');
 
 		if (empty($yalign))
 			$this->_postErrors[] = $this->l('Y-Align is required.');
-		elseif (!in_array($yalign, $this->yaligns))
+		elseif(!in_array($yalign, $this->yaligns))
 			$this->_postErrors[] = $this->l('Y-Align is not in allowed range.');
 		
 		if (empty($xalign))
 			$this->_postErrors[] = $this->l('X-Align is required.');
-		elseif (!in_array($xalign, $this->xaligns))
+		elseif(!in_array($xalign, $this->xaligns))
 			$this->_postErrors[] = $this->l('X-Align is not in allowed range.');
 		if (empty($image_types))
 			$this->_postErrors[] = $this->l('At least one image type is required.');
@@ -135,11 +135,11 @@ class Watermark extends Module
 			if ($error = checkImage($_FILES['PS_WATERMARK'], $this->maxImageSize))
 				$this->_errors[] = $error;
 			/* Copy new watermark */
-			elseif (!copy($_FILES['PS_WATERMARK']['tmp_name'], dirname(__FILE__).'/watermark.gif'))
+			elseif(!copy($_FILES['PS_WATERMARK']['tmp_name'], dirname(__FILE__).'/watermark.gif'))
 				$this->_errors[] = Tools::displayError('an error occurred while uploading watermark: '.$_FILES['PS_WATERMARK']['tmp_name'].' to '.$dest);
 		}
 		
-		if ($this->_errors)
+		if($this->_errors)
 			foreach ($this->_errors as $error)
 				$this->_html .= '<div class="module_error alert error"><img src="../img/admin/warning.gif" alt="'.$this->l('ok').'" /> '.$this->l($error).'</div>';
 		else
@@ -150,7 +150,7 @@ class Watermark extends Module
 	{
 	    $imageTypes = ImageType::getImagesTypes('products');
 		$this->_html .=
-		'<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" enctype="multipart/form-data">
+		'<form action="'.$_SERVER['REQUEST_URI'].'" method="post" enctype="multipart/form-data">
 			<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" />'.$this->l('Watermark details').'</legend>
 				<p>'.$this->l('Once you have set up the module, regenerate the images using the "Images" tool in Preferences. However, the watermark will be added automatically to new images.').'</p>
 				<table border="0" width="500" cellpadding="0" cellspacing="0" id="form">
@@ -249,7 +249,7 @@ class Watermark extends Module
 		$Xoffset = $Yoffset = $xpos = $ypos = 0;
 		if (!$image = imagecreatefromjpeg($imagepath))
 			return false;
-		if (!$imagew = imagecreatefromgif ($watermarkpath))
+		if (!$imagew = imagecreatefromgif($watermarkpath))
 			die ($this->l('The watermark image is not a real gif, please CONVERT the image.'));
 		list($watermarkWidth, $watermarkHeight) = getimagesize($watermarkpath); 
 		list($imageWidth, $imageHeight) = getimagesize($imagepath); 

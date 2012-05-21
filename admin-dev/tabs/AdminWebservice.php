@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -37,6 +37,7 @@ class AdminWebservice extends AdminTab
 	 	$this->lang = false;
 	 	$this->edit = true;
 	 	$this->delete = true;
+	 	
  		$this->id_lang_default = Configuration::get('PS_LANG_DEFAULT');
 		
 		$this->fieldsDisplay = array(
@@ -53,12 +54,7 @@ class AdminWebservice extends AdminTab
 																						'</li><li>'.$this->l('be certain that the 5 methods GET, POST, PUT, DELETE and HEAD are supported by this server').
 																						'</li></ol>', 
 																	'cast' => 'intval',
-																	'type' => 'bool'),
-															'PS_WEBSERVICE_CGI_HOST' => array('title' => $this->l('Active mode CGI for PHP:'), 
-																	'desc' => $this->l('Be sure PHP is not configured as an Apache module on your server'),
-																	'cast' => 'intval',
-																	'type' => 'bool'),
-																	);
+																	'type' => 'bool'));
 		parent::__construct();
 	}
 	
@@ -70,10 +66,8 @@ class AdminWebservice extends AdminTab
 		WebserviceKey::setPermissionForAccount($object->id, Tools::getValue('resources', array()));
 	}
 	
-	public function displayList()
+	public function checkForWarning()
 	{
-		global $cookie, $currentIndex;
-
 		$warnings = array();
 		if (!file_exists(_PS_ROOT_DIR_.'/.htaccess'))
 			$warnings[] = $this->l('In order to enable the PrestaShop Webservice, please generate the .htaccess file via the "Generators" tab (in the "Tools" tab).');
@@ -99,23 +93,15 @@ class AdminWebservice extends AdminTab
 			$warnings[] = $this->l('If possible, it is preferable to use SSL (https) for webservice calls, as it avoids the security issues of type "man in the middle".');
 		
 		$this->displayWarning($warnings);
-		
-		foreach ($this->_list as $k => $item)
-			if ($item['is_module'] && $item['class_name'] && $item['module_name'] && 
-				($instance = Module::getInstanceByName($item['module_name'])) && 
-				!$instance->useNormalPermissionBehaviour())
-				unset($this->_list[$k]);
-		
-		parent::displayList();
 	}
 	
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex;
 		parent::displayForm();
-		
 		if (!($obj = $this->loadObject(true)))
 			return;
+			
 		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
@@ -234,18 +220,63 @@ echo '
 	}
 	public function postProcess()
 	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		
 		if (Tools::getValue('key') && strlen(Tools::getValue('key')) < 32)
 			$this->_errors[] = Tools::displayError($this->l('Key length must be 32 character long'));
-		if (WebserviceKey::keyExists(Tools::getValue('key')) && !Tools::getValue('id_webservice_account'))
-			$this->_errors[] = Tools::displayError($this->l('Key already exists'));
 		return parent::postProcess();
 	}
+
+	public function display()
+	{
+	global $currentIndex, $cookie;
+
+		// Include other tab in current tab
+		if ($this->includeSubTab('display', array('submitAdd2', 'add', 'update', 'view'))){}
+
+		// Include current tab
+		elseif ((Tools::getValue('submitAdd'.$this->table) AND sizeof($this->_errors)) OR isset($_GET['add'.$this->table]))
+		{
+			if ($this->tabAccess['add'] === '1')
+			{
+				$this->displayForm();
+				if ($this->tabAccess['view'])
+					echo '<br /><br /><a href="'.((Tools::getValue('back')) ? Tools::getValue('back') : $currentIndex.'&token='.$this->token).'"><img src="../img/admin/arrow2.gif" /> '.((Tools::getValue('back')) ? $this->l('Back') : $this->l('Back to list')).'</a><br />';
+			}
+			else
+				echo $this->l('You do not have permission to add here');
+		}
+		elseif (isset($_GET['update'.$this->table]))
+		{
+			if ($this->tabAccess['edit'] === '1' OR ($this->table == 'employee' AND $cookie->id_employee == Tools::getValue('id_employee')))
+			{
+				$this->displayForm();
+				if ($this->tabAccess['view'])
+					echo '<br /><br /><a href="'.((Tools::getValue('back')) ? Tools::getValue('back') : $currentIndex.'&token='.$this->token).'"><img src="../img/admin/arrow2.gif" /> '.((Tools::getValue('back')) ? $this->l('Back') : $this->l('Back to list')).'</a><br />';
+			}
+			else
+				echo $this->l('You do not have permission to edit here');
+		}
+		elseif (isset($_GET['view'.$this->table]))
+			$this->{'view'.$this->table}();
+
+		else
+		{
+			$this->checkForWarning();
+			
+			$this->getList((int)$cookie->id_lang);
+			$this->displayList();
+			
+			$this->displayRequiredFields();
+			$this->includeSubTab('display');
+			$assos_shop = Shop::getAssoTables();
+			if (isset($assos_shop[$this->table]) AND $assos_shop[$this->table]['type'] == 'shop')
+			{
+				echo '<br/>';
+				$this->displayAssoShop('key');
+			}
+			elseif (isset($assos_shop[$this->table]) AND $assos_shop[$this->table]['type'] == 'group_shop')
+				$this->displayAssoGroupShop();
+			$this->displayOptionsList();
+		}
+	}
+
 }

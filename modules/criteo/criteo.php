@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Criteo extends Module
@@ -36,7 +36,6 @@ class Criteo extends Module
 	 	$this->tab = 'advertising_marketing';
 	 	$this->version = '1.0';
 		$this->need_instance = 0;
-		$this->author = 'PrestaShop';
 
 	 	parent::__construct();
 
@@ -108,7 +107,7 @@ class Criteo extends Module
 		$category = new Category(intval($id_cat));
 
 		$sub_cats = $category->getSubcategories($id_lang);
-		if (count($sub_cats) > 0)
+		if(count($sub_cats) > 0)
 			foreach ($sub_cats AS $sub_cat)
 			{
 				$all_cats[] = $sub_cat['id_category'];

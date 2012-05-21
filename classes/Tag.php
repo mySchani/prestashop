@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -91,7 +91,7 @@ class TagCore extends ObjectModel
 	*
 	* @return boolean Operation success
 	*/
-	public static function addTags($id_lang, $id_product, $string)
+	static public function addTags($id_lang, $id_product, $string)
 	{
 	 	if (!Validate::isUnsignedId($id_lang) OR !Validate::isTagsList($string))
 			return false;
@@ -124,7 +124,7 @@ class TagCore extends ObjectModel
 		VALUES '.$data);
 	}
 	
-	public static function getMainTags($id_lang, $nb = 10)
+	static public function getMainTags($id_lang, $nb = 10)
 	{
 		$groups = FrontController::getCurrentCustomerGroups();
 		$sqlGroups = (count($groups) ? 'IN ('.implode(',', $groups).')' : '= 1');
@@ -147,7 +147,7 @@ class TagCore extends ObjectModel
 		LIMIT 0, '.(int)($nb));
 	}
 	
-	public static function getProductTags($id_product)
+	static public function getProductTags($id_product)
 	{
 	 	if (!$tmp = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT t.`id_lang`, t.`name` 
@@ -185,7 +185,7 @@ class TagCore extends ObjectModel
 		if (is_array($array))
 		{
 			$array = array_map('intval', $array);
-			$result1 = Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'product SET indexed = 0 WHERE id_product IN ('.implode(',', array_map('intval', $array)).')');
+			$result1 = Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'product SET indexed = 0 WHERE id_product IN ('.implode(',', $array).')');
 			$ids = array();
 			foreach ($array as $id_product)
 				$ids[] = '('.(int)$id_product.','.(int)$this->id.')';
@@ -194,7 +194,7 @@ class TagCore extends ObjectModel
 		return $result1;
 	}
 	
-	public static function deleteTagsForProduct($id_product)
+	static public function deleteTagsForProduct($id_product)
 	{
 		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_tag` WHERE `id_product` = '.(int)($id_product));
 	}

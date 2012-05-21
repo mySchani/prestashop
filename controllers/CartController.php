@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,19 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class CartControllerCore extends FrontController
 {
-	public $php_self = 'cart.php';
-
-	// This is not a public page, so the canonical redirection is disabled
-	public function canonicalRedirection(){}
-
 	public function run()
 	{
 		$this->init();
@@ -41,7 +36,6 @@ class CartControllerCore extends FrontController
 		{
 			if (Tools::getIsset('summary'))
 			{
-				$result = array();
 				if (Configuration::get('PS_ORDER_PROCESS_TYPE') == 1)
 				{
 					if (self::$cookie->id_customer)
@@ -53,9 +47,7 @@ class CartControllerCore extends FrontController
 						$groups = array(1);
 					if ((int)self::$cart->id_address_delivery)
 						$deliveryAddress = new Address((int)self::$cart->id_address_delivery);
-					$result['carriers'] = Carrier::getCarriersForOrder((int)Country::getIdZone((isset($deliveryAddress) AND (int)$deliveryAddress->id) ? (int)$deliveryAddress->id_country : (int)Configuration::get('PS_COUNTRY_DEFAULT')), $groups);
-					$result['checked'] = Carrier::getDefaultCarrierSelection($result['carriers'], (int)self::$cart->id_carrier);
-					$result['HOOK_EXTRACARRIER'] = Module::hookExec('extraCarrier', array('address' => (isset($deliveryAddress) AND (int)$deliveryAddress->id) ? $deliveryAddress : null));
+					$result = array('carriers' => Carrier::getCarriersForOrder((int)Country::getIdZone((isset($deliveryAddress) AND (int)$deliveryAddress->id) ? (int)$deliveryAddress->id_country : (int)Configuration::get('PS_COUNTRY_DEFAULT')), $groups));
 				}
 				$result['summary'] = self::$cart->getSummaryDetails();
 				$result['customizedDatas'] = Product::getAllCustomizedDatas((int)(self::$cart->id));
@@ -78,7 +70,7 @@ class CartControllerCore extends FrontController
 
 	public function includeCartModule()
 	{
-		require_once(_PS_MODULE_DIR_.'/blockcart/blockcart-ajax.php');
+		require_once(_PS_MODULE_DIR_.'/blockcart/blockcart-ajax.php'); 
 	}
 
 	public function preProcess()
@@ -86,19 +78,19 @@ class CartControllerCore extends FrontController
 		parent::preProcess();
 
 		$orderTotal = self::$cart->getOrderTotal(true, Cart::ONLY_PRODUCTS);
-
 		$this->cartDiscounts = self::$cart->getDiscounts();
 		foreach ($this->cartDiscounts AS $k => $this->cartDiscount)
-			if ($error = self::$cart->checkDiscountValidity(new Discount((int)($this->cartDiscount['id_discount'])), $this->cartDiscounts, $orderTotal, self::$cart->getProducts()))
+			if ($error = self::$cart->checkDiscountValidity(new Discount((int)($this->cartDiscount['id_discount'])), $this->cartDiscounts, $orderTotal, self::$cart->getProducts(), false, (int)$this->id_current_group_shop, (int)$this->id_current_shop))
 				self::$cart->deleteDiscount((int)($this->cartDiscount['id_discount']));
 
 		$add = Tools::getIsset('add') ? 1 : 0;
 		$delete = Tools::getIsset('delete') ? 1 : 0;
 
-		if (Configuration::get('PS_TOKEN_ENABLE') == 1
-		&& strcasecmp(Tools::getToken(false), strval(Tools::getValue('token')))
-		&& self::$cookie->isLogged() === true)
+		if (Configuration::get('PS_TOKEN_ENABLE') == 1 &&
+			strcasecmp(Tools::getToken(false), strval(Tools::getValue('token'))) &&
+			self::$cookie->isLogged() === true)
 			$this->errors[] = Tools::displayError('Invalid token');
+
 		// Update the cart ONLY if $this->cookies are available, in order to avoid ghost carts created by bots
 		if (($add OR Tools::getIsset('update') OR $delete) AND isset($_COOKIE[self::$cookie->getName()]))
 		{
@@ -113,7 +105,7 @@ class CartControllerCore extends FrontController
 				$this->errors[] = Tools::displayError('Product not found');
 			else
 			{
-				$producToAdd = new Product((int)($idProduct), true, (int)(self::$cookie->id_lang));
+				$producToAdd = new Product((int)($idProduct), true, (int)self::$cookie->id_lang, (int)$this->id_current_shop);
 				if ((!$producToAdd->id OR !$producToAdd->active) AND !$delete)
 					if (Tools::getValue('ajax') == 'true')
 						die('{"hasError" : true, "errors" : ["'.Tools::displayError('Product is no longer available.', false).'"]}');
@@ -153,11 +145,11 @@ class CartControllerCore extends FrontController
 						$hasUndiscountedProduct = null;
 						foreach($discounts as $discount)
 						{
-							if (is_null($hasUndiscountedProduct))
+							if(is_null($hasUndiscountedProduct))
 							{
 								$hasUndiscountedProduct = false;
 								foreach(self::$cart->getProducts() as $product)
-									if ($product['reduction_applies'] === false)
+									if($product['reduction_applies'] === false)
 									{
 										$hasUndiscountedProduct = true;
 										break;
@@ -168,7 +160,7 @@ class CartControllerCore extends FrontController
 									die('{"hasError" : true, "errors" : ["'.Tools::displayError('Cannot add this product because current voucher does not allow additional discounts.').'"]}');
 								else
 									$this->errors[] = Tools::displayError('Cannot add this product because current voucher does not allow additional discounts.');
-
+							
 						}
 					}
 					if (!sizeof($this->errors))
@@ -229,7 +221,8 @@ class CartControllerCore extends FrontController
 					foreach($discounts AS $discount)
 					{
 						$discountObj = new Discount((int)($discount['id_discount']), (int)(self::$cookie->id_lang));
-						if ($error = self::$cart->checkDiscountValidity($discountObj, $discounts, self::$cart->getOrderTotal(true, Cart::ONLY_PRODUCTS), self::$cart->getProducts()))
+
+						if ($error = self::$cart->checkDiscountValidity($discountObj, $discounts, self::$cart->getOrderTotal(true, Cart::ONLY_PRODUCTS), self::$cart->getProducts(), false, (int)$this->id_current_group_shop, (int)$this->id_current_shop))
 						{
 							self::$cart->deleteDiscount((int)($discount['id_discount']));
 							self::$cart->update();
@@ -240,7 +233,7 @@ class CartControllerCore extends FrontController
 					{
 						$queryString = Tools::safeOutput(Tools::getValue('query', NULL));
 						if ($queryString AND !Configuration::get('PS_CART_REDIRECT'))
-							Tools::redirect('search.php?search='.$queryString);
+							Tools::redirect('index.php?controller=search&search='.$queryString);
 						if (isset($_SERVER['HTTP_REFERER']))
 						{
 							// Redirect to previous page
@@ -251,7 +244,7 @@ class CartControllerCore extends FrontController
 					}
 				}
 				if (Tools::getValue('ajax') != 'true' AND !sizeof($this->errors))
-					Tools::redirect('order.php?'.(isset($idProduct) ? 'ipa='.(int)($idProduct) : ''));
+					Tools::redirect('index.php?controller=order&'.(isset($idProduct) ? 'ipa='.(int)($idProduct) : ''));
 
 			}
 		}

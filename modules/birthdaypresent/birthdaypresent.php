@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class BirthdayPresent extends Module
@@ -63,7 +63,7 @@ class BirthdayPresent extends Module
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<p>'.$this->l('Create a voucher for customers celebrating their birthday and having at least one valid order').'</p>
-			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" style="margin-top: 15px;">
+			<form action="'.$_SERVER['REQUEST_URI'].'" method="post" style="margin-top: 15px;">
 				<label>'.$this->l('Active').'</label>
 				<div class="margin-form">
 					<img src="../img/admin/enabled.gif" /> <input type="radio" name="bp_active" value="1"'.(Configuration::get('BIRTHDAY_ACTIVE') ? ' checked="checked"' : '').' />
@@ -130,7 +130,6 @@ class BirthdayPresent extends Module
 			$voucher->name = 'BIRTHDAY-'.(int)($voucher->id_customer).'-'.date('Y');
 			$voucher->description[(int)(Configuration::get('PS_LANG_DEFAULT'))] = $this->l('Your birthday present !');
 			$voucher->value = Configuration::get('BIRTHDAY_DISCOUNT_VALUE');
-			$voucher->id_currency = Configuration::get('PS_CURRENCY_DEFAULT');
 			$voucher->quantity = 1;
 			$voucher->quantity_per_user = 1;
 			$voucher->cumulable = 1;
@@ -140,7 +139,7 @@ class BirthdayPresent extends Module
 			$voucher->minimal = Configuration::get('BIRTHDAY_MINIMAL_ORDER');
 			$voucher->active = true;
 			if ($voucher->add())
-				Mail::Send((int)Configuration::get('PS_LANG_DEFAULT'), 'birthday', Mail::l('Happy birthday!', (int)Configuration::get('PS_LANG_DEFAULT')), array('{firstname}' => $user['firstname'], '{lastname}' => $user['lastname']), $user['email'], NULL, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
+				Mail::Send((int)(Configuration::get('PS_LANG_DEFAULT')), 'birthday', Mail::l('Happy birthday!'), array('{firstname}' => $user['firstname'], '{lastname}' => $user['lastname']), $user['email'], NULL, strval(Configuration::get('PS_SHOP_EMAIL')), strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
 			else
 				echo Db::getInstance()->getMsgError();
 		}

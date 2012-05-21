@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -214,7 +214,6 @@ class	CookieCore
 	  */
 	public function mylogout()
 	{
-		unset($this->_content['id_compare']);
 		unset($this->_content['id_customer']);
 		unset($this->_content['id_guest']);
 		unset($this->_content['is_guest']);
@@ -250,8 +249,7 @@ class	CookieCore
 			$content = $this->_cipherTool->decrypt($_COOKIE[$this->_name]);
 
 			/* Get cookie checksum */
-			$mbStrValue = ((1 << 1) & ini_get('mbstring.func_overload')) ? 1 : 2;
-			$checksum = crc32($this->_iv.substr($content, 0, strrpos($content, '¤') + $mbStrValue));
+			$checksum = crc32($this->_iv.substr($content, 0, strrpos($content, '¤') + 2));
 
 			/* Unserialize cookie content */
 			$tmpTab = explode('¤', $content);
@@ -341,7 +339,7 @@ class	CookieCore
 	public function unsetFamily($origin)
 	{
 		$family = $this->getFamily($origin);
-		foreach (array_keys($family) AS $member)
+		foreach ($family AS $member => $value)
 			unset($this->$member);
 	}
 

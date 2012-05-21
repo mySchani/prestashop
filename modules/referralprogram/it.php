@@ -77,7 +77,6 @@ $_MODULE['<{referralprogram}prestashop>referralprogram_4218c2cb615fbc2870f6b1e8d
 $_MODULE['<{referralprogram}prestashop>referralprogram_bb7476567f5e12e60b01436dad77a533'] = 'non è valido.';
 $_MODULE['<{referralprogram}prestashop>referralprogram_addae886b20a06e2954461706c90cd7d'] = 'tipo di sconto è richiesto / non valido.';
 $_MODULE['<{referralprogram}prestashop>referralprogram_ac3357de2dec8d74d89dd378962ec621'] = 'Numero di amici è richiesto / non valido.';
-$_MODULE['<{referralprogram}prestashop>referralprogram_18d0d79eb088abb4357e3666eec35660'] = 'Percentuale di sconto è necessario / valido.';
 $_MODULE['<{referralprogram}prestashop>referralprogram_3d31dd445991f35b1ee6491eec7ac71c'] = 'Impossibile scrivere il file xml.';
 $_MODULE['<{referralprogram}prestashop>referralprogram_96191c1f54bb6311624210333ef797eb'] = 'Impossibile chiudere il file xml.';
 $_MODULE['<{referralprogram}prestashop>referralprogram_21cc1fccae3b04bb8cd2719cc5269e1e'] = 'Impossibile aggiornare il file xml. Si prega di controllare i permessi di scrittura del file XML.';
@@ -94,7 +93,7 @@ $_MODULE['<{referralprogram}prestashop>referralprogram_edf7f0a17b8a8f1732f12856f
 $_MODULE['<{referralprogram}prestashop>referralprogram_8465d83b5c1b569299af284c14d957bb'] = 'Descrizione buono:';
 $_MODULE['<{referralprogram}prestashop>referralprogram_b17f3f4dcf653a5776792498a9b44d6a'] = 'Aggiorna le impostazioni';
 $_MODULE['<{referralprogram}prestashop>referralprogram_562ad64cf21ac2da656134355115133d'] = 'Il testo è vuoto.';
-$_MODULE['<{referralprogram}prestashop>referralprogram_6b719c160f9b08dad4760bcc4b52ed48'] = 'Condizioni del programma di riferimento';
+$_MODULE['<{referralprogram}prestashop>referralprogram_01705c0177ebf5fbcbf4e882bc454405'] = 'Regole programma di segnalazione';
 $_MODULE['<{referralprogram}prestashop>referralprogram_c5afb9c76a7880978cba32872d01f068'] = 'Aggiorna il testo';
 $_MODULE['<{referralprogram}prestashop>referralprogram_6b31baf25848e7a6563ecc3946626c80'] = 'Programma di segnalazione';
 $_MODULE['<{referralprogram}prestashop>referralprogram_7790d51a3d62c85aae65464dee12ee8b'] = 'Sponsor del cliente.';

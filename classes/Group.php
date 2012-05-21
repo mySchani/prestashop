@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -82,7 +82,7 @@ class GroupCore extends ObjectModel
 		return parent::getTranslationsFields(array('name'));
 	}
 	
-	public static function getGroups($id_lang)
+	static public function getGroups($id_lang)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT g.`id_group`, g.`reduction`, g.`price_display_method`, gl.`name`
@@ -110,14 +110,20 @@ class GroupCore extends ObjectModel
 		'.($limit > 0 ? 'LIMIT '.(int)$start.', '.(int)$limit : ''));
 	}
 	
-	public static function getReduction($id_customer = NULL)
+	static public function getReduction($id_customer = NULL)
 	{
-		if (!isset(self::$_cacheReduction['customer'][(int)$id_customer]))
-        {
-            $id_group = $id_customer ? Customer::getDefaultGroupId((int)$id_customer) : 1;
-			self::$_cacheReduction['customer'][(int)$id_customer] = Group::getReductionByIdGroup($id_group);
-        }
-		return self::$_cacheReduction['customer'][(int)$id_customer];
+		if ($id_customer === NULL)
+			$id_customer = 0;
+		if (!isset(self::$_cacheReduction['customer'][$id_customer]))
+		{
+			if ($id_customer)
+				$customer = new Customer((int)($id_customer));
+			self::$_cacheReduction['customer'][$id_customer] = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+			SELECT `reduction`
+			FROM `'._DB_PREFIX_.'group`
+			WHERE `id_group` = '.((isset($customer) AND Validate::isLoadedObject($customer)) ? (int)($customer->id_default_group) : 1));
+		}
+		return self::$_cacheReduction['customer'][$id_customer];
 	}
 
 	public static function getReductionByIdGroup($id_group)
@@ -132,7 +138,7 @@ class GroupCore extends ObjectModel
 		return self::$_cacheReduction['group'][$id_group];
 	}
 
-	public static function getPriceDisplayMethod($id_group)
+	static public function getPriceDisplayMethod($id_group)
 	{
 		if (!isset(self::$_groupPriceDisplayMethod[$id_group]))
 			self::$_groupPriceDisplayMethod[$id_group] = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
@@ -142,7 +148,7 @@ class GroupCore extends ObjectModel
 		return self::$_groupPriceDisplayMethod[$id_group];
 	}
 
-	public static function getDefaultPriceDisplayMethod()
+	static public function getDefaultPriceDisplayMethod()
 	{
 		return self::getPriceDisplayMethod(1);
 	}
@@ -160,26 +166,6 @@ class GroupCore extends ObjectModel
 		{
 			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'customer_group` WHERE `id_group` = '.(int)($this->id));
 			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'category_group` WHERE `id_group` = '.(int)($this->id));
-			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'group_reduction` WHERE `id_group` = '.(int)($this->id));
-			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_group_reduction_cache` WHERE `id_group` = '.(int)($this->id));
-			
-			// Add default group (id 1) to customers without groups
-			Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'customer_group` (
-				SELECT c.id_customer, 1 FROM `'._DB_PREFIX_.'customer` c
-				LEFT JOIN `'._DB_PREFIX_.'customer_group` cg
-				ON cg.id_customer = c.id_customer
-				WHERE cg.id_customer IS NULL)');
-	
-			// Set to the customer the default group
-			// Select the minimal id from customer_group
-			Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'customer` cg
-				SET id_default_group =
-					IFNULL((
-						SELECT min(id_group) FROM `'._DB_PREFIX_.'customer_group`
-						WHERE id_customer = cg.id_customer),
-						1)
-				WHERE `id_default_group` = '.(int)($this->id));
-			
 			Discount::deleteByIdGroup((int)($this->id));
 			return true;
 		}

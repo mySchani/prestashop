@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,33 +19,33 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsEquipment extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
-	private $_query2 = '';
+    private $_html = '';
+    private $_query = '';
+    private $_query2 = '';
 
-	function __construct()
-	{
-		$this->name = 'statsequipment';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsequipment';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
+		
 		parent::__construct();
-
-		$this->displayName = $this->l('Software');
-		$this->description = $this->l('Display the software used by your visitors.');
+		
+        $this->displayName = $this->l('Software');
+        $this->description = $this->l('Display the software used by your visitors.');
 	}
 	
 	public function install()
@@ -53,13 +53,17 @@ class StatsEquipment extends ModuleGraph
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
 	
+	/**
+	 * @return array Get list of browser "plugins" (javascript, media player, etc.)
+	 */
 	private function getEquipment()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT DISTINCT g.*
-		FROM `'._DB_PREFIX_.'connections` c 
-		LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_guest` = c.`id_guest`
-		WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween(), false);
+		$sql = 'SELECT DISTINCT g.*
+				FROM `'._DB_PREFIX_.'connections` c 
+				LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_guest` = c.`id_guest`
+				WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
+					'.$this->sqlShopRestriction(false, 'c');
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql, false);
 		
 		$calcArray = array('jsOK' => 0, 'jsKO' => 0, 'javaOK' => 0, 'javaKO' => 0, 'wmpOK' => 0, 'wmpKO' => 0, 'qtOK' => 0, 'qtKO' => 0, 'realOK' => 0, 'realKO' => 0, 'flashOK' => 0, 'flashKO' => 0, 'directorOK' => 0, 'directorKO' => 0);
 		while ($row = Db::getInstance(_PS_USE_SQL_SLAVE_)->nextRow($result))
@@ -106,11 +110,11 @@ class StatsEquipment extends ModuleGraph
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<center>
 				<p><img src="../img/admin/down.gif" />'.$this->l('Determine the percentage of web browsers used by your customers.').'</p>
-				'.ModuleGraph::engine(array('type' => 'pie', 'option' => 'wb')).'<br /><br />
-				<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=browser"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+				'.$this->engine(array('type' => 'pie', 'option' => 'wb')).'<br /><br />
+				<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=browser"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 				<p><img src="../img/admin/down.gif" />'.$this->l('Determine the percentage of operating systems used by your customers.').'</p>
-				'.ModuleGraph::engine(array('type' => 'pie', 'option' => 'os')).'
-				<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=os"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
+				'.$this->engine(array('type' => 'pie', 'option' => 'os')).'
+				<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=os"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
 				
 		if ($equipment)
 		{
@@ -139,24 +143,27 @@ class StatsEquipment extends ModuleGraph
 		{
 			case 'wb':
 				$this->_titles['main'] = $this->l('Web browser use');
-				$this->_query = '
-					SELECT wb.`name`, COUNT(g.`id_web_browser`) AS total
-					FROM `'._DB_PREFIX_.'web_browser` wb
-					LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_web_browser` = wb.`id_web_browser`
-					LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
-					WHERE c.`date_add` BETWEEN ';
+				$this->_query = 'SELECT wb.`name`, COUNT(g.`id_web_browser`) AS total
+						FROM `'._DB_PREFIX_.'web_browser` wb
+						LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_web_browser` = wb.`id_web_browser`
+						LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
+						WHERE 1
+							'.$this->sqlShopRestriction(false, 'c').'
+							c.`date_add` BETWEEN ';
 				$this->_query2 = ' GROUP BY g.`id_web_browser`';
-				break;
+			break;
+
 			case 'os':
 				$this->_titles['main'] = $this->l('Operating systems use');
-				$this->_query = '
-					SELECT os.`name`, COUNT(g.`id_operating_system`) AS total
-					FROM `'._DB_PREFIX_.'operating_system` os
-					LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_operating_system` = os.`id_operating_system`
-					LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
-					WHERE c.`date_add` BETWEEN ';
+				$this->_query = 'SELECT os.`name`, COUNT(g.`id_operating_system`) AS total
+						FROM `'._DB_PREFIX_.'operating_system` os
+						LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_operating_system` = os.`id_operating_system`
+						LEFT JOIN `'._DB_PREFIX_.'connections` c ON g.`id_guest` = c.`id_guest`
+						WHERE 1
+							'.$this->sqlShopRestriction(false, 'c').'
+							c.`date_add` BETWEEN ';
 				$this->_query2 = ' GROUP BY g.`id_operating_system`';
-				break;
+			 break;
 		}
 	}
 	

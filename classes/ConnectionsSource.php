@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14237 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,6 +33,8 @@ class ConnectionsSourceCore extends ObjectModel
 	public $keywords;
 	public $date_add;
 
+	// Controler les keywords
+	
 	protected	$fieldsRequired = array('id_connections', 'date_add');
 	protected	$fieldsValidate = array('id_connections' => 'isUnsignedId', 'http_referer' => 'isAbsoluteUrl', 'request_uri' => 'isUrl', 'keywords' => 'isMessage');
 
@@ -52,7 +54,7 @@ class ConnectionsSourceCore extends ObjectModel
 	
 	public function add($autodate = true, $nullValues = false)
 	{
-		if ($result = parent::add($autodate, $nullValues))
+		if($result = parent::add($autodate, $nullValues))
 			Referrer::cacheNewSource($this->id);
 		return $result;
 	}

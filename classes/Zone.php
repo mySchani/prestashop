@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -58,7 +58,7 @@ class ZoneCore extends ObjectModel
 	*
 	* @return array Zones
 	*/
-	public static function getZones($active = false)
+	static public function getZones($active = false)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
@@ -72,7 +72,7 @@ class ZoneCore extends ObjectModel
 	*
 	* @return integer id_zone
 	*/
-	public static function getIdByName($name)
+	static public function getIdByName($name)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
 		SELECT `id_zone`

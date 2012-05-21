@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7346 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -34,13 +34,13 @@ class AdminThemes extends AdminPreferences
 	 * @since 1.4.0.11, check theme compatibility 1.4
 	 * @static
 		*/
-	public static $check_features_version = '1.4';
+	static public $check_features_version = '1.4';
 	
 	/** $check_features is a multidimensional array used to check [theme]/config.xml values, 
 	 * and also checks prestashop current configuration if not match.
 	 * @static
 	 */
-	public static $check_features = array(
+	static public $check_features = array(
 		'ccc' => array( // feature key name
 			'attributes' => array(
 				'available' => array( 
@@ -95,13 +95,13 @@ class AdminThemes extends AdminPreferences
 	{
 		$this->className = 'Configuration';
 		$this->table = 'configuration';
-
+		$id_shop = (int)Shop::getCurrentShop(true);
  		$this->_fieldsAppearance = array(
-			'PS_LOGO' => array('title' => $this->l('Header logo:'), 'desc' => $this->l('Will appear on main page'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'logo.jpg?date='.time(), 'pos' => 'before')),
-			'PS_LOGO_MAIL' => array('title' => $this->l('Mail logo:'), 'desc' => $this->l('Will appear on e-mail headers, if undefined the Header logo will be used'), 'type' => 'file', 'thumb' => array('file' => ((file_exists(_PS_IMG_DIR_.'logo_mail.jpg')) ? _PS_IMG_.'logo_mail.jpg?date='.time() : _PS_IMG_.'logo.jpg?date='.time()), 'pos' => 'before')),
-			'PS_LOGO_INVOICE' => array('title' => $this->l('Invoice logo:'), 'desc' => $this->l('Will appear on invoices headers, if undefined the Header logo will be used'), 'type' => 'file', 'thumb' => array('file' => (file_exists(_PS_IMG_DIR_.'logo_invoice.jpg') ? _PS_IMG_.'logo_invoice.jpg?date='.time() : _PS_IMG_.'logo.jpg?date='.time()), 'pos' => 'before')),
-			'PS_FAVICON' => array('title' => $this->l('Favicon:'), 'desc' => $this->l('Will appear in the address bar of your web browser'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'favicon.ico?date='.time(), 'pos' => 'after')),
-			'PS_STORES_ICON' => array('title' => $this->l('Store icon:'), 'desc' => $this->l('Will appear on the store locator (inside Google Maps)').'<br />'.$this->l('Suggested size: 30x30, Transparent GIF'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'logo_stores.gif?date='.time(), 'pos' => 'before')),
+			'PS_LOGO' => array('title' => $this->l('Header logo:'), 'desc' => $this->l('Will appear on main page'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'logo-'.(int)$id_shop.'.jpg?date='.time(), 'pos' => 'before')),
+			'PS_LOGO_MAIL' => array('title' => $this->l('Mail logo:'), 'desc' => $this->l('Will appear on e-mail headers, if undefined the Header logo will be used'), 'type' => 'file', 'thumb' => array('file' => ((file_exists(_PS_IMG_DIR_.'logo_mail-'.(int)$id_shop.'.jpg')) ? _PS_IMG_.'logo_mail-'.(int)$id_shop.'.jpg?date='.time() : _PS_IMG_.'logo-'.(int)$id_shop.'.jpg?date='.time()), 'pos' => 'before')),
+			'PS_LOGO_INVOICE' => array('title' => $this->l('Invoice logo:'), 'desc' => $this->l('Will appear on invoices headers, if undefined the Header logo will be used'), 'type' => 'file', 'thumb' => array('file' => (file_exists(_PS_IMG_DIR_.'logo_invoice-'.(int)$id_shop.'.jpg') ? _PS_IMG_.'logo_invoice-'.(int)$id_shop.'.jpg?date='.time() : _PS_IMG_.'logo-'.(int)$id_shop.'.jpg?date='.time()), 'pos' => 'before')),
+			'PS_FAVICON' => array('title' => $this->l('Favicon:'), 'desc' => $this->l('Will appear in the address bar of your web browser'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'favicon-'.(int)$id_shop.'.ico?date='.time(), 'pos' => 'after')),
+			'PS_STORES_ICON' => array('title' => $this->l('Store icon:'), 'desc' => $this->l('Will appear on the store locator (inside Google Maps)').'<br />'.$this->l('Suggested size: 30x30, Transparent GIF'), 'type' => 'file', 'thumb' => array('file' => _PS_IMG_.'logo_stores-'.(int)$id_shop.'.gif?date='.time(), 'pos' => 'before')),
 			'PS_NAVIGATION_PIPE' => array('title' => $this->l('Navigation pipe:'), 'desc' => $this->l('Used for navigation path inside categories/product'), 'cast' => 'strval', 'type' => 'text', 'size' => 20),
 		);
 		$this->_fieldsTheme = array(
@@ -113,11 +113,6 @@ class AdminThemes extends AdminPreferences
 	public function display()
 	{
 		global $currentIndex;
-		
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-		/* PrestaShop demo mode*/
 		
 		if (file_exists(_PS_IMG_DIR_.'logo.jpg'))
 		{
@@ -150,7 +145,7 @@ class AdminThemes extends AdminPreferences
 	{
 		$dir = opendir(_PS_ALL_THEMES_DIR_);
 		while ($folder = readdir($dir))
-			if ($folder != '.' AND $folder != '..' AND is_dir(_PS_ALL_THEMES_DIR_.$folder) AND file_exists(_PS_ALL_THEMES_DIR_.'/'.$folder.'/preview.jpg'))
+			if ($folder != '.' AND $folder != '..' AND file_exists(_PS_ALL_THEMES_DIR_.'/'.$folder.'/preview.jpg'))
 				$themes[$folder]['name'] = $folder;
 		closedir($dir);	
 		return isset($themes) ? $themes : array();
@@ -230,7 +225,7 @@ class AdminThemes extends AdminPreferences
 			foreach ($configItem as $attr)
 			{
 				$check = $this->_checkConfigForFeatures($arrFeatures,$attr);
-				if ($check == false)
+				if($check == false)
 					$return = false;
 			}
 			return $return;
@@ -263,31 +258,19 @@ class AdminThemes extends AdminPreferences
 		return $return;
 	}
 
-	/**
-	 * Checks submitted values
-	 *
+	/** this functions make checks about AdminThemes configuration edition only.
+	 * 
 	 * @since 1.4
 	 */
 	public function postProcess()
 	{
-		// FPDF does not support PNG images with alpha channel
-		if (isset($_FILES['PS_LOGO_INVOICE']) && $_FILES['PS_LOGO_INVOICE']['type'] == 'image/png')
-			$this->_errors[] = Tools::displayError('Invoice logo does not accept PNG images.');
-
-		global $smarty;
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
 		// new check compatibility theme feature (1.4) :
 		$val = Tools::getValue('PS_THEME');
 		Configuration::updateValue('PS_IMG_UPDATE_TIME', time());
 		if (!empty($val) AND !$this->_isThemeCompatible($val)) // don't submit if errors
 			unset($_POST['submitThemes'.$this->table]);
-		Tools::clearCache($smarty);
 		parent::postProcess();
 	}
 }
+
+?>

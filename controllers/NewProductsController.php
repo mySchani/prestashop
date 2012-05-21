@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,21 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7480 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class NewProductsControllerCore extends FrontController
 {
-	public $php_self = 'new-products.php';
-
+	public function __construct()
+	{
+		$this->php_self = 'new-products.php';
+	
+		parent::__construct();
+	}
+	
 	public function setMedia()
 	{
 		parent::setMedia();
@@ -40,7 +45,8 @@ class NewProductsControllerCore extends FrontController
 		parent::process();
 		
 		$this->productSort();
-		$nbProducts = (int)(Product::getNewProducts((int)(self::$cookie->id_lang), isset($this->p) ? (int)($this->p) - 1 : NULL, isset($this->n) ? (int)($this->n) : NULL, true));
+
+		$nbProducts = (int)Product::getNewProducts((int)self::$cookie->id_lang, (isset($this->p) ? (int)($this->p) - 1 : NULL), (isset($this->n) ? (int)($this->n) : NULL), true);
 		$this->pagination($nbProducts);
 		
 		self::$smarty->assign(array(

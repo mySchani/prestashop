@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,16 +29,15 @@ ControllerFactory::includeController('ParentOrderController');
 
 class OrderOpcControllerCore extends ParentOrderController
 {
-	public $php_self = 'order-opc.php';
 	public $isLogged;
-
+	
 	public function preProcess()
 	{
 		parent::preProcess();
 		if ($this->nbProducts)
 			self::$smarty->assign('virtual_cart', false);
 		$this->isLogged = (bool)((int)(self::$cookie->id_customer) AND Customer::customerIdExistsStatic((int)(self::$cookie->id_customer)));
-
+		
 		if (self::$cart->nbProducts())
 		{
 			if (Tools::isSubmit('ajax'))
@@ -101,7 +100,7 @@ class OrderOpcControllerCore extends ParentOrderController
 							$customer->newsletter = (int)Tools::isSubmit('newsletter');
 							$customer->optin = (int)Tools::isSubmit('optin');
 							$return = array(
-								'hasError' => !empty($this->errors),
+								'hasError' => !empty($this->errors), 
 								'errors' => $this->errors,
 								'id_customer' => (int)self::$cookie->id_customer,
 								'token' => Tools::getToken(false)
@@ -158,48 +157,48 @@ class OrderOpcControllerCore extends ParentOrderController
 						case 'updateAddressesSelected':
 							if (self::$cookie->isLogged(true))
 							{
-								$id_address_delivery = (int)(Tools::getValue('id_address_delivery'));
-								$id_address_invoice = (int)(Tools::getValue('id_address_invoice'));
-								$address_delivery = new Address((int)(Tools::getValue('id_address_delivery')));
-								$address_invoice = ((int)(Tools::getValue('id_address_delivery')) == (int)(Tools::getValue('id_address_invoice')) ? $address_delivery : new Address((int)(Tools::getValue('id_address_invoice'))));
-
+							$id_address_delivery = (int)(Tools::getValue('id_address_delivery'));
+							$id_address_invoice = (int)(Tools::getValue('id_address_invoice'));
+							$address_delivery = new Address((int)(Tools::getValue('id_address_delivery')));
+							$address_invoice = ((int)(Tools::getValue('id_address_delivery')) == (int)(Tools::getValue('id_address_invoice')) ? $address_delivery : new Address((int)(Tools::getValue('id_address_invoice'))));
 								if ($address_delivery->id_customer != self::$cookie->id_customer || $address_invoice->id_customer != self::$cookie->id_customer)
 									$this->errors[] = Tools::displayError('This address is not yours.');
 								elseif (!Address::isCountryActiveById((int)(Tools::getValue('id_address_delivery'))))
-									$this->errors[] = Tools::displayError('This address is not in a valid area.');
-								elseif (!Validate::isLoadedObject($address_delivery) OR !Validate::isLoadedObject($address_invoice) OR $address_invoice->deleted OR $address_delivery->deleted)
-									$this->errors[] = Tools::displayError('This address is invalid.');
-								else
+								$this->errors[] = Tools::displayError('This address is not in a valid area.');
+							elseif (!Validate::isLoadedObject($address_delivery) OR !Validate::isLoadedObject($address_invoice) OR $address_invoice->deleted OR $address_delivery->deleted)
+								$this->errors[] = Tools::displayError('This address is invalid.');
+							else
+							{
+								self::$cart->id_address_delivery = (int)(Tools::getValue('id_address_delivery'));
+								self::$cart->id_address_invoice = Tools::isSubmit('same') ? self::$cart->id_address_delivery : (int)(Tools::getValue('id_address_invoice'));
+								if (!self::$cart->update())
+									$this->errors[] = Tools::displayError('An error occurred while updating your cart.');
+							
+								if (!sizeof($this->errors))
 								{
-									self::$cart->id_address_delivery = (int)(Tools::getValue('id_address_delivery'));
-									self::$cart->id_address_invoice = Tools::isSubmit('same') ? self::$cart->id_address_delivery : (int)(Tools::getValue('id_address_invoice'));
-									if (!self::$cart->update())
-										$this->errors[] = Tools::displayError('An error occurred while updating your cart.');
-									if (!sizeof($this->errors))
+									if (self::$cookie->id_customer)
 									{
-										if (self::$cookie->id_customer)
-										{
-											$customer = new Customer((int)(self::$cookie->id_customer));
-											$groups = $customer->getGroups();
-										}
-										else
-											$groups = array(1);
-										$result = $this->_getCarrierList();
-										// Wrapping fees
-										$wrapping_fees = (float)(Configuration::get('PS_GIFT_WRAPPING_PRICE'));
-										$wrapping_fees_tax = new Tax((int)(Configuration::get('PS_GIFT_WRAPPING_TAX')));
-										$wrapping_fees_tax_inc = $wrapping_fees * (1 + (((float)($wrapping_fees_tax->rate) / 100)));
-										$result = array_merge($result, array(
-											'summary' => self::$cart->getSummaryDetails(),
-											'HOOK_TOP_PAYMENT' => Module::hookExec('paymentTop'),
-											'HOOK_PAYMENT' => $this->_getPaymentMethods(),
-											'gift_price' => Tools::displayPrice(Tools::convertPrice(Product::getTaxCalculationMethod() == 1 ? $wrapping_fees : $wrapping_fees_tax_inc, new Currency((int)(self::$cookie->id_currency))))
-										));
-										die(Tools::jsonEncode($result));
+										$customer = new Customer((int)(self::$cookie->id_customer));
+										$groups = $customer->getGroups();
 									}
+									else
+										$groups = array(1);
+									$result = $this->_getCarrierList();
+									// Wrapping fees
+									$wrapping_fees = (float)(Configuration::get('PS_GIFT_WRAPPING_PRICE'));
+									$wrapping_fees_tax = new Tax((int)(Configuration::get('PS_GIFT_WRAPPING_TAX')));
+									$wrapping_fees_tax_inc = $wrapping_fees * (1 + (((float)($wrapping_fees_tax->rate) / 100)));
+									$result = array_merge($result, array(
+										'summary' => self::$cart->getSummaryDetails(),
+										'HOOK_TOP_PAYMENT' => Module::hookExec('paymentTop'),
+										'HOOK_PAYMENT' => $this->_getPaymentMethods(),
+										'gift_price' => Tools::displayPrice(Tools::convertPrice(Product::getTaxCalculationMethod() == 1 ? $wrapping_fees : $wrapping_fees_tax_inc, new Currency((int)(self::$cookie->id_currency))))
+									));
+									die(Tools::jsonEncode($result));
 								}
-								if (sizeof($this->errors))
-									die('{"hasError" : true, "errors" : ["'.implode('\',\'', $this->errors).'"]}');
+							}
+							if (sizeof($this->errors))
+								die('{"hasError" : true, "errors" : ["'.implode('\',\'', $this->errors).'"]}');
 							}
 							die(Tools::displayError());
 							break;
@@ -213,11 +212,11 @@ class OrderOpcControllerCore extends ParentOrderController
 		elseif (Tools::isSubmit('ajax'))
 			exit;
 	}
-
+	
 	public function setMedia()
 	{
 		parent::setMedia();
-
+		
 		// Adding CSS style sheet
 		Tools::addCSS(_THEME_CSS_DIR_.'order-opc.css');
 		// Adding JS files
@@ -225,7 +224,7 @@ class OrderOpcControllerCore extends ParentOrderController
 		Tools::addJs(_PS_JS_DIR_.'jquery/jquery.scrollTo-1.4.2-min.js');
 		Tools::addJS(_THEME_JS_DIR_.'tools/statesManagement.js');
 	}
-
+	
 	public function process()
 	{
 		// SHOPPING CART
@@ -234,11 +233,7 @@ class OrderOpcControllerCore extends ParentOrderController
 		$this->_assignWrappingAndTOS();
 
 		$selectedCountry = (int)(Configuration::get('PS_COUNTRY_DEFAULT'));
-		if (Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES'))
-			$countries = Carrier::getDeliveredCountries((int)self::$cookie->id_lang, true, true);
-		else
-			$countries = Country::getCountries((int)self::$cookie->id_lang, true);
-		
+		$countries = Country::getCountries((int)(self::$cookie->id_lang), true);
 		self::$smarty->assign(array(
 			'isLogged' => $this->isLogged,
 			'isGuest' => isset(self::$cookie->is_guest) ? self::$cookie->is_guest : 0,
@@ -249,11 +244,6 @@ class OrderOpcControllerCore extends ParentOrderController
 			'errorTOS' => Tools::displayError('You must accept terms of service before', false),
 			'isPaymentStep' => (bool)(isset($_GET['isPaymentStep']) AND $_GET['isPaymentStep'])
 		));
-		/* Call a hook to display more information on form */
-		self::$smarty->assign(array(
-			'HOOK_CREATE_ACCOUNT_FORM' => Module::hookExec('createAccountForm'),
-			'HOOK_CREATE_ACCOUNT_TOP' => Module::hookExec('createAccountTop')
-		));
 		$years = Tools::dateYears();
 		$months = Tools::dateMonths();
 		$days = Tools::dateDays();
@@ -262,11 +252,11 @@ class OrderOpcControllerCore extends ParentOrderController
 			'months' => $months,
 			'days' => $days,
 		));
-
+		
 		/* Load guest informations */
 		if ($this->isLogged AND self::$cookie->is_guest)
 			self::$smarty->assign('guestInformations', $this->_getGuestInformations());
-
+		
 		if ($this->isLogged)
 			$this->_assignAddress(); // ADDRESS
 		// CARRIER
@@ -274,32 +264,30 @@ class OrderOpcControllerCore extends ParentOrderController
 		// PAYMENT
 		$this->_assignPayment();
 		Tools::safePostVars();
-		if ($blocknewsletter = Module::getInstanceByName('blocknewsletter'))
-			self::$smarty->assign('newsletter', (int)$blocknewsletter->active);
-		else
-			self::$smarty->assign('newsletter', 0);
+		
+		self::$smarty->assign('newsletter', (int)Module::getInstanceByName('blocknewsletter')->active);
 	}
-
+	
 	public function displayHeader()
 	{
 		if (Tools::getValue('ajax') != 'true')
 			parent::displayHeader();
 	}
-
+	
 	public function displayContent()
 	{
 		parent::displayContent();
-
+	
 		$this->_processAddressFormat();
 		self::$smarty->display(_PS_THEME_DIR_.'order-opc.tpl');
 	}
-
+	
 	public function displayFooter()
 	{
 		if (Tools::getValue('ajax') != 'true')
 			parent::displayFooter();
 	}
-
+	
 	protected function _getGuestInformations()
 	{
 		$customer = new Customer((int)(self::$cookie->id_customer));
@@ -336,7 +324,7 @@ class OrderOpcControllerCore extends ParentOrderController
 			'sl_day' => $birthday[2]
 		);
 	}
-
+	
 	protected function _assignCarrier()
 	{
 		if (!$this->isLogged)
@@ -353,15 +341,15 @@ class OrderOpcControllerCore extends ParentOrderController
 		else
 			parent::_assignCarrier();
 	}
-
+	
 	protected function _assignPayment()
 	{
 		self::$smarty->assign(array(
-		   'HOOK_TOP_PAYMENT' => ($this->isLogged ? Module::hookExec('paymentTop') : ''),
+		    'HOOK_TOP_PAYMENT' => ($this->isLogged ? Module::hookExec('paymentTop') : ''),
 			'HOOK_PAYMENT' => $this->_getPaymentMethods()
 		));
 	}
-
+	
 	protected function _getPaymentMethods()
 	{
 		if (!$this->isLogged)
@@ -386,29 +374,29 @@ class OrderOpcControllerCore extends ParentOrderController
 			return '<p class="warning">'.Tools::displayError('Error: no currency has been selected').'</p>';
 		if (!self::$cookie->checkedTOS AND Configuration::get('PS_CONDITIONS'))
 			return '<p class="warning">'.Tools::displayError('Please accept Terms of Service').'</p>';
-
+		
 		/* If some products have disappear */
 		if (!self::$cart->checkQuantities())
 			return '<p class="warning">'.Tools::displayError('An item in your cart is no longer available, you cannot proceed with your order.').'</p>';
-
+		
 		/* Check minimal amount */
 		$currency = Currency::getCurrency((int)self::$cart->id_currency);
-
+		
 		$minimalPurchase = Tools::convertPrice((float)Configuration::get('PS_PURCHASE_MINIMUM'), $currency);
-		if (self::$cart->getOrderTotal(false, Cart::ONLY_PRODUCTS) < $minimalPurchase)
+		if (self::$cart->getOrderTotal(false) < $minimalPurchase)
 			return '<p class="warning">'.Tools::displayError('A minimum purchase total of').' '.Tools::displayPrice($minimalPurchase, $currency).
 			' '.Tools::displayError('is required in order to validate your order.').'</p>';
-
+		
 		/* Bypass payment step if total is 0 */
 		if (self::$cart->getOrderTotal() <= 0)
 			return '<p class="center"><input type="button" class="exclusive_large" name="confirmOrder" id="confirmOrder" value="'.Tools::displayError('I confirm my order').'" onclick="confirmFreeOrder();" /></p>';
-
+		
 		$return = Module::hookExecPayment();
 		if (!$return)
 			return '<p class="warning">'.Tools::displayError('No payment method is available').'</p>';
 		return $return;
 	}
-
+	
 	protected function _getCarrierList()
 	{
 		$address_delivery = new Address(self::$cart->id_address_delivery);
@@ -448,8 +436,8 @@ class OrderOpcControllerCore extends ParentOrderController
 		$address_delivery = new Address((int)self::$cart->id_address_delivery);
 		$address_invoice = new Address((int)self::$cart->id_address_invoice);
 
-		$inv_adr_fields = AddressFormat::getOrderedAddressFields((int)$address_delivery->id_country, false, true);
-		$dlv_adr_fields = AddressFormat::getOrderedAddressFields((int)$address_invoice->id_country, false, true);
+		$inv_adr_fields = AddressFormat::getOrderedAddressFields((int)$address_delivery->id_country);
+		$dlv_adr_fields = AddressFormat::getOrderedAddressFields((int)$address_invoice->id_country);
 
 		$inv_all_fields = array();
 		$dlv_all_fields = array();

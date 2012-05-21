@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14009 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -67,8 +67,8 @@ smartyRegisterFunction($smarty, 'modifier', 'secureReferrer', array('Tools', 'se
 
 smartyRegisterFunction($smarty, 'function', 't', 'smartyTruncate'); // unused
 smartyRegisterFunction($smarty, 'function', 'm', 'smartyMaxWords'); // unused
-smartyRegisterFunction($smarty, 'function', 'p', 'smartyShowObject'); // Debug only
-smartyRegisterFunction($smarty, 'function', 'd', 'smartyDieObject'); // Debug only
+smartyRegisterFunction($smarty, 'function', 'p', 'smartyShowObject'); // unused
+smartyRegisterFunction($smarty, 'function', 'd', 'smartyDieObject'); // unused
 smartyRegisterFunction($smarty, 'function', 'l', 'smartyTranslate');
 
 smartyRegisterFunction($smarty, 'function', 'dateFormat', array('Tools', 'dateFormat'));
@@ -123,7 +123,7 @@ function smartyTranslate($params, &$smarty)
 		if(!is_array($_MODULES))
 			$_MODULES = array();
 		if (@include_once($translationsFile))
-			if (is_array($_MODULE))
+			if(is_array($_MODULE))
 				$_MODULES = array_merge($_MODULES, $_MODULE);
 		$lang_array = $_MODULES;
 	}
@@ -142,11 +142,13 @@ function smartyTranslate($params, &$smarty)
 
 function smartyDieObject($params, &$smarty)
 {
+	Tools::displayAsDeprecated();
 	return Tools::d($params['var']);
 }
 
 function smartyShowObject($params, &$smarty)
 {
+	Tools::displayAsDeprecated();
 	return Tools::p($params['var']);
 }
 
@@ -186,7 +188,7 @@ function smarty_modifier_truncate($string, $length = 80, $etc = '...', $break_wo
 		$length -= min($length, Tools::strlen($etc));
 		if (!$break_words && !$middle)
 			$string = preg_replace('/\s+?(\S+)?$/u', '', Tools::substr($string, 0, $length+1, $charset));
-		return !$middle ? Tools::substr($string, 0, $length, $charset).$etc : Tools::substr($string, 0, $length/2, $charset).$etc.Tools::substr($string, -$length/2, $length, $charset);
+		return !$middle ? Tools::substr($string, 0, $length, $charset).$etc : Tools::substr($string, 0, $length/2, $charset).$etc.Tools::substr($string, -$length/2, $charset);
 	}
 	else
 		return $string;

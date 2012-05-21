@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,37 +19,34 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class sendToAFriend extends Module
 {
-	function __construct($dontTranslate = false)
-	{
-		$this->name = 'sendtoafriend';
-		$this->version = '1.1';
+ 	function __construct()
+ 	{
+ 	 	$this->name = 'sendtoafriend';
+ 	 	$this->version = '1.1';
 		$this->author = 'PrestaShop';
-		$this->tab = 'front_office_features';
+ 	 	$this->tab = 'front_office_features';
 		$this->need_instance = 0;
 
 		parent::__construct();
 
-		if(!$dontTranslate)
-		{
-			$this->displayName = $this->l('Send to a Friend module');
-			$this->description = $this->l('Allows customers to send a product link to a friend.');
-		}
-	}
+		$this->displayName = $this->l('Send to a Friend module');
+		$this->description = $this->l('Allows customers to send a product link to a friend.');
+ 	}
 
 	function install()
 	{
-		return (parent::install() AND $this->registerHook('extraLeft'));
+	 	return (parent::install() AND $this->registerHook('extraLeft'));
 	}
 
 	function hookExtraLeft($params)
@@ -57,16 +54,6 @@ class sendToAFriend extends Module
 		global $smarty;
 		$smarty->assign('this_path', $this->_path);
 		return $this->display(__FILE__, 'product_page.tpl');
-	}
-	
-	public function displayPageForm()
-	{
-		if (!$this->active)
-			Tools::display404Error();
-
-		include(dirname(__FILE__).'/../../header.php');
-		echo $this->displayFrontForm();
-		include(dirname(__FILE__).'/../../footer.php');
 	}
 
 	public function displayFrontForm()
@@ -103,7 +90,7 @@ class sendToAFriend extends Module
 				);
 
 				/* Email sending */
-				if (!Mail::Send((int)$cookie->id_lang, 'send_to_a_friend', Mail::l('A friend sent you a link to', (int)$cookie->id_lang).' '.$product->name, $templateVars, $_POST['email'], NULL, ($cookie->email ? $cookie->email : NULL), ($cookie->customer_firstname ? $cookie->customer_firstname.' '.$cookie->customer_lastname : NULL), NULL, NULL, dirname(__FILE__).'/mails/'))
+				if (!Mail::Send((int)$cookie->id_lang, 'send_to_a_friend', Mail::l('A friend sent you a link to').' '.$product->name, $templateVars, $_POST['email'], NULL, ($cookie->email ? $cookie->email : NULL), ($cookie->customer_firstname ? $cookie->customer_firstname.' '.$cookie->customer_lastname : NULL), NULL, NULL, dirname(__FILE__).'/mails/'))
 					$error = $this->l('An error occurred during the process.');
 				else
 					Tools::redirect(_MODULE_DIR_.'/'.$this->name.'/sendtoafriend-form.php?id_product='.(int)$product->id.'&submited');

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -37,7 +37,7 @@ class AdminTags extends AdminTab
 		$this->delete = true;
 
 		$this->fieldsDisplay = array(
-		'id_tag' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
+		'id_tag' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25, 'filter_key' => 'a!id_seller_message'),
 		'lang' => array('title' => $this->l('Language'), 'filter_key' => 'l!name'),
 		'name' => array('title' => $this->l('Name'), 'width' => 200, 'filter_key' => 'a!name'),
 		'products' => array('title' => $this->l('Products'), 'align' => 'right', 'havingFilter' => true));

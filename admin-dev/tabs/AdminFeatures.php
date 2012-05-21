@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7331 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,14 +32,14 @@ class AdminFeatures extends AdminTab
 	public function __construct()
 	{
 		$this->adminFeaturesValues = new AdminFeaturesValues();
-		$this->table = 'feature';
-		$this->className = 'Feature';
-		$this->lang = true;
-		$this->edit = true;
-		$this->delete = true;
+	 	$this->table = 'feature';
+	 	$this->className = 'Feature';
+	 	$this->lang = true;
+	 	$this->edit = true;
+	 	$this->delete = true;
 
 		$this->fieldsDisplay = array(
-			'name' => array('title' => $this->l('Name'), 'width' => 128),
+			'name' => array('title' => $this->l('Name'), 'width' => 128, 'filter_key' => 'b!name'),
 			'value' => array('title' => $this->l('Values'), 'width' => 255, 'orderby' => false, 'search' => false));
 
 		parent::__construct();
@@ -56,7 +56,10 @@ class AdminFeatures extends AdminTab
 			echo '<br /><br /><a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" alt="" /> '.$this->l('Back to the features list').'</a><br />';
 		}
 		else
+		{
 			parent::display();
+			$this->displayAssoGroupShop();
+		}
 	}
 
 	/* Report to AdminTab::displayList() for more details */
@@ -75,11 +78,11 @@ class AdminFeatures extends AdminTab
 		if (!sizeof($this->_list))
 			echo '<tr><td class="center" colspan="'.sizeof($this->_list).'">'.$this->l('No features found.').'</td></tr>';
 
-		$irow = 0;
+					$irow = 0;
 		foreach ($this->_list AS $tr)
 		{
 			$id = (int)($tr['id_'.$this->table]);
-			echo '
+		 	echo '
 			<tr'.($irow++ % 2 ? ' class="alt_row"' : '').'>
 				<td style="vertical-align: top; padding: 4px 0 4px 0" class="center"><input type="checkbox" name="'.$this->table.'Box[]" value="'.$id.'" class="noborder" /></td>
 				<td style="width: 140px; vertical-align: top; padding: 4px 0 4px 0; cursor: pointer" onclick="$(\'#features_values_'.$id.'\').slideToggle();">'.$tr['name'].'</td>
@@ -133,7 +136,7 @@ class AdminFeatures extends AdminTab
 
 	public function displayForm($isMainTab = true)
 	{
-		global $currentIndex;
+		global $currentIndex, $cookie;
 		parent::displayForm();
 
 		if (!($obj = $this->loadObject(true)))
@@ -152,15 +155,18 @@ class AdminFeatures extends AdminTab
 					<div id="name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input size="33" type="text" name="name_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'name', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
-					</div>
-				<script type="text/javascript">
-					var flag_fields = \'name\';
-				</script>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'name', false, true);
+					</div>';
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name', 'name');
 		echo '
 					<div class="clear"></div>
-				</div>
-				'.Module::hookExec('featureForm', array('id_feature' => $obj->id)).'
+				</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('GroupShop association:').'</label><div class="margin-form">';
+					$this->displayAssoGroupShop();
+					echo '</div>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -177,19 +183,16 @@ class AdminFeatures extends AdminTab
 
 	public function postProcess()
 	{
-		global $cookie, $currentIndex;
+	 	global	$cookie, $currentIndex;
 		$this->adminFeaturesValues->tabAccess = Profile::getProfileAccess($cookie->profile, $this->id);
 		$this->adminFeaturesValues->postProcess($this->token);
-		
-		Module::hookExec('postProcessFeature',
-		array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessFeature to stop saving process
 
-		if (Tools::getValue('submitDel'.$this->table))
+		if(Tools::getValue('submitDel'.$this->table))
 		{
-			if ($this->tabAccess['delete'] === '1')
-			{
-				if (isset($_POST[$this->table.'Box']))
-				{
+		 	if ($this->tabAccess['delete'] === '1')
+		 	{
+			 	if (isset($_POST[$this->table.'Box']))
+			 	{
 					$object = new $this->className();
 					if ($object->deleteSelection($_POST[$this->table.'Box']))
 						Tools::redirectAdmin($currentIndex.'&conf=2'.'&token='.$this->token);
@@ -205,3 +208,5 @@ class AdminFeatures extends AdminTab
 			parent::postProcess();
 	}
 }
+
+

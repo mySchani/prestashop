@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,18 +19,23 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderFollowControllerCore extends FrontController
 {
-	public $auth = true;
-	public $php_self = 'order-follow.php';
-	public $authRedirection = 'order-follow.php';
-	public $ssl = true;
+	public function __construct()
+	{
+		$this->auth = true;
+		$this->php_self = 'order-follow.php';
+		$this->authRedirection = 'order-follow.php';
+		$this->ssl = true;
+	
+		parent::__construct();
+	}
 	
 	public function preProcess()
 	{
@@ -41,16 +46,16 @@ class OrderFollowControllerCore extends FrontController
 			$customizationQtyInput = Tools::getValue('customization_qty_input');
 
 			if (!$id_order = (int)(Tools::getValue('id_order')))
-				Tools::redirect('history.php');
+				Tools::redirect('index.php?controller=history');
 			if (!$order_qte_input = Tools::getValue('order_qte_input'))
-				Tools::redirect('order-follow.php?errorDetail1');
+				Tools::redirect('index.php?controller=order-follow&errorDetail1');
 			if ($customizationIds = Tools::getValue('customization_ids') AND !$customizationQtyInput)
-				Tools::redirect('order-follow.php?errorDetail1');
+				Tools::redirect('index.php?controller=order-follow&errorDetail1');
 			if (!$ids_order_detail = Tools::getValue('ids_order_detail') AND !$customizationIds)
-				Tools::redirect('order-follow.php?errorDetail2');
+				Tools::redirect('index.php?controller=order-follow&errorDetail2');
 
 			$order = new Order((int)($id_order));
-			if (!$order->isReturnable()) Tools::redirect('order-follow.php?errorNotReturnable');
+			if (!$order->isReturnable()) Tools::redirect('index.php?controller=order-follow&errorNotReturnable');
 			if ($order->id_customer != self::$cookie->id_customer)
 				die(Tools::displayError());
 			$orderReturn = new OrderReturn();
@@ -58,15 +63,15 @@ class OrderFollowControllerCore extends FrontController
 			$orderReturn->id_order = $id_order;
 			$orderReturn->question = strval(Tools::getValue('returnText'));
 			if (empty($orderReturn->question))
-				Tools::redirect('order-follow.php?errorMsg');
+				Tools::redirect('index.php?controller=order-follow&errorMsg');
 			if (!$orderReturn->checkEnoughProduct($ids_order_detail, $order_qte_input, $customizationIds, $customizationQtyInput))
-				Tools::redirect('order-follow.php?errorQuantity');
+				Tools::redirect('index.php?controller=order-follow&errorQuantity');
 
 			$orderReturn->state = 1;
 			$orderReturn->add();
 			$orderReturn->addReturnDetail($ids_order_detail, $order_qte_input, $customizationIds, $customizationQtyInput);
 			Module::hookExec('orderReturn', array('orderReturn' => $orderReturn));
-			Tools::redirect('order-follow.php');
+			Tools::redirect('index.php?controller=order-follow');
 		}
 
 		$ordersReturn = OrderReturn::getOrdersReturn((int)(self::$cookie->id_customer));

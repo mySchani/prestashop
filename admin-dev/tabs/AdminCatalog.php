@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -49,9 +49,27 @@ class AdminCatalog extends AdminTab
 	public function __construct()
 	{
 		/* Get current category */
-		$id_category = abs((int)(Tools::getValue('id_category')));
-		if (!$id_category) $id_category = 1;
-		self::$_category = new Category($id_category);
+		$id_category = abs(Tools::getValue('id_category'));
+		$shop = new Shop(Shop::getCurrentShop(true));
+		if (!$id_category)
+			$id_category = $shop->id_category;
+		else if ($id_category != $shop->id_category)
+		{
+			// Check if current category is "inside" shop default category
+			$sql = 'SELECT nleft, nright FROM '._DB_PREFIX_.'category
+					WHERE id_category = '.$shop->id_category;
+			if ($result = Db::getInstance()->getRow($sql))
+			{
+				$sql = 'SELECT id_category FROM '._DB_PREFIX_.'category
+						WHERE id_category = '.(int)$id_category.'
+							AND nleft >= '.$result['nleft'].'
+							AND nright <= '.$result['nright'];
+				if (!Db::getInstance()->getValue($sql))
+					$id_category = $shop->id_category;
+			}
+		}
+
+		self::$_category = new Category($id_category, NULL, Shop::getCurrentShop(true));
 		if (!Validate::isLoadedObject(self::$_category))
 			die('Category cannot be loaded');
 
@@ -93,6 +111,15 @@ class AdminCatalog extends AdminTab
 			}
 			$this->attributeGenerator->postProcess();
 		}
+		elseif (isset($_GET['imageresize']))
+		{
+			if (!isset($this->imageResize))
+			{
+				include_once(PS_ADMIN_DIR.'/tabs/AdminImageResize.php');
+				$this->imageResize = new AdminImageResize();
+			}
+			$this->imageResize->postProcess();
+		}
 		$this->adminProducts->postProcess($this->token);
 	}
 
@@ -133,19 +160,38 @@ class AdminCatalog extends AdminTab
 			}
 			$this->attributeGenerator->displayForm();
 		}
+		elseif (isset($_GET['imageresize']))
+		{
+			if (!isset($this->imageResize))
+			{
+				include_once(PS_ADMIN_DIR.'/tabs/AdminImageResize.php');
+				$this->imageResize = new AdminImageResize();
+			}
+			$this->imageResize->displayForm();
+		}
 		elseif (!isset($_GET['editImage']))
 		{
+			$home = false;
 			$id_category = (int)(Tools::getValue('id_category'));
 			if (!$id_category)
-				$id_category = 1;
+			{
+				$home = true;
+				if (Shop::getContextType() == Shop::CONTEXT_SHOP)
+				{
+					$shop = new Shop((int)Shop::getCurrentShop());
+					$id_category = $shop->id_category;
+				}
+				else
+					$id_category = 1;
+			}
 			$catalog_tabs = array('category', 'product');
 			// Cleaning links
 			$catBarIndex = $currentIndex;
 			foreach ($catalog_tabs AS $tab)
 				if (Tools::getValue($tab.'Orderby') && Tools::getValue($tab.'Orderway')) 
 					$catBarIndex = preg_replace('/&'.$tab.'Orderby=([a-z _]*)&'.$tab.'Orderway=([a-z]*)/i', '', $currentIndex);
-			
-			echo '<div class="cat_bar"><span style="color: #3C8534;">'.$this->l('Current category').' :</span>&nbsp;&nbsp;&nbsp;'.getPath($catBarIndex, $id_category).'</div>';
+					
+			echo '<div class="cat_bar"><span style="color: #3C8534;">'.$this->l('Current category').' :</span>&nbsp;&nbsp;&nbsp;'.getPath($catBarIndex, $id_category, '', '', 'catalog', $home).'</div>';
 			echo '<h2>'.$this->l('Categories').'</h2>';
 			$this->adminCategories->display($this->token);
 			echo '<div style="margin:10px">&nbsp;</div>';

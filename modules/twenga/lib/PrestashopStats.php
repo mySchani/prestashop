@@ -1,6 +1,6 @@
 <?php
 /**
- * 2007-2012 PrestaShop
+ * 2007-2011 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -19,12 +19,16 @@
  * needs please refer to http://www.prestashop.com for more information.
  *
  *  @author PrestaShop SA <contact@prestashop.com>
- *  @copyright 2007-2012 PrestaShop SA : 6 rue lacepede, 75005 PARIS
- *  @version  Release: $Revision: 14011 $
+ *  @copyright 2007-2011 PrestaShop SA : 6 rue lacepede, 75005 PARIS
+ *  @version  Release: $Revision: 6844 $
  *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
  *  International Registered Trademark & Property of PrestaShop SA
  **/
 
+/**
+ * @author Nans Pellicari - Prestashop
+ * @version 1.3
+ */
 class PrestashopStats
 {
     /**
@@ -63,7 +67,7 @@ class PrestashopStats
     {
         $params['url'] = self::$site_url;
         $params['module'] = 'twenga';
-        if (Configuration::get('PS_TWENGA_KEY') !== false && Configuration::get('PS_TWENGA_KEY') !== '') $params['key'] = Configuration::get('PS_TWENGA_KEY');
+        if(Configuration::get('PS_TWENGA_KEY') !== false && Configuration::get('PS_TWENGA_KEY') !== '') $params['key'] = Configuration::get('PS_TWENGA_KEY');
         $str_params = http_build_query($params);
 	    $str_url = $url.(($str_params !== '') ? '&'.$str_params : '');
 	    return $str_url;
@@ -101,7 +105,7 @@ class PrestashopStats
     {
         $str = self::buildUrlToQuery(self::$arr_ps_stats_url[__FUNCTION__]);
         $return = $this->executeQuery($str);
-        if (trim($return['response']) !== '' && Validate::isMd5($return['response']))
+        if(trim($return['response']) !== '' && Validate::isMd5($return['response']))
             Configuration::updateValue('PS_TWENGA_KEY', $return['response']);
     }
     public function validateSubscription ()

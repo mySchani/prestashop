@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,32 +31,21 @@ include(dirname(__FILE__).'/cashondelivery.php');
 
 $cashOnDelivery = new CashOnDelivery();
 if ($cart->id_customer == 0 OR $cart->id_address_delivery == 0 OR $cart->id_address_invoice == 0 OR !$cashOnDelivery->active)
-	Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
+	Tools::redirect('index.php?controller=order&step=1');
 
-// Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
-$authorized = false;
-foreach (Module::getPaymentModules() as $module)
-	if ($module['name'] == 'cashondelivery')
-	{
-		$authorized = true;
-		break;
-	}
-if (!$authorized)
-	die(Tools::displayError('This payment method is not available.'));
-	
 $customer = new Customer((int)$cart->id_customer);
 
 if (!Validate::isLoadedObject($customer))
-	Tools::redirectLink(__PS_BASE_URI__.'order.php?step=1');
+	Tools::redirect('index.php?controller=order&step=1');
 
 /* Validate order */
 if (Tools::getValue('confirm'))
 {
 	$customer = new Customer((int)$cart->id_customer);
 	$total = $cart->getOrderTotal(true, Cart::BOTH);
-	$cashOnDelivery->validateOrder((int)$cart->id, Configuration::get('PS_OS_PREPARATION'), $total, $cashOnDelivery->displayName, NULL, array(), NULL, false, $customer->secure_key);
+	$cashOnDelivery->validateOrder((int)$cart->id, _PS_OS_PREPARATION_, $total, $cashOnDelivery->displayName, NULL, array(), NULL, false, $customer->secure_key);
 	$order = new Order((int)$cashOnDelivery->currentOrder);
-	Tools::redirectLink(__PS_BASE_URI__.'order-confirmation.php?key='.$customer->secure_key.'&id_cart='.(int)($cart->id).'&id_module='.(int)$cashOnDelivery->id.'&id_order='.(int)$cashOnDelivery->currentOrder);
+	Tools::redirect('index.php?controller=order-confirmation&key='.$customer->secure_key.'&id_cart='.(int)($cart->id).'&id_module='.(int)$cashOnDelivery->id.'&id_order='.(int)$cashOnDelivery->currentOrder);
 }
 else
 {

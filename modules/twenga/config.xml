@@ -2,9 +2,9 @@
 <module>
 	<name>twenga</name>
 	<displayName><![CDATA[Twenga API]]></displayName>
-	<version><![CDATA[1.8]]></version>
+	<version><![CDATA[1.6]]></version>
 	<description><![CDATA[Module role: export of your products on Twenga and installation of the sales tracking brought by Twenga (requires sign up to Twenga)]]></description>
-	<author><![CDATA[PrestaShop]]></author>
+	<author><![CDATA[]]></author>
 	<tab><![CDATA[smart_shopping]]></tab>
 	<is_configurable>1</is_configurable>
 	<need_instance>1</need_instance>

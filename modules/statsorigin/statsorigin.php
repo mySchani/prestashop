@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,32 +19,32 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsOrigin extends ModuleGraph
 {
 	private $_html;
 	
-	function __construct()
-	{
-		$this->name = 'statsorigin';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsorigin';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
-		parent::__construct();
-
-		$this->displayName = $this->l('Visitors origin');
-		$this->description = $this->l('Display the websites your visitors come from.');
-	}
+		
+        parent::__construct();
+		
+        $this->displayName = $this->l('Visitors origin');
+        $this->description = $this->l('Display the websites your visitors come from.');
+    }
 
 	function install()
 	{
@@ -54,10 +54,12 @@ class StatsOrigin extends ModuleGraph
 	private function getOrigins($dateBetween)
 	{
 		$directLink = $this->l('Direct link');
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT c.http_referer
-		FROM '._DB_PREFIX_.'connections c
-		WHERE c.date_add BETWEEN '.$dateBetween, false);
+		$sql = 'SELECT http_referer
+				FROM '._DB_PREFIX_.'connections
+				WHERE 1
+					'.$this->sqlShopRestriction().'
+					date_add BETWEEN '.$dateBetween;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql, false);
 		$websites = array($directLink => 0);
 		while ($row = Db::getInstance(_PS_USE_SQL_SLAVE_)->nextRow($result))
 		{
@@ -87,8 +89,8 @@ class StatsOrigin extends ModuleGraph
 		{
 			$this->_html .= '
 			<center><p><img src="../img/admin/down.gif" />'. $this->l('Here is the percentage of the 10 most popular referrer websites by which visitors went through to get to your shop.').'</p>
-			'.ModuleGraph::engine(array('type' => 'pie')).'</center>
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=top"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br /><br />
+			'.$this->engine(array('type' => 'pie')).'</center>
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=top"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br /><br />
 			<div style="overflow-y: scroll; height: 600px;">
 			<center>
 			<table class="table " border="0" cellspacing="0" cellspacing="0">

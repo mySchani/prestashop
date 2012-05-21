@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14645 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -184,7 +184,7 @@ function displayFlags(languages, defaultLanguageID, employee_cookie)
 					);
 				var languagesFlags = $('<div></div>')
 					.addClass('language_flags')
-					.html(choose_language_trad+'<br /><br />');
+					.html('Choose language:<br /><br />');
 				$.each(languages, function(key, language) {
 					var img = $('<img>')
 						.addClass('pointer')
@@ -307,7 +307,7 @@ function delAccessory(id)
 	var inputCut = input.value.split('-');
 	var nameCut = name.value.split('¤');
 
-	if (inputCut.length != nameCut.length)
+	if (inputCut.lenght != nameCut.lenght)
 		return alert('Bad size');
 
 	// Reset all hidden fields
@@ -518,12 +518,6 @@ function askFeatureName(selected, selector)
 		$('#features_' + selector).show();
 		$('#feature_name_' + selector).attr('name', selected.name);
 	}
-	else
-	{
-		$('#features_' + selector).hide();
-		$('#feature_name_' + selector).removeAttr('name');
-	}
-
 }
 
 function replaceFeature(toReplace, selector)
@@ -833,3 +827,20 @@ function trackClickOnHelp(label, doc_version)
 	});
 }
 
+$(document).ready(function()
+{
+	$('.multishop_config a').click(function(e)
+	{
+		var input = $(this).parent().find('input[type=checkbox]');
+		input.attr('checked', (!input.attr('checked')) ? true : false);
+		return false;
+	});
+
+	$('.multishop_config').hover(function()
+	{
+		$(this).find('div').fadeIn('fast');
+	}, function()
+	{
+		$(this).find('div').fadeOut('fast');
+	});
+});

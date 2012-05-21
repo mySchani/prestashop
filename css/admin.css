@@ -319,7 +319,7 @@ select optgroup option {
 /* STRUCTURE */
 
 #container {
-	width: 960px;
+	width: 1024px;
 	margin: 0 auto 2em auto;
 	text-align: left;
 }
@@ -914,6 +914,27 @@ table.permissions td {
 	margin: 0;
 }
 
+#header_shoplist select.shopList{
+    background-image: url("../../../img/t/AdminShop.gif");
+    background-position: 1px 50%;
+    background-repeat: no-repeat;
+    padding: 1px 1px 1px 14px;
+}
+
+	#header_shoplist select.shopList .first{
+		font-weight: bold;
+	}
+	
+	#header_shoplist select.shopList .group{
+		font-weight: bold;
+		font-style: italic;
+		padding-left: 10px;
+	}
+	
+	#header_shoplist select.shopList .shop{
+		padding-left: 20px;
+	}
+
 .clearfix:after {
 	content: ".";
 	display: block;
@@ -1491,8 +1512,24 @@ a.blue:hover {
 	cursor:pointer;
 }
 
-a.action_module_delete {
-	color: #CB1C00;
-	text-decoration: underline;
-	margin-right: 30px;
+#importList label{
+	float: none;
 }
+
+#importList ul{
+	list-style-type: none;
+}
+
+.multishop_config{
+	position: absolute;
+	margin-left: -10px;
+}
+
+	.multishop_config div{
+	    background-color: #DFFAD3;
+	    border: 1px solid #DFD5C3;
+	    display: none;
+	    margin-top: 2px;
+	    padding: 5px;
+	    width: 200px;
+	}

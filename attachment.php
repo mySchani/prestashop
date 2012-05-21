@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,20 +19,17 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14007 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7104 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 require(dirname(__FILE__).'/config/config.inc.php');
-require(dirname(__FILE__).'/init.php');
+Tools::displayFileAsDeprecated();
 
-$a = new Attachment((int)(Tools::getValue('id_attachment')), (int)($cookie->id_lang));
+// init front controller in order to use Tools::redirect
+$controller = new FrontController();
+$controller->init();
 
-header('Content-Transfer-Encoding: binary');
-header('Content-Type: '.$a->mime);
-header('Content-Length: '.filesize(_PS_DOWNLOAD_DIR_.$a->file));
-header('Content-Disposition: attachment; filename="'.utf8_decode($a->file_name).'"');
-readfile(_PS_DOWNLOAD_DIR_.$a->file);
-exit;
+Tools::redirect('index.php?controller=attachment'.(($_SERVER['QUERY_STRING']) ? '&'.$_SERVER['QUERY_STRING'] : ''));

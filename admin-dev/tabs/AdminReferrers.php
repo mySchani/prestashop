@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -33,7 +33,7 @@ if (Tools::getValue('token') == Tools::getAdminToken('AdminReferrers'.(int)(Tab:
 {
 	if (Tools::isSubmit('ajaxProductFilter'))
 		Referrer::getAjaxProduct((int)(Tools::getValue('id_referrer')), (int)(Tools::getValue('id_product')), new Employee((int)(Tools::getValue('id_employee'))));
-	elseif (Tools::isSubmit('ajaxFillProducts'))
+	else if (Tools::isSubmit('ajaxFillProducts'))
 	{
 		$jsonArray = array();
 		$result = Db::getInstance()->ExecuteS('
@@ -69,12 +69,12 @@ class AdminReferrers extends AdminTab
 			'cache_registrations' => array('title' => $this->l('Reg.'), 'width' => 30, 'align' => 'center'),
 			'cache_orders' => array('title' => $this->l('Ord.'), 'width' => 30, 'align' => 'center'),
 			'cache_sales' => array('title' => $this->l('Sales'), 'width' => 80, 'align' => 'right', 'prefix' => '<b>', 'suffix' => '</b>', 'price' => true),
-			'cart' => array('title' => $this->l('Avg. cart'), 'width' => 50, 'align' => 'right', 'price' => true, 'havingFilter' => true),
+			'cart' => array('title' => $this->l('Avg. cart'), 'width' => 50, 'align' => 'right', 'price' => true),
 			'cache_reg_rate' => array('title' => $this->l('Reg. rate'), 'width' => 30, 'align' => 'center'),
 			'cache_order_rate' => array('title' => $this->l('Order rate'), 'width' => 30, 'align' => 'center'),
-			'fee0' => array('title' => $this->l('Click'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true),
-			'fee1' => array('title' => $this->l('Base'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true),
-			'fee2' => array('title' => $this->l('Percent'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true));
+			'fee0' => array('title' => $this->l('Click'), 'width' => 30, 'align' => 'right', 'price' => true),
+			'fee1' => array('title' => $this->l('Base'), 'width' => 30, 'align' => 'right', 'price' => true),
+			'fee2' => array('title' => $this->l('Percent'), 'width' => 30, 'align' => 'right', 'price' => true));
 			
 		parent::__construct();
 	}
@@ -155,7 +155,7 @@ class AdminReferrers extends AdminTab
 		{
 			echo '
 			<div style="float:left;margin-right:20px">
-				'.AdminStatsTab::displayCalendarStatic(array('Calendar' => $this->l('Calendar'), 'Day' => $this->l('Today'), 'Month' => $this->l('Month'), 'Year' => $this->l('Year'), 'From' => $this->l('From'), 'To' => $this->l('To'))).'
+				'.AdminStatsTab::displayCalendarStatic(array('Calendar' => $this->l('Calendar'), 'Day' => $this->l('Today'), 'Month' => $this->l('Month'), 'Year' => $this->l('Year'))).'
 			</div>';
 			if (!Tools::isSubmit('viewreferrer'))
 				echo '

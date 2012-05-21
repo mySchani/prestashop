@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,41 +19,41 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsNewsletter extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
-	private $_query2 = '';
-	private $_option = '';
+    private $_html = '';
+    private $_query = '';
+    private $_query2 = '';
+    private $_option = '';
 
-	function __construct()
-	{
-		$this->name = 'statsnewsletter';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsnewsletter';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
+		
 		parent::__construct();
+		
+        $this->displayName = $this->l('Newsletter');
+        $this->description = $this->l('Display the newsletter registrations');
+    }
 
-		$this->displayName = $this->l('Newsletter');
-		$this->description = $this->l('Display the newsletter registrations');
-	}
-	
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-		
+
 	public function hookAdminStatsModules($params)
 	{
 		if (Module::isInstalled('blocknewsletter'))
@@ -66,26 +66,30 @@ class StatsNewsletter extends ModuleGraph
 				<p>'.$this->l('Registrations from customers:').' '.(int)($totals['customers']).'</p>
 				<p>'.$this->l('Registrations from visitors:').' '.(int)($totals['visitors']).'</p>
 				<p>'.$this->l('Both:').' '.(int)($totals['both']).'</p>
-				<center>'.ModuleGraph::engine(array('type' => 'line', 'layers' => 3)).'</center>
-				<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+				<center>'.$this->engine(array('type' => 'line', 'layers' => 3)).'</center>
+				<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 			</fieldset>';
 		}
 		else
 			$this->_html = '<p>'.$this->l('Module Newsletter Block must be installed').'</p>';
-		
+
 		return $this->_html;
 	}
 
 	private function getTotals()
 	{
-		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(*) as customers
-		FROM `'._DB_PREFIX_.'customer` c
-		WHERE c.`newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween());
-		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(*) as visitors
-		FROM '._DB_PREFIX_.'newsletter n
-		WHERE n.`newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(*) as customers
+				FROM `'._DB_PREFIX_.'customer`
+				WHERE 1
+					'.$this->sqlShopRestriction(true).'
+					`newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween();
+		$result1 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
+
+		$sql = 'SELECT COUNT(*) as visitors
+				FROM '._DB_PREFIX_.'newsletter
+				WHERE '.$this->sqlShopRestriction().'
+					`newsletter_date_add` BETWEEN '.ModuleGraph::getDateBetween();
+		$result2 = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return array('customers' => $result1['customers'], 'visitors' => $result2['visitors'], 'both' => $result1['customers'] + $result2['visitors']);
 	}
 		
@@ -96,14 +100,17 @@ class StatsNewsletter extends ModuleGraph
 		$this->_titles['main'][2] = $this->l('Visitors');
 		$this->_titles['main'][3] = $this->l('Both');
 			
-		$this->_query = '
-		SELECT c.newsletter_date_add
-		FROM `'._DB_PREFIX_.'customer` c
-		WHERE c.`newsletter_date_add` BETWEEN ';
-		$this->_query2 = '
-		SELECT n.newsletter_date_add
-		FROM '._DB_PREFIX_.'newsletter n
-		WHERE n.`newsletter_date_add` BETWEEN ';
+		$this->_query = 'SELECT newsletter_date_add
+				FROM `'._DB_PREFIX_.'customer`
+				WHERE 1
+					'.$this->sqlShopRestriction(true).'
+					`newsletter_date_add` BETWEEN ';
+
+		$this->_query2 = 'SELECT newsletter_date_add
+				FROM '._DB_PREFIX_.'newsletter
+				WHERE 1
+					'.$this->sqlShopRestriction(true).'
+					`newsletter_date_add` BETWEEN ';
 		$this->setDateGraph($layers, true);
 	}
 	

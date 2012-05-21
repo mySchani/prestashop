@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,14 +31,6 @@ class AdminAccess extends AdminTab
 {
 	public function postProcess()
 	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		
 		if (Tools::isSubmit('submitAddaccess') AND $action = Tools::getValue('action') AND $id_tab = (int)(Tools::getValue('id_tab')) AND $id_profile = (int)(Tools::getValue('id_profile')) AND $this->tabAccess['edit'] == 1)
 		{
 			if ($id_tab == -1 AND $action == 'all' AND (int)(Tools::getValue('perm')) == 0)
@@ -46,11 +38,11 @@ class AdminAccess extends AdminTab
 			elseif ($id_tab == -1 AND $action == 'all')
 				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `view` = '.(int)(Tools::getValue('perm')).', `add` = '.(int)(Tools::getValue('perm')).', `edit` = '.(int)(Tools::getValue('perm')).', `delete` = '.(int)(Tools::getValue('perm')).' WHERE `id_profile` = '.(int)($id_profile));
 			elseif ($id_tab == -1)
-				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `'.bqSQL($action).'` = '.(int)(Tools::getValue('perm')).' WHERE `id_profile` = '.(int)($id_profile));
+				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `'.pSQL($action).'` = '.(int)(Tools::getValue('perm')).' WHERE `id_profile` = '.(int)($id_profile));
 			elseif ($action == 'all')
 				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `view` = '.(int)(Tools::getValue('perm')).', `add` = '.(int)(Tools::getValue('perm')).', `edit` = '.(int)(Tools::getValue('perm')).', `delete` = '.(int)(Tools::getValue('perm')).' WHERE `id_tab` = '.(int)($id_tab).' AND `id_profile` = '.(int)($id_profile));
 			else
-				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `'.bqSQL($action).'` = '.(int)(Tools::getValue('perm')).' WHERE `id_tab` = '.(int)($id_tab).' AND `id_profile` = '.(int)($id_profile));
+				Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'access` SET `'.pSQL($action).'` = '.(int)(Tools::getValue('perm')).' WHERE `id_tab` = '.(int)($id_tab).' AND `id_profile` = '.(int)($id_profile));
 		}
 	}
 	
@@ -112,7 +104,7 @@ class AdminAccess extends AdminTab
 		if (!sizeof($tabs))
 			echo '<tr><td colspan="5">'.$this->l('No tab').'</td></tr>';
 		elseif ($currentProfile == (int)(_PS_ADMIN_PROFILE_))
-			echo '<tr><td colspan="5">'.$this->l('Administrator permissions cannot be modified.').'</td></tr>';
+			echo '<tr><td colspan="5">'.$this->l('Administrator permissions can\'t be modified.').'</td></tr>';
 		else 
 			foreach ($tabs AS $tab)
 				if (!$tab['id_parent'] OR (int)($tab['id_parent']) == -1)
@@ -120,8 +112,7 @@ class AdminAccess extends AdminTab
 					$this->printTabAccess((int)($currentProfile), $tab, $accesses[$tab['id_tab']], false, $tabsize, sizeof($tabs));
 					foreach ($tabs AS $child)
 						if ($child['id_parent'] === $tab['id_tab'])
-							if (isset($accesses[$child['id_tab']]))
-								$this->printTabAccess($currentProfile, $child, $accesses[$child['id_tab']], true, $tabsize, sizeof($tabs));
+					 		$this->printTabAccess($currentProfile, $child, $accesses[$child['id_tab']], true, $tabsize, sizeof($tabs));
 				}
 		echo '</table>';
 	}
@@ -133,7 +124,7 @@ class AdminAccess extends AdminTab
 		echo '<tr><td'.($is_child ? '' : ' class="bold"').'>'.($is_child ? ' &raquo; ' : '').$tab['name'].'</td>';
 		foreach ($perms as $perm)
 		{
-			if ($this->tabAccess['edit'] == 1)
+			if($this->tabAccess['edit'] == 1)
 				echo '<td class="center"><input type="checkbox" name="1" id=\''.$perm.(int)($access['id_tab']).'\' class=\''.$perm.' '.(int)($access['id_tab']).'\' onclick="ajax_power(this, \''.$perm.'\', '.(int)($access['id_tab']).', '.(int)($access['id_profile']).', \''.$this->token.'\', \''.$tabsize.'\', \''.$tabnumber.'\')" '.((int)($access[$perm]) == 1 ? 'checked="checked"' : '').'/></td>';
 			else
 				echo '<td class="center"><input type="checkbox" name="1" disabled="disabled" '.((int)($access[$perm]) == 1 ? 'checked="checked"' : '').' /></td>';

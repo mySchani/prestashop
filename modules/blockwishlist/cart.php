@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,6 +29,8 @@ require_once(dirname(__FILE__).'/../../config/config.inc.php');
 require_once(dirname(__FILE__).'/../../init.php');
 require_once(dirname(__FILE__).'/WishList.php');
 require_once(dirname(__FILE__).'/blockwishlist.php');
+
+$errors = array();
 
 $action = Tools::getValue('action');
 $add = (!strcmp($action, 'add') ? 1 : 0);
@@ -40,7 +42,7 @@ $id_product_attribute = (int)(Tools::getValue('id_product_attribute'));
 if (Configuration::get('PS_TOKEN_ENABLE') == 1 AND
 	strcmp(Tools::getToken(false), Tools::getValue('token')) AND
 	$cookie->isLogged() === true)
-	echo Tools::displayError('Invalid token');
+	$errors[] = Tools::displayError('Invalid token');
 if ($cookie->isLogged())
 {
 	if ($id_wishlist AND WishList::exists($id_wishlist, $cookie->id_customer) === true)
@@ -49,31 +51,21 @@ if ($cookie->isLogged())
 		$smarty->assign('error', true);
 	if (($add OR $delete) AND empty($id_product) === false)
 	{
-		if (!isset($cookie->id_wishlist) OR $cookie->id_wishlist == '')
+		if(!isset($cookie->id_wishlist) OR $cookie->id_wishlist == '')
 		{
-			// Try to get an existing wishlist before creating a new one (useful if there is no wishlist block hooked left or right)
-			$wishlists = Wishlist::getByIdCustomer($cookie->id_customer);
-			if (!empty($wishlists))
-			{
-				$id_wishlist = (int)$wishlists[0]['id_wishlist'];
-				$cookie->id_wishlist = (int)$id_wishlist;
-			}
-			else
-			{
-				$wishlist = new WishList();
-				$modWishlist = new BlockWishList();
-				$wishlist->name = $modWishlist->default_wishlist_name;
-				$wishlist->id_customer = (int)($cookie->id_customer);
-				list($us, $s) = explode(' ', microtime());
-				srand($s * $us);
-				$wishlist->token = strtoupper(substr(sha1(uniqid(rand(), true)._COOKIE_KEY_.$cookie->id_customer), 0, 16));
-				$wishlist->add();
-				$cookie->id_wishlist = (int)($wishlist->id);
-			}
+			$wishlist = new WishList();
+			$modWishlist = new BlockWishList();
+			$wishlist->name = $modWishlist->default_wishlist_name;
+			$wishlist->id_customer = (int)($cookie->id_customer);
+			list($us, $s) = explode(' ', microtime());
+			srand($s * $us);
+			$wishlist->token = strtoupper(substr(sha1(uniqid(rand(), true)._COOKIE_KEY_.$cookie->id_customer), 0, 16));
+			$wishlist->add();
+			$cookie->id_wishlist = (int)($wishlist->id);
 		}
 		if ($add AND $quantity)
 			WishList::addProduct($cookie->id_wishlist, $cookie->id_customer, $id_product, $id_product_attribute, $quantity);
-		elseif ($delete)
+		else if ($delete)
 			WishList::removeProduct($cookie->id_wishlist, $cookie->id_customer, $id_product, $id_product_attribute);
 	}
 	$smarty->assign('products', WishList::getProductByIdCustomer($cookie->id_wishlist, $cookie->id_customer, $cookie->id_lang, null, true));
@@ -86,4 +78,10 @@ if ($cookie->isLogged())
 		echo Tools::displayError('No template found');
 }
 else
-	echo Tools::displayError('You must be logged in to manage your wishlist.');
+	$errors[] = Tools::displayError('You must be logged in to manage your wishlist.');
+	
+if (sizeof($errors))
+{
+	$smarty->assign('errors', $errors);
+	$smarty->display(_PS_THEME_DIR_.'errors.tpl');
+}

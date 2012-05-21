@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Pagesnotfound extends Module
@@ -48,11 +48,13 @@ class Pagesnotfound extends Module
 
 	function install()
 	{
-		if (!parent::install() OR !$this->registerHook('top') OR !$this->registerHook('frontCanonicalRedirect') OR !$this->registerHook('AdminStatsModules'))
+		if (!parent::install() OR !$this->registerHook('top') OR !$this->registerHook('AdminStatsModules'))
 			return false;
 		return Db::getInstance()->Execute('
 		CREATE TABLE `'._DB_PREFIX_.'pagenotfound` (
 		  id_pagenotfound INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+		  id_shop INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
+		  id_group_shop INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
 		  request_uri VARCHAR(256) NOT NULL,
 		  http_referer VARCHAR(256) NOT NULL,
 		  date_add DATETIME NOT NULL,
@@ -60,19 +62,20 @@ class Pagesnotfound extends Module
 		  INDEX (`date_add`)
 		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8;');
 	}
-	
+
     function uninstall()
     {
         return (parent::uninstall() AND Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'pagenotfound`'));
     }
-	
+
 	private function getPages()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT http_referer, request_uri, COUNT(*) as nb
-		FROM `'._DB_PREFIX_.'pagenotfound` p
-		WHERE p.date_add BETWEEN '.ModuleGraph::getDateBetween().'
-		GROUP BY http_referer, request_uri');
+		$sql = 'SELECT http_referer, request_uri, COUNT(*) as nb
+				FROM `'._DB_PREFIX_.'pagenotfound`
+				WHERE date_add BETWEEN '.ModuleGraph::getDateBetween()
+					.$this->sqlShopRestriction().
+				'GROUP BY http_referer, request_uri';
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
 
 		$pages = array();
 		foreach ($result as $row)
@@ -88,7 +91,7 @@ class Pagesnotfound extends Module
 		uasort($pages, 'pnfSort');
 		return $pages;
 	}
-	
+
     function hookAdminStatsModules()
     {
 		if (Tools::isSubmit('submitTruncatePNF'))
@@ -96,14 +99,7 @@ class Pagesnotfound extends Module
 			Db::getInstance()->Execute('TRUNCATE `'._DB_PREFIX_.'pagenotfound`');
 			$this->_html .= '<div class="conf confirm"><img src="../img/admin/ok.gif" /> '.$this->l('Pages not found has been emptied.').'</div>';
 		}
-		elseif (Tools::isSubmit('submitDeletePNF'))
-		{
-			Db::getInstance()->Execute('
-				DELETE FROM `'._DB_PREFIX_.'pagenotfound`
-				WHERE date_add BETWEEN '.ModuleGraph::getDateBetween());
-			$this->_html .= '<div class="conf confirm"><img src="../img/admin/ok.gif" /> '.$this->l('Pages not found have been deleted.').'</div>';
-		}
-	
+
         $this->_html .= '<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>';
 		if (!file_exists(dirname(__FILE__).'/../../.htaccess'))
 			$this->_html .= '<div class="warning warn">'.$this->l('You <b>must</b> use a .htaccess file to redirect 404 errors to the page "404.php"').'</div>';
@@ -132,15 +128,12 @@ class Pagesnotfound extends Module
 		}
 		else
 			$this->_html .= '<div class="conf confirm"><img src="../img/admin/ok.gif" /> '.$this->l('No pages registered').'</div>';
-			
+
 		$this->_html .= '</fieldset>';
 		if (sizeof($pages))
 			$this->_html .= '<div class="clear">&nbsp;</div>
 			<fieldset class="width3"><legend><img src="../img/admin/delete.gif" /> '.$this->l('Empty database').'</legend>
-				<form action="'.Tools::htmlEntitiesUtf8($_SERVER['REQUEST_URI']).'" method="post">
-					<input type="submit" class="button" name="submitDeletePNF" value="'.$this->l('Empty ALL pages not found in this period').'">
-					<input type="submit" class="button" name="submitTruncatePNF" value="'.$this->l('Empty ALL pages not found').'">
-				</form>	
+				<form action="'.Tools::htmlEntitiesUtf8($_SERVER['REQUEST_URI']).'" method="post"><input type="submit" class="button" name="submitTruncatePNF" value="'.$this->l('Empty ALL pages not found').'"></form>
 			</fieldset>';
 		$this->_html .= '<div class="clear">&nbsp;</div>
 		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
@@ -152,11 +145,9 @@ class Pagesnotfound extends Module
 
         return $this->_html;
     }
-	
+
 	function hookTop($params)
 	{
-		if (Configuration::get('PS_CANONICAL_REDIRECT'))
-		  return;
 		if (strstr($_SERVER['REQUEST_URI'], '404.php') AND isset($_SERVER['REDIRECT_URL']))
 			$_SERVER['REQUEST_URI'] = $_SERVER['REDIRECT_URL'];
 		if (!Validate::isUrl($request_uri = $_SERVER['REQUEST_URI']) OR strstr($_SERVER['REQUEST_URI'], '-admin404'))
@@ -165,26 +156,9 @@ class Pagesnotfound extends Module
 		{
 			$http_referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
 			if (empty($http_referer) OR Validate::isAbsoluteUrl($http_referer))
-				Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'pagenotfound` (`request_uri`,`http_referer`,`date_add`) VALUES (\''.pSQL($request_uri).'\',\''.pSQL($http_referer).'\',NOW())');
+				Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'pagenotfound` (`request_uri`, `http_referer`, `date_add`, `id_shop`, `id_group_shop`) VALUES (\''.pSQL($request_uri).'\', \''.pSQL($http_referer).'\', NOW(), '.$this->shopID.', '.$this->shopGroupID.')');
 		}
 	}
-	
-	function hookFrontCanonicalRedirect($params)
-	{
-		if (!Configuration::get('PS_CANONICAL_REDIRECT'))
-			return;
-		if (strstr($_SERVER['REQUEST_URI'], '404.php') AND isset($_SERVER['REDIRECT_URL']))
-			$_SERVER['REQUEST_URI'] = $_SERVER['REDIRECT_URL'];
-		if (!Validate::isUrl($request_uri = $_SERVER['REQUEST_URI']) OR strstr($_SERVER['REQUEST_URI'], '-admin404'))
-			return;
-		if (strstr($_SERVER['PHP_SELF'], '404.php') AND !strstr($_SERVER['REQUEST_URI'], '404.php'))
-		{
-			$http_referer = isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '';
-			if (empty($http_referer) OR Validate::isAbsoluteUrl($http_referer))
-				Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'pagenotfound` (`request_uri`,`http_referer`,`date_add`) VALUES (\''.pSQL($request_uri).'\',\''.pSQL($http_referer).'\',NOW())');
-		}
-	}
-
 }
 
 function pnfSort($a, $b) {
@@ -192,5 +166,3 @@ function pnfSort($a, $b) {
         return 0;
     return ($a['nb'] > $b['nb']) ? -1 : 1;
 }
-
-

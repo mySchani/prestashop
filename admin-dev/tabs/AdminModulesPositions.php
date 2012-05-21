@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7466 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -68,7 +68,7 @@ class AdminModulesPositions extends AdminTab
 				$id_hook = (int)(Tools::getValue('id_hook'));
 				$hook = new Hook($id_hook);
 				$excepts = explode(',', str_replace(' ', '', Tools::getValue('exceptions')));
-
+				
 				// Checking vars...
 				foreach ($excepts AS $except)
 					if (!Validate::isFileName($except))
@@ -77,17 +77,20 @@ class AdminModulesPositions extends AdminTab
 					$this->_errors[] = Tools::displayError('module cannot be loaded');
 				elseif (!$id_hook OR !Validate::isLoadedObject($hook))
 					$this->_errors[] = Tools::displayError('Hook cannot be loaded.');
-				elseif (Hook::getModuleFromHook($id_hook, $id_module))
+				elseif (Hook::getModulesFromHook($id_hook, $id_module))
 					$this->_errors[] = Tools::displayError('This module is already transplanted to this hook.');
 				elseif (!$module->isHookableOn($hook->name))
-					$this->_errors[] = Tools::displayError('This module cannot be transplanted to this hook.');
+					$this->_errors[] = Tools::displayError('This module can\'t be transplanted to this hook.');
 				// Adding vars...
-				elseif (!$module->registerHook($hook->name))
-					$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
-				elseif (!$module->registerExceptions($id_hook, $excepts))
-					$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
 				else
-					Tools::redirectAdmin($currentIndex.'&conf=16'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
+				{
+					if (!$module->registerHook($hook->name, Shop::getListFromContext()))
+						$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
+					elseif (!$module->registerExceptions($id_hook, $excepts, Shop::getListFromContext()))
+						$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
+					else
+						Tools::redirectAdmin($currentIndex.'&conf=16'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
+				}
 			}
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
@@ -103,22 +106,49 @@ class AdminModulesPositions extends AdminTab
 				$module = Module::getInstanceById($id_module);
 				$id_hook = (int)(Tools::getValue('id_hook'));
 				$hook = new Hook($id_hook);
-				$excepts = explode(',', str_replace(' ', '', Tools::getValue('exceptions')));
-
-				// Checking vars...
-				foreach ($excepts AS $except)
-					if (!Validate::isFileName($except))
-						$this->_errors[] = Tools::displayError('No valid value for field exceptions');
+				
 				if (!$id_module OR !Validate::isLoadedObject($module))
 					$this->_errors[] = Tools::displayError('module cannot be loaded');
 				elseif (!$id_hook OR !Validate::isLoadedObject($hook))
 					$this->_errors[] = Tools::displayError('Hook cannot be loaded.');
-
-				// Adding vars...
-				if (!$module->editExceptions($id_hook, $excepts))
-					$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
 				else
-					Tools::redirectAdmin($currentIndex.'&conf=16'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
+				{
+					$exceptions = Tools::getValue('exceptions');
+					if (is_array($exceptions))
+					{
+						foreach ($exceptions as $id => $exception)
+						{
+							$exception = explode(',', str_replace(' ', '', $exception));
+	
+							// Check files name
+							foreach ($exception AS $except)
+								if (!Validate::isFileName($except))
+									$this->_errors[] = Tools::displayError('No valid value for field exceptions');
+	
+							// Add files exceptions
+							if (!$module->editExceptions($id_hook, $exception, array($id)))
+								$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
+						}
+						
+						if (!$this->_errors)
+							Tools::redirectAdmin($currentIndex.'&conf=16'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
+					}
+					else
+					{
+						$exceptions = explode(',', str_replace(' ', '', $exceptions));
+
+						// Check files name
+						foreach ($exceptions AS $except)
+							if (!Validate::isFileName($except))
+								$this->_errors[] = Tools::displayError('No valid value for field exceptions');
+
+						// Add files exceptions
+						if (!$module->editExceptions($id_hook, $exceptions, Shop::getListFromContext()))
+							$this->_errors[] = Tools::displayError('An error occurred while transplanting module to hook.');
+						else
+							Tools::redirectAdmin($currentIndex.'&conf=16'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
+					}
+				}
 			}
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to add here.');
@@ -139,14 +169,10 @@ class AdminModulesPositions extends AdminTab
 					$this->_errors[] = Tools::displayError('Hook cannot be loaded.');
 				else
 				{
-					$position = Db::getInstance()->getValue('SELECT `position` FROM `'._DB_PREFIX_.'hook_module` hm WHERE hm.`id_hook` = '.$id_hook.' AND hm.`id_module` = '.$id_module);
-					if (!$module->unregisterHook($id_hook) OR !$module->unregisterExceptions($id_hook))
+					if (!$module->unregisterHook($id_hook, Shop::getListFromContext()) OR !$module->unregisterExceptions($id_hook, Shop::getListFromContext()))
 						$this->_errors[] = Tools::displayError('An error occurred while deleting module from hook.');
 					else
-					{
-						$this->placeCorrectlyOtherModules($id_hook, $position);
 						Tools::redirectAdmin($currentIndex.'&conf=17'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token);
-					}
 				}
 			}
 			else
@@ -171,11 +197,8 @@ class AdminModulesPositions extends AdminTab
 						$this->_errors[] = Tools::displayError('Hook cannot be loaded.');
 					else
 					{
-						$position = Db::getInstance()->getValue('SELECT `position` FROM `'._DB_PREFIX_.'hook_module` hm WHERE hm.`id_hook` = '.(int)($id_hook).' AND hm.`id_module` = '.(int)($id_module));
 						if (!$module->unregisterHook((int)($id_hook)) OR !$module->unregisterExceptions((int)($id_hook)))
 							$this->_errors[] = Tools::displayError('An error occurred while deleting module from hook.');
-						else
-							$this->placeCorrectlyOtherModules((int)($id_hook), (int)($position));
 					}
 				}
 				if (!sizeof($this->_errors))
@@ -195,6 +218,7 @@ class AdminModulesPositions extends AdminTab
 	public function displayList()
 	{
 		global $currentIndex;
+
 		$link = new Link();
 		$admin_dir = dirname($_SERVER['PHP_SELF']);
 		$admin_dir = substr($admin_dir, strrpos($admin_dir,'/') + 1);
@@ -218,32 +242,28 @@ class AdminModulesPositions extends AdminTab
 				<option>---------------</option>';
 				$modules = Module::getModulesInstalled();
 
-				$moduleIdList = array();
 				foreach ($modules AS $module)
-				{
-					$moduleIdList[] = (int)$module['id_module'];
-				}
-				Module::preloadModuleNameFromId($moduleIdList);
-				foreach ($modules AS $module) {
-					Module::getInstanceById((int)($module['id_module']));
 					if ($tmpInstance = Module::getInstanceById((int)($module['id_module'])))
 						$cm[$tmpInstance->displayName] = $tmpInstance;
-				}
+
 				ksort($cm);
 				foreach ($cm AS $module)
 					echo '
 					<option value="'.(int)($module->id).'" '.($this->displayKey == $module->id ? 'selected="selected" ' : '').'>'.$module->displayName.'</option>';
 			echo '
-			</select><br /><br />
+			</select>
+			<br /><br />
 			<input type="checkbox" id="hook_position" onclick="autoUrlNoList(\'hook_position\', \''.$currentIndex.'&token='.$this->token.'&show_modules='.(int)(Tools::getValue('show_modules')).'&hook_position=\')" '.(Tools::getValue('hook_position') ? 'checked="checked" ' : '').' />&nbsp;<label class="t" for="hook_position">'.$this->l('Display non-positionable hook').'</label>
 		</form>
 		
-		<fieldset style="width:250px;float:right"><legend>'.$this->l('Live edit').'</legend>
-				<p>'.$this->l('By clicking here you will be redirected to the front office of your shop to move and delete modules directly.').'</p>
+		<fieldset style="width:250px;float:right"><legend>'.$this->l('Live edit').'</legend>';
+		if (Tools::isMultiShopActivated() && Shop::getContextType() != Shop::CONTEXT_SHOP)
+			echo '<p>'.$this->l('You have to select a shop to use live edit').'</p>';
+		else
+			echo '<p>'.$this->l('By clicking here you will be redirected to the front office of your shop to move and delete modules directly.').'</p>
 				<br>
-				<a href="'.$link->getPageLink('index.php').'?live_edit&ad='.$admin_dir.'&liveToken='.sha1($admin_dir._COOKIE_KEY_).'" target="_blank" class="button">'.$this->l('Run LiveEdit').'</a>
-		</fieldset>
-		';
+				<a href="'.$link->getPageLink('index').'&live_edit&ad='.$admin_dir.'&liveToken='.sha1($admin_dir._COOKIE_KEY_).((Tools::isMultiShopActivated()) ? '&id_shop='.Shop::getCurrentShop() : '').'" target="_blank" class="button">'.$this->l('Run LiveEdit').'</a>';
+		echo '</fieldset>';
 
 		// Print hook list
 		echo '<form method="post" action="'.$currentIndex.'&token='.$this->token.'">';
@@ -251,20 +271,20 @@ class AdminModulesPositions extends AdminTab
 		$hooks = Hook::getHooks(!(int)(Tools::getValue('hook_position')));
 
 		echo '<div id="unhook_button_position_top"><input class="button floatr" type="submit" name="unhookform" value="'.$this->l('Unhook the selection').'"/></div>';
-		Hook::preloadModulesFromHooks();
+
+		$canMove = (Tools::isMultiShopActivated() && Shop::getContextType() != Shop::CONTEXT_SHOP) ? false : true;
+		if (!$canMove)
+			echo '<br /><div><b>'.$this->l('If you want to order / move following data, please go in shop context (select a shop in shop list)').'</b></div>';
 		foreach ($hooks AS $hook)
 		{
-			$modules = array();
-			if (!$this->displayKey)
-				$modules = Hook::getModulesFromHook($hook['id_hook']);
-			elseif ($res = Hook::getModuleFromHook($hook['id_hook'], $this->displayKey))
-					$modules[0] = $res;
-			$nbModules = sizeof($modules);
+			$modules = Hook::getModulesFromHook($hook['id_hook'], $this->displayKey);
+
+			$nbModules = count($modules);
 			echo '
 			<a name="'.$hook['name'].'"/>
 			<table cellpadding="0" cellspacing="0" class="table width3 space'.($nbModules >= 2? ' tableDnD' : '' ).'" id="'.$hook['id_hook'].'">
 			<tr class="nodrag nodrop"><th colspan="4">'.$hook['title'].' - <span style="color: red">'.$nbModules.'</span> '.(($nbModules > 1) ? $this->l('modules') : $this->l('module'));
-			if ($nbModules)
+			if ($nbModules && $canMove)
 				echo '<input type="checkbox" id="Ghook'.$hook['id_hook'].'" class="floatr" style="margin-right: 2px;" onclick="hookCheckboxes('.$hook['id_hook'].', 0, this)"/>';
 			if (!empty($hook['description']))
 				echo '&nbsp;<span style="font-size:0.8em; font-weight: normal">['.$hook['description'].']</span>';
@@ -275,26 +295,20 @@ class AdminModulesPositions extends AdminTab
 			{
 				$instances = array();
 				foreach ($modules AS $module)
-				{
-					$moduleIdList[] = (int)$module['id_module'];
-				}
-				Module::preloadModuleNameFromId($moduleIdList);
-				foreach ($modules AS $module) {
 					if ($tmpInstance = Module::getInstanceById((int)($module['id_module'])))
-						$instances[$tmpInstance->getPosition($hook['id_hook'])] = $tmpInstance;
-				}
-				ksort($instances);
+						$instances[] = $tmpInstance;
 				foreach ($instances AS $position => $instance)
 				{
+					$position = $position + 1;
 					echo '
 					<tr id="'.$hook['id_hook'].'_'.$instance->id.'"'.($irow++ % 2 ? ' class="alt_row"' : '').' style="height: 42px;">';
 					if (!$this->displayKey)
 					{
 						echo '
 						<td class="positions" width="40">'.(int)($position).'</td>
-						<td'.($nbModules >= 2? ' class="dragHandle"' : '').' id="td_'.$hook['id_hook'].'_'.$instance->id.'" width="40">
-						<a'.($position == 1 ? ' style="display: none;"' : '' ).' href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&direction=0&token='.$this->token.'&changePosition='.rand().'#'.$hook['name'].'"><img src="../img/admin/up.gif" alt="'.$this->l('Up').'" title="'.$this->l('Up').'" /></a><br />
-							<a '.($position == sizeof($instances) ? ' style="display: none;"' : '').'href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&direction=1&token='.$this->token.'&changePosition='.rand().'#'.$hook['name'].'"><img src="../img/admin/down.gif" alt="'.$this->l('Down').'" title="'.$this->l('Down').'" /></a>
+						<td'.(($canMove && $nbModules >= 2) ? ' class="dragHandle"' : '').' id="td_'.$hook['id_hook'].'_'.$instance->id.'" width="40">
+							'.(($canMove) ? '<a'.($position == 1 ? ' style="display: none;"' : '' ).' href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&direction=0&token='.$this->token.'&changePosition='.rand().'#'.$hook['name'].'"><img src="../img/admin/up.gif" alt="'.$this->l('Up').'" title="'.$this->l('Up').'" /></a><br />
+							<a '.($position == count($instances) ? ' style="display: none;"' : '').'href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&direction=1&token='.$this->token.'&changePosition='.rand().'#'.$hook['name'].'"><img src="../img/admin/down.gif" alt="'.$this->l('Down').'" title="'.$this->l('Down').'" /></a>' : '').'
 						</td>
 						<td style="padding-left: 10px;"><label class="lab_modules_positions" for="mod'.$hook['id_hook'].'_'.$instance->id.'">
 						';
@@ -305,10 +319,13 @@ class AdminModulesPositions extends AdminTab
 					<img src="../modules/'.$instance->name.'/logo.gif" alt="'.stripslashes($instance->name).'" /> <strong>'.stripslashes($instance->displayName).'</strong>
 						'.($instance->version ? ' v'.((int)($instance->version) == $instance->version? sprintf('%.1f', $instance->version) : (float)($instance->version)) : '').'<br />'.$instance->description.'
 					</label></td>
-						<td width="60">
+						<td width="60">';
+					if ($canMove)
+						echo '
 							<a href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&editGraft'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token.'"><img src="../img/admin/edit.gif" border="0" alt="'.$this->l('Edit').'" title="'.$this->l('Edit').'" /></a>
 							<a href="'.$currentIndex.'&id_module='.$instance->id.'&id_hook='.$hook['id_hook'].'&deleteGraft'.($this->displayKey ? '&show_modules='.$this->displayKey : '').'&token='.$this->token.'"><img src="../img/admin/delete.gif" border="0" alt="'.$this->l('Delete').'" title="'.$this->l('Delete').'" /></a>
-							<input type="checkbox" id="mod'.$hook['id_hook'].'_'.$instance->id.'" class="hook'.$hook['id_hook'].'" onclick="hookCheckboxes('.$hook['id_hook'].', 1, this)" name="unhooks[]" value="'.$hook['id_hook'].'_'.$instance->id.'"/>
+							<input type="checkbox" id="mod'.$hook['id_hook'].'_'.$instance->id.'" class="hook'.$hook['id_hook'].'" onclick="hookCheckboxes('.$hook['id_hook'].', 1, this)" name="unhooks[]" value="'.$hook['id_hook'].'_'.$instance->id.'"/>';
+						echo '
 						</td>
 					</tr>';
 				}
@@ -326,15 +343,40 @@ class AdminModulesPositions extends AdminTab
 
 		$id_module = (int)(Tools::getValue('id_module'));
 		$id_hook = (int)(Tools::getValue('id_hook'));
-		if ($id_module AND $id_hook AND Tools::isSubmit('editGraft'))
+		if (Tools::isSubmit('editGraft'))
 		{
+			// Check auth for this page
+			if (!$id_module || !$id_hook)
+				Tools::redirectAdmin($currentIndex . '&token='.$this->token);
+				
+			$sql = 'SELECT id_module
+					FROM '._DB_PREFIX_.'hook_module
+					WHERE id_module = '.$id_module.'
+						AND id_hook = '.$id_hook.'
+						AND id_shop IN('.implode(', ', ShopCore::getListFromContext()).')';
+			if (!Db::getInstance()->getValue($sql))
+				Tools::redirectAdmin($currentIndex . '&token='.$this->token);
+
 			$slModule = Module::getInstanceById($id_module);
-			$exceptsList = $slModule->getExceptions($id_hook);
+			$exceptsList = $slModule->getExceptions($id_hook, true);
+			$exceptsDiff = false;
 			$excepts = '';
-			foreach ($exceptsList as $key => $except)
-				$excepts .= ($key ? ',' : '').$except['file_name'];
+			if ($exceptsList)
+			{
+				$first = current($exceptsList);
+				foreach ($exceptsList as $k => $v)
+					if (array_diff($v, $first))
+						$exceptsDiff = true;
+				
+				if (!$exceptsDiff)
+					$excepts = implode(', ', $first);
+			}
 		}
-		$excepts = strval(Tools::getValue('exceptions', ((isset($slModule) AND Validate::isLoadedObject($slModule)) ? $excepts : '')));
+		else
+		{
+			$exceptsDiff = false;
+			$excepts = strval(Tools::getValue('exceptions'));
+		}
 		$modules = Module::getModulesInstalled(0);
 
 		$instances = array();
@@ -354,7 +396,7 @@ class AdminModulesPositions extends AdminTab
 					<select name="id_module"'.(Tools::isSubmit('editGraft') ? ' disabled="disabled"' : '').'>';
 					foreach ($modules AS $module)
 						echo '
-						<option value="'.$module->id.'" '.($id_module == $module->id ? 'selected="selected" ' : '').'>'.stripslashes($module->displayName).'</option>';
+						<option value="'.$module->id.'" '.(($id_module == $module->id || (!$id_module && Tools::getValue('show_modules') == $module->id)) ? 'selected="selected" ' : '').'>'.stripslashes($module->displayName).'</option>';
 					echo '
 					</select><sup> *</sup>
 				</div>
@@ -366,16 +408,40 @@ class AdminModulesPositions extends AdminTab
 						<option value="'.$hook['id_hook'].'" '.($id_hook == $hook['id_hook'] ? 'selected="selected" ' : '').'>'.$hook['title'].'</option>';
 					echo '
 					</select><sup> *</sup>
-				</div>
-				<label>'.$this->l('Exceptions').' :</label>
-				<div class="margin-form">
-					<input type="text" name="exceptions" size="40" '.(!empty($excepts) ? 'value="'.$excepts.'"' : '').'><br />Ex: identity.php, history.php, order.php, product.php<br /><br />
-					'.$this->l('Please specify those files for which you do not want the module to be displayed').'.<br />
-					'.$this->l('These files are located in your base directory').', '.$this->l('e.g., ').' <b>identity.php</b>.<br />
-					'.$this->l('Please type each filename separated by a comma').'.
-					<br /><br />
-				</div>
-				<div class="margin-form">
+				</div>';
+
+		// Manage exceptions
+		if (!$exceptsDiff)
+		{
+			echo '<label>'.$this->l('Exceptions').' :</label>
+					<div class="margin-form">
+						<input type="text" name="exceptions" size="40" '.(!empty($excepts) ? 'value="'.$excepts.'"' : '').'><br />Ex: identity.php, history.php, order.php, product.php<br /><br />
+						'.$this->l('Please specify those files for which you do not want the module to be displayed').'.<br />
+						'.$this->l('These files are located in your base directory').', '.$this->l('e.g., ').' <b>identity.php</b>.<br />
+						'.$this->l('Please type each filename separated by a comma').'.
+						<br /><br />
+					</div>';
+		}
+		else
+		{
+			echo '<label>'.$this->l('Exceptions').' :</label>
+					<div class="margin-form">';
+			foreach ($exceptsList as $shopID => $fileList)
+			{
+				echo '<input type="text" name="exceptions['.$shopID.']" size="40" value="' . implode(', ', $fileList) . '">';
+				$shop = new Shop($shopID);
+				echo ' ('.htmlspecialchars($shop->name).')<br /><br />';
+			}
+			echo 'Ex: identity.php, history.php, order.php, product.php<br /><br />
+						'.$this->l('Please specify those files for which you do not want the module to be displayed').'.<br />
+						'.$this->l('These files are located in your base directory').', '.$this->l('e.g., ').' <b>identity.php</b>.<br />
+						'.$this->l('Please type each filename separated by a comma').'.
+						<br /><br />
+					</div>';
+		}
+		
+
+		echo '<div class="margin-form">
 				';
 				if (Tools::isSubmit('editGraft'))
 				{
@@ -390,11 +456,4 @@ class AdminModulesPositions extends AdminTab
 			</fieldset>
 		</form>';
 	}
-
-	private function placeCorrectlyOtherModules($id_hook, $position)
-	{
-		return Db::getInstance()->Execute('UPDATE `'._DB_PREFIX_.'hook_module` hm SET hm.`position`= hm.`position` - 1 WHERE hm.`id_hook` = '.(int)($id_hook).' AND hm.`position` > '.(int)($position));
-	}
 }
-
-

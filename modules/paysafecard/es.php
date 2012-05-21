@@ -2,8 +2,6 @@
 
 global $_MODULE;
 $_MODULE = array();
-$_MODULE['<{paysafecard}prestashop>prepaidservices_3e8e30e75887d2f3b02da669ebd5b380'] = 'Se ha encontrado un certificado para esta configuración';
-$_MODULE['<{paysafecard}prestashop>prepaidservices_515f3d11e66f6fc5f7bb453e6030241a'] = 'Ya se ha guardado una clave';
 $_MODULE['<{paysafecard}prestashop>disposition-error_393988def796f78c4b673b90548f3afa'] = 'La disposición se encuentra en un estado no válido';
 $_MODULE['<{paysafecard}prestashop>disposition-error_5db89f2bf67f2c7dbd86cac101c3c1b8'] = 'No está autorizado a recuperar el pago.';
 $_MODULE['<{paysafecard}prestashop>payment_da9c72b9e543135f3f59e3c8ac68ef35'] = 'Pagar con';

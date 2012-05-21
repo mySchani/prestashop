@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7499 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -78,11 +78,10 @@ class AdminCategories extends AdminTab
 	public function display($token = NULL)
 	{
 		global $currentIndex, $cookie;
-
-		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : NULL, !$cookie->__get($this->table.'Orderway') ? 'ASC' : NULL);
+		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : NULL, !$cookie->__get($this->table.'Orderway') ? 'ASC' : NULL, 0, NULL, (int)Shop::getCurrentShop(true));
 		echo '<h3>'.(!$this->_listTotal ? ($this->l('There are no subcategories')) : ($this->_listTotal.' '.($this->_listTotal > 1 ? $this->l('subcategories') : $this->l('subcategory')))).' '.$this->l('in category').' "'.stripslashes($this->_category->getName()).'"</h3>';
 		if ($this->tabAccess['add'] === '1')
-			echo '<a href="'.__PS_BASE_URI__.substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__)).'?tab=AdminCatalog&add'.$this->table.'&id_parent='.Tools::getValue('id_category', 1).'&token='.($token!=NULL ? $token : $this->token).'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add a new subcategory').'</a>';
+			echo '<a href="'.__PS_BASE_URI__.substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__)).'?tab=AdminCatalog&add'.$this->table.'&id_parent='.$this->_category->id.'&token='.($token!=NULL ? $token : $this->token).'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add a new subcategory').'</a>';
 		echo '<div style="margin:10px;">';
 		$this->displayList($token);
 		echo '</div>';
@@ -98,12 +97,42 @@ class AdminCategories extends AdminTab
 		{
 			if ($id_category = (int)(Tools::getValue('id_category')))
 			{
-				if (!Category::checkBeforeMove($id_category, (int)(Tools::getValue('id_parent'))))
+				if (!Category::checkBeforeMove($id_category, $this->_category->id))
 				{
 					$this->_errors[] = Tools::displayError('Category cannot be moved here');
 					return false;
 				}
 			}
+		}
+		/* Change object statuts (active, inactive) */
+		elseif (isset($_GET['status']) AND Tools::getValue($this->identifier))
+		{
+			if ($this->tabAccess['edit'] === '1')
+			{
+				if (Validate::isLoadedObject($object = $this->loadObject()))
+				{
+					if ($object->toggleStatus())
+					{
+						$target = '';
+						if (($id_category = (int)(Tools::getValue('id_category'))) AND Tools::getValue('id_product'))
+							$target = '&id_category='.(int)($id_category);
+						else 
+						{
+							$referrer = Tools::secureReferrer($_SERVER['HTTP_REFERER']);
+							if (preg_match('/id_category=(\d+)/', $referrer, $matches))
+								$target = '&id_category='.(int)($matches[1]);
+						}
+						Module::hookExec('categoryUpdate');
+						Tools::redirectAdmin($currentIndex.'&conf=5'.$target.'&token='.Tools::getValue('token'));
+					}
+					else
+						$this->_errors[] = Tools::displayError('An error occurred while updating status.');
+				}
+				else
+					$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+			}
+			else
+				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 		/* Delete object */
 		elseif (isset($_GET['delete'.$this->table]))
@@ -143,10 +172,8 @@ class AdminCategories extends AdminTab
 				$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			if (!$object->updatePosition((int)(Tools::getValue('way')), (int)(Tools::getValue('position'))))
 				$this->_errors[] = Tools::displayError('Failed to update the position.');
-			else {
-				$object->regenerateEntireNtree();
+			else
 				Tools::redirectAdmin($currentIndex.'&'.$this->table.'Orderby=position&'.$this->table.'Orderway=asc&conf=5'.(($id_category = (int)(Tools::getValue($this->identifier, Tools::getValue('id_category_parent', 1)))) ? ('&'.$this->identifier.'='.$id_category) : '').'&token='.Tools::getAdminTokenLite('AdminCatalog'));
-			}
 		}
 		/* Delete multiple objects */
 		elseif (Tools::getValue('submitDel'.$this->table))
@@ -197,6 +224,13 @@ class AdminCategories extends AdminTab
 			return;
 		$active = $this->getFieldValue($obj, 'active');
 		$customer_groups = $obj->getGroups();
+		if (Shop::getContextType() == Shop::CONTEXT_SHOP)
+		{
+			$shop = new Shop(Shop::getCurrentShop());
+			$id_category = $shop->id_category;
+		}
+		else
+			$id_category = (int)Tools::getValue('id_parent');
 
 		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.($token!=NULL ? $token : $this->token).'" method="post" enctype="multipart/form-data">
@@ -208,7 +242,7 @@ class AdminCategories extends AdminTab
 			echo '
 					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input type="text" style="width: 260px" name="name_'.$language['id_lang'].'" id="name_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'name', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" '.((!$obj->id) ? ' onkeyup="copy2friendlyURL();"' : '').' /><sup> *</sup>
-						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		echo '	<p class="clear"></p>
 				</div>
@@ -220,22 +254,19 @@ class AdminCategories extends AdminTab
 					<label class="t" for="active_off"><img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 				</div>
 				<label>'.$this->l('Parent category:').' </label>
-				<div class="margin-form">';
-				// Translations are not automatic for the moment ;)
-				$trads = array(
-					 'Home' => $this->l('Home'), 
-					 'selected' => $this->l('selected'), 
-					 'Collapse All' => $this->l('Collapse All'), 
-					 'Expand All' => $this->l('Expand All')
-				);
-				echo Helper::renderAdminCategorieTree($trads, array(isset($obj->id_parent) ? $obj->id_parent : Tools::getValue('id_parent', 1)), 'id_parent', true);
-				echo '</div>
+				<div class="margin-form">
+					<select name="id_parent">';
+		$categories = Category::getCategories((int)$cookie->id_lang, false);
+		Category::recurseCategory($categories, $categories[0][1], 1, ($obj->id ? $this->getFieldValue($obj, 'id_parent') : $id_category));
+		echo '
+					</select>
+				</div>
 				<label>'.$this->l('Description:').' </label>
 				<div class="margin-form translatable">';
 		foreach ($this->_languages AS $language)
 			echo '
 					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<textarea name="description_'.$language['id_lang'].'" rows="10" cols="100">'.htmlentities($this->getFieldValue($obj, 'description', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'</textarea>
+						<textarea name="description_'.$language['id_lang'].'" rows="5" cols="40">'.htmlentities($this->getFieldValue($obj, 'description', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'</textarea>
 					</div>';
 		echo '	<p class="clear"></p>
 				</div>
@@ -252,7 +283,7 @@ class AdminCategories extends AdminTab
 			echo '
 					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input type="text" name="meta_title_'.$language['id_lang'].'" id="meta_title_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'meta_title', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
-						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		echo '	<p class="clear"></p>
 				</div>
@@ -261,7 +292,7 @@ class AdminCategories extends AdminTab
 		foreach ($this->_languages AS $language)
 			echo '<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input type="text" name="meta_description_'.$language['id_lang'].'" id="meta_description_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'meta_description', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
-						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 				</div>';
 		echo '	<p class="clear"></p>
 				</div>
@@ -271,7 +302,7 @@ class AdminCategories extends AdminTab
 			echo '
 					<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input type="text" name="meta_keywords_'.$language['id_lang'].'" id="meta_keywords_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'meta_keywords', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
-						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
+						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}'.($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		echo '	<p class="clear"></p>
 				</div>
@@ -280,7 +311,7 @@ class AdminCategories extends AdminTab
 		foreach ($this->_languages AS $language)
 			echo '<div class="lang_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input type="text" name="link_rewrite_'.$language['id_lang'].'" id="link_rewrite_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'link_rewrite', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" onchange="this.value = str2url(this.value);" /><sup> *</sup>
-						<span class="hint" name="help_box">'.$this->l('Only letters and the minus (-) character are allowed').'<span class="hint-pointer">&nbsp;</span></span>
+						<span class="hint" name="help_box">'.$this->l('Only letters and the minus (-) character are allowed').($obj->id ? '<br />'.$this->youEditFieldFor() : '').'<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		echo '	<p class="clear"></p>
 				</div>

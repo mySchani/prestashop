@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date dans le passé
-if (!class_exists('ConfigurationTest',false))
-	require_once(INSTALL_PATH.'/../classes/ConfigurationTest.php');
+include_once(INSTALL_PATH.'/classes/ConfigurationTest.php');
 
 // Functions list to test with 'test_system'
 $funcs = array('fopen', 'fclose', 'fread', 'fwrite', 'rename', 'file_exists', 'unlink', 'rmdir', 'mkdir', 'getcwd', 'chdir', 'chmod');
@@ -61,7 +60,6 @@ $tests_op = array(
 	'gz' => false,
 	'mcrypt' => false,
 	'magicquotes' => false,
-	'dom' => false,
 );
 
 // Execute tests

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -38,22 +38,12 @@ class LanguageCore extends ObjectModel
 	/** @var string 5-letter iso code */
 	public 		$language_code;
 
-	/** @var string date format http://http://php.net/manual/en/function.date.php with the date only */
-	public 		$date_format_lite = 'Y-m-d';
-	
-	/** @var string date format http://http://php.net/manual/en/function.date.php with hours and minutes */
-	public 		$date_format_full = 'Y-m-d H:i:s';
-
-	/** @var bool true if this language is right to left language */
-	public		$is_rtl = false;
-
 	/** @var boolean Status */
 	public 		$active = true;
 
-	protected 	$fieldsRequired = array('name', 'iso_code', 'date_format_lite', 'date_format_full');
-	protected 	$fieldsSize = array('name' => 32, 'iso_code' => 2, 'language_code' => 5, 'date_format_lite' => 32, 'date_format_full' => 32);
-	protected 	$fieldsValidate = array('name' => 'isGenericName', 'iso_code' => 'isLanguageIsoCode', 'language_code' => 'isLanguageCode',
-	'active' => 'isBool', 'is_rtl' => 'isBool', 'date_format_lite' => 'isPhpDateFormat', 'date_format_full' => 'isPhpDateFormat');
+	protected 	$fieldsRequired = array('name', 'iso_code');
+	protected 	$fieldsSize = array('name' => 32, 'iso_code' => 2, 'language_code' => 5);
+	protected 	$fieldsValidate = array('name' => 'isGenericName', 'iso_code' => 'isLanguageIsoCode', 'language_code' => 'isLanguageCode', 'active' => 'isBool');
 
 	protected 	$table = 'lang';
 	protected 	$identifier = 'id_lang';
@@ -63,16 +53,9 @@ class LanguageCore extends ObjectModel
 	protected static $_LANGUAGES;
 	protected static $countActiveLanguages;
 
-	protected $webserviceParameters = array(
+	protected	$webserviceParameters = array(
 		'objectNodeName' => 'language',
 		'objectsNodeName' => 'languages',
-	);
-
-	protected $translationsFilesAndVars = array(
-		'fields' => '_FIELDS',
-		'errors' => '_ERRORS',
-		'admin' => '_LANGADM',
-		'pdf' => '_LANGPDF',
 	);
 
 	public	function __construct($id = NULL, $id_lang = NULL)
@@ -86,104 +69,41 @@ class LanguageCore extends ObjectModel
 		$fields['name'] = pSQL($this->name);
 		$fields['iso_code'] = pSQL(strtolower($this->iso_code));
 		$fields['language_code'] = pSQL(strtolower($this->language_code));
-		$fields['is_rtl'] = (int)$this->is_rtl;
 		if (empty($fields['language_code']))
 			$fields['language_code'] = $fields['iso_code'];
-		$fields['date_format_lite'] = pSQL($this->date_format_lite);
-		$fields['date_format_full'] = pSQL($this->date_format_full);
-		$fields['active'] = (int)$this->active;
+		$fields['active'] = (int)($this->active);
 		return $fields;
 	}
-	
-	/**
-	 * Generate traslations files
-	 * 
-	 */
-	private function _generateFiles($newIso = null)
-	{
-		$iso_code = $newIso?$newIso:$this->iso_code;
-	
-		if (!file_exists(_PS_TRANSLATIONS_DIR_.$iso_code))
-			mkdir(_PS_TRANSLATIONS_DIR_.$iso_code);
-		foreach ($this->translationsFilesAndVars as $file => $var)
-			if (!file_exists(_PS_TRANSLATIONS_DIR_.$iso_code.'/'.$file.'.php'))
-				file_put_contents(_PS_TRANSLATIONS_DIR_.$iso_code.'/'.$file.'.php', '<?php
-	global $'.$var.';
-	$'.$var.' = array();
-?>');
-	}
-	
-	/**
-	 * Move translations files after editiing language iso code
-	 */
-	public function moveToIso($newIso)
-	{
-		if($newIso == $this->iso_code)
-			return true;
 
-		if (file_exists(_PS_TRANSLATIONS_DIR_.$this->iso_code))
-			rename(_PS_TRANSLATIONS_DIR_.$this->iso_code, _PS_TRANSLATIONS_DIR_.$newIso);
-
-		if (file_exists(_PS_MAIL_DIR_.$this->iso_code))
-			rename(_PS_MAIL_DIR_.$this->iso_code, _PS_MAIL_DIR_.$newIso);
-
-		$modulesList = Module::getModulesDirOnDisk();
-		foreach ($modulesList as $moduleDir)
-		{
-			if (file_exists(_PS_MODULE_DIR_.$moduleDir.'/mails/'.$this->iso_code))
-				rename(_PS_MODULE_DIR_.$moduleDir.'/mails/'.$this->iso_code, _PS_MODULE_DIR_.$moduleDir.'/mails/'.$newIso);
-			
-			if (file_exists(_PS_MODULE_DIR_.$moduleDir.'/'.$this->iso_code.'.php'))
-				rename(_PS_MODULE_DIR_.$moduleDir.'/'.$this->iso_code.'.php', _PS_MODULE_DIR_.$moduleDir.'/'.$newIso.'.php');
-		}
-
-		foreach ($this->_getThemesList() as $theme => $data)
-		{
-			if (file_exists(_PS_ALL_THEMES_DIR_.$theme.'/lang/'.$this->iso_code.'.php'))
-				rename(_PS_ALL_THEMES_DIR_.$theme.'/lang/'.$this->iso_code.'.php', _PS_ALL_THEMES_DIR_.$theme.'/lang/'.$newIso.'.php');
-
-			if (file_exists(_PS_ALL_THEMES_DIR_.$theme.'/mails/'.$this->iso_code))
-				rename(_PS_ALL_THEMES_DIR_.$theme.'/mails/'.$this->iso_code, _PS_ALL_THEMES_DIR_.$theme.'/mails/'.$newIso);
-
-			foreach ($modulesList as $module)
-				if (file_exists(_PS_ALL_THEMES_DIR_.$theme.'/modules/'.$module.'/'.$this->iso_code.'.php'))
-					rename(_PS_ALL_THEMES_DIR_.$theme.'/modules/'.$module.'/'.$this->iso_code.'.php', _PS_ALL_THEMES_DIR_.$theme.'/modules/'.$module.'/'.$newIso.'.php');
-		}
-	}
-	
-	/**
-	  * Return an array with themes and thumbnails
-	  *
-	  * @return array
-	  */
-	private function _getThemesList()
-	{
-		$dir = opendir(_PS_ALL_THEMES_DIR_);
-		while ($folder = readdir($dir))
-			if ($folder != '.' AND $folder != '..' AND file_exists(_PS_ALL_THEMES_DIR_.'/'.$folder.'/preview.jpg'))
-				$themes[$folder]['name'] = $folder;
-		closedir($dir);	
-		return isset($themes) ? $themes : array();
-	}
-	
 	public function add($autodate = true, $nullValues = false)
 	{
 		if (!parent::add($autodate))
 			return false;
 
-		// create empty files if they not exists
-		$this->_generateFiles();
+		$translationsFiles = array(
+			'fields' => '_FIELDS',
+			'errors' => '_ERRORS',
+			'admin' => '_LANGADM',
+			'pdf' => '_LANGPDF',
+		);
+		if (!file_exists(_PS_TRANSLATIONS_DIR_.$this->iso_code))
+			mkdir(_PS_TRANSLATIONS_DIR_.$this->iso_code);
+		foreach ($translationsFiles as $file => $var)
+			if (!file_exists(_PS_TRANSLATIONS_DIR_.$this->iso_code.'/'.$file.'.php'))
+				file_put_contents(_PS_TRANSLATIONS_DIR_.$this->iso_code.'/'.$file.'.php', '<?php
+	global $'.$var.';
+	$'.$var.' = array();
+?>');
 
 		$resUpdateSQL = $this->loadUpdateSQL();
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
-		if (!Configuration::get('PS_REWRITING_SETTINGS'))
+		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return $resUpdateSQL;
 
 		return ($resUpdateSQL AND Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 			(int)(Configuration::get('PS_REWRITING_SETTINGS')),
 			(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-			Configuration::get('PS_HTACCESS_SPECIFIC'),
-			(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+			Configuration::get('PS_HTACCESS_SPECIFIC')
 		));
 	}
 
@@ -193,13 +113,12 @@ class LanguageCore extends ObjectModel
 			return false;
 
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
-		if (!Configuration::get('PS_REWRITING_SETTINGS'))
+		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return true;
 		return (Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 			(int)(Configuration::get('PS_REWRITING_SETTINGS')),
 			(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-			Configuration::get('PS_HTACCESS_SPECIFIC'),
-			(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+			Configuration::get('PS_HTACCESS_SPECIFIC')
 		));
 	}
 
@@ -221,7 +140,7 @@ class LanguageCore extends ObjectModel
 	{
 		if (isset(self::$_checkedLangs[$iso_code]) AND self::$_checkedLangs[$iso_code])
 			return true;
-		foreach (array_keys(self::getFilesList($iso_code, _THEME_NAME_, false, false, false, true)) as $key)
+		foreach (self::getFilesList($iso_code, _THEME_NAME_, false, false, false, true) as $key => $file)
 			if (!file_exists($key))
 				return false;
 		self::$_checkedLangs[$iso_code] = true;
@@ -247,19 +166,37 @@ class LanguageCore extends ObjectModel
 		}
 
 		$lFiles = array('admin'.'.php', 'errors'.'.php', 'fields'.'.php', 'pdf'.'.php');
-		$mFiles =  array('account.html', 'account.txt', 'bankwire.html', 'bankwire.txt',
-		'cheque.html', 'cheque.txt', 'contact.html', 'contact.txt', 'contact_form.html',
-		'contact_form.txt', 'credit_slip.html', 'credit_slip.txt', 'download_product.html',
-		'download_product.txt', 'download-product.tpl', 'employee_password.html', 'employee_password.txt',
-		'forward_msg.html', 'forward_msg.txt', 'guest_to_customer.html', 'guest_to_customer.txt',
-		'in_transit.html', 'in_transit.txt', 'log_alert.html', 'log_alert.txt', 'newsletter.html', 'newsletter.txt',
-		'order_canceled.html', 'order_canceled.txt', 'order_conf.html', 'order_conf.txt',
-		'order_customer_comment.html', 'order_customer_comment.txt', 'order_merchant_comment.html',
-		'order_merchant_comment.txt', 'order_return_state.html', 'order_return_state.txt',
-		'outofstock.html', 'outofstock.txt', 'password.html', 'password.txt', 'password_query.html',
-		'password_query.txt', 'payment.html', 'payment.txt', 'payment_error.html', 'payment_error.txt',
-		'preparation.html', 'preparation.txt', 'refund.html', 'refund.txt', 'reply_msg.html',
-		'reply_msg.txt', 'shipped.html', 'shipped.txt', 'test.html', 'test.txt', 'voucher.html', 'voucher.txt');
+		$mFiles =  array(
+			'account.html',					'account.txt',
+			'bankwire.html',				'bankwire.txt',
+			'cheque.html',					'cheque.txt',
+			'contact.html',					'contact.txt',
+			'contact_form.html',			'contact_form.txt',
+			'credit_slip.html',				'credit_slip.txt',
+			'download_product.html',		'download_product.txt',
+			'download-product.tpl',
+			'employee_password.html',		'employee_password.txt',
+			'forward_msg.html',				'forward_msg.txt',
+			'guest_to_customer.html',		'guest_to_customer.txt',
+			'in_transit.html',				'in_transit.txt',
+			'newsletter.html',				'newsletter.txt',
+			'order_canceled.html',			'order_canceled.txt',
+			'order_conf.html',				'order_conf.txt',
+			'order_customer_comment.html',	'order_customer_comment.txt',
+			'order_merchant_comment.html',	'order_merchant_comment.txt',
+			'order_return_state.html',		'order_return_state.txt',
+			'outofstock.html',				'outofstock.txt',
+			'password.html',				'password.txt',
+			'password_query.html',			'password_query.txt',
+			'payment.html',					'payment.txt',
+			'payment_error.html',			'payment_error.txt',
+			'preparation.html',				'preparation.txt',
+			'refund.html',					'refund.txt',
+			'reply_msg.html',				'reply_msg.txt',
+			'shipped.html',					'shipped.txt',
+			'test.html',					'test.txt',
+			'voucher.html',					'voucher.txt',
+		);
 
 		$number = -1;
 
@@ -268,6 +205,7 @@ class LanguageCore extends ObjectModel
 		$files_theme = array();
 		$files_mail = array();
 		$files_modules = array();
+
 
 		// When a copy is made from a theme in specific language
 		// to an other theme for the same language,
@@ -296,7 +234,7 @@ class LanguageCore extends ObjectModel
 			if ($modules)
 			{
 				$modList = Module::getModulesDirOnDisk();
-				foreach ($modList as $mod)
+				foreach ($modList as $k => $mod)
 				{
 					$modDir = _PS_MODULE_DIR_.$mod;
 					// Lang file
@@ -318,7 +256,7 @@ class LanguageCore extends ObjectModel
 				$files = array_merge($files, $files_modules);
 			}
 		}
-		elseif ($select == 'mail' OR $select == 'tr')
+		else if ($select == 'mail' OR $select == 'tr')
 		{
 			return $files;
 		}
@@ -352,8 +290,7 @@ class LanguageCore extends ObjectModel
 
 		foreach($tables as $table)
 			foreach($table as $t)
-				if ($t != _DB_PREFIX_.'configuration_lang')
-					$langTables[] = $t;
+				$langTables[] = $t;
 
 		Db::getInstance()->Execute('SET @id_lang_default = (SELECT c.`value` FROM `'._DB_PREFIX_.'configuration` c WHERE c.`name` = \'PS_LANG_DEFAULT\' LIMIT 1)');
 		$return = true;
@@ -420,18 +357,18 @@ class LanguageCore extends ObjectModel
 		// Files deletion
 		foreach (self::getFilesList($this->iso_code, _THEME_NAME_, false, false, false, true, true) as $key => $file)
 			if (file_exists($key))
-				unlink($key);
+			unlink($key);
 		$modList = scandir(_PS_MODULE_DIR_);
-		foreach ($modList as $mod)
+		foreach ($modList as $k => $mod)
 		{
 			self::recurseDeleteDir(_PS_MODULE_DIR_.$mod.'/mails/'.$this->iso_code);
 			$files = @scandir(_PS_MODULE_DIR_.$mod.'/mails/');
 			if (count($files) <= 2)
 				self::recurseDeleteDir(_PS_MODULE_DIR_.$mod.'/mails/');
 
-			if (file_exists(_PS_MODULE_DIR_.$mod.'/'.$this->iso_code.'.php'))
+			if(file_exists(_PS_MODULE_DIR_.$mod.'/'.$this->iso_code.'.php'))
 			{
-				unlink(_PS_MODULE_DIR_.$mod.'/'.$this->iso_code.'.php');
+				$return = unlink(_PS_MODULE_DIR_.$mod.'/'.$this->iso_code.'.php');
 				$files = @scandir(_PS_MODULE_DIR_.$mod);
 				if (count($files) <= 2)
 					self::recurseDeleteDir(_PS_MODULE_DIR_.$mod);
@@ -460,14 +397,13 @@ class LanguageCore extends ObjectModel
 			}
 
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
-		if (!Configuration::get('PS_REWRITING_SETTINGS'))
+		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return true;
 
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 									(int)(Configuration::get('PS_REWRITING_SETTINGS')),
 									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-									Configuration::get('PS_HTACCESS_SPECIFIC'),
-									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+									Configuration::get('PS_HTACCESS_SPECIFIC')
 								);
 	}
 
@@ -484,14 +420,13 @@ class LanguageCore extends ObjectModel
 		}
 
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
-		if (!Configuration::get('PS_REWRITING_SETTINGS'))
+		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return true;
 
 		Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 								(int)(Configuration::get('PS_REWRITING_SETTINGS')),
 								(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-								Configuration::get('PS_HTACCESS_SPECIFIC'),
-								(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+								Configuration::get('PS_HTACCESS_SPECIFIC')
 							);
 
 		return $result;
@@ -503,15 +438,15 @@ class LanguageCore extends ObjectModel
 	  * @param boolean $active Select only active languages
 	  * @return array Languages
 	  */
-	public static function getLanguages($active = true)
+	public static function getLanguages($active = true, $id_shop = false)
 	{
 		if (!self::$_LANGUAGES)
 			self::loadLanguages();
-
+		$languages = array();
 		$languages = array();
 		foreach (self::$_LANGUAGES AS $language)
 		{
-			if ($active AND !$language['active'])
+			if ($active AND !$language['active'] OR ($id_shop AND !isset($language['shops'][(int)$id_shop])))
 				continue;
 			$languages[] = $language;
 		}
@@ -547,15 +482,15 @@ class LanguageCore extends ObjectModel
 	public static function getIdByIso($iso_code)
 	{
 	 	if (!Validate::isLanguageIsoCode($iso_code))
-	 		die(Tools::displayError('Fatal error: ISO code is not correct').' '.$iso_code);
+	 		die(Tools::displayError('Fatal error : iso code is not correct : ').$iso_code);
 
 		return Db::getInstance()->getValue('SELECT `id_lang` FROM `'._DB_PREFIX_.'lang` WHERE `iso_code` = \''.pSQL(strtolower($iso_code)).'\'');
 	}
 
 	public static function getLanguageCodeByIso($iso_code)
 	{
-		if (!Validate::isLanguageIsoCode($iso_code))
-			die(Tools::displayError('Fatal error: ISO code is not correct').' '.$iso_code);
+	 	if (!Validate::isLanguageIsoCode($iso_code))
+	 		die(Tools::displayError('Fatal error : iso code is not correct : ').$iso_code);
 
 		return Db::getInstance()->getValue('SELECT `language_code` FROM `'._DB_PREFIX_.'lang` WHERE `iso_code` = \''.pSQL(strtolower($iso_code)).'\'');
 	}
@@ -602,27 +537,36 @@ class LanguageCore extends ObjectModel
 	public static function loadLanguages()
 	{
 		self::$_LANGUAGES = array();
-		$result = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'lang`');
+
+		$result = Db::getInstance()->ExecuteS('
+		SELECT l.`id_lang`, l.`name`, l.`iso_code`, l.`active`, ls.`id_shop`
+		FROM `'._DB_PREFIX_.'lang` l
+		LEFT JOIN `'._DB_PREFIX_.'lang_shop` ls ON (l.id_lang = ls.id_lang)');
+		
 		foreach ($result AS $row)
-			self::$_LANGUAGES[(int)$row['id_lang']] = $row;
+		{
+			if (!isset(self::$_LANGUAGES[(int)$row['id_lang']]))
+			self::$_LANGUAGES[(int)$row['id_lang']] = array('id_lang' => (int)$row['id_lang'], 
+																											'name' => $row['name'], 
+																											'iso_code' => $row['iso_code'], 
+																											'active' => (int)$row['active'],);
+			self::$_LANGUAGES[(int)$row['id_lang']]['shops'][(int)$row['id_shop']] = true;
+		}
 	}
 
 	public function update($nullValues = false)
 	{
-
-		
 		if (!parent::update($nullValues))
 			return false;
 
 		// If url_rewrite is not enabled, we don't need to regenerate .htaccess
-		if (!Configuration::get('PS_REWRITING_SETTINGS'))
+		if(!Configuration::get('PS_REWRITING_SETTINGS'))
 			return true;
 
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 							(int)(Configuration::get('PS_REWRITING_SETTINGS')),
 							(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')),
-							Configuration::get('PS_HTACCESS_SPECIFIC'),
-							(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+							Configuration::get('PS_HTACCESS_SPECIFIC')
 							);
 	}
 
@@ -632,7 +576,7 @@ class LanguageCore extends ObjectModel
 			return true;
 		else
 		{
-			if (@fsockopen('www.prestashop.com', 80))
+			if(@fsockopen('www.prestashop.com', 80))
 			{
 				$lang = new Language();
 				$lang->iso_code = $iso_code;
@@ -709,4 +653,3 @@ class LanguageCore extends ObjectModel
 		return self::$countActiveLanguages;
 	}
 }
-

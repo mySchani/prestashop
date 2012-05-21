@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -72,7 +72,7 @@ countries = new Array();
 			<sup>*</sup>
 		</p>
 		<p class="required password">
-			<label for="passwd">{l s='Password' mod='paypal'}</label>
+			<label for="password">{l s='Password' mod='paypal'}</label>
 			<input type="password" class="text" name="passwd" id="passwd" />
 			<sup>*</sup>
 			<span class="form_info">{l s='(5 characters min.)' mod='paypal'}</span>
@@ -125,7 +125,7 @@ countries = new Array();
 		<h3>{l s='Your address' mod='paypal'}</h3>
 		<p class="text">
 			<label for="company">{l s='Company' mod='paypal'}</label>
-			<input type="text" class="text" id="company" name="company" value="{if isset($smarty.post.company)}{$smarty.post.company|escape:'htmlall':'UTF-8'}{/if}" />
+			<input type="text" class="text" id="company" name="company" value="{if isset($smarty.post.company)}{$smarty.post.company}{/if}" />
 		</p>
 		<p class="required text">
 			<label for="firstname">{l s='First name' mod='paypal'}</label>
@@ -144,7 +144,7 @@ countries = new Array();
 		</p>
 		<p class="text">
 			<label for="address2">{l s='Address (2)' mod='paypal'}</label>
-			<input type="text" class="text" name="address2" id="address2" value="{if isset($smarty.post.address2)}{$smarty.post.address2|escape:'htmlall':'UTF-8'}{/if}" />
+			<input type="text" class="text" name="address2" id="address2" value="{if isset($smarty.post.address2)}{$smarty.post.address2}{/if}" />
 		</p>
 		<p class="required text">
 			<label for="postcode">{l s='Postal code / Zip code' mod='paypal'}</label>
@@ -175,19 +175,19 @@ countries = new Array();
 		</p>
 		<p class="textarea">
 			<label for="other">{l s='Additional information' mod='paypal'}</label>
-			<textarea name="other" id="other" cols="26" rows="3">{if isset($smarty.post.other)}{$smarty.post.other|escape:'htmlall':'UTF-8'}{/if}</textarea>
+			<textarea name="other" id="other" cols="26" rows="3">{if isset($smarty.post.other)}{$smarty.post.other}{/if}</textarea>
 		</p>
 		<p class="text">
 			<label for="phone">{l s='Home phone' mod='paypal'}</label>
-			<input type="text" class="text" name="phone" id="phone" value="{if isset($smarty.post.phone)}{$smarty.post.phone|escape:'htmlall':'UTF-8'}{/if}" />
+			<input type="text" class="text" name="phone" id="phone" value="{if isset($smarty.post.phone)}{$smarty.post.phone}{/if}" />
 		</p>
 		<p class="text">
 			<label for="phone_mobile">{l s='Mobile phone' mod='paypal'}</label>
-			<input type="text" class="text" name="phone_mobile" id="phone_mobile" value="{if isset($smarty.post.phone_mobile)}{$smarty.post.phone_mobile|escape:'htmlall':'UTF-8'}{/if}" />
+			<input type="text" class="text" name="phone_mobile" id="phone_mobile" value="{if isset($smarty.post.phone_mobile)}{$smarty.post.phone_mobile}{/if}" />
 		</p>
 		<p class="required text" id="address_alias">
 			<label for="alias">{l s='Assign an address title for future reference' mod='paypal'} !</label>
-			<input type="text" class="text" name="alias" id="alias" value="{if isset($smarty.post.alias)}{$smarty.post.alias|escape:'htmlall':'UTF-8'}{else}{l s='My address' mod='paypal'}{/if}" />
+			<input type="text" class="text" name="alias" id="alias" value="{if isset($smarty.post.alias)}{$smarty.post.alias}{else}{l s='My address' mod='paypal'}{/if}" />
 			<sup>*</sup>
 		</p>
 	</fieldset>

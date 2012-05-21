@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,17 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14970 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 include(dirname(__FILE__).'/../../config/config.inc.php');
 include(dirname(__FILE__).'/moneybookers.php');
-
-if (Configuration::get('MB_SECRET_WORD') == '')
-	die('Module is not configured');
 
 $moneyBookers = new MoneyBookers();
 
@@ -63,30 +60,25 @@ foreach ($errors AS $error)
 $message = nl2br(strip_tags($message));
 
 $id_cart = (int)(substr($_POST['transaction_id'], 0, strpos($_POST['transaction_id'], '_')));
-if (_PS_VERSION_ >= 1.5)
-	Context::getContext()->cart = new Cart((int)$id_cart);
 $secure_cart = explode('_', $_POST['transaction_id']);
 $status = (int)($_POST['status']);
-if (!isset($secure_cart[2]))
-	$secure_cart[2] = 'KO';
-
+if (!isset($secure_cart[1]))
+	$secure_cart[1] = 'KO';
 switch ($status)
 {	
 	/* Bankwire */
 	case 0:
-		$moneyBookers->setTransactionDetail($_POST);
-		$moneyBookers->validateOrder((int)($secure_cart[0]), Configuration::get('PS_OS_BANKWIRE'), (float)($_POST['amount']), $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[2]);
+		$moneyBookers->validateOrder((int)($secure_cart[0]), _PS_OS_BANKWIRE_, (float)($_POST['amount']), $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[1]);
 		break;
 
 	/* Payment OK */
 	case 2:
-		$moneyBookers->setTransactionDetail($_POST);
-		$moneyBookers->validateOrder((int)($secure_cart[0]), Configuration::get('PS_OS_PAYMENT'), (float)($_POST['amount']), $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[2]);
+		$moneyBookers->validateOrder((int)($secure_cart[0]), _PS_OS_PAYMENT_, (float)($_POST['amount']), $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[1]);
 		break;
 
 	/* Unknown or error */
 	default:
-		$moneyBookers->validateOrder((int)($secure_cart[0]), Configuration::get('PS_OS_ERROR'), 0, $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[2]);
+		$moneyBookers->validateOrder((int)($secure_cart[0]), _PS_OS_ERROR_, 0, $moneyBookers->displayName, $message, array(), NULL, false, $secure_cart[1]);
 		break;
 }
 

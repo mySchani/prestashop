@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7227 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,9 +29,7 @@ ob_start();
 $timerStart = microtime(true);
 
 $currentFileName = array_reverse(explode("/", $_SERVER['SCRIPT_NAME']));
-$cookieLifetime = (time() + (((int)Configuration::get('PS_COOKIE_LIFETIME_BO') > 0 ? (int)Configuration::get('PS_COOKIE_LIFETIME_BO') : 1)* 3600));
-$cookie = new Cookie('psAdmin', substr($_SERVER['SCRIPT_NAME'], strlen(__PS_BASE_URI__), -strlen($currentFileName['0'])), $cookieLifetime);
-
+$cookie = new Cookie('psAdmin', substr($_SERVER['SCRIPT_NAME'], strlen(__PS_BASE_URI__), -strlen($currentFileName['0'])));
 if (isset($_GET['logout']))
 	$cookie->logout();
 
@@ -56,7 +54,6 @@ else
 	define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
 
 	$employee = new Employee((int)$cookie->id_employee);
-	$cookie->profile = $employee->id_profile;
 	$cookie->id_lang = (int)$employee->id_lang;
 	$iso = strtolower(Language::getIsoById($cookie->id_lang ? $cookie->id_lang : Configuration::get('PS_LANG_DEFAULT')));
 	include(_PS_TRANSLATIONS_DIR_.$iso.'/errors.php');
@@ -81,5 +78,16 @@ else
 					break;
 				}
 		$employee->update();
+	}
+	
+	// Change shop context ?
+	if (Tools::isMultiShopActivated() && Tools::getValue('setShopContext') !== false)
+	{
+		$cookie->shopContext = Tools::getValue('setShopContext');
+		$url = parse_url($_SERVER['REQUEST_URI']);
+		$query = (isset($url['query'])) ? $url['query'] : '';
+		parse_str($query, $parseQuery);
+		unset($parseQuery['setShopContext']);
+		Tools::redirectAdmin($url['path'] . '?' . http_build_query($parseQuery));
 	}
 }

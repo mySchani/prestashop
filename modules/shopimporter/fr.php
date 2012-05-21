@@ -47,7 +47,6 @@ $_MODULE['<{shopimporter}prestashop>shopimporter_782c8b38bce4f2f6975ca7f33ac8189
 $_MODULE['<{shopimporter}prestashop>shopimporter_f2931b8b1622867fcc461d7de388e319'] = 'Import des historique de commande';
 $_MODULE['<{shopimporter}prestashop>shopimporter_32a6deec3cca312a54d6b8769c9b8dd7'] = 'n\'est pas disponible dans ce module';
 $_MODULE['<{shopimporter}prestashop>shopimporter_1e411d25230ba738b9ae583bcb9b0b57'] = 'Connexion à la base de données OK ';
-$_MODULE['<{shopimporter}prestashop>shopimporter_472f0b8c78cc382302e094c94856c951'] = 'La connexion au service Web est OK';
 $_MODULE['<{shopimporter}prestashop>shopimporter_3596c777cbc8b72d678f34daabc9148b'] = 'Afficher les erreurs';
 $_MODULE['<{shopimporter}prestashop>shopimporter_89a399eee52b2a6daaea92eba3e14cad'] = 'Lancer le test d\'import';
 $_MODULE['<{shopimporter}prestashop>shopimporter_bf79359f8edda6f7df97ef57a4ee09b6'] = 'Lancer l\'import';
@@ -61,6 +60,11 @@ $_MODULE['<{shopimporter}prestashop>shopimporter_60474e812295a5adc371de63dc62a16
 $_MODULE['<{shopimporter}prestashop>shopimporter_05f4be265d59ea66f3a1fb12ba103583'] = 'Choisir un import';
 $_MODULE['<{shopimporter}prestashop>shopimporter_961f2247a2070bedff9f9cd8d64e2650'] = 'Choisir';
 $_MODULE['<{shopimporter}prestashop>shopimporter_151a0fbfcc4894aa53335091c2512de5'] = 'Aucun module d\'import installé';
+$_MODULE['<{shopimporter}prestashop>shopimporter_9aa1b03934893d7134a660af4204f2a9'] = 'Serveur';
+$_MODULE['<{shopimporter}prestashop>shopimporter_8f9bfe9d1345237cb3b2b205864da075'] = 'Utilisateur';
+$_MODULE['<{shopimporter}prestashop>shopimporter_dc647eb65e6711e155375218212b3964'] = 'Mot de passe';
+$_MODULE['<{shopimporter}prestashop>shopimporter_e307db07b3975fef922a80d07455ee5e'] = 'Base de données';
+$_MODULE['<{shopimporter}prestashop>shopimporter_dac130bdd2c5492a8108a4145bd9f04a'] = 'Prefix de base de données';
 $_MODULE['<{shopimporter}prestashop>shopimporter_2bb4cbbf4c51025867d47131e79ad05f'] = 'Etape suivante';
 $_MODULE['<{shopimporter}prestashop>shopimporter_72dd98a453e92ccc01697f29bb5dbeb9'] = 'Option d\'import';
 $_MODULE['<{shopimporter}prestashop>shopimporter_9dfc5d5738312210c3c75e68a468691d'] = 'Options avancées ';

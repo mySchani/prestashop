@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14903 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -197,12 +197,12 @@ class GuestCore extends ObjectModel
 	
 	public static function setNewGuest($cookie)
 	{
-		$guest = new Guest(isset($cookie->id_customer) ? Guest::getFromCustomer((int)$cookie->id_customer) : null);
+		$guest = new Guest(isset($cookie->id_customer) ? Guest::getFromCustomer((int)($cookie->id_customer)) : NULL);
 		$guest->userAgent();
 		if ($guest->id_operating_system OR $guest->id_web_browser)
 		{
 			$guest->save();
-			$cookie->id_guest = (int)$guest->id;
+			$cookie->id_guest = (int)($guest->id);
 		}
 	}
 }

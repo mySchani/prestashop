@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15069 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -32,8 +32,6 @@ define ('TEXTAREA_SIZED', 70);
 
 class AdminTranslations extends AdminTab
 {
-
-	protected $link_lang_pack = 'http://www.prestashop.com/download/lang_packs/get_each_language_pack.php';
 	protected $total_expression = 0;
 	protected $all_iso_lang = array();
 	protected $modules_translations = array();
@@ -52,8 +50,7 @@ class AdminTranslations extends AdminTab
 	{
 		parent::__construct();
 		self::$tpl_regexp = '/\{l s=\''._PS_TRANS_PATTERN_.'\'( mod=\'.+\')?( js=1)?\}/U';
-		// added ? after spaces because some peoples forget them. see PSCFI-2501
-		self::$php_regexp = '/->l\(\''._PS_TRANS_PATTERN_.'\'(, ?\'(.+)\')?(, ?(.+))?\)/U';
+		self::$php_regexp = '/->l\(\''._PS_TRANS_PATTERN_.'\'(, \'(.+)\')?(, (.+))?\)/U';
 	}
 	
 	/**
@@ -70,7 +67,7 @@ class AdminTranslations extends AdminTab
 			$_MODULES = array();
 		elseif (isset($_MODULE))
 		{
-			if (is_array($_MODULE) AND $is_default === true)
+			if(is_array($_MODULE) AND $is_default === true)
 			{
 				$_NEW_MODULE = array();
 				foreach($_MODULE as $key=>$value)
@@ -102,7 +99,7 @@ class AdminTranslations extends AdminTab
 		// If folder wasn't already added
 		if (!file_exists($path))
 		{
-			if (!mkdir($path, 0777, true))
+			if(!mkdir($path, 0777, true))
 			{
 				$bool &= false;
 				$this->_errors[] = $this->l('Cannot create the folder').' "'.$path.'". '.$this->l('Check directory writing permissions.');
@@ -164,7 +161,7 @@ class AdminTranslations extends AdminTab
 			}
 		}
 		if ($bool)
-			Tools::redirectAdmin($currentIndex.'&conf=14&token='.$this->token);
+			Tools::redirectLink($currentIndex.'&conf=14&token='.$this->token);
 		$this->_errors[] = $this->l('a part of the data has been copied but some language files could not be found or copied');
 	}
 	
@@ -181,7 +178,7 @@ class AdminTranslations extends AdminTab
 		$content = file_get_contents($path);
 		$arr_replace = array();
 		$bool_flag = true;
-		if (preg_match_all('#\$_MODULE\[\'([^\']+)\'\]#Ui', $content, $matches))
+		if(preg_match_all('#\$_MODULE\[\'([^\']+)\'\]#Ui', $content, $matches))
 		{
 			foreach ($matches[1] as $key=>$value)
 			{
@@ -211,71 +208,25 @@ class AdminTranslations extends AdminTab
 	
 	public function checkAndAddMailsFiles ($iso_code, $files_list)
 	{
-		// 1 - Scan mails files
 		$mails = scandir(_PS_MAIL_DIR_.'en/');
 		$mails_new_lang = array();
-
-		// Get all email files
 		foreach ($files_list as $file)
+		{
 			if (preg_match('#^mails\/([a-z0-9]+)\/#Ui', $file['filename'], $matches))
 			{
 				$slash_pos = strrpos($file['filename'], '/');
-				$mails_new_lang[] = substr($file['filename'], -(strlen($file['filename']) - $slash_pos - 1));
-			}
-
-		// Get the difference
-		$arr_mails_needed = array_diff($mails, $mails_new_lang);
-
-		// Add mails files
-		foreach ($arr_mails_needed as $mail_to_add)
-			if (!in_array($mail_to_add, array('.', '..', '.svn', '.htaccess')))
-				@copy(_PS_MAIL_DIR_.'en/'.$mail_to_add, _PS_MAIL_DIR_.$iso_code.'/'.$mail_to_add);
-
-
-		// 2 - Scan modules files
-		$modules = scandir(_PS_MODULE_DIR_);
-
-		$module_mail_en = array();
-		$module_mail_iso_code = array();
-
-		foreach ($modules as $module)
-		{
-			if (!in_array($module, array('.', '..', '.svn', '.htaccess')) && file_exists(_PS_MODULE_DIR_.$module.'/mails/en/'))
-			{
-				$arr_files = scandir(_PS_MODULE_DIR_.$module.'/mails/en/');
-
-				foreach ($arr_files as $file)
-				{
-					if (!in_array($file, array('.', '..', '.svn', '.htaccess')))
-					{
-						if (file_exists(_PS_MODULE_DIR_.$module.'/mails/en/'.$file))
-							$module_mail_en[] = _PS_MODULE_DIR_.$module.'/mails/ISO_CODE/'.$file;
-
-						if (file_exists(_PS_MODULE_DIR_.$module.'/mails/'.$iso_code.'/'.$file))
-							$module_mail_iso_code[] = _PS_MODULE_DIR_.$module.'/mails/ISO_CODE/'.$file;
-					}
-				}
+				$mails_new_lang[] = substr($file['filename'], -(strlen($file['filename'])-$slash_pos-1));
 			}
 		}
-
-		// Get the difference in this modules
-		$arr_modules_mails_needed = array_diff($module_mail_en, $module_mail_iso_code);
-
-		// Add mails files for this modules
-		foreach ($arr_modules_mails_needed as $file)
+		$arr_mails_needed = array_diff($mails, $mails_new_lang);
+		foreach ($arr_mails_needed as $mail_to_add)
 		{
-			$file_en = str_replace('ISO_CODE', 'en', $file);
-			$file_iso_code = str_replace('ISO_CODE', $iso_code, $file);
-			$dir_iso_code = substr($file_iso_code, 0, -(strlen($file_iso_code) - strrpos($file_iso_code, '/') - 1));
-
-			if (!file_exists($dir_iso_code))
-				mkdir($dir_iso_code);
-
-			if (file_exists($file_en))
-				copy($file_en, $file_iso_code);
+			if ($mail_to_add !== '.' && $mail_to_add !== '..' && $mail_to_add !== '.svn')
+			{
+				@copy(_PS_MAIL_DIR_.'en/'.$mail_to_add, _PS_MAIL_DIR_.$iso_code.'/'.$mail_to_add);
+			}
 		}
 	}
-
 	public function submitImportLang()
 	{
 		global $currentIndex;
@@ -287,11 +238,9 @@ class AdminTranslations extends AdminTab
 			$gz = new Archive_Tar($_FILES['file']['tmp_name'], true);
 			$iso_code = str_replace('.gzip', '', $_FILES['file']['name']);
 			$files_list = $gz->listContent();
-
 			if ($gz->extract(_PS_TRANSLATIONS_DIR_.'../', false))
 			{
 				$this->checkAndAddMailsFiles($iso_code, $files_list);
-
 				if (Validate::isLanguageFileName($_FILES['file']['name']))
 				{
 					if (!Language::checkAndAddLanguage($iso_code))
@@ -299,8 +248,7 @@ class AdminTranslations extends AdminTab
 				}
 				Tools::redirectAdmin($currentIndex.'&conf='.(isset($conf) ? $conf : '15').'&token='.$this->token);
 			}
-			else
-				$this->_errors[] = Tools::displayError('Archive cannot be extracted.');
+			$this->_errors[] = Tools::displayError('Archive cannot be extracted.');
 		}
 	}
 	
@@ -311,7 +259,7 @@ class AdminTranslations extends AdminTab
 		$arr_import_lang = explode('|', Tools::getValue('params_import_language')); /* 0 = Language ISO code, 1 = PS version */
 		if (Validate::isLangIsoCode($arr_import_lang[0]))
 		{
-			if ($content = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$arr_import_lang[1].'/'.$arr_import_lang[0].'.gzip', false, @stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)))))
+			if ($content = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$arr_import_lang[1].'/'.$arr_import_lang[0].'.gzip', false, stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)))))
 			{
 				$file = _PS_TRANSLATIONS_DIR_.$arr_import_lang[0].'.gzip';
 				if (file_put_contents($file, $content))
@@ -367,7 +315,7 @@ class AdminTranslations extends AdminTab
 		{
 			$str_write = '';
 			$_cache_file[($is_default ? self::DEFAULT_THEME_NAME : $theme_name).'-'.$file_name] = true;
-			if (!file_exists($file_name))
+			if(!file_exists($file_name))
 				file_put_contents($file_name, '');
 			if (!is_writable($file_name))
 				die ($this->l('Cannot write the theme\'s language file ').'('.$file_name.')'.$this->l('. Please check write permissions.'));
@@ -398,7 +346,7 @@ class AdminTranslations extends AdminTab
 					if (array_key_exists($post_key, $_POST) AND !empty($_POST[$post_key]) AND !in_array($pattern, $array_check_duplicate))
 					{
 						$array_check_duplicate[] = $pattern;
-						$str_write .= '$_MODULE['.$pattern.'] = \''.pSQL(str_replace(array("\r\n", "\r", "\n"), ' ', $_POST[$post_key])).'\';'."\n";
+						$str_write .= '$_MODULE['.$pattern.'] = \''.pSQL($_POST[$post_key]).'\';'."\n";
 						$this->total_expression++;
 					}
 				}
@@ -415,9 +363,9 @@ class AdminTranslations extends AdminTab
 		{
 			if ($file{0} === '.' OR in_array(substr($file, 0, strrpos($file,'.')), $this->all_iso_lang))
 				unset($files[$key]);
-			elseif ($type_clear === 'file' AND !in_array(substr($file, strrpos($file,'.')),$arr_good_ext))
+			else if ($type_clear === 'file' AND !in_array(substr($file, strrpos($file,'.')),$arr_good_ext))
 				unset($files[$key]);
-			elseif ($type_clear === 'directory' AND (!is_dir($path.$file) OR in_array($file, $arr_exclude)))
+			else if ($type_clear === 'directory' AND (!is_dir($path.$file) OR in_array($file, $arr_exclude)))
 				unset($files[$key]);
 				
 		}
@@ -455,11 +403,8 @@ class AdminTranslations extends AdminTab
 		{
 			if ((preg_match('/^(.*).tpl$/', $template_file) OR ($is_default AND preg_match('/^(.*).php$/', $template_file))) AND file_exists($tpl = $dir.$template_file))
 			{
-				$content = file_get_contents($tpl);
-				// module files can now be ignored by adding this string in a file
-				if (strpos($content, 'IGNORE_THIS_FILE_FOR_TRANSLATION') !== false)
-					continue;
 				// Get translations key
+				$content = file_get_contents($tpl);
 				preg_match_all(substr($template_file, -4) == '.tpl' ? self::$tpl_regexp : self::$php_regexp, $content, $matches);
 				
 				// Write each translation on its module file
@@ -484,15 +429,7 @@ class AdminTranslations extends AdminTab
 	public function postProcess()
 	{
 		global $currentIndex;
-		
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
-		
+
 		if (Tools::isSubmit('submitCopyLang'))
 		{
 		 	if ($this->tabAccess['add'] === '1')
@@ -605,14 +542,14 @@ class AdminTranslations extends AdminTab
 					$arr_files = $this->getAllModuleFiles($modules, _PS_MODULE_DIR_, $lang, true);
 					$arr_find_and_write = array_merge($arr_find_and_write, $arr_files);
 					
-					if (file_exists(_PS_THEME_DIR_.'/modules/'))
+					if(file_exists(_PS_THEME_DIR_.'/modules/'))
 					{
 						$modules = scandir(_PS_THEME_DIR_.'/modules/');
 						$arr_files = $this->getAllModuleFiles($modules, _PS_THEME_DIR_.'modules/', $lang);
 						$arr_find_and_write = array_merge($arr_find_and_write, $arr_files);
 					}
 					
-					foreach ($arr_find_and_write as $key => $value)
+					foreach ($arr_find_and_write as $key=>$value)
 						$this->findAndWriteTranslationsIntoFile($value['file_name'], $value['files'], $value['theme'], $value['module'], $value['dir']);
 					Tools::redirectAdmin($currentIndex.'&conf=4&token='.$this->token);
 				}
@@ -673,20 +610,15 @@ class AdminTranslations extends AdminTab
 		{
 			foreach ($all_content as $type_content=>$mails)
 			{
-				if (!in_array($type_content, array('txt', 'html')))
-					die(Tools::displayError());
 				foreach ($mails as $mail_name=>$content)
 				{
+					
 					$module_name = false;
 					$module_name_pipe_pos = stripos($mail_name, '|');
 					if ($module_name_pipe_pos)
 					{
 						$module_name = substr($mail_name, 0, $module_name_pipe_pos);
-						if (!Validate::isModuleName($module_name))
-							die(Tools::displayError());
 						$mail_name = substr($mail_name, $module_name_pipe_pos+1);
-						if (!Validate::isTplName($mail_name))
-							die(Tools::displayError());
 					}
 					
 					if ($type_content == 'html')
@@ -759,7 +691,7 @@ class AdminTranslations extends AdminTab
 			'back' => $this->l('Back Office translations'),
 			'errors' => $this->l('Error message translations'),
 			'fields' => $this->l('Field name translations'),
-			'modules' => $this->l('Translations of installed modules'),
+			'modules' => $this->l('Module translations'),
 			'pdf' => $this->l('PDF translations'),
 			'mails' => $this->l('E-mail template translations'),
 		);
@@ -794,7 +726,7 @@ class AdminTranslations extends AdminTab
 			$this->displayWarning($this->l('If you choose to update an existing language pack, all your previous customization in the theme named prestashop will be lost. This includes front office expressions and default e-mail templates.'));
 			echo '<div style="font-weight:bold; float:left;">'.$this->l('Language you want to add or update:').' ';
 			
-			if ($lang_packs = Tools::file_get_contents($this->link_lang_pack .'?version='._PS_VERSION_, false, @stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)))))
+			if ($lang_packs = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_each_language_pack.php?version='._PS_VERSION_, false, stream_context_create(array('http' => array('method' => 'GET', 'timeout' => 5)))))
 			{
 				// Notice : for php < 5.2 compatibility, Tools::jsonDecode. The second parameter to true will set us 
 				if ($lang_packs != '' AND $lang_packs = Tools::jsonDecode($lang_packs,true))
@@ -913,7 +845,7 @@ class AdminTranslations extends AdminTab
 		if (!file_exists($dir.'/'.$file))
 			if (!file_put_contents($dir.'/'.$file, "<?php\n\nglobal \$".$var.";\n\$".$var." = array();\n\n?>"))
 				die('Please create a "'.$file.'" file in '.$dir);
-		if (!is_writable($dir.'/'.$file) AND !_PS_MODE_DEMO_)
+		if (!is_writable($dir.'/'.$file))
 			$this->displayWarning(Tools::displayError('This file must be writable:').' '.$dir.'/'.$file);
 		include($dir.'/'.$file);
 		return ${$var};
@@ -925,13 +857,13 @@ class AdminTranslations extends AdminTab
 		<script type="text/javascript">';
 		if (Tools::getValue('type') == 'mails')
 			$str_output .= '$(document).ready(function(){
-				openCloseAllDiv(\''.Tools::safeOutput($_GET['type']).'_div\', this.value == openAll); toggleElemValue(this.id, openAll, closeAll);
+				openCloseAllDiv(\''.$_GET['type'].'_div\', this.value == openAll); toggleElemValue(this.id, openAll, closeAll);
 				});';
 		$str_output .= '
 			var openAll = \''.html_entity_decode($this->l('Expand all fieldsets'), ENT_NOQUOTES, 'UTF-8').'\';
 			var closeAll = \''.html_entity_decode($this->l('Close all fieldsets'), ENT_NOQUOTES, 'UTF-8').'\';
 		</script>
-		<input type="button" class="button" id="buttonall" onclick="openCloseAllDiv(\''.Tools::safeOutput($_GET['type']).'_div\', this.value == openAll); toggleElemValue(this.id, openAll, closeAll);" />
+		<input type="button" class="button" id="buttonall" onclick="openCloseAllDiv(\''.$_GET['type'].'_div\', this.value == openAll); toggleElemValue(this.id, openAll, closeAll);" />
 		<script type="text/javascript">toggleElemValue(\'buttonall\', '.($closed ? 'openAll' : 'closeAll').', '.($closed ? 'closeAll' : 'openAll').');</script>';
 		return $str_output;
 	}
@@ -943,30 +875,76 @@ class AdminTranslations extends AdminTab
 			<input type="submit" name="submitTranslations'.ucfirst($name).'AndStay" value="'.$this->l('Update and stay').'" class="button" />';
 	}
 	
+	public function displayAutoTranslate()
+	{
+		$languageCode = Tools::htmlentitiesUTF8(Language::getLanguageCodeByIso(Tools::getValue('lang')));
+		return '
+		<input type="button" class="button" onclick="translateAll();" value="'.$this->l('Translate with Google (experimental)').'" />
+		<script type="text/javascript" src="http://www.google.com/jsapi"></script>
+		<script type="text/javascript">
+			var gg_translate = {
+				language_code : \''.$languageCode.'\',
+				not_available : \''.addslashes(html_entity_decode($this->l('this language is not available on Google Translate API'), ENT_QUOTES, 'utf-8')).'\',
+				tooltip_title : \''.addslashes(html_entity_decode($this->l('Google translate suggests :'), ENT_QUOTES, 'utf-8')).'\'
+			};
+		</script>
+		<script type="text/javascript" src="../js/gg-translate.js"></script>
+		<script type="text/javascript">
+			var displayOnce = 0;
+			google.load("language", "1");
+			function translateAll() {
+				if (!ggIsTranslatable(gg_translate[\'language_code\']))
+					alert(\'"\'+gg_translate[\'language_code\']+\'" : \'+gg_translate[\'not_available\']);
+				else
+				{
+					$.each($(\'input[type="text"]\'), function() {
+						var tdinput = $(this);
+						if (tdinput.attr("value") == "" && tdinput.parent("td").prev().html()) {
+							google.language.translate(tdinput.parent("td").prev().html(), "en", gg_translate[\'language_code\'], function(result) {
+								if (!result.error)
+									tdinput.val(result.translation);
+								else if (displayOnce == 0)
+								{
+									displayOnce = 1;
+									alert(result.error.message);
+								}
+							});
+						}
+					});
+					$.each($("textarea"), function() {
+						var tdtextarea = $(this);
+						if (tdtextarea.html() == "" && tdtextarea.parent("td").prev().html()) {
+							google.language.translate(tdtextarea.parent("td").prev().html(), "en", gg_translate[\'language_code\'], function(result) {
+								if (!result.error)
+									tdtextarea.html(result.translation);
+								else if (displayOnce == 0)
+								{
+									displayOnce = 1;
+									alert(result.error.message);
+								}
+							});
+						}
+					});
+				}
+			}
+		</script>';
+	}
+	
 	public function displayLimitPostWarning($count)
 	{
 		$str_output = '';
-		$suhosin_post = ini_get('suhosin.post.max_vars');
-		$suhosin_request = ini_get('suhosin.request.max_vars');
-		$php_max_input = ini_get('max_input_vars');
-		if ((!empty($suhosin_post) && ($suhosin_post < $count))
-		 || (!empty($suhosin_request) && ($suhosin_request < $count))
-		 || (!empty($php_max_input) && ($php_max_input < $count)))
+		if ((ini_get('suhosin.post.max_vars') AND ini_get('suhosin.post.max_vars') < $count)
+		 OR (ini_get('suhosin.request.max_vars') AND ini_get('suhosin.request.max_vars') < $count))
 		{
-			$this->suhosin_limit_exceed = true;
-			$str_output .= '<div class="warning">'
-				.$this->l('Warning, your hosting provider limits the maximum number of fields to post in a form:').'<br/>'
-				.(!empty($suhosin_post)?'<b>'.$suhosin_post.'</b> '
-					.sprintf($this->l('for %s'), 'suhosin.post.max_vars').'<br/>'
-				:'')
-				.(!empty($suhosin_request)?'<b>'.$suhosin_request.'</b> '
-					.sprintf($this->l('for %s'), 'suhosin.request.max_vars').'<br/>'
-				:'')
-				.(!empty($php_max_input)?'<b>'.$php_max_input.'</b> '
-					.sprintf($this->l('for %s'), 'max_input_vars').'<br/>'
-				:'')
-			.$this->l('Please ask your hosting provider to increase the suhosin post and request limit to')
-			.' <u><b>'.((int)$count + 100).'</b></u> '.$this->l('at least.').' '.$this->l('or edit the translation file manually.').'</div>'; 
+			if (ini_get('suhosin.post.max_vars') < $count OR ini_get('suhosin.request.max_vars') < $count)
+			{
+				$this->suhosin_limit_exceed = true;
+				$str_output .= '<div class="warning">'.$this->l('Warning, your hosting provider is using the suhosin patch for PHP, which limits the maximum number of fields to post in a form:').'<br/>'
+				.'<b>'.ini_get('suhosin.post.max_vars').'</b> '.$this->l('for suhosin.post.max_vars.').'<br/>'
+				.'<b>'.ini_get('suhosin.request.max_vars').'</b> '.$this->l('for suhosin.request.max_vars.').'<br/>'
+				.$this->l('Please ask your hosting provider to increase the suhosin post and request limit to')
+				.' <u><b>'.((int)$count + 100).'</b></u> '.$this->l('at least.').' '.$this->l('or edit the translation file manually.').'</div>'; 
+			}
 		}
 		return $str_output;
 	}
@@ -974,10 +952,6 @@ class AdminTranslations extends AdminTab
 	public function displayFormFront($lang)
 	{
 		global $currentIndex;
-
-		if (!Validate::isLangIsoCode($lang))
-			die(Tools::displayError());
-
 		$_LANG = $this->fileExists(_PS_THEME_DIR_.'lang', Tools::strtolower($lang).'.php', '_LANG');
 		$str_output = '';
 		
@@ -1000,7 +974,7 @@ class AdminTranslations extends AdminTab
 				/* Get string translation */
 				foreach($matches[1] AS $key)
 				{
-					if (empty($key))
+					if(empty($key))
 					{
 						$this->_errors[] = $this->l('Empty string found, please edit:').' <br />'._PS_THEME_DIR_.''.$template;
 						$newLang[$key] = '';
@@ -1024,6 +998,7 @@ class AdminTranslations extends AdminTab
 			$str_output .= '
 			<form method="post" action="'.$currentIndex.'&submitTranslationsFront=1&token='.$this->token.'" class="form">';
 			$str_output .= $this->displayToggleButton(sizeof($_LANG) >= $count);
+			$str_output .= $this->displayAutoTranslate();
 			$str_output .= '<input type="hidden" name="lang" value="'.$lang.'" /><input type="submit" name="submitTranslationsFront" value="'.$this->l('Update translations').'" class="button" /><br /><br />';
 			foreach ($files AS $k => $newLang)
 				if (sizeof($newLang))
@@ -1039,7 +1014,7 @@ class AdminTranslations extends AdminTab
 						$str_output .= '<tr><td style="width: 40%">'.stripslashes($key).'</td><td>';
 						if (strlen($key) != 0 && strlen($key) < TEXTAREA_SIZED)
 							$str_output .= '= <input type="text" style="width: 450px" name="'.$k.'_'.md5($key).'" value="'.stripslashes(preg_replace('/"/', '\&quot;', stripslashes($value))).'" />';
-						elseif (strlen($key))
+						elseif(strlen($key))
 							$str_output .= '= <textarea rows="'.(int)(strlen($key) / TEXTAREA_SIZED).'" style="width: 450px" name="'.$k.'_'.md5($key).'">'.stripslashes(preg_replace('/"/', '\&quot;', stripslashes($value))).'</textarea>';
 						else
 							$str_output .= '<span class="error-inline">'.implode(', ', $this->_errors).'</span>';
@@ -1060,10 +1035,6 @@ class AdminTranslations extends AdminTab
 	public function displayFormBack($lang)
 	{
 		global $currentIndex;
-
-		if (!Validate::isLangIsoCode($lang))
-			die(Tools::displayError());
-			
 		$_LANGADM = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'admin.php', '_LANGADM');
 		$str_output = '';
 		/* List templates to parse */
@@ -1106,6 +1077,7 @@ class AdminTranslations extends AdminTab
 			$str_output .= '
 			<form method="post" action="'.$currentIndex.'&submitTranslationsBack=1&token='.$this->token.'" class="form">';
 			$str_output .= $this->displayToggleButton();
+			$str_output .= $this->displayAutoTranslate();
 			$str_output .= '<input type="hidden" name="lang" value="'.$lang.'" /><input type="submit" name="submitTranslationsBack" value="'.$this->l('Update translations').'" class="button" /><br /><br />';
 			foreach ($tabsArray AS $k => $newLang)
 				if (sizeof($newLang))
@@ -1137,10 +1109,6 @@ class AdminTranslations extends AdminTab
 	public function displayFormErrors($lang)
 	{
 		global $currentIndex;
-
-		if (!Validate::isLangIsoCode($lang))
-			die(Tools::displayError());
-			
 		$_ERRORS = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'errors.php', '_ERRORS');
 		
 		$str_output = '';
@@ -1174,11 +1142,12 @@ class AdminTranslations extends AdminTab
 				{
 					if (!filesize($fn))
 						continue;
-					preg_match_all('/Tools::displayError\(\''._PS_TRANS_PATTERN_.'\'(, ?(true|false))?\)/U', fread(fopen($fn, 'r'), filesize($fn)), $matches);
+					preg_match_all('/Tools::displayError\(\''._PS_TRANS_PATTERN_.'\'(, (true|false))?\)/U', fread(fopen($fn, 'r'), filesize($fn)), $matches);
 					foreach($matches[1] AS $key)
 						$stringToTranslate[$key] = (key_exists(md5($key), $_ERRORS)) ? html_entity_decode($_ERRORS[md5($key)], ENT_COMPAT, 'UTF-8') : '';
 				}
 		$irow = 0;
+		$str_output .= $this->displayAutoTranslate();
 		$str_output .= '<h2>'.$this->l('Language').' : '.Tools::strtoupper($lang).' - '.$this->l('Error translations').'</h2>'
 		.$this->l('Errors to translate').' : <b>'.sizeof($stringToTranslate).'</b><br /><br />';
 		$str_output .= $this->displayLimitPostWarning(sizeof($stringToTranslate));
@@ -1199,10 +1168,6 @@ class AdminTranslations extends AdminTab
 	public function displayFormFields($lang)
 	{
 		global $currentIndex;
-		
-		if (!Validate::isLangIsoCode($lang))
-			die(Tools::displayError());
-		
 		$_FIELDS = $this->fileExists(_PS_TRANSLATIONS_DIR_.$lang, 'fields.php', '_FIELDS');
 
 		$str_output = '';
@@ -1225,6 +1190,7 @@ class AdminTranslations extends AdminTab
 				$count += sizeof($classArray[$className]['validateLang']);
 		}
 
+		$str_output .= $this->displayAutoTranslate();
 		$str_output .= '
 		<h2>'.$this->l('Language').' : '.Tools::strtoupper($lang).' - '.$this->l('Field name translations').'</h2>';
 		$str_output .= $this->displayLimitPostWarning($count);
@@ -1282,7 +1248,7 @@ class AdminTranslations extends AdminTab
 		$arr_return['total_filled'] = 0;
 		$arr_return['directory'] = $dir;
 //		$arr_return['subject'] = $this->getSubjectMailContent($dir.$lang);
-		if (file_exists($dir.'en'))
+		if(file_exists($dir.'en'))
 		{
 			// Get all english files to compare with the language to translate
 			foreach (scandir($dir.'en') AS $email_file)
@@ -1375,12 +1341,10 @@ class AdminTranslations extends AdminTab
 								<input type="text" name="subject['.$group_name.']['.$subject_mail.']" value="'.(isset($mails['subject'][$subject_mail]) ? $mails['subject'][$subject_mail] : '').'" />
 							</div>
 						</div>';
-					}
-					else
-					{
+					} else {
 						$str_return .= '
 						<div class="label-subject">
-							<b>'.sprintf($this->l('No Subject was found for %s, or subject is generated in database.'), '<em>'.$mail_name.'</em>').'</b>'
+							<b>'.sprintf($this->l('No Subject was found for %s.'), '<em>'.$mail_name.'</em>').'</b>'
 						.'</div>';
 					}
 					if (key_exists('html', $mail_files))
@@ -1537,7 +1501,6 @@ class AdminTranslations extends AdminTab
 			_PS_ROOT_DIR_.'/controllers',
 			_PS_ROOT_DIR_.'/classes',
 			PS_ADMIN_DIR.'/tabs',
-			PS_ADMIN_DIR,
 		);
 		$arr_files_to_parse = array_merge($arr_files_to_parse, $modules_has_mails);
 		foreach ($arr_files_to_parse as $path) {
@@ -1555,9 +1518,9 @@ class AdminTranslations extends AdminTab
 		// Before 1.4.0.14 each theme folder was parsed,
 		// This page was really to low to load.
 		// Now just use the current theme.
-		if (_THEME_NAME_ !== AdminTranslations::DEFAULT_THEME_NAME)
+		if(_THEME_NAME_ !== AdminTranslations::DEFAULT_THEME_NAME)
 		{
-			if (file_exists(_PS_THEME_DIR_.'mails'))
+			if(file_exists(_PS_THEME_DIR_.'mails'))
 			{
 				$theme_mails['theme_mail'] = $this->getMailFiles(_PS_THEME_DIR_.'mails/', $lang, 'theme_mail');
 				$theme_mails['theme_mail']['subject'] = $this->getSubjectMailContent(_PS_THEME_DIR_.'mails/'.$lang);
@@ -1644,7 +1607,7 @@ class AdminTranslations extends AdminTab
 		echo $str_output;
 	}
 
-	protected static function getSubjectMail($directory, $subject_mail)
+	protected function getSubjectMail($directory, $subject_mail)
 	{
 		foreach (scandir($directory) AS $filename)
 		{
@@ -1662,8 +1625,9 @@ class AdminTranslations extends AdminTab
 							if ($tab2 && isset($tab2[1]))
 							{
 								$tab2[1] = trim(str_replace('\'', '', $tab2[1]));
-								if (preg_match('/Mail::l\(\''._PS_TRANS_PATTERN_.'\'/s', $tab2[2], $matches))
-									$subject_mail[$tab2[1]] = $matches[1];
+								if (preg_match('/Mail::l\(\''._PS_TRANS_PATTERN_.'\'\)/s', $tab2[2], $tab3))
+									$tab2[2] = $tab3[1];
+								$subject_mail[$tab2[1]] = $tab2[2];
 							}
 						}
 					}
@@ -1747,7 +1711,7 @@ class AdminTranslations extends AdminTab
 				'theme'			=> ($is_default ? self::DEFAULT_THEME_NAME : _THEME_NAME_ ),
 			);
 		$dir_module = $this->clearModuleFiles($files_module, 'directory', $path);
-		if (!empty($dir_module))
+		if(!empty($dir_module))
 		{
 			foreach ($dir_module AS $folder)
 			{
@@ -1773,23 +1737,24 @@ class AdminTranslations extends AdminTab
 		{
 			if ($module{0} != '.' AND is_dir($root_dir.$module))
 			{
-				@include($root_dir.$module.'/'.$lang.'.php');
+				@include_once($root_dir.$module.'/'.$lang.'.php');
 				self::getModuleTranslations($is_default);
 				$this->recursiveGetModuleFiles($root_dir.$module.'/', $array_files, $module, $root_dir.$module.'/'.$lang.'.php', $is_default);
 			}
 		}
 		return $array_files;
 	}
-
 	public function displayFormModules($lang)
 	{
 		global $currentIndex, $_MODULES;
-
+		
 		$array_lang_src = Language::getLanguages(false);
 		$str_output = '';
-
+		
 		foreach ($array_lang_src as $language)
+		{
 			$this->all_iso_lang[] = $language['iso_code'];
+		}
 
 		if (!file_exists(_PS_MODULE_DIR_))
 			die($this->displayWarning(Tools::displayError('Fatal error: Module directory is not here anymore ').'('._PS_MODULE_DIR_.')'));
@@ -1799,33 +1764,22 @@ class AdminTranslations extends AdminTab
 			$this->displayWarning(Tools::displayError('There are no modules in your copy of PrestaShop. Use the Modules tab to activate them or go to our Website to download additional Modules.'));
 		else
 		{
-
-			if (!_PS_MODE_DEV_)
-			{
-				// Get all module which are installed for to have a minimum of POST
-				$modules = Module::getModulesInstalled();
-
-				foreach ($modules as &$module)
-					$module = $module['name'];
-			}
-
 			$arr_find_and_fill = array();
-
+			
 			$arr_files = $this->getAllModuleFiles($modules, _PS_MODULE_DIR_, $lang, true);
 			$arr_find_and_fill = array_merge($arr_find_and_fill, $arr_files);
-
-			if (file_exists(_PS_THEME_DIR_.'/modules/'))
+			
+			if(file_exists(_PS_THEME_DIR_.'/modules/'))
 			{
 				$modules = scandir(_PS_THEME_DIR_.'/modules/');
 				$arr_files = $this->getAllModuleFiles($modules, _PS_THEME_DIR_.'modules/', $lang);
 				$arr_find_and_fill = array_merge($arr_find_and_fill, $arr_files);
 			}
-
 			foreach ($arr_find_and_fill as $value)
 				$this->findAndFillTranslations($value['files'], $value['theme'], $value['module'], $value['dir'], $lang);
-
+			
 			$str_output .= '
-			<h2>'.$this->l('Language').' : '.Tools::strtoupper($lang).' - '.$this->l('Translations of installed modules').'</h2>
+			<h2>'.$this->l('Language').' : '.Tools::strtoupper($lang).' - '.$this->l('Modules translations').'</h2>
 			'.$this->l('Total expressions').' : <b>'.$this->total_expression.'</b>. '.$this->l('Click the fieldset title to expand or close the fieldset.').'.<br /><br />';
 			$str_output .= $this->displayLimitPostWarning($this->total_expression);
 			if (!$this->suhosin_limit_exceed)
@@ -1833,6 +1787,7 @@ class AdminTranslations extends AdminTab
 				$str_output .= '
 				<form method="post" action="'.$currentIndex.'&submitTranslationsModules=1&token='.$this->token.'" class="form">';
 				$str_output .= $this->displayToggleButton();
+				$str_output .= $this->displayAutoTranslate();
 				$str_output .= '<input type="hidden" name="lang" value="'.$lang.'" /><input type="submit" name="submitTranslationsModules" value="'.$this->l('Update translations').'" class="button" /><br /><br />';
 				
 				if (count($this->modules_translations) > 1) 
@@ -1880,37 +1835,17 @@ class AdminTranslations extends AdminTab
 		echo $str_output;
 	}
 
-	/** parse $filepath to find expression which match $regex, and return an 
-	 * 
-	 * @param string $filepath file to parse
-	 * @param string $regex regexp to use
-	 * @param array $langArray contains expression in the chosen language
-	 * @param string $tab name to use with the md5 key
-	 * @param array $tabsArray 
-	 * @return array containing all datas needed for building the translation form
-	 * @since 1.4.5.0
-	 */
-	private function _parsePdfClass($filepath, $regex, $langArray, $tab, $tabsArray)
-	{
-		$content = file_get_contents($filepath);
-		preg_match_all($regex, $content, $matches);
-		foreach ($matches[1] as $key)
-			$tabsArray[$tab][$key] = stripslashes(key_exists($tab.md5(addslashes($key)), $langArray) ? html_entity_decode($langArray[$tab.md5(addslashes($key))], ENT_COMPAT, 'UTF-8') : '');
-		return $tabsArray;
-	}
-
 	public function displayFormPDF()
 	{
 		global $currentIndex;
 
 		$lang = Tools::strtolower(Tools::getValue('lang'));
-		$_LANGPDF = array();
+		$_LANG = array();
 		$str_output = '';
-		if (!Validate::isLangIsoCode($lang))
-			die(Tools::displayError());
+		
 		if (!file_exists(_PS_TRANSLATIONS_DIR_.$lang))
 			if (!mkdir(_PS_TRANSLATIONS_DIR_.$lang, 0700))
-				die('Please create a "'.$lang.'" directory in '._PS_TRANSLATIONS_DIR_);
+				die('Please create a "'.$iso.'" directory in '._PS_TRANSLATIONS_DIR_);
 		if (!file_exists(_PS_TRANSLATIONS_DIR_.$lang.'/pdf.php'))
 			if (!file_put_contents(_PS_TRANSLATIONS_DIR_.$lang.'/pdf.php', "<?php\n\nglobal \$_LANGPDF;\n\$_LANGPDF = array();\n\n?>"))
 				die('Please create a "'.Tools::strtolower($lang).'.php" file in '.realpath(PS_ADMIN_DIR.'/'));
@@ -1919,17 +1854,19 @@ class AdminTranslations extends AdminTab
 		$files = array();
 		$count = 0;
 		$tab = 'PDF_invoice';
-		$tabsArray = array($tab=>array());
+		$pdf = _PS_CLASS_DIR_.'PDF.php';
+		$newLang = array();
+		$fd = fopen($pdf, 'r');
+		$content = fread($fd, filesize($pdf));
+		fclose($fd);
 		$regex = '/self::l\(\''._PS_TRANS_PATTERN_.'\'[\)|\,]/U';
-		// need to parse PDF.php in order to find $regex and add this to $tabsArray
-		// this has to be done for the core class, and eventually for the override
-		$tabsArray = $this->_parsePdfClass(_PS_CLASS_DIR_.'PDF.php', $regex, $_LANGPDF, $tab, $tabsArray);
-		if(file_exists(_PS_ROOT_DIR_.'/override/classes/PDF.php'))
-			$tabsArray = $this->_parsePdfClass(_PS_ROOT_DIR_.'/override/classes/PDF.php', $regex, $_LANGPDF, $tab, $tabsArray);
-
+		preg_match_all($regex, $content, $matches);
+		foreach($matches[1] AS $key)
+			$tabsArray[$tab][$key] = stripslashes(key_exists($tab.md5(addslashes($key)), $_LANGPDF) ? html_entity_decode($_LANGPDF[$tab.md5(addslashes($key))], ENT_COMPAT, 'UTF-8') : '');
 		$count += isset($tabsArray[$tab]) ? sizeof($tabsArray[$tab]) : 0;
 		$closed = sizeof($_LANGPDF) >= $count;
-
+		
+		$str_output .= $this->displayAutoTranslate();
 		$str_output .= '<h2>'.$this->l('Language').' : '.Tools::strtoupper($lang).'</h2>'
 			.$this->l('Expressions to translate').' : <b>'.$count.'</b>. '.$this->l('Click on the titles to open fieldsets').'.<br /><br />';
 		$str_output .= $this->displayLimitPostWarning($count);
@@ -1978,7 +1915,7 @@ class AdminTranslations extends AdminTab
 	  *
 	  * @return array
 	  */
-	public static function getThemesList()
+	static public function getThemesList()
 	{
 		$dir = opendir(_PS_ALL_THEMES_DIR_);
 		while ($folder = readdir($dir))

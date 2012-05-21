@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7048 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-/*
-* P3P Policies (http://www.w3.org/TR/2002/REC-P3P-20020416/#compact_policies)
-*/
+// P3P Policies (http://www.w3.org/TR/2002/REC-P3P-20020416/#compact_policies)
 header('P3P: CP="IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA"');
 header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
 header('Pragma: no-cache');
@@ -39,8 +37,7 @@ echo '
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'.$iso.'" lang="'.$iso.'">
 	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-		<meta name="robots" content="NOFOLLOW, NOINDEX" />
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 		<link type="text/css" rel="stylesheet" href="'._PS_JS_DIR_.'jquery/datepicker/datepicker.css" />
 		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'admin.css" />
 		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'jquery.cluetip.css" />
@@ -69,9 +66,6 @@ echo '
 		</style>
 	</head>
 	<body '.((!empty($employee->bo_color)) ? 'style="background:'.Tools::htmlentitiesUTF8($employee->bo_color).'"' : '').'>
-	<script>
-		var choose_language_trad = "'.translate('Choose language:').'";
-	</script>
 	<div id="top_container">
 		<div id="container">
 			<div id="header_infos"><span>
@@ -90,7 +84,6 @@ echo '
 						<option value="0">'.translate('everywhere').'</option>
 						<option value="1" '.(Tools::getValue('bo_search_type') == 1 ? 'selected="selected"' : '').'>'.translate('catalog').'</option>
 						<option value="2" '.(Tools::getValue('bo_search_type') == 2 ? 'selected="selected"' : '').'>'.translate('customers').'</option>
-						<option value="6" '.(Tools::getValue('bo_search_type') == 6 ? 'selected="selected"' : '').'>'.translate('ip address').'</option>
 						<option value="3" '.(Tools::getValue('bo_search_type') == 3 ? 'selected="selected"' : '').'>'.translate('orders').'</option>
 						<option value="4" '.(Tools::getValue('bo_search_type') == 4 ? 'selected="selected"' : '').'>'.translate('invoices').'</option>
 						<option value="5" '.(Tools::getValue('bo_search_type') == 5 ? 'selected="selected"' : '').'>'.translate('carts').'</option>
@@ -110,7 +103,7 @@ echo '
 				</script>
 				<select onchange="quickSelect(this);" id="quick_select">
 					<option value="0">'.translate('Quick Access').'</option>';
-foreach (QuickAccess::getQuickAccesses((int)($cookie->id_lang)) as $quick)
+foreach (QuickAccess::getQuickAccesses((int)($cookie->id_lang)) AS $quick)
 {
 	preg_match('/tab=(.+)(&.+)?$/', $quick['link'], $adminTab);
 	if (isset($adminTab[1]))
@@ -122,10 +115,14 @@ foreach (QuickAccess::getQuickAccesses((int)($cookie->id_lang)) as $quick)
 	echo '<option value="'.$quick['link'].($quick['new_window'] ? '_blank' : '').'">&gt; '.$quick['name'].'</option>';
 }
 echo '			</select>
-			</div>
-			<div class="flatclear">&nbsp;</div>';
-			echo Module::hookExec('backOfficeTop');
-			echo '<ul id="menu">';
+			</div>';
+
+			if (Tools::isMultiShopActivated())
+				echo '<div id="header_shoplist">'.Shop::generateHtmlList().'</div>';
+
+echo '		<div class="flatclear">&nbsp;</div>
+			'.Module::hookExec('backOfficeTop').'
+			<ul id="menu">';
 if (empty($tab))
 	echo '<div class="mainsubtablist" style="display:none"></div>';
 
@@ -133,13 +130,13 @@ $id_parent_tab_current = (int)(Tab::getCurrentParentId());
 $tabs = Tab::getTabs((int)$cookie->id_lang, 0);
 $echoLis = '';
 $mainsubtablist = '';
-foreach ($tabs as $t)
+foreach ($tabs AS $t)
 	if (checkTabRights($t['id_tab']) === true)
 	{
 		$img = (Tools::file_exists_cache(_PS_ADMIN_DIR_.'/themes/'.$employee->bo_theme.'/img/t/'.$t['class_name'].'.gif') ? 'themes/'.$employee->bo_theme.'/img/' : _PS_IMG_).'t/'.$t['class_name'].'.gif';
 		if (trim($t['module']) != '')
 			$img = _MODULE_DIR_.$t['module'].'/'.$t['class_name'].'.gif';
-		$current = (($t['class_name'] == $tab) || ($id_parent_tab_current == $t['id_tab']));
+		$current = (($t['class_name'] == $tab) OR ($id_parent_tab_current == $t['id_tab']));
 		echo '<li class="submenu_size '.($current ? 'active' : '').'" id="maintab'.$t['id_tab'].'">
 			<a href="index.php?tab='.$t['class_name'].'&token='.Tools::getAdminToken($t['class_name'].(int)($t['id_tab']).(int)($cookie->id_employee)).'">
 				<img src="'.$img.'" alt="" /> '.$t['name'].'
@@ -147,7 +144,7 @@ foreach ($tabs as $t)
 		</li>';
 		$echoLi = '';
 		$subTabs = Tab::getTabs((int)$cookie->id_lang, (int)$t['id_tab']);
-		foreach ($subTabs as $t2)
+		foreach ($subTabs AS $t2)
 			if (checkTabRights($t2['id_tab']) === true)
 				$echoLi .= '<li><a href="index.php?tab='.$t2['class_name'].'&token='.Tools::getAdminTokenLite($t2['class_name']).'">'.$t2['name'].'</a></li>';
 		if ($current)
@@ -170,11 +167,11 @@ if ($employee->bo_uimode == 'hover')
 					$(this).addClass("active");
 				}
 			</script>';
-echo '		<ul id="submenu" '.(strlen($mainsubtablist) ? 'class="withLeftBorder clearfix"' : '').'>'.$mainsubtablist.'</ul>
+echo '		<ul id="submenu" '.(strlen($mainsubtablist) ? 'class="withLeftBorder"' : '').'>'.$mainsubtablist.'</ul>
 			<div id="main">
 				<div id="content">'
 			.(file_exists(PS_ADMIN_DIR.'/../install') ? '<div style="background-color: #FFEBCC;border: 1px solid #F90;line-height: 20px;margin: 0px 0px 10px;padding: 10px 20px;">'
 				.translate('For security reasons, you must also:').' '.
-				translate('delete the /install folder').
+				translate('deleted the /install folder').
 				'</div>' : '').'
 				';

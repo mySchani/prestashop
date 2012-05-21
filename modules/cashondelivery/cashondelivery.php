@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14265 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class CashOnDelivery extends PaymentModule
@@ -34,9 +34,9 @@ class CashOnDelivery extends PaymentModule
 	{
 		$this->name = 'cashondelivery';
 		$this->tab = 'payments_gateways';
-		$this->version = '0.4';
+		$this->version = '0.3';
 		$this->author = 'PrestaShop';
-		$this->need_instance = 1;
+		$this->need_instance = 0;
 		
 		$this->currencies = false;
 
@@ -44,13 +44,6 @@ class CashOnDelivery extends PaymentModule
 
 		$this->displayName = $this->l('Cash on delivery (COD)');
 		$this->description = $this->l('Accept cash on delivery payments');
-
-		/* For 1.4.3 and less compatibility */
-		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT');
-		if (!Configuration::get('PS_OS_PAYMENT'))
-			foreach ($updateConfig as $u)
-				if (!Configuration::get($u) && defined('_'.$u.'_'))
-					Configuration::updateValue($u, constant('_'.$u.'_'));
 	}
 
 	public function install()

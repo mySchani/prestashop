@@ -4,7 +4,6 @@ global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{ekomi}prestashop>ekomi_c0858307dfd3d91768c79ec116820b60'] = 'eKomi';
 $_MODULE['<{ekomi}prestashop>ekomi_d245187b3591f5f6f723ece2217bb637'] = 'Añadir un bloque eKomi';
-$_MODULE['<{ekomi}prestashop>ekomi_5f8f22b8cdbaeee8cf857673a9b6ba20'] = 'directorio';
 $_MODULE['<{ekomi}prestashop>ekomi_f4d1ea475eaa85102e2b4e6d95da84bd'] = 'Confirmación';
 $_MODULE['<{ekomi}prestashop>ekomi_c888438d14855d7d96a2724ee9c306bd'] = 'Configuración actualizada';
 $_MODULE['<{ekomi}prestashop>ekomi_f4f70727dc34561dfde1a3c529b6205c'] = 'Configuración';

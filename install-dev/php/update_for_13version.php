@@ -8,12 +8,9 @@ function update_for_13version()
 		return; // if the old version is a 1.4 version
 	
 	// Disable the Smarty 3
+	Configuration::updateValue('PS_FORCE_SMARTY_2', 1);
 	// Disable the URL rewritting
+	Configuration::updateValue('PS_REWRITING_SETTINGS', 0);
 	// Disable Canonical redirection
-	$res = Db::getInstance()->getValue('REPLACE INTO `'._DB_PREFIX_.'configuration`
-		(name, value) VALUES 
-		("PS_FORCE_SMARTY_2", "1"),
-		("PS_REWRITING_SETTINGS", "0")
-		("PS_CANONICAL_REDIRECT", "0")
-		');
+	Configuration::updateValue('PS_CANONICAL_REDIRECT', 0);
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14490 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7317 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,20 +31,24 @@ if (function_exists('date_default_timezone_set'))
 define('_PS_MAGIC_QUOTES_GPC_', get_magic_quotes_gpc());
 define('_PS_MYSQL_REAL_ESCAPE_STRING_', function_exists('mysql_real_escape_string'));
 
-require_once(INSTALL_PATH.'/classes/AddConfToFile.php');
-require_once(INSTALL_PATH.'/../classes/Validate.php');
-require_once(INSTALL_PATH.'/../classes/Db.php');
-require_once(INSTALL_PATH.'/../classes/Tools.php');
-require_once(INSTALL_PATH.'/../config/settings.inc.php');
+include(INSTALL_PATH.'/classes/AddConfToFile.php');
+include(INSTALL_PATH.'/../classes/Validate.php');
+include(INSTALL_PATH.'/../classes/Db.php');
+include(INSTALL_PATH.'/../classes/Tools.php');
+include_once(INSTALL_PATH.'/../config/settings.inc.php');
+
+Shop::setCurrentShop();
+define('_THEME_NAME_', Shop::getCurrentTheme());
+define('__PS_BASE_URI__', Shop::getCurrentBaseURI());
 
 function isFormValid()
 {
 	global $error;
-
+	$validInfos = true;
 	foreach ($error as $anError)
 		if ($anError != '')
-			return false;
-	return true;
+			$validInfos = false;
+	return $validInfos;
 }
 
 $error = array();
@@ -57,22 +61,22 @@ foreach ($_GET AS &$var)
 			$row = html_entity_decode($row, ENT_COMPAT, 'UTF-8');
 }
 
-if (!isset($_GET['infosShop']) OR empty($_GET['infosShop']))
+if(!isset($_GET['infosShop']) OR empty($_GET['infosShop']))
 	$error['infosShop'] = '0';
 else
 	$error['infosShop'] = '';
 
-if (!isset($_GET['infosFirstname']) OR empty($_GET['infosFirstname']))
+if(!isset($_GET['infosFirstname']) OR empty($_GET['infosFirstname']))
 	$error['infosFirstname'] = '0';
 else
 	$error['infosFirstname'] = '';
 
-if (!isset($_GET['infosName']) OR empty($_GET['infosName']))
+if(!isset($_GET['infosName']) OR empty($_GET['infosName']))
 	$error['infosName'] = '0';
 else
 	$error['infosName'] = '';
 
-if (isset($_GET['infosEmail']) AND !Validate::isEmail($_GET['infosEmail']))
+if(isset($_GET['infosEmail']) AND !Validate::isEmail($_GET['infosEmail']))
 	$error['infosEmail'] = '3';
 else
 	$error['infosEmail'] = '';
@@ -81,16 +85,6 @@ if (isset($_GET['infosShop']) AND !Validate::isGenericName($_GET['infosShop']))
 	$error['validateShop'] = '46';
 else
 	$error['validateShop'] = '';
-
-if (!isset($_GET['infosCountry']) OR empty($_GET['infosCountry']))
-	$error['infosCountry'] = '0';
-else
-	$error['infosCountry'] = '';
-
-if (!isset($_GET['infosTimezone']) OR empty($_GET['infosTimezone']))
-	$error['infosTimezone'] = '0';
-else
-	$error['infosTimezone'] = '';
 
 if (isset($_GET['infosFirstname']) AND !Validate::isName($_GET['infosFirstname']))
 	$error['validateFirstname'] = '47';
@@ -107,7 +101,7 @@ if (isset($_GET['catalogMode']) AND !Validate::isInt($_GET['catalogMode']))
 else
 	$error['validateCatalogMode'] = '';
 
-if (!isset($_GET['infosEmail']) OR empty($_GET['infosEmail']))
+if(!isset($_GET['infosEmail']) OR empty($_GET['infosEmail']))
 	$error['infosEmail'] = '0';
 
 if (!isset($_GET['infosPassword']) OR empty($_GET['infosPassword']))
@@ -120,10 +114,10 @@ if (!isset($_GET['infosPasswordRepeat']) OR empty($_GET['infosPasswordRepeat']))
 else
 	$error['infosPasswordRepeat'] = '';
 
-if ($error['infosPassword'] == '' AND $_GET['infosPassword'] != $_GET['infosPasswordRepeat'])
+if($error['infosPassword'] == '' AND $_GET['infosPassword'] != $_GET['infosPasswordRepeat'])
 	$error['infosPassword'] = '2';
 
-if ($error['infosPassword'] == '' AND (Tools::strlen($_GET['infosPassword']) < 8 OR !Validate::isPasswdAdmin($_GET['infosPassword'])))
+if($error['infosPassword'] == '' AND (Tools::strlen($_GET['infosPassword']) < 8 OR !Validate::isPasswdAdmin($_GET['infosPassword'])))
 	$error['infosPassword'] = '12';
 
 /////////////////////////////
@@ -134,7 +128,7 @@ include_once(INSTALL_PATH.'/classes/ToolsInstall.php');
 $dbInstance = Db::getInstance();
 // set Languages
 $error['infosLanguages'] = '';
-if (isFormValid())
+if(isFormValid())
 {
 	/*$idDefault = array_search($_GET['infosDL'][0], $_GET['infosWL']) + 1;
 	//prepare the requests
@@ -146,11 +140,11 @@ if (isFormValid())
 	foreach ($_GET['infosWL'] AS $wl)
 		$sqlLanguages[] = "INSERT INTO `"._DB_PREFIX_."lang` (`id_lang` ,`name` ,`active` ,`iso_code`)VALUES (NULL , '".ToolsInstall::getLangString($wl)."', '1', '".pSQL($wl)."')";
 	foreach($sqlLanguages AS $query)
-		if (!Db::getInstance()->Execute($query))
+		if(!Db::getInstance()->Execute($query))
 			$error['infosLanguages'] = '11';
 
 	// Flags copy
-	if (!$languagesId = Db::getInstance()->ExecuteS('SELECT `id_lang`, `iso_code` FROM `'._DB_PREFIX_.'lang`'))
+	if(!$languagesId = Db::getInstance()->ExecuteS('SELECT `id_lang`, `iso_code` FROM `'._DB_PREFIX_.'lang`'))
 		$error['infosLanguages'] = '11';
 
 	unset($dbInstance);*/
@@ -183,8 +177,8 @@ $error['infosInsertSQL'] = '';
 if (isFormValid())
 {
 	$sqlParams = array();
-	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_DOMAIN', '".pSQL(Tools::getHttpHost())."', NOW(), NOW())";
-	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_DOMAIN_SSL', '".pSQL(Tools::getHttpHost())."', NOW(), NOW())";
+	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_DOMAIN', '".Tools::getHttpHost()."', NOW(), NOW())";
+	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_DOMAIN_SSL', '".Tools::getHttpHost()."', NOW(), NOW())";
 	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_INSTALL_VERSION', '".pSQL(INSTALL_VERSION)."', NOW(), NOW())";
 	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_NAME', '".pSQL($_GET['infosShop'])."', NOW(), NOW())";
 	$sqlParams[] = "INSERT IGNORE INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_SHOP_EMAIL', '".pSQL($_GET['infosEmail'])."', NOW(), NOW())";
@@ -206,8 +200,8 @@ if (isFormValid())
 	require_once(dirname(__FILE__).'/../../classes/LocalizationPack.php');
 
 
-	$stream_context = @stream_context_create(array('http' => array('timeout' => 5)));
-	$localization_file = @Tools::file_get_contents('http://www.prestashop.com/download/localization_pack.php?country='.$_GET['countryName'], false, $stream_context);
+	$context = stream_context_create(array('http' => array('timeout' => 5)));
+	$localization_file = @Tools::file_get_contents('http://www.prestashop.com/download/localization_pack.php?country='.$_GET['countryName'], false, $context);
 	if (!$localization_file AND file_exists(dirname(__FILE__).'/../../localization/'.strtolower($_GET['countryName']).'.xml'))
 		$localization_file = @file_get_contents(dirname(__FILE__).'/../../localization/'.strtolower($_GET['countryName']).'.xml');
 	if ($localization_file)
@@ -232,7 +226,7 @@ if (isFormValid())
 		$sqlParams[] = "INSERT INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_MAIL_SMTP_ENCRYPTION', '".pSQL($_GET['smtpEnc'])."', NOW(), NOW())";
 		$sqlParams[] = "INSERT INTO "._DB_PREFIX_."configuration (name, value, date_add, date_upd) VALUES ('PS_MAIL_SMTP_PORT', '".pSQL($_GET['smtpPort'])."', NOW(), NOW())";
 	}
-	$sqlParams[] = 'INSERT INTO '._DB_PREFIX_.'employee (id_employee, lastname, firstname, email, passwd, last_passwd_gen, bo_theme, active, id_profile, id_lang, bo_show_screencast) VALUES (NULL, \''.pSQL(ToolsInstall::ucfirst($_GET['infosName'])).'\', \''.pSQL(ToolsInstall::ucfirst($_GET['infosFirstname'])).'\', \''.pSQL($_GET['infosEmail']).'\', \''.md5(pSQL(_COOKIE_KEY_.$_GET['infosPassword'])).'\', \''.date('Y-m-d h:i:s', strtotime('-360 minutes')).'\', \'oldschool\', 1, 1, (SELECT `value` FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \'PS_LANG_DEFAULT\' LIMIT 1), 1)';
+	$sqlParams[] = 'INSERT INTO '._DB_PREFIX_.'employee (id_employee, lastname, firstname, email, passwd, last_passwd_gen, bo_theme, active, id_profile, id_lang) VALUES (NULL, \''.pSQL(ToolsInstall::ucfirst($_GET['infosName'])).'\', \''.pSQL(ToolsInstall::ucfirst($_GET['infosFirstname'])).'\', \''.pSQL($_GET['infosEmail']).'\', \''.md5(pSQL(_COOKIE_KEY_.$_GET['infosPassword'])).'\', \''.date('Y-m-d h:i:s', strtotime('-360 minutes')).'\', \'oldschool\', 1, 1, (SELECT `value` FROM `'._DB_PREFIX_.'configuration` WHERE `name` = \'PS_LANG_DEFAULT\' LIMIT 1))';
 	$sqlParams[] = 'INSERT INTO '._DB_PREFIX_.'contact (id_contact, email, customer_service) VALUES (NULL, \''.pSQL($_GET['infosEmail']).'\', 1), (NULL, \''.pSQL($_GET['infosEmail']).'\', 1)';
 
 	if (function_exists('mcrypt_encrypt'))
@@ -265,22 +259,15 @@ if (isFormValid())
 	{
 		$sqlParams[] = 'DELETE c, cl FROM `'._DB_PREFIX_.'cms` AS c LEFT JOIN `'._DB_PREFIX_.'cms_lang` AS cl ON c.id_cms = cl.id_cms WHERE 1 AND c.`id_cms` IN (1, 5)';
 	}
-
+	
 	$dbInstance = Db::getInstance();
 	foreach($sqlParams as $query)
-		if (!$dbInstance->Execute($query))
+		if(!$dbInstance->Execute($query))
 			$error['infosInsertSQL'] = '11';
 	unset($dbInstance);
 
 	//select the version of Smarty for the version of php
-	Tools::selectionVersionSmarty();
-}
-
-// Active only the country selected by the merchant
-if (isFormValid())
-{
-	if ($id_country = Tools::getValue('infosCountry'))
-		Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'country SET active = 0 WHERE id_country != '.(int)$id_country);
+    Tools::selectionVersionSmarty();
 }
 
 //////////////////////////

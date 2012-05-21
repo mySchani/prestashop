@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,6 +29,10 @@ class DiscountCore extends ObjectModel
 {
 	public		$id;
 
+	public		$id_group_shop;
+	
+	public		$id_shop;
+	
 	/** @var integer Customer id only if discount is reserved */
 	public		$id_customer;
 
@@ -70,9 +74,6 @@ class DiscountCore extends ObjectModel
 
 	/** @var integer Minimum cart total amount required to use the discount */
 	public 		$minimal;
-	
-	/** @var boolean include_tax selected for the choice of the calcul method in the cart*/
-	public 		$include_tax;
 
 	/** @var integer display the discount in the summary */
 	public 		$cart_display;
@@ -118,7 +119,6 @@ class DiscountCore extends ObjectModel
 			'date_from' => array('sqlId' => 'date_from'),
 			'date_to' => array('sqlId' => 'date_to'),
 			'minimal' => array('sqlId' => 'minimal'),
-			'include_tax' => array('sqlId' => 'include_tax'),
 			'active' => array('sqlId' => 'active'),
 			'cart_display' => array('sqlId' => 'cart_display'),
 			'date_add' => array('sqlId' => 'date_add'),
@@ -132,6 +132,8 @@ class DiscountCore extends ObjectModel
 	{
 		parent::validateFields();
 
+		$fields['id_group_shop'] = (int)$this->id_group_shop;
+		$fields['id_shop'] = (int)$this->id_shop;
 		$fields['id_customer'] = (int)($this->id_customer);
 		$fields['id_group'] = (int)($this->id_group);
 		$fields['id_currency'] = (int)($this->id_currency);
@@ -145,7 +147,6 @@ class DiscountCore extends ObjectModel
 		$fields['date_from'] = pSQL($this->date_from);
 		$fields['date_to'] = pSQL($this->date_to);
 		$fields['minimal'] = (float)($this->minimal);
-		$fields['include_tax'] = (int)($this->include_tax);
 		$fields['behavior_not_exhausted'] = (int)$this->behavior_not_exhausted;
 		$fields['active'] = (int)($this->active);
 		$fields['cart_display'] = (int)($this->cart_display);
@@ -195,7 +196,7 @@ class DiscountCore extends ObjectModel
 	  *
 	  * @return array Discount types
 	  */
-	public static function getDiscountTypes($id_lang)
+	static public function getDiscountTypes($id_lang)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
@@ -228,7 +229,7 @@ class DiscountCore extends ObjectModel
 	  * @param boolean $id_customer Customer ID
 	  * @return array Discounts
 	  */
-	public static function getCustomerDiscounts($id_lang, $id_customer, $active = false, $includeGenericOnes = true, $stock = false)
+	static public function getCustomerDiscounts($id_lang, $id_customer, $active = false, $includeGenericOnes = true, $stock = false)
     {
 		global $cart;
 
@@ -275,7 +276,7 @@ class DiscountCore extends ObjectModel
 	  * @param boolean $order_total_products Total cart products amount
 	  * @return mixed Return a float value or '!' if reduction is 'Shipping free'
 	  */
-	public function getValue($nb_discounts = 0, $order_total_products = 0, $shipping_fees = 0, $idCart = false, $useTax = true)
+	public function getValue($nb_discounts = 0, $order_total_products = 0, $shipping_fees = 0, $idCart = false, $useTax = true, $id_group_shop = false, $id_shop = false)
 	{
 		$totalAmount = 0;
 
@@ -288,19 +289,25 @@ class DiscountCore extends ObjectModel
 
 		if ($this->usedByCustomer((int)($cart->id_customer)) >= $this->quantity_per_user AND !$cart->OrderExists())
 			return 0;
-
+		
 		$date_start = strtotime($this->date_from);
 		$date_end = strtotime($this->date_to);
 		if ((time() < $date_start OR time() > $date_end) AND !$cart->OrderExists()) return 0;
 
+		if ($id_group_shop AND $id_shop)
+			if (!$this->availableWithShop($id_group_shop, $id_shop))
+				return 0;
 		$products = $cart->getProducts();
 		$categories = Discount::getCategories((int)($this->id));
+		$in_category = false;
 
 		foreach ($products AS $product)
 			if (count($categories) AND Product::idIsOnCategoryId($product['id_product'], $categories))
-				$totalAmount += $this->include_tax ? $product['total_wt'] : $product['total'];
+				$totalAmount += $useTax ? $product['price_wt'] * $product['quantity']: $product['price'] * $product['quantity'];
+
 		if ($this->minimal > 0 AND $totalAmount < $this->minimal)
 			return 0;
+
 		switch ($this->id_discount_type)
 		{
 			/* Relative value (% of the order total) */
@@ -310,7 +317,7 @@ class DiscountCore extends ObjectModel
 				foreach ($products AS $product)
 						if (Product::idIsOnCategoryId($product['id_product'], $categories))
 							if ($this->cumulable_reduction OR (!$product['reduction_applies'] AND !$product['on_sale']))
-								$amount += ($useTax? $product['total_wt'] : $product['total']) * $percentage;
+								$amount += ($useTax ? $product['total_wt'] : $product['total']) * $percentage;
 				return $amount;
 
 			/* Absolute value */
@@ -345,18 +352,18 @@ class DiscountCore extends ObjectModel
 	 * @return bool
 	 * @deprecated
 	 */
-	public static function isParentCategoryProductDiscount($id_category_product, $id_category_discount)
+	static public function isParentCategoryProductDiscount($id_category_product, $id_category_discount)
 	{
 		Tools::displayAsDeprecated();
 		$category = new Category((int)($id_category_product));
 		$parentCategories = $category->getParentsCategories();
 		foreach($parentCategories AS $parentCategory)
-			if ($id_category_discount == $parentCategory['id_category'])
+			if($id_category_discount == $parentCategory['id_category'])
 				return true;
 		return false;
 	}
 
-	public static function getCategories($id_discount)
+	static public function getCategories($id_discount)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT `id_category`
@@ -391,12 +398,12 @@ class DiscountCore extends ObjectModel
 		}
 	}
 
-	public static function discountExists($discountName, $id_discount = 0)
+	static public function discountExists($discountName, $id_discount = 0)
 	{
 		return Db::getInstance()->getRow('SELECT `id_discount` FROM '._DB_PREFIX_.'discount WHERE `name` LIKE \''.pSQL($discountName).'\' AND `id_discount` != '.(int)($id_discount));
 	}
 
-	public static function createOrderDiscount($order, $productList, $qtyList, $name, $shipping_cost = false, $id_category = 0, $subcategory = 0)
+	static public function createOrderDiscount($order, $productList, $qtyList, $name, $shipping_cost = false, $id_category = 0, $subcategory = 0)
 	{
 		$languages = Language::getLanguages($order);
 		$products = $order->getProducts(false, $productList, $qtyList);
@@ -428,10 +435,12 @@ class DiscountCore extends ObjectModel
 		$voucher->quantity_per_user = 1;
 		$voucher->cumulable = 1;
 		$voucher->cumulable_reduction = 1;
-        $voucher->minimal = (float)($voucher->value);
-        $voucher->include_tax = 1;
+		$voucher->minimal = (float)($voucher->value);
 		$voucher->active = 1;
 		$voucher->cart_display = 1;
+		$voucher->id_group_shop = (int)$order->id_group_shop;
+		$voucher->id_shop = (int)$order->id_shop;
+		
 		$now = time();
 		$voucher->date_from = date('Y-m-d H:i:s', $now);
 		$voucher->date_to = date('Y-m-d H:i:s', $now + (3600 * 24 * 365.25)); /* 1 year */
@@ -445,7 +454,7 @@ class DiscountCore extends ObjectModel
 		return $voucher;
 	}
 
-	public static function display($discountValue, $discountType, $currency = false)
+	static public function display($discountValue, $discountType, $currency = false)
 	{
 		if ((float)($discountValue) AND (int)($discountType))
 		{
@@ -457,7 +466,7 @@ class DiscountCore extends ObjectModel
 		return ''; // return a string because it's a display method
 	}
 
-	public static function getVouchersToCartDisplay($id_lang, $id_customer)
+	static public function getVouchersToCartDisplay($id_lang, $id_customer)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT d.`name`, dl.`description`, d.`id_discount`
@@ -471,7 +480,7 @@ class DiscountCore extends ObjectModel
 		OR d.`id_group` IN (SELECT `id_group` FROM `'._DB_PREFIX_.'customer_group` WHERE `id_customer` = '.(int)($id_customer).')))' : 'OR d.`id_group` = 1)'));
 	}
 
-	public static function deleteByIdCustomer($id_customer)
+	static public function deleteByIdCustomer($id_customer)
 	{
 		$discounts = Db::getInstance()->ExecuteS('SELECT `id_discount` FROM `'._DB_PREFIX_.'discount` WHERE `id_customer` = '.(int)($id_customer));
 		foreach ($discounts as $discount)
@@ -483,7 +492,7 @@ class DiscountCore extends ObjectModel
 		return true;
 	}
 
-	public static function deleteByIdGroup($id_group)
+	static public function deleteByIdGroup($id_group)
 	{
 		$discounts = Db::getInstance()->ExecuteS('SELECT `id_discount` FROM `'._DB_PREFIX_.'discount` WHERE `id_group` = '.(int)($id_group));
 		foreach ($discounts as $discount)
@@ -495,8 +504,17 @@ class DiscountCore extends ObjectModel
 		return true;
 	}
 
-	public static function getDiscount($id_discount)
+	static public function getDiscount($id_discount)
 	{
 		return Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'discount` WHERE `id_discount` = '.(int)$id_discount);
 	}
+	
+	public function availableWithShop($id_group_shop, $id_shop)
+	{
+		return Db::getInstance()->getValue('SELECT d.id_discount
+														FROM '._DB_PREFIX_.'discount d
+														LEFT JOIN '._DB_PREFIX_.'group_shop gs ON (gs.id_group_shop=d.id_group_shop)
+														WHERE d.id_discount='.(int)$this->id.' AND (d.id_shop='.(int)$id_shop.' OR (d.id_group_shop='.(int)$id_group_shop.' AND gs.share_datas=1))');
+	}
 }
+

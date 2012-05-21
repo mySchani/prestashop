@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class SimpleXMLExtended extends SimpleXMLElement
@@ -47,9 +46,8 @@ class Treepodia extends Module
 	{
 	 	$this->name = 'treepodia';
 	 	$this->tab = 'front_office_features';
-	 	$this->version = '1.6.1';
+	 	$this->version = '1.2';
 		$this->displayName = 'Treepodia';
-		$this->author = 'PrestaShop';
 
 	 	parent::__construct();
 		$this->description = $this->l('Cover your entire catalog with product videos in 24 hours.');
@@ -77,18 +75,16 @@ class Treepodia extends Module
 		Configuration::updateValue('TREEPODIA_INTEGRATION_TYPE', $type);
 		Configuration::updateValue('TREEPODIA_PLAY_LOGO', $logo);
 		Configuration::updateValue('TREEPODIA_POSITION', $position);
-		Configuration::updateValue('TREEPODIA_HOOK', $hook);
+        Configuration::updateValue('TREEPODIA_HOOK', $hook);
 
 		return true;
 	}
 
 	private function _getShopURL()
 	{
-		if (!($domain = Configuration::get('PS_SHOP_DOMAIN')))
-			$domain = $_SERVER['HTTP_HOST'];
-
-		$host = ((Configuration::get('PS_SSL_ENABLED') || (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) != 'off')) ? 'https://'.$domain : 'http://'.$domain).__PS_BASE_URI__;
-
+		$host = ((Configuration::get('PS_SSL_ENABLED') OR (!empty($_SERVER['HTTPS']) AND strtolower($_SERVER['HTTPS']) != 'off')) ? Tools::getShopDomainSsl() : Tools::getShopDomain()).__PS_BASE_URI__;
+		if (substr($host, 0, 4) != 'http')
+			$host = ((Configuration::get('PS_SSL_ENABLED') OR (!empty($_SERVER['HTTPS']) AND strtolower($_SERVER['HTTPS']) != 'off')) ? 'https://'.$host : 'http://'.$host);
 		return $host;
 	}
 
@@ -127,23 +123,13 @@ XML;
 		foreach ($languages AS $language)
 			$infos->addChild('lang', $language['iso_code']);
 
-		$limit_sql = '';
-		$limit_start = (int)Tools::getValue('limit_start');
-		$limit_end = (int)Tools::getValue('limit_end');
-		if ($limit_start > 0)
-		{
-			if ($limit_end < $limit_start)
-				$limit_end = $limit_start + 10;
-			$limit_sql = ' LIMIT '.(int)$limit_start.','.(int)$limit_end;
-		}
-
 		$sqlProducts = Db::getInstance()->ExecuteS('
 		SELECT p.id_product, p.reference, p.weight, m.name manufacturer, s.name supplier, p.on_sale, p.id_manufacturer, pd.id_product_download
 		FROM '._DB_PREFIX_.'product p
 		LEFT JOIN '._DB_PREFIX_.'manufacturer m ON (m.id_manufacturer = p.id_manufacturer)
 		LEFT JOIN '._DB_PREFIX_.'supplier s ON (s.id_supplier = p.id_supplier)
 		LEFT JOIN '._DB_PREFIX_.'product_download pd ON (pd.id_product = p.id_product)
-		WHERE p.active = 1'.$limit_sql);
+		WHERE p.active = 1');
 
 		foreach ($sqlProducts AS $sqlProduct)
 		{
@@ -202,18 +188,9 @@ XML;
 			$price->addChild('retail-price-with-tax', Product::getPriceStatic((int)$sqlProduct['id_product'], true, NULL, 6, NULL, false, false));
 			$price->addChild('retail-price-without-tax', Product::getPriceStatic((int)$sqlProduct['id_product'], false, NULL, 6, NULL, false, false));
 			$price->addChild('final-retail-price-with-tax', Product::getPriceStatic((int)$sqlProduct['id_product'], true));
-			if (version_compare(_PS_VERSION_, '1.4') < 0)
-			{
-				$price->addChild('final-retail-price-without-tax', Product::getPriceStatic(intval($sqlProduct['id_product']), false));
-				$price->addChild('reduction_percent', floatval($sqlProduct['reduction_percent']));
-				$price->addChild('reduction_price', floatval($sqlProduct['reduction_price']));
-			}
-			else
-			{
-				$price->addChild('final-retail-price-without-tax', Product::getPriceStatic((int)$sqlProduct['id_product'], false, NULL, 6, NULL, false, true, 1, false, NULL, NULL, NULL, $specificPrice));
-				$price->addChild('reduction_percent', ($specificPrice AND $specificPrice['reduction_type'] == 'percentage') ? $specificPrice['reduction'] * 100 : 0.00);
-				$price->addChild('reduction_price', ($specificPrice AND $specificPrice['reduction_type'] == 'amount') ? (float)$specificPrice['reduction'] : 0.00);
-			}
+			$price->addChild('final-retail-price-without-tax', Product::getPriceStatic((int)$sqlProduct['id_product'], false, NULL, 6, NULL, false, true, 1, false, NULL, NULL, NULL, $specificPrice));
+			$price->addChild('reduction_percent', ($specificPrice AND $specificPrice['reduction_type'] == 'percentage') ? $specificPrice['reduction'] * 100 : 0.00);
+			$price->addChild('reduction_price', ($specificPrice AND $specificPrice['reduction_type'] == 'amount') ? (float)$specificPrice['reduction'] : 0.00);
 			$price->addChild('display-on-sale', (int)$sqlProduct['on_sale']);
 			
 			$product->addChild('downloadable', $sqlProduct['id_product_download'] >= 1 ? 1 : 0);
@@ -260,7 +237,7 @@ XML;
 				$image = $product->addChild('image');
 				$image->addAttribute('id',$imageSQL['id_image']);
 
-				$image->addCData('image-url', $link->getImageLink($productLinkRewrite, (int)($sqlProduct['id_product']).'-'.(int)($imageSQL['id_image']), 'large'));
+					$image->addCData('image-url', $link->getImageLink($productLinkRewrite, (int)($sqlProduct['id_product']).'-'.(int)($imageSQL['id_image']), 'large'));
 
 				if (isset($imagesLegends[$imageSQL['id_image']]) AND sizeof($imagesLegends[$imageSQL['id_image']]))
 				{
@@ -276,30 +253,14 @@ XML;
 				}
 			}
 
-			if (version_compare(_PS_VERSION_, '1.4') < 0)
+			$quantityDiscounts = SpecificPrice::getQuantityDiscounts((int)$sqlProduct['id_product'], $this->shopID, 0, 0, 0);
+
+			foreach ($quantityDiscounts AS $quantityDiscount)
 			{
-				$quantityDiscounts = Db::getInstance()->ExecuteS('
-				SELECT dq.quantity, dq.value, dq.id_discount_type
-				FROM '._DB_PREFIX_.'discount_quantity dq
-				WHERE dq.id_product = '.intval($sqlProduct['id_product']));
-				foreach ($quantityDiscounts AS $quantityDiscount)
-				{
-					$discount = $product->addChild('discount');
-					$discount->addChild('discount-quantity', intval($quantityDiscount['quantity']));
-					$discount->addChild('discount-value', floatval($quantityDiscount['value']));
-					$discount->addChild('discount-type', ($quantityDiscount['id_discount_type'] == 1 ? $defaultCurrencyIsoCode : '%'));
-				}
-			}
-			else
-			{
-				$quantityDiscounts = SpecificPrice::getQuantityDiscounts((int)$sqlProduct['id_product'], (int)Shop::getCurrentShop(), 0, 0, 0);
-				foreach ($quantityDiscounts AS $quantityDiscount)
-				{
-					$discount = $product->addChild('discount');
-					$discount->addChild('discount-quantity', (int)($quantityDiscount['from_quantity']));
-					$discount->addChild('discount-value', ((float)($quantityDiscount['price']) AND $quantityDiscount['reduction_type'] == 'amount') ? (float)($quantityDiscount['price']) : $quantityDiscount['reduction'] * 100);
-					$discount->addChild('discount-type', ($quantityDiscount['reduction_type'] == 'amount' ? $defaultCurrencyIsoCode : '%'));
-				}
+				$discount = $product->addChild('discount');
+				$discount->addChild('discount-quantity', (int)($quantityDiscount['from_quantity']));
+				$discount->addChild('discount-value', ((float)($quantityDiscount['price']) AND $quantityDiscount['reduction_type'] == 'amount') ? (float)($quantityDiscount['price']) : $quantityDiscount['reduction'] * 100);
+				$discount->addChild('discount-type', ($quantityDiscount['reduction_type'] == 'amount' ? $defaultCurrencyIsoCode : '%'));
 			}
 
 			$categories = Db::getInstance()->ExecuteS('
@@ -379,7 +340,7 @@ XML;
 					$xml_group = $product->addChild('attribute-group');
 					$xml_group->addAttribute('id', $id_group);
 
-					if (!empty($group[ 'name' ]))
+					if(!empty($group[ 'name' ]))
 					{
 						$nameGroup = $xml_group->addChild('name');
 						$languageVariant = $nameGroup->addChild('language-variant');
@@ -437,7 +398,7 @@ XML;
 			LEFT JOIN '._DB_PREFIX_.'product_attribute_image pi ON (pa.id_product_attribute = pi.id_product_attribute)
 			WHERE pa.id_product = '.(int)$sqlProduct['id_product']);
 
-			if (!empty($productAttributes))	
+			if(!empty($productAttributes))	
 			{
 				foreach ($productAttributes AS $productAttribute)
 				{
@@ -591,7 +552,7 @@ XML;
 			$output .= '
 			<fieldset>
 				<legend><img src="'.__PS_BASE_URI__.'modules/'.$this->name.'/logo.gif" alt="" />'.$this->l('Settings').'</legend>
-				<form method="post" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" enctype="multipart/form-data">
+				<form method="post" action="'.$_SERVER['REQUEST_URI'].'" enctype="multipart/form-data">
 					<input type="radio" name="trpd_integration_type" value="0" style="vertical-align: middle;" '.((int)(Configuration::get('TREEPODIA_INTEGRATION_TYPE')) == 0 ? 'checked' : '').'/> <label style="font-size: 14px; color: #268CCD; float: none;">'.$this->l('Use built-in integration').'</label>
 					<p>'.$this->l('The built-in integration automatically embeds Treepodia integration code into your store and displays a link to the video on your product page.').'</p><br />
 					<p id="current">'.$this->l('Current logo:').'<br />

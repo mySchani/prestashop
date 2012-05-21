@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,22 +19,17 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 function shop_url()
 {
-	$host = Db::getInstance()->getValue('SELECT value FROM `'._DB_PREFIX_.'configuration`
-		WHERE name="CANONICAL_URL"');
-	if (!$host)
-		$host = (isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST']);
-	$res = Db::getInstance()->getValue('REPLACE INTO `'._DB_PREFIX_.'configuration`
-		(name, value) VALUES 
-		("PS_SHOP_DOMAIN", "'.pSQL($host).'"),
-		("PS_SHOP_DOMAIN_SSL", "'.pSQL($host).'")
-		');
+	if (!($host = Configuration::get('CANONICAL_URL')))
+		$host = Tools::getHttpHost();
+	Configuration::updateValue('PS_SHOP_DOMAIN', $host);
+	Configuration::updateValue('PS_SHOP_DOMAIN_SSL', $host);
 	return true;
 }

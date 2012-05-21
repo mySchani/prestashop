@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,20 +19,25 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7104 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderConfirmationControllerCore extends FrontController
 {
-	public $php_self = 'order-confirmation.php';
-		
 	public $id_cart;
 	public $id_module;
 	public $id_order;
 	public $secure_key;
+	
+	public function __construct()
+	{
+		$this->php_self = 'order-confirmation.php';
+	
+		parent::__construct();
+	}
 	
 	public function preProcess()
 	{
@@ -42,15 +47,15 @@ class OrderConfirmationControllerCore extends FrontController
 		
 		/* check if the cart has been made by a Guest customer, for redirect link */
 		if (Cart::isGuestCartByCartId($this->id_cart))
-			$redirectLink = 'guest-tracking.php';
+			$redirectLink = 'index.php?controller=guest-tracking';
 		else
-			$redirectLink = 'history.php';
+			$redirectLink = 'index.php?controller=history';
 		
 		$this->id_module = (int)(Tools::getValue('id_module', 0));
 		$this->id_order = Order::getOrderByCartId((int)($this->id_cart));
 		$this->secure_key = Tools::getValue('key', false);
 		if (!$this->id_order OR !$this->id_module OR !$this->secure_key OR empty($this->secure_key))
-			Tools::redirect($redirectLink.(Tools::isSubmit('slowvalidation') ? '?slowvalidation' : ''));
+			Tools::redirect($redirectLink.(Tools::isSubmit('slowvalidation') ? '&slowvalidation' : ''));
 
 		$order = new Order((int)($this->id_order));
 		if (!Validate::isLoadedObject($order) OR $order->id_customer != self::$cookie->id_customer OR $this->secure_key != $order->secure_key)
@@ -76,7 +81,7 @@ class OrderConfirmationControllerCore extends FrontController
 				'id_order_formatted' => sprintf('#%06d', $this->id_order)
 			));
 			/* If guest we clear the cookie for security reason */
-			self::$cookie->mylogout();
+			self::$cookie->logout();
 		}
 	}
 	

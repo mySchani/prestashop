@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,72 +19,85 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsRegistrations extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
+    private $_html = '';
+    private $_query = '';
 
-	function __construct()
-	{
-		$this->name = 'statsregistrations';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsregistrations';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-
+			
 		parent::__construct();
+		
+        $this->displayName = $this->l('Customer accounts');
+        $this->description = $this->l('Display the progress of customer registration.');
+    }
 
-		$this->displayName = $this->l('Customer accounts');
-		$this->description = $this->l('Display the progress of customer registration.');
-	}
-	
+    /**
+     * Called during module installation
+     */
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
+	/**
+	 * @return int Get total of registration in date range
+	 */
 	public function getTotalRegistrations()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(`id_customer`) as total
-		FROM `'._DB_PREFIX_.'customer`
-		WHERE `date_add` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(`id_customer`) as total
+				FROM `'._DB_PREFIX_.'customer`
+				WHERE `date_add` BETWEEN '.ModuleGraph::getDateBetween().'
+				'.$this->sqlShopRestriction(true);
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return isset($result['total']) ? $result['total'] : 0;
 	}
-	
+
+	/**
+	 * @return int Get total of blocked visitors during registration process
+	 */
 	public function getBlockedVisitors()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(DISTINCT c.`id_guest`) as blocked
-		FROM `'._DB_PREFIX_.'page_type` pt
-		LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page_type = pt.id_page_type
-		LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON p.id_page = cp.id_page
-		LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_connections = cp.id_connections
-		LEFT JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
-		WHERE  pt.name = "authentication.php"
-		AND (g.id_customer IS NULL OR g.id_customer = 0)
-		AND c.`date_add` BETWEEN '.ModuleGraph::getDateBetween());
+		$sql = 'SELECT COUNT(DISTINCT c.`id_guest`) as blocked
+				FROM `'._DB_PREFIX_.'page_type` pt
+				LEFT JOIN `'._DB_PREFIX_.'page` p ON p.id_page_type = pt.id_page_type
+				LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON p.id_page = cp.id_page
+				LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_connections = cp.id_connections
+				LEFT JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
+				WHERE pt.name = "authentication.php"
+					'.$this->sqlShopRestriction(false, 'c').'
+					AND (g.id_customer IS NULL OR g.id_customer = 0)
+					AND c.`date_add` BETWEEN '.ModuleGraph::getDateBetween();
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return $result['blocked'];
 	}
-	
+
 	public function getFirstBuyers()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT COUNT(DISTINCT o.`id_customer`) as buyers
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'guest` g ON o.id_customer = g.id_customer
-		LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_guest = g.id_guest
-		WHERE o.`date_add` BETWEEN '.ModuleGraph::getDateBetween().' AND o.valid = 1
-		AND ABS(TIMEDIFF(o.date_add, c.date_add)+0) < 120000');
+		$sql = 'SELECT COUNT(DISTINCT o.`id_customer`) as buyers
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'guest` g ON o.id_customer = g.id_customer
+				LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_guest = g.id_guest
+				WHERE o.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
+					'.$this->sqlShopRestriction(false, 'o').'
+					AND o.valid = 1
+					AND ABS(TIMEDIFF(o.date_add, c.date_add)+0) < 120000';
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return $result['buyers'];
 	}
 		
@@ -102,8 +115,8 @@ class StatsRegistrations extends ModuleGraph
 				'.$this->l('Visitors who have placed an order directly after registration:').' '.(int)($totalBuyers).($totalRegistrations ? ' ('.number_format(100*$totalBuyers/($totalRegistrations), 2).'%)' : '').'
 			</p>
 			<p>'.$this->l('Total customer accounts:').' '.$totalRegistrations.'</p>
-			<center>'.ModuleGraph::engine(array('type' => 'line')).'</center>
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+			<center>'.$this->engine(array('type' => 'line')).'</center>
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset><br />
 		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
 			<h2>'.$this->l('Number of customer accounts created').'</h2>
@@ -128,7 +141,9 @@ class StatsRegistrations extends ModuleGraph
 		$this->_query = '
 			SELECT `date_add`
 			FROM `'._DB_PREFIX_.'customer`
-			WHERE `date_add` BETWEEN';
+			WHERE 1
+				'.$this->sqlShopRestriction(true).'
+				`date_add` BETWEEN';
 		$this->_titles['main'] = $this->l('Number of customer accounts created');
 		$this->setDateGraph($layers, true);
 	}

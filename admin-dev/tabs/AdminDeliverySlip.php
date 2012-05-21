@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -36,7 +36,7 @@ class AdminDeliverySlip extends AdminTab
 		$this->optionTitle = $this->l('Delivery slips options');
 		$this->_fieldsOptions = array(
 			'PS_DELIVERY_PREFIX' => array('title' => $this->l('Delivery prefix:'), 'desc' => $this->l('Prefix used for delivery slips'), 'size' => 6, 'type' => 'textLang'),
-			'PS_DELIVERY_NUMBER' => array('title' => $this->l('Delivery number:'), 'desc' => $this->l('The next delivery slip will begin with this number, and then increase with each additional slip'), 'size' => 6, 'type' => 'text', 'cast' => 'intval'),
+			'PS_DELIVERY_NUMBER' => array('title' => $this->l('Delivery number:'), 'desc' => $this->l('The next delivery slip will begin with this number, and then increase with each additional slip'), 'size' => 6, 'type' => 'text'),
 		);
 
 		parent::__construct();

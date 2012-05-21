@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -62,8 +62,8 @@
 					{foreach from=$datas key='index' item='data' name='datas'}
 						{ldelim}
 						"index":			{$index},
-						"value":			"{$data.value|addslashes|replace:'\\\'':'\''}",
-						"truncatedValue":	"{$data.value|truncate:28:'...'|addslashes|replace:'\\\'':'\''}"
+						"value":			"{$data.value|addslashes|replace: '\\\'':'\''}",
+						"truncatedValue":	"{$data.value|truncate:28:'...'|addslashes|replace: '\\\'':'\''}"
 						{rdelim}{if !$smarty.foreach.datas.last},{/if}
 					{/foreach}]
 				{rdelim}{if !$smarty.foreach.customization.last},{/if}
@@ -86,7 +86,7 @@
 		"name":            "{$discount.name|cat:' : '|cat:$discount.description|truncate:18:'...'|addslashes|replace:'\\\'':'\''}",
 		"description":     "{$discount.description|addslashes|replace:'\\\'':'\''}",
 		"nameDescription": "{$discount.name|cat:' : '|cat:$discount.description|truncate:18:'...'|addslashes|replace:'\\\'':'\''}",
-		"link":            "{$link->getPageLink('order.php', true)}?deleteDiscount={$discount.id_discount}",
+		"link":            "{$link->getPageLink('order', true, NULL, "deleteDiscount={$discount.id_discount}")}",
 		"price":           "-{if $discount.value_real != '!'}{if $priceDisplay == 1}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_tax_exc}{else}{convertPrice|html_entity_decode:2:'UTF-8' price=$discount.value_real}{/if}{/if}"
 	{rdelim}
 	{if !$smarty.foreach.discounts.last},{/if}

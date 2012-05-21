@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,18 +19,23 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class AddressesControllerCore extends FrontController
 {
-	public $auth = true;
-	public $php_self = 'addresses.php';
-	public $authRedirection = 'addresses.php';
-	public $ssl = true;
+	public function __construct()
+	{
+		$this->auth = true;
+		$this->php_self = 'addresses.php';
+		$this->authRedirection = 'addresses.php';
+		$this->ssl = true;
+	
+		parent::__construct();
+	}
 	
 	public function setMedia()
 	{
@@ -60,12 +65,16 @@ class AddressesControllerCore extends FrontController
 		{
 			$address = new Address($addressDetailed['id_address']);
 			
-			$multipleAddressesFormated[$total] = AddressFormat::getFormattedLayoutData($address);
+			$multipleAddressesFormated[$total]['ordered'] = AddressFormat::getOrderedAddressFields($addressDetailed['id_country']);
+			$multipleAddressesFormated[$total]['formated'] =  AddressFormat::getFormattedAddressFieldsValues(
+				$address, 
+				$multipleAddressesFormated[$total]['ordered']);
+			$multipleAddressesFormated[$total]['object'] = $addressDetailed;
 			unset($address);
 			++$total;
 			
 			// Retro theme < 1.4.2
-      $ordered_fields = AddressFormat::getOrderedAddressFields($addressDetailed['id_country'], false, true);
+      $ordered_fields = AddressFormat::getOrderedAddressFields($addressDetailed['id_country']);
 		}
 		
 		// Retro theme 1.4.2

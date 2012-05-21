@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6883 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 include_once(dirname(__FILE__).'/../config/config.inc.php');
 $cookie = new Cookie('psAdmin');
-
 
 $module = Tools::getValue('module');
 $render = Tools::getValue('render');
@@ -39,11 +38,8 @@ $height = Tools::getValue('height');
 $id_employee = Tools::getValue('id_employee');
 $id_lang = Tools::getValue('id_lang');
 
-if (!Validate::isModuleName($module))
-    die(Tools::displayError());
-
-if (!isset($cookie->id_employee) || !$cookie->id_employee  || $cookie->id_employee != $id_employee)
-    die(Tools::displayError());
+if ($cookie->id_employee != $id_employee)
+	die;
 
 if (!Tools::file_exists_cache($module_path = dirname(__FILE__).'/../modules/'.$module.'/'.$module.'.php'))
 	die(Tools::displayError());
@@ -53,7 +49,8 @@ require_once($module_path);
 $graph = new $module();
 $graph->setEmployee($id_employee);
 $graph->setLang($id_lang);
-if ($option) $graph->setOption($option, $layers);
+if ($option)
+	$graph->setOption($option, $layers);
 
 $graph->create($render, $type, $width, $height, $layers);
 $graph->draw();

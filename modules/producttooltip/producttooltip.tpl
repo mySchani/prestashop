@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,11 +18,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+
+<script type="text/javascript" src="{$base_dir}js/jquery/jquery.jgrowl-1.2.1.min.js"></script>
+<link href="{$base_dir}css/jquery.jgrowl.css" rel="stylesheet" type="text/css" />
 
 <script type="text/javascript">
 $(document).ready(function() {ldelim}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6946 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsBestProducts extends ModuleGrid
@@ -138,7 +138,7 @@ class StatsBestProducts extends ModuleGrid
 				
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
-			'.ModuleGrid::engine($engineParams).'
+			'.$this->engine($engineParams).'
 			<p><a href="'.htmlentities($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset>';
 		return $this->_html;
@@ -149,28 +149,40 @@ class StatsBestProducts extends ModuleGrid
 		$dateBetween = $this->getDate();
 		$arrayDateBetween = explode(' AND ', $dateBetween);
 
-		$this->_query = '
-		SELECT SQL_CALC_FOUND_ROWS p.reference, p.id_product, pl.name, ROUND(AVG(od.product_price / o.conversion_rate), 2) as avgPriceSold, 
-			IFNULL((SELECT SUM(pa.quantity) FROM '._DB_PREFIX_.'product_attribute pa WHERE pa.id_product = p.id_product GROUP BY pa.id_product), p.quantity) as quantity,
-			IFNULL(SUM(od.product_quantity), 0) AS totalQuantitySold,
-			ROUND(IFNULL(IFNULL(SUM(od.product_quantity), 0) / (1 + LEAST(TO_DAYS('.$arrayDateBetween[1].'), TO_DAYS(NOW())) - GREATEST(TO_DAYS('.$arrayDateBetween[0].'), TO_DAYS(p.date_add))), 0), 2) as averageQuantitySold,
-			ROUND(IFNULL(SUM((od.product_price * od.product_quantity) / o.conversion_rate), 0), 2) AS totalPriceSold,
-			(
-				SELECT IFNULL(SUM(pv.counter), 0)
-				FROM '._DB_PREFIX_.'page pa
-				LEFT JOIN '._DB_PREFIX_.'page_viewed pv ON pa.id_page = pv.id_page
-				LEFT JOIN '._DB_PREFIX_.'date_range dr ON pv.id_date_range = dr.id_date_range
-				WHERE pa.id_object = p.id_product AND pa.id_page_type = 1
-				AND dr.time_start BETWEEN '.$dateBetween.'
-				AND dr.time_end BETWEEN '.$dateBetween.'
-			) AS totalPageViewed
-		FROM '._DB_PREFIX_.'product p
-		LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)($this->getLang()).')
-		LEFT JOIN '._DB_PREFIX_.'order_detail od ON od.product_id = p.id_product
-		LEFT JOIN '._DB_PREFIX_.'orders o ON od.id_order = o.id_order
-		WHERE p.active = 1 AND o.valid = 1
-		AND o.invoice_date BETWEEN '.$dateBetween.'
-		GROUP BY od.product_id';
+		$joinShop = $whereShop = '';
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$joinShop = ' LEFT JOIN '._DB_PREFIX_.'product_shop ps ON ps.id_product = p.id_product ';
+			if ($this->shopID)
+				$whereShop = ' ps.id_shop = '.$this->shopID.' AND ';
+			else if ($this->shopGroupID)
+				$whereShop = 'ps.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.') AND';
+		}
+		
+		$this->_query = 'SELECT SQL_CALC_FOUND_ROWS p.reference, p.id_product, pl.name, ROUND(AVG(od.product_price / o.conversion_rate), 2) as avgPriceSold, 
+				IFNULL((SELECT SUM(pa.quantity) FROM '._DB_PREFIX_.'product_attribute pa WHERE pa.id_product = p.id_product GROUP BY pa.id_product), p.quantity) as quantity,
+				IFNULL(SUM(od.product_quantity), 0) AS totalQuantitySold,
+				ROUND(IFNULL(IFNULL(SUM(od.product_quantity), 0) / (1 + LEAST(TO_DAYS('.$arrayDateBetween[1].'), TO_DAYS(NOW())) - GREATEST(TO_DAYS('.$arrayDateBetween[0].'), TO_DAYS(p.date_add))), 0), 2) as averageQuantitySold,
+				ROUND(IFNULL(SUM((od.product_price * od.product_quantity) / o.conversion_rate), 0), 2) AS totalPriceSold,
+				(
+					SELECT IFNULL(SUM(pv.counter), 0)
+					FROM '._DB_PREFIX_.'page pa
+					LEFT JOIN '._DB_PREFIX_.'page_viewed pv ON pa.id_page = pv.id_page
+					LEFT JOIN '._DB_PREFIX_.'date_range dr ON pv.id_date_range = dr.id_date_range
+					WHERE pa.id_object = p.id_product AND pa.id_page_type = 1
+					AND dr.time_start BETWEEN '.$dateBetween.'
+					AND dr.time_end BETWEEN '.$dateBetween.'
+				) AS totalPageViewed
+				FROM '._DB_PREFIX_.'product p
+				'.$joinShop.'
+				LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)($this->getLang()).')
+				LEFT JOIN '._DB_PREFIX_.'order_detail od ON od.product_id = p.id_product
+				LEFT JOIN '._DB_PREFIX_.'orders o ON od.id_order = o.id_order
+				WHERE '.$whereShop.'
+					p.active = 1
+					AND o.valid = 1
+					AND o.invoice_date BETWEEN '.$dateBetween.'
+				GROUP BY od.product_id';
 
 		if (Validate::IsName($this->_sort))
 		{
@@ -178,6 +190,7 @@ class StatsBestProducts extends ModuleGrid
 			if (isset($this->_direction) AND Validate::IsSortDirection($this->_direction))
 				$this->_query .= ' '.$this->_direction;
 		}
+
 		if (($this->_start === 0 OR Validate::IsUnsignedInt($this->_start)) AND Validate::IsUnsignedInt($this->_limit))
 			$this->_query .= ' LIMIT '.$this->_start.', '.($this->_limit);
 		$this->_values = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query);

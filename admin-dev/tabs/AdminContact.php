@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -60,7 +60,7 @@ class AdminContact extends AdminPreferences
 			'PS_SHOP_EMAIL' => array('title' => $this->l('Shop e-mail:'), 'desc' => $this->l('Displayed in e-mails sent to customers'), 'validation' => 'isEmail', 'required' => true, 'size' => 30, 'type' => 'text'),
 			'PS_SHOP_DETAILS' => array('title' => $this->l('Registration:'), 'desc' => $this->l('Shop registration information (e.g., SIRET or RCS)'), 'validation' => 'isGenericName', 'size' => 30, 'type' => 'textarea', 'cols' => 30, 'rows' => 5),
 			'PS_SHOP_ADDR1' => array('title' => $this->l('Shop address line 1:'), 'validation' => 'isAddress', 'size' => 30, 'type' => 'text'),
-			'PS_SHOP_ADDR2' => array('title' => $this->l('Address line 2'), 'validation' => 'isAddress', 'size' => 30, 'type' => 'text'),
+			'PS_SHOP_ADDR2' => array('title' => 'Address line 2', 'validation' => 'isAddress', 'size' => 30, 'type' => 'text'),
 			'PS_SHOP_CODE' => array('title' => $this->l('Post/Zip code:'), 'validation' => 'isGenericName', 'size' => 6, 'type' => 'text'),
 			'PS_SHOP_CITY' => array('title' => $this->l('City:'), 'validation' => 'isGenericName', 'size' => 30, 'type' => 'text'),
 			'PS_SHOP_COUNTRY_ID' => array('title' => $this->l('Country:'), 'validation' => 'isInt', 'size' => 30, 'type' => 'select', 'list' => $countryList, 'identifier' => 'id', 'cast' => 'intval'),
@@ -84,7 +84,7 @@ class AdminContact extends AdminPreferences
 			'PS_SHOP_PHONE' => 'phone');
 		
 		$this->_fieldsShop = array();
-		$orderedFields = AddressFormat::getOrderedAddressFields(Configuration::get('PS_SHOP_COUNTRY_ID'), false, true);
+		$orderedFields = AddressFormat::getOrderedAddressFields(Configuration::get('PS_SHOP_COUNTRY_ID'));
 		
 		foreach($orderedFields as $lineFields)
 			if (($patterns = explode(' ', $lineFields)))

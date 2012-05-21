@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,24 +19,38 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14851 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class IdentityControllerCore extends FrontController
 {
-	public $auth = true;
-	public $php_self = 'identity.php';
-	public $authRedirection = 'identity.php';
-	public $ssl = true;
+	public function __construct()
+	{
+		$this->auth = true;
+		$this->php_self = 'identity.php';
+		$this->authRedirection = 'identity.php';
+		$this->ssl = true;
+	
+		parent::__construct();
+	}
 	
 	public function preProcess()
 	{
 		parent::preProcess();
 		
 		$customer = new Customer((int)(self::$cookie->id_customer));
+
+		if (sizeof($_POST))
+		{
+			$exclusion = array('secure_key', 'old_passwd', 'passwd', 'active', 'date_add', 'date_upd', 'last_passwd_gen', 'newsletter_date_add', 'id_default_group');
+			$fields = $customer->getFields();
+			foreach ($fields AS $key => $value)
+				if (!in_array($key, $exclusion))
+					$customer->{$key} = key_exists($key, $_POST) ? trim($_POST[$key]) : 0;
+		}
 
 		if (isset($_POST['years']) AND isset($_POST['months']) AND isset($_POST['days']))
 			$customer->birthday = (int)($_POST['years']).'-'.(int)($_POST['months']).'-'.(int)($_POST['days']);
@@ -50,9 +64,6 @@ class IdentityControllerCore extends FrontController
 			{
 				$customer->birthday = (empty($_POST['years']) ? '' : (int)($_POST['years']).'-'.(int)($_POST['months']).'-'.(int)($_POST['days']));
 
-				if (Customer::customerExists(Tools::getValue('email'), true))
-					$this->errors[] = Tools::displayError('An account is already registered with this e-mail.');
-
 				$_POST['old_passwd'] = trim($_POST['old_passwd']);
 				if (empty($_POST['old_passwd']) OR (Tools::encrypt($_POST['old_passwd']) != self::$cookie->passwd))
 					$this->errors[] = Tools::displayError('Your password is incorrect.');
@@ -61,7 +72,7 @@ class IdentityControllerCore extends FrontController
 				else
 				{
 					$prev_id_default_group = $customer->id_default_group;
-					$this->errors = $customer->validateControler(true, true);
+					$this->errors = $customer->validateControler();
 				}
 				if (!sizeof($this->errors))
 				{

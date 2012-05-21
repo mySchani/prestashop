@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,27 +39,16 @@ class RijndaelCore
 	// Base64 is not required, but it is be more compact than urlencode
 	public function encrypt($plaintext)
 	{
-		$length = (ini_get('mbstring.func_overload') & 2) ? mb_strlen($plaintext, ini_get('default_charset')) : strlen($plaintext);
-
-        if ($length >= 1048576)
+        if (($length = strlen($plaintext)) >= 1048576)
 			return false;
 		return base64_encode(mcrypt_encrypt(MCRYPT_RIJNDAEL_128, $this->_key, $plaintext, MCRYPT_MODE_ECB, $this->_iv)).sprintf('%06d', $length);
 	}
 
 	public function decrypt($ciphertext)
 	{
-		if (ini_get('mbstring.func_overload') & 2)
-		{
-			$plainTextLength = intval(mb_substr($ciphertext, -6, 6, ini_get('default_charset')));
-			$ciphertext = mb_substr($ciphertext, 0, -6, ini_get('default_charset'));
-			return mb_substr(mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $this->_key, base64_decode($ciphertext), MCRYPT_MODE_ECB, $this->_iv), 0, $plainTextLength, ini_get('default_charset'));
-		}
-		else
-		{
-			$plainTextLength = intval(substr($ciphertext, -6));
-			$ciphertext = substr($ciphertext, 0, -6);
-			return substr(mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $this->_key, base64_decode($ciphertext), MCRYPT_MODE_ECB, $this->_iv), 0, $plainTextLength);
-		}
+		$plainTextLength = intval(substr($ciphertext, -6));
+		$ciphertext = substr($ciphertext, 0, -6);
+		return substr(mcrypt_decrypt(MCRYPT_RIJNDAEL_128, $this->_key, base64_decode($ciphertext), MCRYPT_MODE_ECB, $this->_iv), 0, $plainTextLength);
 	}
 }
 

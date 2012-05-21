@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -54,7 +54,7 @@ if ($cookie->isLogged())
 			if (WishList::isExistsByNameForUser($name))
 				$errors[] = Tools::displayError('This name is already used by another list.');
 			
-			if (!sizeof($errors))
+			if(!sizeof($errors))
 			{
 				$wishlist = new WishList();
 				$wishlist->name = $name;
@@ -63,7 +63,7 @@ if ($cookie->isLogged())
 				srand($s * $us);
 				$wishlist->token = strtoupper(substr(sha1(uniqid(rand(), true)._COOKIE_KEY_.$cookie->id_customer), 0, 16));
 				$wishlist->add();
-				Mail::Send((int)$cookie->id_lang, 'wishlink', Mail::l('Your wishlist\'s link', (int)$cookie->id_lang), 
+				Mail::Send((int)($cookie->id_lang), 'wishlink', Mail::l('Your wishlist\'s link'), 
 					array(
 					'{wishlist}' => $wishlist->name,
 					'{message}' => Tools::getProtocol().htmlentities($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/blockwishlist/view.php?token='.$wishlist->token),
@@ -71,9 +71,9 @@ if ($cookie->isLogged())
 			}
 		}
 	}
-	elseif ($add)
+	else if ($add)
 		WishList::addCardToWishlist((int)($cookie->id_customer), (int)(Tools::getValue('id_wishlist')), (int)($cookie->id_lang));
-	elseif ($delete AND empty($id_wishlist) === false)
+	else if ($delete AND empty($id_wishlist) === false)
 	{
 		$wishlist = new WishList((int)($id_wishlist));
 		if (Validate::isLoadedObject($wishlist))
@@ -86,7 +86,7 @@ if ($cookie->isLogged())
 }
 else
 {
-	Tools::redirect('authentication.php?back=modules/blockwishlist/mywishlist.php');
+	Tools::redirect('index.php?controller=authentication&back=modules/blockwishlist/mywishlist.php');
 }
 
 $smarty->assign(array(

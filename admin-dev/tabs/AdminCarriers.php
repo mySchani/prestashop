@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14915 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7321 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -53,7 +53,7 @@ class AdminCarriers extends AdminTab
 		
 		$this->optionTitle = $this->l('Carrier options');
 		$this->_fieldsOptions = array(
-			'PS_CARRIER_DEFAULT' => array('title' => $this->l('Default carrier:'), 'desc' => $this->l('The default carrier used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_carrier', 'list' => Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::ALL_CARRIERS)),
+			'PS_CARRIER_DEFAULT' => array('title' => $this->l('Default carrier:'), 'desc' => $this->l('The default carrier used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_carrier', 'list' => Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, ALL_CARRIERS)),
 		);
 
 		parent::__construct();
@@ -132,19 +132,11 @@ class AdminCarriers extends AdminTab
 				<label>'.$this->l('Zone').'</label>
 				<div class="margin-form">';
 					$carrier_zones = $obj->getZones();
-					$carrier_zones_ids = array();
-					if (is_array($carrier_zones))
-						foreach($carrier_zones as $carrier_zone)
-							$carrier_zones_ids[] = $carrier_zone['id_zone'];
-					
 					$zones = Zone::getZones(false);
 					foreach ($zones AS $zone)
-						echo '<input type="checkbox" id="zone_'.$zone['id_zone'].'" name="zone_'.$zone['id_zone'].'" value="true" '.
-							Tools::getValue('zone_'.$zone['id_zone'], (in_array($zone['id_zone'], $carrier_zones_ids) ? ' checked="checked"' : '')).'>
-							<label class="t" for="zone_'.$zone['id_zone'].'"> <b>'.$zone['name'].'</b></label><br />';
-					
-					echo '<p>'.$this->l('The zone in which this carrier is to be used').'</p>
-				</div>
+						echo '<input type="checkbox" id="zone_'.$zone['id_zone'].'" name="zone_'.$zone['id_zone'].'" value="true" '.(Tools::getValue('zone_'.$zone['id_zone'], (is_array($carrier_zones) AND in_array(array('id_carrier' => $obj->id, 'id_zone' => $zone['id_zone'], 'name' => $zone['name'], 'active' => $zone['active']), $carrier_zones))) ? ' checked="checked"' : '').'><label class="t" for="zone_'.$zone['id_zone'].'">&nbsp;<b>'.$zone['name'].'</b></label><br />';
+				echo '<p>'.$this->l('The zone in which this carrier is to be used').'</p>
+	</div>
 				<label>'.$this->l('Group access').'</label>
 				<div class="margin-form">';
 					$groups = Group::getGroups((int)($cookie->id_lang));
@@ -223,7 +215,7 @@ class AdminCarriers extends AdminTab
 					</select>
 					<p>'.$this->l('Out-of-range behavior when none is defined (e.g., when a customer\'s cart weight is greater than the highest range limit)').'</p>
 				</div>';
-				if ($this->getFieldValue($obj, 'is_module'))
+				if($this->getFieldValue($obj, 'is_module'))
 				{
 					echo '<label>'.$this->l('Module:').' </label>
 						  <div class="margin-form"><p> - '.
@@ -231,12 +223,12 @@ class AdminCarriers extends AdminTab
 						  <input type="hidden" name="is_module" value="1">
 						  <input type="hidden" name="external_module_name" value="'.$this->getFieldValue($obj, 'external_module_name').'">';
 
-					if ($this->getFieldValue($obj, 'shipping_external'))
+					if($this->getFieldValue($obj, 'shipping_external'))
 					{
 						echo '<p> - '.$this->l('The shipping costs are calculated outside of your shop').'</p>
 						<input type="hidden" name="shipping_external" value="1">';
 					}
-					if ($this->getFieldValue($obj, 'need_range'))
+					if($this->getFieldValue($obj, 'need_range'))
 					{
 						echo '<p> - '.$this->l('This carrier uses PrestaShop range to calculate shipping costs').'</p>
 						<input type="hidden" name="need_range" value="1">';
@@ -244,7 +236,14 @@ class AdminCarriers extends AdminTab
 
 					echo '</div>';
 				}
-				echo '</div>
+				echo '</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+					$this->displayAssoShop();
+					echo '</div>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -266,15 +265,11 @@ class AdminCarriers extends AdminTab
 	private function changeGroups($id_carrier, $delete = true)
 	{
 		if ($delete)
-			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id_carrier);
+			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.(int)($id_carrier));
 		$groups = Db::getInstance()->ExecuteS('SELECT id_group FROM `'._DB_PREFIX_.'group`');
-		if (Tools::isSubmit('groupBox') && Tools::getValue('groupBox'))
-			foreach ($groups as $group)
-				if (in_array($group['id_group'], Tools::getValue('groupBox')))
-					Db::getInstance()->Execute('
-						INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier)
-						VALUES('.(int)$group['id_group'].','.(int)$id_carrier.')
-					');
+		foreach ($groups as $group)
+			if (in_array($group['id_group'], $_POST['groupBox']))
+				Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier) VALUES('.(int)($group['id_group']).','.(int)($id_carrier).')');
 	}
 
 	public function postProcess()
@@ -297,7 +292,7 @@ class AdminCarriers extends AdminTab
 						$object = new $this->className($id);
 						if (Validate::isLoadedObject($object))
 						{
-							Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id);
+							Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.(int)($id));
 							$object->deleted = 1;
 							$object->update();
 							$objectNew = new $this->className();
@@ -345,18 +340,6 @@ class AdminCarriers extends AdminTab
 				}
 			}
 		}
-		elseif ((isset($_GET['status'.$this->table]) OR isset($_GET['status'])) AND Tools::getValue($this->identifier))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT'))
-					$this->_errors[] = Tools::displayError('You cannot disable the default carrier, please change your default carrier first.');
-				else
-					parent::postProcess();
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
 		else
 		{
 			if ((Tools::isSubmit('submitDel'.$this->table) && in_array(Configuration::get('PS_CARRIER_DEFAULT'), Tools::getValue('carrierBox')))
@@ -373,7 +356,7 @@ class AdminCarriers extends AdminTab
 		$carrier = new $this->className($id);
 		if (!Validate::isLoadedObject($carrier))
 			die (Tools::displayError('Object cannot be loaded'));
-		$zones = Zone::getZones(false);
+		$zones = Zone::getZones(true);
 		foreach ($zones as $zone)
 			if (sizeof($carrier->getZone($zone['id_zone'])))
 			{
@@ -393,3 +376,4 @@ class AdminCarriers extends AdminTab
 		parent::displayListContent($token);
 	}
 }
+

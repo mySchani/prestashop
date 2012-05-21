@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -43,9 +43,8 @@ class AdminAttributesGroups extends AdminTab
 	 	$this->delete = true;
 
 		$this->fieldsDisplay = array(
-			'name' => array('title' => $this->l('Name'), 'width' => 140),
+			'name' => array('title' => $this->l('Name'), 'width' => 140, 'filter_key' => 'b!name'),
 			'attribute' => array('title' => $this->l('Attributes'), 'width' => 240, 'orderby' => false, 'search' => false));
-
 		parent::__construct();
 	}
 
@@ -60,25 +59,25 @@ class AdminAttributesGroups extends AdminTab
 			echo '<br /><br /><a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to list').'</a><br />';
 		}
 		else
+		{
 			parent::display();
+			$this->displayAssoGroupShop();
+		}
 	}
-
+	
 	public function postProcess()
 	{
-		global $cookie, $currentIndex;
+	 	global	$cookie, $currentIndex;
 		
 		$this->adminAttributes->tabAccess = Profile::getProfileAccess($cookie->profile, $this->id);
 		$this->adminAttributes->postProcess($this->token);
-		
-		Module::hookExec('postProcessAttributeGroup',
-		array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessAttributeGroup to stop saving process
 
-		if (Tools::getValue('submitDel'.$this->table))
+		if(Tools::getValue('submitDel'.$this->table))
 		{
-			if ($this->tabAccess['delete'] === '1')
+		 	if ($this->tabAccess['delete'] === '1')
 			{
-				if (isset($_POST[$this->table.'Box']))
-				{
+			 	if (isset($_POST[$this->table.'Box']))
+			 	{
 					$object = new $this->className();
 					if ($object->deleteSelection($_POST[$this->table.'Box']))
 						Tools::redirectAdmin($currentIndex.'&conf=2'.'&token='.$this->token);
@@ -140,7 +139,7 @@ class AdminAttributesGroups extends AdminTab
 						<tr>
 							<td class="center"><input type="checkbox" name="attribute'.$id.'Box[]" value="'.$attribute['id_attribute'].'" class="noborder" /></td>
 							<td>
-								'.($tr['is_color_group'] ? '<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; '.(!file_exists('../img/co/'.$attribute['id_attribute'].'.jpg') ? 'background-color: '.$attribute['color'].';' : 'background-image: url(../img/co/'.$attribute['id_attribute'].'.jpg);').' margin-right: 4px;"></div>' : '')
+								'.($tr['is_color_group'] ? '<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; background-color: '.$attribute['color'].'; margin-right: 4px;"></div>' : '')
 								.$attribute['name'].'
 							</td>
 							<td class="center">
@@ -174,7 +173,7 @@ class AdminAttributesGroups extends AdminTab
 
 	public function displayForm($isMainTab = true)
 	{
-		global $currentIndex;
+		global $currentIndex, $cookie;
 		parent::displayForm();
 
 		if (!($obj = $this->loadObject(true)))
@@ -191,11 +190,8 @@ class AdminAttributesGroups extends AdminTab
 					<div id="name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
 						<input size="33" type="text" name="name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'name', (int)($language['id_lang']))).'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
-					</div>
-				<script type="text/javascript">
-					var flag_fields = \'name¤public_name\';
-				</script>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'name', false, true);
+					</div>';
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤public_name', 'name');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -208,7 +204,7 @@ class AdminAttributesGroups extends AdminTab
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Term or phrase displayed to the customer').'</p>
 					</div>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'public_name', false, true);
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤public_name', 'public_name');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -219,8 +215,14 @@ class AdminAttributesGroups extends AdminTab
 					<input type="radio" name="is_color_group" id="is_color_group_off" value="0" '.(!$this->getFieldValue($obj, 'is_color_group') ? 'checked="checked" ' : '').'/>
 					<label class="t" for="is_color_group_off"><img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('No').'" /></label>
 					<p>'.$this->l('This is a color group').'</p>
-				</div>
-				'.Module::hookExec('attributeGroupForm', array('id_attribute_group' => $obj->id)).'
+				</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('GroupShop association:').'</label><div class="margin-form">';
+					$this->displayAssoGroupShop();
+					echo '</div>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>

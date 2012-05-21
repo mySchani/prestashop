@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,21 +19,21 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6856 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class MySQLCore extends Db
 {
-	public function connect()
+	public function	connect()
 	{
 		if (!defined('_PS_DEBUG_SQL_'))
 			define('_PS_DEBUG_SQL_', false);
 		if ($this->_link = mysql_connect($this->_server, $this->_user, $this->_password))
 		{
-			if (!$this->set_db($this->_database))
+			if(!$this->set_db($this->_database))
 				die(Tools::displayError('The database selection cannot be made.'));
 		}
 		else
@@ -45,28 +45,24 @@ class MySQLCore extends Db
 		return $this->_link;
 	}
 	
-	public function getServerVersion(){
-		return mysql_get_server_info();
-	}
-	
 	/* do not remove, useful for some modules */
 	public function set_db($db_name) {
 		return mysql_select_db($db_name, $this->_link);
 	}
 	
-	public function disconnect()
+	public function	disconnect()
 	{
 		if ($this->_link)
 			@mysql_close($this->_link);
 		$this->_link = false;
 	}
 	
-	public function getRow($query, $use_cache = 1)
+	public function	getRow($query, $use_cache = 1)
 	{
 		$query .= ' LIMIT 1';
 		$this->_result = false;
 		$this->_lastQuery = $query;
-		if ($use_cache AND _PS_CACHE_ENABLED_)
+		if($use_cache AND _PS_CACHE_ENABLED_)
 			if ($result = Cache::getInstance()->get(md5($query)))
 			{
 				$this->_lastCached = true;
@@ -88,7 +84,7 @@ class MySQLCore extends Db
 		return false;
 	}
 
-	public function getValue($query, $use_cache = 1)
+	public function	getValue($query, $use_cache = 1)
 	{
 		$query .= ' LIMIT 1';
 		$this->_result = false;
@@ -103,14 +99,14 @@ class MySQLCore extends Db
 		{ 
 			$this->_lastCached = false;
 			$result =  array_shift($tmpArray);
-			if ($use_cache AND _PS_CACHE_ENABLED_)
+			if($use_cache AND _PS_CACHE_ENABLED_)
 				Cache::getInstance()->setQuery($query, $result);
 			return $result;
 		}
 		return false;
 	}
 	
-	public function Execute($query, $use_cache = 1)
+	public function	Execute($query, $use_cache = 1)
 	{
 		$this->_result = false;
 		if ($this->_link)
@@ -136,7 +132,7 @@ class MySQLCore extends Db
 	 * @param int $use_cache if query has been already executed, use its result
 	 * @return array or result object 
 	 */
-	public function ExecuteS($query, $array = true, $use_cache = 1)
+	public function	ExecuteS($query, $array = true, $use_cache = 1)
 	{
 		$this->_result = false;
 		$this->_lastQuery = $query;
@@ -172,12 +168,12 @@ class MySQLCore extends Db
 		return mysql_fetch_assoc($result ? $result : $this->_result);
 	}
 	
-	public function delete($table, $where = false, $limit = false, $use_cache = 1)
+	public function	delete($table, $where = false, $limit = false, $use_cache = 1)
 	{
 		$this->_result = false;
 		if ($this->_link)
 		{
-			$query  = 'DELETE FROM `'.bqSQL($table).'`'.($where ? ' WHERE '.$where : '').($limit ? ' LIMIT '.(int)($limit) : '');
+			$query  = 'DELETE FROM `'.pSQL($table).'`'.($where ? ' WHERE '.$where : '').($limit ? ' LIMIT '.(int)($limit) : '');
 			$res =  mysql_query($query, $this->_link);
 			if ($use_cache AND _PS_CACHE_ENABLED_)
 				Cache::getInstance()->deleteQuery($query);
@@ -187,7 +183,7 @@ class MySQLCore extends Db
 		return false;
 	}
 	
-	public function NumRows()
+	public function	NumRows()
 	{
 		if (!$this->_lastCached AND $this->_link AND $this->_result)
 		{
@@ -202,14 +198,14 @@ class MySQLCore extends Db
 		}
 	}
 	
-	public function Insert_ID()
+	public function	Insert_ID()
 	{
 		if ($this->_link)
 			return mysql_insert_id($this->_link);
 		return false;
 	}
 	
-	public function Affected_Rows()
+	public function	Affected_Rows()
 	{
 		if ($this->_link)
 			return mysql_affected_rows($this->_link);
@@ -223,6 +219,7 @@ class MySQLCore extends Db
 		if ($this->_link)
 		{
 			$result =  mysql_query($query, $this->_link);
+			$this->_lastQuery = $query;
 			if ($webservice_call)
 				$this->displayMySQLError($query);
 			if ($use_cache AND _PS_CACHE_ENABLED_)
@@ -240,41 +237,34 @@ class MySQLCore extends Db
 	 */
 	public function getMsgError($query = false)
 	{
-		return mysql_error($this->_link);
+		return mysql_error();
 	}
 
 	public function getNumberError()
 	{
-		return mysql_errno($this->_link);
+		return mysql_errno();
 	}
 
 	public function displayMySQLError($query = false)
 	{
 		global $webservice_call;
-		if ($webservice_call && mysql_errno($this->_link))
-			WebserviceRequest::getInstance()->setError(500, '[SQL Error] '.mysql_error($this->_link).'. Query was : '.$query, 97);
-		elseif (_PS_DEBUG_SQL_ AND mysql_errno($this->_link) AND !defined('PS_INSTALLATION_IN_PROGRESS'))
+		if ($webservice_call && mysql_errno())
+		{
+			WebserviceRequest::getInstance()->setError(500, '[SQL Error] '.mysql_error().'. Query was : '.$query, 97);
+		}
+		elseif (_PS_DEBUG_SQL_ AND mysql_errno() AND !defined('PS_INSTALLATION_IN_PROGRESS'))
 		{
 			if ($query)
-				die(Tools::displayError(mysql_error($this->_link).'<br /><br /><pre>'.$query.'</pre>'));
-			die(Tools::displayError((mysql_error($this->_link))));
+			{
+				die(Tools::displayError(mysql_error().'<br /><br /><pre>'.$query.'</pre>'));
+			}
+			die(Tools::displayError((mysql_error())));
 		}
 	}
 
-	/**
-	 * tryToConnect return 0 if the connection succeed and the database can be selected.
-	 * @since 1.4.4.0, the parameter $newDbLink (default true) has been added.
-	 * 
-	 * @param string $server mysql server name
-	 * @param string $user mysql user
-	 * @param string $pwd mysql user password
-	 * @param string $db mysql database name
-	 * @param boolean $newDbLink if set to true, the function will not create a new link if one already exists.
-	 * @return integer
-	 */
-	public static function tryToConnect($server, $user, $pwd, $db, $newDbLink = true)
+	static public function tryToConnect($server, $user, $pwd, $db)
 	{
-		if (!$link = @mysql_connect($server, $user, $pwd, $newDbLink))
+		if (!$link = @mysql_connect($server, $user, $pwd))
 			return 1;
 		if (!@mysql_select_db($db, $link))
 			return 2;
@@ -282,7 +272,7 @@ class MySQLCore extends Db
 		return 0;
 	}
 
-	public static function tryUTF8($server, $user, $pwd)
+	static public function tryUTF8($server, $user, $pwd)
 	{
 		$link = @mysql_connect($server, $user, $pwd);
 		if (!mysql_query('SET NAMES \'utf8\'', $link))

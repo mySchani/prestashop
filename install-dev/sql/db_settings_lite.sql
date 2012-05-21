@@ -66,26 +66,7 @@ INSERT INTO `PREFIX_hook` (`id_hook`, `name`, `title`, `description`, `position`
 (63, 'beforeAuthentication', 'Before Authentication', 'Before authentication', 0, 0),
 (64, 'paymentTop', 'Top of payment page', 'Top of payment page', 0, 0),
 (65, 'afterCreateHtaccess', 'After htaccess creation', 'After htaccess creation', 0, 0),
-(66, 'afterSaveAdminMeta', 'After save configuration in AdminMeta', 'After save configuration in AdminMeta', 0, 0),
-(67, 'attributeGroupForm', 'Add fields to the form "attribute group"', 'Add fields to the form "attribute group"', 0, 0),
-(68, 'afterSaveAttributeGroup', 'On saving attribute group', 'On saving attribute group', 0, 0),
-(69, 'afterDeleteAttributeGroup', 'On deleting attribute group', 'On deleting attribute group', 0, 0),
-(70, 'featureForm', 'Add fields to the form "feature"', 'Add fields to the form "feature"', 0, 0),
-(71, 'afterSaveFeature', 'On saving attribute feature', 'On saving attribute feature', 0, 0),
-(72, 'afterDeleteFeature', 'On deleting attribute feature', 'On deleting attribute feature', 0, 0),
-(73, 'afterSaveProduct', 'On saving products', 'On saving products', 0, 0),
-(74, 'productListAssign', 'Assign product list to a category', 'Assign product list to a category', 0, 0),
-(75, 'postProcessAttributeGroup', 'On post-process in admin attribute group', 'On post-process in admin attribute group', 0, 0),
-(76, 'postProcessFeature', 'On post-process in admin feature', 'On post-process in admin feature', 0, 0),
-(77, 'featureValueForm', 'Add fields to the form "feature value"', 'Add fields to the form "feature value"', 0, 0),
-(78, 'postProcessFeatureValue', 'On post-process in admin feature value', 'On post-process in admin feature value', 0, 0),
-(79, 'afterDeleteFeatureValue', 'On deleting attribute feature value', 'On deleting attribute feature value', 0, 0),
-(90, 'afterSaveFeatureValue', 'On saving attribute feature value', 'On saving attribute feature value', 0, 0),
-(91, 'attributeForm', 'Add fields to the form "attribute value"', 'Add fields to the form "attribute value"', 0, 0),
-(92, 'postProcessAttribute', 'On post-process in admin feature value', 'On post-process in admin feature value', 0, 0),
-(93, 'afterDeleteAttribute', 'On deleting attribute feature value', 'On deleting attribute feature value', 0, 0),
-(94, 'afterSaveAttribute', 'On saving attribute feature value', 'On saving attribute feature value', 0, 0),
-(95, 'frontCanonicalRedirect', 'Front Canonical Redirect', 'Check for 404 errors before canonical redirects', 0, 0);
+(66, 'afterSaveAdminMeta', 'After save configuration in AdminMeta', 'After save configuration in AdminMeta', 0, 0);
 
 INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES
 (1, 'PS_LANG_DEFAULT', '1', NOW(), NOW()),
@@ -170,7 +151,7 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (80, 'PS_ORDER_PROCESS_TYPE', 0, NOW(), NOW()),
 (81, 'PS_SPECIFIC_PRICE_PRIORITIES', 'id_shop;id_currency;id_country;id_group', NOW(), NOW()),
 (82, 'PS_TAX_DISPLAY', 0, NOW(), NOW()),
-(83, 'PS_SMARTY_FORCE_COMPILE', 0, NOW(), NOW()),
+(83, 'PS_SMARTY_FORCE_COMPILE', 1, NOW(), NOW()),
 (84, 'PS_DISTANCE_UNIT', 'km', NOW(), NOW()),
 (85, 'PS_STORES_DISPLAY_CMS', 1, NOW(), NOW()),
 (86, 'PS_STORES_DISPLAY_FOOTER', 1, NOW(), NOW()),
@@ -204,27 +185,7 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (114, 'PS_CANONICAL_REDIRECT', '1', NOW(), NOW()),
 (115, 'PS_IMG_UPDATE_TIME', UNIX_TIMESTAMP(), NOW(), NOW()),
 (116, 'PS_BACKUP_DROP_TABLE', 1, NOW(), NOW()),
-(117, 'PS_OS_CHEQUE', '1', NOW(), NOW()),
-(118, 'PS_OS_PAYMENT', '2', NOW(), NOW()),
-(119, 'PS_OS_PREPARATION', '3', NOW(), NOW()),
-(120, 'PS_OS_SHIPPING', '4', NOW(), NOW()),
-(121, 'PS_OS_DELIVERED', '5', NOW(), NOW()),
-(122, 'PS_OS_CANCELED', '6', NOW(), NOW()),
-(123, 'PS_OS_REFUND', '7', NOW(), NOW()),
-(124, 'PS_OS_ERROR', '8', NOW(), NOW()),
-(125, 'PS_OS_OUTOFSTOCK', '9', NOW(), NOW()),
-(126, 'PS_OS_BANKWIRE', '10', NOW(), NOW()),
-(127, 'PS_OS_PAYPAL', '11', NOW(), NOW()),
-(128, 'PS_OS_WS_PAYMENT', '12', NOW(), NOW()),
-(129, 'PS_LEGACY_IMAGES', '1', NOW(), NOW()),
-(130, 'PS_IMAGE_QUALITY', 'jpg', NOW(), NOW()),
-(131, 'PS_PNG_QUALITY', '7', NOW(), NOW()),
-(132, 'PS_JPEG_QUALITY', '90', NOW(), NOW()),
-(133, 'PS_COOKIE_LIFETIME_FO', '480', NOW(), NOW()),
-(134, 'PS_COOKIE_LIFETIME_BO', '480', NOW(), NOW()),
-(135, 'PS_RESTRICT_DELIVERED_COUNTRIES', '0', NOW(), NOW()),
-(136, 'PS_LIMIT_UPLOAD_IMAGE_VALUE', '2', NOW(), NOW()),
-(137, 'PS_LIMIT_UPLOAD_FILE_VALUE', '2', NOW(), NOW());
+(117, 'PS_LEGACY_IMAGES', '1', NOW(), NOW());
 
 INSERT INTO `PREFIX_configuration_lang` (`id_configuration`, `id_lang`, `value`, `date_upd`) VALUES
 (36, 1, 'IN', NOW()),(36, 2, 'FA', NOW()),(36, 3, 'CU', NOW()),(36, 4, 'FA', NOW()),(36, 5, 'FA', NOW()),
@@ -237,12 +198,10 @@ INSERT INTO `PREFIX_configuration_lang` (`id_configuration`, `id_lang`, `value`,
 (74, 4, 'Lieber Kunde,\r\n\r\nMit freundlichen Grüßen,\r\nIhr Kundenservice', NOW()),
 (74, 5, 'Gentile Cliente,\r\n\r\nCordiali saluti,\r\nServizio Clienti', NOW());
 
-INSERT INTO `PREFIX_lang` (`id_lang`, `name`, `active`, `iso_code`, `language_code`, `date_format_lite`, `date_format_full`) VALUES
-(1, 'English (English)', 1, 'en', 'en-us', 'm/j/Y', 'm/j/Y H:i:s'),
-(2, 'Français (French)', 1, 'fr', 'fr', 'd/m/Y', 'd/m/Y H:i:s'),
-(3, 'Español (Spanish)', 1, 'es', 'es', 'd/m/Y', 'd/m/Y H:i:s'),
-(4, 'Deutsch (German)', 1, 'de', 'de', 'd.m.Y', 'd.m.Y H:i:s'),
-(5, 'Italiano (Italian)', 1, 'it', 'it', 'd/m/Y', 'd/m/Y H:i:s');
+INSERT INTO `PREFIX_lang` (`id_lang`, `name`, `active`, `iso_code`, `language_code`) VALUES
+(1, 'English (English)', 1, 'en', 'en-us'),(2, 'Français (French)', 1, 'fr', 'fr'),(3, 'Español (Spanish)', 1, 'es', 'es'),(4, 'Deutsch (German)', 1, 'de', 'de'),(5, 'Italiano (Italian)', 1, 'it', 'it');
+
+INSERT INTO `PREFIX_lang_shop` (`id_lang`, `id_shop`) VALUES (1,1), (2,1), (3,1), (4,1), (5,1);
 
 INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft`, `nright`, `active`, `date_add`, `date_upd`, `position`) VALUES (1, 0, 0, 1, 8, 1, NOW(), NOW(), 0);
 INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `description`, `link_rewrite`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
@@ -250,7 +209,7 @@ INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `descripti
 
 INSERT INTO `PREFIX_order_state` (`id_order_state`, `invoice`, `send_email`, `color`, `unremovable`, `logable`, `delivery`) VALUES
 (1, 0, 1, 'lightblue', 1, 0, 0),(2, 1, 1, '#DDEEFF', 1, 1, 0),(3, 1, 1, '#FFDD99', 1, 1, 1),(4, 1, 1, '#EEDDFF', 1, 1, 1),(5, 1, 0, '#DDFFAA', 1, 1, 1),
-(6, 0, 1, '#DADADA', 1, 0, 0),(7, 1, 1, '#FFFFBB', 1, 0, 0),(8, 0, 1, '#FFDFDF', 1, 0, 0),(9, 1, 1, '#FFD3D3', 1, 0, 0),(10, 0, 1, 'lightblue', 1, 0, 0),(11, 0, 0, 'lightblue', 1, 0, 0),(12, 1, 0, '#DDEEFF', 1, 1, 0);
+(6, 0, 1, '#DADADA', 1, 0, 0),(7, 1, 1, '#FFFFBB', 1, 0, 0),(8, 0, 1, '#FFDFDF', 1, 0, 0),(9, 1, 1, '#FFD3D3', 1, 0, 0),(10, 0, 1, 'lightblue', 1, 0, 0),(11, 0, 0, 'lightblue', 1, 0, 0),(12, 0, 0, 'lightblue', 1, 0, 0);
 
 INSERT INTO `PREFIX_order_state_lang` (`id_order_state`, `id_lang`, `name`, `template`) VALUES
 (1, 1, 'Awaiting cheque payment', 'cheque'),
@@ -318,12 +277,14 @@ INSERT INTO `PREFIX_zone` (`id_zone`, `name`, `active`) VALUES
 (1, 'Europe', 1),(2, 'North America', 1),(3, 'Asia', 1),(4, 'Africa', 1),
 (5, 'Oceania', 1),(6, 'South America', 1),(7, 'Europe (out E.U)', 1),(8, 'Centrale America/Antilla', 1);
 
+INSERT INTO `PREFIX_zone_group_shop` (`id_zone`, `id_group_shop`) (SELECT `id_zone`, 1  FROM `PREFIX_zone`);
+
 INSERT INTO `PREFIX_country` (`id_country`, `id_zone`, `iso_code`, `call_prefix`, `active`, `contains_states`, `need_identification_number`, `need_zip_code`, `zip_code_format`, `display_tax_label`) VALUES
 (1, 1, 'DE', 49, 1, 0, 0, 1, 'NNNNN', 1),(2, 1, 'AT', 43, 1, 0, 0, 1, 'NNNN', 1),(3, 1, 'BE', 32, 1, 0, 0, 1, 'NNNN', 1),(4, 2, 'CA', 1, 1, 1, 0, 1, 'LNL NLN', 0),(5, 3, 'CN', 86, 1, 0, 0, 1, 'NNNNNN', 1),
 (6, 1, 'ES', 34, 1, 0, 1, 1, 'NNNNN', 1),(7, 1, 'FI', 358, 1, 0, 0, 1, 'NNNNN', 1),(8, 1, 'FR', 33, 1, 0, 0, 1, 'NNNNN', 1),(9, 1, 'GR', 30, 1, 0, 0, 1, 'NNNNN', 1),(10, 1, 'IT', 39, 1, 1, 0, 1, 'NNNNN', 1),
-(11, 3, 'JP', 81, 1, 1, 0, 1, 'NNN-NNNN', 1),(12, 1, 'LU', 352, 1, 0, 0, 1, 'NNNN', 1),(13, 1, 'NL', 31, 1, 0, 0, 1, 'NNNN LL', 1),(14, 1, 'PL', 48, 1, 0, 0, 1, 'NN-NNN', 1),
+(11, 3, 'JP', 81, 1, 0, 0, 1, 'NNN-NNNN', 1),(12, 1, 'LU', 352, 1, 0, 0, 1, 'NNNN', 1),(13, 1, 'NL', 31, 1, 0, 0, 1, 'NNNN LL', 1),(14, 1, 'PL', 48, 1, 0, 0, 1, 'NN-NNN', 1),
 (15, 1, 'PT', 351, 1, 0, 0, 1, 'NNNN NNN', 1),(16, 1, 'CZ', 420, 1, 0, 0, 1, 'NNN NN', 1),(17, 1, 'GB', 44, 1, 0, 0, 1, '', 1),(18, 1, 'SE', 46, 1, 0, 0, 1, 'NNN NN', 1),
-(19, 7, 'CH', 41, 1, 0, 0, 1, 'NNNN', 1),(20, 1, 'DK', 45, 1, 0, 0, 1, 'NNNN', 1),(21, 2, 'US', 1, 1, 1, 0, 1, 'NNNNN', 0),(22, 3, 'HK', 852, 1, 0, 0, 0, '', 1),(23, 1, 'NO', 47, 1, 0, 0, 1, 'NNNN', 1),
+(19, 7, 'CH', 41, 1, 0, 0, 1, 'NNNN', 1),(20, 1, 'DK', 45, 1, 0, 0, 1, 'NNNN', 1),(21, 2, 'US', 1, 1, 1, 0, 1, 'NNNNN', 1),(22, 3, 'HK', 852, 1, 0, 0, 0, '', 1),(23, 1, 'NO', 47, 1, 0, 0, 1, 'NNNN', 1),
 (24, 5, 'AU', 61, 1, 0, 0, 1, 'NNNN', 1),(25, 3, 'SG', 65, 1, 0, 0, 1, 'NNNNNN', 1),(26, 1, 'IE', 353, 1, 0, 0, 1, '', 1),(27, 5, 'NZ', 64, 1, 0, 0, 1, 'NNNN', 1),(28, 3, 'KR', 82, 1, 0, 0, 1, 'NNN-NNN', 1),
 (29, 3, 'IL', 972, 1, 0, 0, 1, 'NNNNN', 1),(30, 4, 'ZA', 27, 1, 0, 0, 1, 'NNNN', 1),(31, 4, 'NG', 234, 1, 0, 0, 1, '', 1),(32, 4, 'CI', 225, 1, 0, 0, 1, '', 1),(33, 4, 'TG', 228, 1, 0, 0, 1, '', 1),
 (34, 6, 'BO', 591, 1, 0, 0, 1, '', 1),(35, 4, 'MU', 230, 1, 0, 0, 1, '', 1),(36, 1, 'RO', 40, 1, 0, 0, 1, 'NNNNNN', 1),(37, 1, 'SK', 421, 1, 0, 0, 1, 'NNN NN', 1),(38, 4, 'DZ', 213, 1, 0, 0, 1, 'NNNNN', 1),
@@ -341,9 +302,9 @@ INSERT INTO `PREFIX_country` (`id_country`, `id_zone`, `iso_code`, `call_prefix`
 (94, 4, 'GH', 233, 1, 0, 0, 1, '', 1),(95, 8, 'GD', 0, 1, 0, 0, 1, '', 1),(96, 7, 'GL', 299, 1, 0, 0, 1, '', 1),(97, 7, 'GI', 350, 1, 0, 0, 1, '', 1),(98, 8, 'GP', 590, 1, 0, 0, 1, '', 1),
 (99, 8, 'GU', 0, 1, 0, 0, 1, '', 1),(100, 8, 'GT', 502, 1, 0, 0, 1, '', 1),(101, 7, 'GG', 0, 1, 0, 0, 1, 'LLN NLL', 1),(102, 4, 'GN', 224, 1, 0, 0, 1, '', 1),(103, 4, 'GW', 245, 1, 0, 0, 1, '', 1),
 (104, 6, 'GY', 592, 1, 0, 0, 1, '', 1),(105, 8, 'HT', 509, 1, 0, 0, 1, '', 1),(106, 5, 'HM', 0, 1, 0, 0, 1, '', 1),(107, 7, 'VA', 379, 1, 0, 0, 1, 'NNNNN', 1),(108, 8, 'HN', 504, 1, 0, 0, 1, '', 1),
-(109, 7, 'IS', 354, 1, 0, 0, 1, 'NNN', 1),(110, 3, 'IN', 91, 1, 0, 0, 1, 'NNN NNN', 1),(111, 3, 'ID', 62, 1, 1, 0, 1, 'NNNNN', 1),(112, 3, 'IR', 98, 1, 0, 0, 1, 'NNNNN-NNNNN', 1),
+(109, 7, 'IS', 354, 1, 0, 0, 1, 'NNN', 1),(110, 3, 'IN', 91, 1, 0, 0, 1, 'NNN NNN', 1),(111, 3, 'ID', 62, 1, 0, 0, 1, 'NNNNN', 1),(112, 3, 'IR', 98, 1, 0, 0, 1, 'NNNNN-NNNNN', 1),
 (113, 3, 'IQ', 964, 1, 0, 0, 1, 'NNNNN', 1),(114, 7, 'IM', 0, 1, 0, 0, 1, 'CN NLL', 1),(115, 8, 'JM', 0, 1, 0, 0, 1, '', 1),(116, 7, 'JE', 0, 1, 0, 0, 1, 'CN NLL', 1),(117, 3, 'JO', 962, 1, 0, 0, 1, '', 1),
-(118, 3, 'KZ', 7, 1, 0, 0, 1, 'NNNNNN', 1),(119, 4, 'KE', 254, 1, 0, 0, 1, '', 1),(120, 5, 'KI', 686, 1, 0, 0, 1, '', 1),(121, 3, 'KP', 850, 1, 0, 0, 1, '', 1),(122, 3, 'KW', 965, 1, 0, 0, 1, '', 1),
+(118, 3, 'KZ', 7, 1, 0, 0, 1, 'NNNNNN', 1),(119, 4, 'KE', 254, 1, 0, 0, 1, '', 1),(120, 7, 'KI', 686, 1, 0, 0, 1, '', 1),(121, 3, 'KP', 850, 1, 0, 0, 1, '', 1),(122, 3, 'KW', 965, 1, 0, 0, 1, '', 1),
 (123, 3, 'KG', 996, 1, 0, 0, 1, '', 1),(124, 3, 'LA', 856, 1, 0, 0, 1, '', 1),(125, 1, 'LV', 371, 1, 0, 0, 1, 'C-NNNN', 1),(126, 3, 'LB', 961, 1, 0, 0, 1, '', 1),(127, 4, 'LS', 266, 1, 0, 0, 1, '', 1),
 (128, 4, 'LR', 231, 1, 0, 0, 1, '', 1),(129, 4, 'LY', 218, 1, 0, 0, 1, '', 1),(130, 1, 'LI', 423, 1, 0, 0, 1, 'NNNN', 1),(131, 1, 'LT', 370, 1, 0, 0, 1, 'NNNNN', 1),(132, 3, 'MO', 853, 1, 0, 0, 0, '', 1),
 (133, 7, 'MK', 389, 1, 0, 0, 1, '', 1),(134, 4, 'MG', 261, 1, 0, 0, 1, '', 1),(135, 4, 'MW', 265, 1, 0, 0, 1, '', 1),(136, 3, 'MY', 60, 1, 0, 0, 1, 'NNNNN', 1),(137, 3, 'MV', 960, 1, 0, 0, 1, '', 1),
@@ -481,6 +442,8 @@ INSERT IGNORE INTO `PREFIX_country_lang` (`id_country`, `id_lang`, `name`)
             WHERE c.`name` = 'PS_LANG_DEFAULT' LIMIT 1) AND tl.`id_country`=`PREFIX_country`.`id_country`)
     FROM `PREFIX_lang` CROSS JOIN `PREFIX_country`);
 
+INSERT INTO `PREFIX_country_shop` (id_shop, id_country) (SELECT 1, id_country FROM PREFIX_country);
+
 INSERT INTO `PREFIX_state` (`id_state`, `id_country`, `id_zone`, `name`, `iso_code`, `active`) VALUES
 (1, 21, 2, 'Alabama', 'AL', 1),(2, 21, 2, 'Alaska', 'AK', 1),(3, 21, 2, 'Arizona', 'AZ', 1),(4, 21, 2, 'Arkansas', 'AR', 1),
 (5, 21, 2, 'California', 'CA', 1),(6, 21, 2, 'Colorado', 'CO', 1),(7, 21, 2, 'Connecticut', 'CT', 1),(8, 21, 2, 'Delaware', 'DE', 1),
@@ -616,7 +579,7 @@ INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `tax_be
 (10, 1, 'Grosseto', 'GR', 0, 1),
 (10, 1, 'Imperia', 'IM', 0, 1),
 (10, 1, 'Isernia', 'IS', 0, 1),
-(10, 1, 'L\'Aquila', 'AQ', 0, 1),
+(10, 1, 'L''Aquila', 'AQ', 0, 1),
 (10, 1, 'La Spezia', 'SP', 0, 1),
 (10, 1, 'Latina', 'LT', 0, 1),
 (10, 1, 'Lecce', 'LE', 0, 1),
@@ -684,90 +647,6 @@ INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `tax_be
 (10, 1, 'Vicenza', 'VI', 0, 1),
 (10, 1, 'Viterbo', 'VT', 0, 1);
 
-INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `active`) VALUES
-(111, 3, 'Aceh', 'AC', 1),
-(111, 3, 'Bali', 'BA', 1),
-(111, 3, 'Bangka', 'BB', 1),
-(111, 3, 'Banten', 'BT', 1),
-(111, 3, 'Bengkulu', 'BE', 1),
-(111, 3, 'Central Java', 'JT', 1),
-(111, 3, 'Central Kalimantan', 'KT', 1),
-(111, 3, 'Central Sulawesi', 'ST', 1),
-(111, 3, 'Coat of arms of East Java', 'JI', 1),
-(111, 3, 'East kalimantan', 'KI', 1),
-(111, 3, 'East Nusa Tenggara', 'NT', 1),
-(111, 3, 'Lambang propinsi', 'GO', 1),
-(111, 3, 'Jakarta', 'JK', 1),
-(111, 3, 'Jambi', 'JA', 1),
-(111, 3, 'Lampung', 'LA', 1),
-(111, 3, 'Maluku', 'MA', 1),
-(111, 3, 'North Maluku', 'MU', 1),
-(111, 3, 'North Sulawesi', 'SA', 1),
-(111, 3, 'North Sumatra', 'SU', 1),
-(111, 3, 'Papua', 'PA', 1),
-(111, 3, 'Riau', 'RI', 1),
-(111, 3, 'Lambang Riau', 'KR', 1),
-(111, 3, 'Southeast Sulawesi', 'SG', 1),
-(111, 3, 'South Kalimantan', 'KS', 1),
-(111, 3, 'South Sulawesi', 'SN', 1),
-(111, 3, 'South Sumatra', 'SS', 1),
-(111, 3, 'West Java', 'JB', 1),
-(111, 3, 'West Kalimantan', 'KB', 1),
-(111, 3, 'West Nusa Tenggara', 'NB', 1),
-(111, 3, 'Lambang Provinsi Papua Barat', 'PB', 1),
-(111, 3, 'West Sulawesi', 'SR', 1),
-(111, 3, 'West Sumatra', 'SB', 1),
-(111, 3, 'Yogyakarta', 'YO', 1);
-
-INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `active`) VALUES
-(11, 3, "Aichi", "23", 1),
-(11, 3, "Akita", "05", 1),
-(11, 3, "Aomori", "02", 1),
-(11, 3, "Chiba", "12", 1),
-(11, 3, "Ehime", "38", 1),
-(11, 3, "Fukui", "18", 1),
-(11, 3, "Fukuoka", "40", 1),
-(11, 3, "Fukushima", "07", 1),
-(11, 3, "Gifu", "21", 1),
-(11, 3, "Gunma", "10", 1),
-(11, 3, "Hiroshima", "34", 1),
-(11, 3, "Hokkaido", "01", 1),
-(11, 3, "Hyogo", "28", 1),
-(11, 3, "Ibaraki", "08", 1),
-(11, 3, "Ishikawa", "17", 1),
-(11, 3, "Iwate", "03", 1),
-(11, 3, "Kagawa", "37", 1),
-(11, 3, "Kagoshima", "46", 1),
-(11, 3, "Kanagawa", "14", 1),
-(11, 3, "Kochi", "39", 1),
-(11, 3, "Kumamoto", "43", 1),
-(11, 3, "Kyoto", "26", 1),
-(11, 3, "Mie", "24", 1),
-(11, 3, "Miyagi", "04", 1),
-(11, 3, "Miyazaki", "45", 1),
-(11, 3, "Nagano", "20", 1),
-(11, 3, "Nagasaki", "42", 1),
-(11, 3, "Nara", "29", 1),
-(11, 3, "Niigata", "15", 1),
-(11, 3, "Oita", "44", 1),
-(11, 3, "Okayama", "33", 1),
-(11, 3, "Okinawa", "47", 1),
-(11, 3, "Osaka", "27", 1),
-(11, 3, "Saga", "41", 1),
-(11, 3, "Saitama", "11", 1),
-(11, 3, "Shiga", "25", 1),
-(11, 3, "Shimane", "32", 1),
-(11, 3, "Shizuoka", "22", 1),
-(11, 3, "Tochigi", "09", 1),
-(11, 3, "Tokushima", "36", 1),
-(11, 3, "Tokyo", "13", 1),
-(11, 3, "Tottori", "31", 1),
-(11, 3, "Toyama", "16", 1),
-(11, 3, "Wakayama", "30", 1),
-(11, 3, "Yamagata", "06", 1),
-(11, 3, "Yamaguchi", "35", 1),
-(11, 3, "Yamanashi", "19", 1);
-
 INSERT INTO `PREFIX_currency` (`name`, `iso_code`, `iso_code_num`, `sign`, `blank`, `conversion_rate`, `format`, `deleted`, `active`) VALUES
 ('Euro', 'EUR', '978', '€', 1, 1, 2, 0, 1), ('Dollar', 'USD', '840', '$', 0, 1.32, 1, 0, 1), ('Pound', 'GBP', '826', '£', 0, 0.8, 1, 0, 1);
 /*('Yen', 'JPY', '392', '¥', 0, 113.14, 2, 0, 0),
@@ -781,6 +660,7 @@ INSERT INTO `PREFIX_currency` (`name`, `iso_code`, `iso_code_num`, `sign`, `blan
 ('Rupees', 'INR', '356', 'rupees', 1, 60.93, 2, 0, 0), ('Won', 'KRW', '410', '₩', 1, 1537.58, 2, 0, 0), ('Mexican Peso', 'MXN', '484', '$', 1, 16.96, 2, 0, 0),
 ('Ringgit', 'MYR', '458', 'RM', 1, 4.13, 2, 0, 0), ('New-Zeland Dollar', 'NZD', '554', '$', 1, 1.81, 2, 0, 0), ('Peso Phillipin', 'PHP', '608', 'Php', 1, 58.61, 2, 0, 0),
 ('Singapour Dollar', 'SGD', '702', '$', 1, 1.77, 2, 0, 0), ('Baht', 'THB', '764', '฿', 1, 40.96, 2, 0, 0), ('Rand', 'ZAR', '710', 'R', 1, 9.38, 2, 0, 0);*/
+INSERT INTO `PREFIX_currency_shop` (`id_currency`, `id_shop`) VALUES (1,1), (2,1), (3,1);
 
 INSERT INTO `PREFIX_image_type` (`id_image_type`, `name`, `width`, `height`, `products`, `categories`, `manufacturers`, `suppliers`, `scenes`, `stores`) VALUES
 (1, 'small', 45, 45, 1, 1, 1, 1, 0, 0),
@@ -791,6 +671,8 @@ INSERT INTO `PREFIX_image_type` (`id_image_type`, `name`, `width`, `height`, `pr
 (6, 'home', 129, 129, 1, 0, 0, 0, 0, 0),
 (7, 'large_scene', 556, 200, 0, 0, 0, 0, 1, 0),
 (8, 'thumb_scene', 161, 58, 0, 0, 0, 0, 1, 0);
+
+INSERT INTO `PREFIX_contact_shop` (`id_contact`, `id_shop`) VALUES (1,1), (2,1);
 
 INSERT INTO `PREFIX_contact_lang` (`id_contact`, `id_lang`, `name`, `description`) VALUES
 (1, 1, 'Webmaster', 'If a technical problem occurs on this website'),
@@ -817,20 +699,21 @@ INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1
 
 INSERT INTO `PREFIX_tab` (`id_tab`, `class_name`, `id_parent`, `position`) VALUES (1, 'AdminCatalog', 0, 1),(2, 'AdminCustomers', 0, 2),(3, 'AdminOrders', 0, 3),
 (4, 'AdminPayment', 0, 4),(5, 'AdminShipping', 0, 5),(6, 'AdminStats', 0, 6),(7, 'AdminModules', 0, 7),(29, 'AdminEmployees', 0, 8),(8, 'AdminPreferences', 0, 9),
-(9, 'AdminTools', 0, 10),(11, 'AdminAttributesGroups', 1, 1),(36, 'AdminFeatures', 1, 2),(68, 'AdminAttachments', 1, 3),(58, 'AdminScenes', 1, 4),
-(10, 'AdminManufacturers', 1, 5),(34, 'AdminSuppliers', 1, 6),(73, 'AdminStockMvt', 1, 7),(66, 'AdminTags', 1, 8),(60, 'AdminTracking', 1, 9),
-(12, 'AdminAddresses', 2, 1),(63, 'AdminGroups', 2, 2),(65, 'AdminCarts', 2, 3),(59, 'AdminMessages', 3, 1),(42, 'AdminInvoices', 3, 2),
-(13, 'AdminStatuses', 3, 3),(55, 'AdminDeliverySlip', 3, 4),(47, 'AdminReturn', 3, 5),(49, 'AdminSlip', 3, 6),(54, 'AdminOrderMessage', 3, 7),
-(48, 'AdminPDF', 3, 8),(15, 'AdminCurrencies', 4, 1),(16, 'AdminTaxes', 4, 2),(85, 'AdminTaxRulesGroup', 4, 3),(14, 'AdminDiscounts', 4, 4),
-(17, 'AdminCarriers', 5, 1),(18, 'AdminCountries', 5, 2),(46, 'AdminStates', 5, 3),(87, 'AdminCounty', 5, 4),(19, 'AdminZones', 5, 5),(20, 'AdminRangePrice', 5, 6),
+(9, 'AdminTools', 0, 10),(82, 'AdminStores', 9, 11),(60, 'AdminTracking', 1, 1),(10, 'AdminManufacturers', 1, 2),(34, 'AdminSuppliers', 1, 3),(11, 'AdminAttributesGroups', 1, 4),
+(36, 'AdminFeatures', 1, 5),(58, 'AdminScenes', 1, 6),(66, 'AdminTags', 1, 7),(68, 'AdminAttachments', 1, 7),(12, 'AdminAddresses', 2, 1),(63, 'AdminGroups', 2, 2),
+(65, 'AdminCarts', 2, 3),(42, 'AdminInvoices', 3, 1),(55, 'AdminDeliverySlip', 3, 2),(47, 'AdminReturn', 3, 3),(49, 'AdminSlip', 3, 4),(59, 'AdminMessages', 3, 5),
+(13, 'AdminStatuses', 3, 6),(54, 'AdminOrderMessage', 3, 7),(14, 'AdminDiscounts', 4, 4),(15, 'AdminCurrencies', 4, 1),(16, 'AdminTaxes', 4, 2),
+(17, 'AdminCarriers', 5, 1),(46, 'AdminStates', 5, 2),(18, 'AdminCountries', 5, 3),(19, 'AdminZones', 5, 5),(20, 'AdminRangePrice', 5, 6),
 (21, 'AdminRangeWeight', 5, 7),(51, 'AdminStatsConf', 6, 1),(61, 'AdminSearchEngines', 6, 2),(62, 'AdminReferrers', 6, 3),
-(80, 'AdminAddonsCatalog', 7, 1),(81, 'AdminAddonsMyAccount', 7, 2),(83, 'AdminThemes', 7, 3),(22, 'AdminModulesPositions', 7, 4),
-(30, 'AdminProfiles', 29, 1),(31, 'AdminAccess', 29, 2),(28, 'AdminContacts', 29, 3),(71, 'AdminCustomerThreads', 29, 4),(37, 'AdminQuickAccesses', 29, 5),(35, 'AdminTabs', 29, 6),
-(38, 'AdminAppearance', 8, 1),(23, 'AdminDb', 8, 2),(24, 'AdminEmails', 8, 3),(26, 'AdminImages', 8, 4),(70, 'AdminPerformance', 8, 5),(56, 'AdminMeta', 8, 6),
-(67, 'AdminSearchConf', 8, 7),(40, 'AdminAliases', 8, 8),(44, 'AdminLocalization', 8, 9),(84, 'AdminGeolocation', 8, 10),(27, 'AdminPPreferences', 8, 11),
-(39, 'AdminContact', 8, 12),(41, 'AdminImport', 9, 1),(32, 'AdminLanguages', 9, 2),(33, 'AdminTranslations', 9, 3),(64, 'AdminGenerator', 9, 4),
-(52, 'AdminSubDomains', 9, 5),(57, 'AdminCMSContent', 9, 6),(82, 'AdminStores', 9, 7),(72, 'AdminWebservice', 9, 8),(53, 'AdminBackup', 9, 9),
-(86, 'AdminLogs', 9, 10),(69, 'AdminInformation', 9, 11),(43, 'AdminSearch', -1, 0),(88,'AdminHome', -1, 0);
+(22, 'AdminModulesPositions', 7, 4),(30, 'AdminProfiles', 29, 1),(31, 'AdminAccess', 29, 2),(28, 'AdminContacts', 29, 3),(39, 'AdminContact', 8, 1),
+(38, 'AdminAppearance', 8, 2),(56, 'AdminMeta', 8, 3),(27, 'AdminPPreferences', 8, 4),(24, 'AdminEmails', 8, 5),(26, 'AdminImages', 8, 6),(23, 'AdminDb', 8, 7),
+(48, 'AdminPDF', 3, 8),(44, 'AdminLocalization', 8, 9),(67, 'AdminSearchConf', 8, 10),(32, 'AdminLanguages', 9, 1),(33, 'AdminTranslations', 9, 2),
+(35, 'AdminTabs', 29, 3),(37, 'AdminQuickAccesses', 9, 4),(40, 'AdminAliases', 8, 5),(41, 'AdminImport', 9, 6),(52, 'AdminSubDomains', 9, 7),
+(53, 'AdminBackup', 9, 8),(57, 'AdminCMSContent', 9, 9),(64, 'AdminGenerator', 9, 10),(43, 'AdminSearch', -1, 0),(69, 'AdminInformation', 9, 11),
+(70, 'AdminPerformance', 8, 11),(71, 'AdminCustomerThreads', 29, 4),(72, 'AdminWebservice', 9, 12),(73, 'AdminStockMvt', 1, 9),
+(80, 'AdminAddonsCatalog', 7, 1),(81, 'AdminAddonsMyAccount', 7, 2),(83, 'AdminThemes', 7, 3),(84, 'AdminGeolocation', 8, 12),
+(85, 'AdminTaxRulesGroup', 4, 3),(86, 'AdminLogs', 9, 13), (87, 'AdminCounty', 5, 4),(88,'AdminHome',-1,0),(89,'AdminShop', 0, 11), (90,'AdminGroupShop', 89, 1),
+(91, 'AdminShopUrl', 89, 2);
 
 INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) (SELECT 1, id_tab, 1, 1, 1, 1 FROM PREFIX_tab);
 
@@ -838,20 +721,20 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (1, 1, 'Catalog'),(1, 2, 'Customers'),(1, 3, 'Orders'),(1, 4, 'Payment'),
 (1, 5, 'Shipping'),(1, 6, 'Stats'),(1, 7, 'Modules'),(1, 8, 'Preferences'),(1, 9, 'Tools'),(1, 10, 'Manufacturers'),(1, 11, 'Attributes and Groups'),
 (1, 12, 'Addresses'),(1, 13, 'Statuses'),(1, 14, 'Vouchers'),(1, 15, 'Currencies'),(1, 16, 'Taxes'),(1, 17, 'Carriers'),(1, 18, 'Countries'),
-(1, 19, 'Zones'),(1, 20, 'Price Ranges'),(1, 21, 'Weight Ranges'),(1, 22, 'Positions'),(1, 23, 'Database'),(1, 24, 'E-mail'),(1, 26, 'Images'),
+(1, 19, 'Zones'),(1, 20, 'Price Ranges'),(1, 21, 'Weight Ranges'),(1, 22, 'Positions'),(1, 23, 'Database'),(1, 24, 'E-mail'),(1, 26, 'Image'),
 (1, 27, 'Products'),(1, 28, 'Contacts'),(1, 29, 'Employees'),(1, 30, 'Profiles'),(1, 31, 'Permissions'),(1, 32, 'Languages'),(1, 33, 'Translations'),
-(1, 34, 'Suppliers'),(1, 35, 'Tabs'),(1, 36, 'Features'),(1, 37, 'Quick Access'),(1, 38, 'Appearance'),(1, 39, 'Contact Information'),(1, 40, 'Keyword Typos'),
-(1, 41, 'CSV Import'),(1, 42, 'Invoices'),(1, 43, 'Search'),(1, 44, 'Localization'),(1, 46, 'States'),(1, 47, 'Merchandise Returns'),(1, 48, 'PDF'),
-(1, 49, 'Credit Slips'),(1, 51, 'Settings'),(1, 52, 'Subdomains'),(1, 53, 'DB Backup'),(1, 54, 'Order Messages'),
-(1, 55, 'Delivery Slips'),(1, 56, 'SEO & URLs'),(1, 57, 'CMS'),(1, 58, 'Image Mapping'),(1, 59, 'Customer Messages'),(1, 60, 'Monitoring'),
+(1, 34, 'Suppliers'),(1, 35, 'Tabs'),(1, 36, 'Features'),(1, 37, 'Quick Access'),(1, 38, 'Appearance'),(1, 39, 'Contact Information'),(1, 40, 'Aliases'),
+(1, 41, 'Import'),(1, 42, 'Invoices'),(1, 43, 'Search'),(1, 44, 'Localization'),(1, 46, 'States'),(1, 47, 'Merchandise Returns'),(1, 48, 'PDF'),
+(1, 49, 'Credit Slips'),(1, 51, 'Settings'),(1, 52, 'Subdomains'),(1, 53, 'DB backup'),(1, 54, 'Order Messages'),
+(1, 55, 'Delivery Slips'),(1, 56, 'SEO & URLs'),(1, 57, 'CMS'),(1, 58, 'Image Mapping'),(1, 59, 'Customer Messages'),(1, 60, 'Tracking'),
 (1, 61, 'Search Engines'),(1, 62, 'Referrers'),(1, 63, 'Groups'),(1, 64, 'Generators'),(1, 65, 'Shopping Carts'),(1, 66, 'Tags'),(1, 67, 'Search'),
-(1, 68, 'Attachments'),(1, 69, 'Configuration Information'),(1, 70, 'Performance'),(1, 71, 'Customer Service'),(1, 72, 'Webservice'),(1, 73, 'Stock Movement'),
-(1, 80, 'Modules & Themes Catalog'),(1, 81, 'My Account'),(1, 82, 'Stores'),(1, 83, 'Themes'),(1, 84, 'Geolocation'),(1, 85, 'Tax Rules'),(1, 86, 'Logs'),
-(1, 87, 'Counties'),(1, 88, 'Home');
+(1, 68, 'Attachments'),(1, 69, 'Configuration Information'),(1, 70, 'Performance'),(1, 71, 'Customer Service'),(1, 72, 'Webservice'),(1, 73, 'Stock Movements'),
+(1, 80, 'Modules & Themes Catalog'),(1, 81, 'My Account'),(1, 82, 'Stores'),(1, 83, 'Themes'),(1, 84, 'Geolocation'),(1, 85, 'Tax Rules'),(1, 86, 'Log'),
+(1, 87, 'Counties'),(1, 88, 'Home'), (1, 89, 'Shops'), (1, 90, 'Group Shops'), (1, 91, 'Shop Urls');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (2, 1, 'Catalogue'),(2, 2, 'Clients'),(2, 3, 'Commandes'),(2, 4, 'Paiement'),(2, 5, 'Transport'),
-(2, 6, 'Stats'),(2, 7, 'Modules'),(2, 8, 'Préférences'),(2, 9, 'Outils'),(2, 10, 'Marques'),(2, 11, 'Attributs et groupes'),(2, 12, 'Adresses'),(2, 13, 'Statuts'),
+(2, 6, 'Stats'),(2, 7, 'Modules'),(2, 8, 'Préférences'),(2, 9, 'Outils'),(2, 10, 'Fabricants'),(2, 11, 'Attributs et groupes'),(2, 12, 'Adresses'),(2, 13, 'Statuts'),
 (2, 14, 'Bons de réduction'),(2, 15, 'Devises'),(2, 16, 'Taxes'),(2, 17, 'Transporteurs'),(2, 18, 'Pays'),(2, 19, 'Zones'),(2, 20, 'Tranches de prix'),
 (2, 21, 'Tranches de poids'),(2, 22, 'Positions'),(2, 23, 'Base de données'),(2, 24, 'Emails'),(2, 26, 'Images'),(2, 27, 'Produits'),(2, 28, 'Contacts'),
 (2, 29, 'Employés'),(2, 30, 'Profils'),(2, 31, 'Permissions'),(2, 32, 'Langues'),(2, 33, 'Traductions'),(2, 34, 'Fournisseurs'),(2, 35, 'Onglets'),
@@ -862,7 +745,7 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (2, 62, 'Sites affluents'),(2, 63, 'Groupes'),(2, 64, 'Générateurs'),(2, 65, 'Paniers'),(2, 66, 'Tags'),(2, 67, 'Recherche'),
 (2, 68, 'Documents joints'),(2, 69, 'Informations'),(2, 70, 'Performances'),(2, 71, 'SAV'),(2, 72, 'Service web'),(2, 73, 'Mouvements de Stock'),
 (2, 80, 'Catalogue de modules et thèmes'),(2, 81, 'Mon compte'),(2, 82, 'Magasins'),(2, 83, 'Thèmes'),(2, 84, 'Géolocalisation'),(2, 85, 'Règles de taxes'),(2, 86, 'Log'),
-(2, 87, 'Comtés'),(2,88,'Accueil');
+(2, 87, 'Comtés'),(2,88,'Accueil'), (2, 89, 'Boutiques'), (2, 90, 'Groupes de boutique'), (2, 91, 'URLs de boutique');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (3, 1, 'Catálogo'),(3, 2, 'Clientes'),(3, 3, 'Pedidos'),(3, 4, 'Pago'),(3, 5, 'Transporte'),
@@ -870,28 +753,28 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (3, 13, 'Estados'),(3, 14, 'Vales de descuento'),(3, 15, 'Divisas'),(3, 16, 'Impuestos'),(3, 17, 'Transportistas'),(3, 18, 'Países'),(3, 19, 'Zonas'),
 (3, 20, 'Franja de precios'),(3, 21, 'Franja de pesos'),(3, 22, 'Posiciones'),(3, 23, 'Base de datos'),(3, 24, 'Emails'),(3, 26, 'Imágenes'),
 (3, 27, 'Productos'),(3, 28, 'Contactos'),(3, 29, 'Empleados'),(3, 30, 'Perfiles'),(3, 31, 'Permisos'),(3, 32, 'Idiomas'),(3, 33, 'Traducciones'),
-(3, 34, 'Proveedores'),(3, 35, 'Pestañas'),(3, 36, 'Características'),(3, 37, 'Acceso rápido'),(3, 38, 'Aspecto'),(3, 39, 'Datos'),(3, 40, 'Alias'),
+(3, 34, 'Proovedores'),(3, 35, 'Pestañas'),(3, 36, 'Características'),(3, 37, 'Acceso rápido'),(3, 38, 'Aspecto'),(3, 39, 'Datos'),(3, 40, 'Alias'),
 (3, 41, 'Importar'),(3, 42, 'Facturas'),(3, 43, 'Búsqueda'),(3, 44, 'Ubicación'),(3, 46, 'Estados'),(3, 47, 'Devolución productos'),(3, 48, 'PDF'),
 (3, 49, 'Vales'),(3, 51, 'Configuración'),(3, 52, 'Subcampos'),(3, 53, 'Copia de seguridad'),(3, 54, 'Mensajes de Orden'),
 (3, 55, 'Albaranes de entrega'),(3, 56, 'SEO & URLs'),(3, 57, 'CMS'),(3, 58, 'Mapeo de la imagen'),(3, 59, 'Mensajes del cliente'),(3, 60, 'Rastreo'),
 (3, 61, 'Motores de búsqueda'),(3, 62, 'Referido'),(3, 63, 'Grupos'),(3, 64, 'Generadores'),(3, 65, 'Carritos'),(3, 66, 'Etiquetas'),(3, 67, 'Búsqueda'),(3, 68, 'Adjuntos'),
-(3, 69, 'Informaciones'),(3, 70, 'Rendimiento'),(3, 72, 'Web service'),(3, 71, 'Servicio al cliente'),(3, 73, 'Movimiento de Stock'), (3, 82, 'Tiendas'),(3, 83, 'Temas'),(3, 84, 'Geolocalización'),(3, 85, 'Reglas de Impuestos'),(3, 86, 'Log'),
-(3, 87, 'Condados'),(3,88,'Home');
+(3, 69, 'Informations'),(3, 70, 'Rendimiento'),(3, 72, 'Web service'),(3, 71, 'Servicio al cliente'),(3, 73, 'Movimiento de Stock'), (3, 82, 'Tiendas'),(3, 83, 'Temas'),(3, 84, 'Geolocalización'),(3, 85, 'Reglas de Impuestos'),(3, 86, 'Log'),
+(3, 87, 'Condados'),(3,88,'Home'), (3, 89, 'Shops'), (3, 90, 'Group Shops'), (3, 91, 'Shop Urls');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (4, 1, 'Katalog'),(4, 2, 'Kunden'),(4, 3, 'Bestellungen'),(4, 4, 'Zahlung'),
-(4, 5, 'Versandkosten'),(4, 6, 'Statistik'),(4, 7, 'Module'),(4, 8, 'Voreinstellungen'),(4, 9, 'Tools'),(4, 10, 'Hersteller'),(4, 11, 'Varianten & Kombinationen'),
-(4, 12, 'Adressen'),(4, 13, 'Status'),(4, 14, 'Gutscheine'),(4, 15, 'Währungen'),(4, 16, 'Steuern'),(4, 17, 'Versanddienste'),(4, 18, 'Länder'),
-(4, 19, 'Zonen'),(4, 20, 'Preisklasse'),(4, 21, 'Gewichtsklassen'),(4, 22, 'Positionen'),(4, 23, 'Datenbank'),(4, 24, 'E-Mail'),(4, 26, 'Bild'),
+(4, 5, 'Versandkosten'),(4, 6, 'Statistik'),(4, 7, 'Module'),(4, 8, 'Voreinstellungen'),(4, 9, 'Tools'),(4, 10, 'Hersteller'),(4, 11, 'Attribute und Gruppen'),
+(4, 12, 'Adressen'),(4, 13, 'Status'),(4, 14, 'Gutscheine'),(4, 15, 'Währungen'),(4, 16, 'Steuern'),(4, 17, 'Lieferanten'),(4, 18, 'Länder'),
+(4, 19, 'Zonen'),(4, 20, 'Preislagen'),(4, 21, 'Gewichtsklassen'),(4, 22, 'Positionen'),(4, 23, 'Datenbank'),(4, 24, 'E-Mail'),(4, 26, 'Bild'),
 (4, 27, 'Produkte'),(4, 28, 'Kontakte'),(4, 29, 'Mitarbeiter'),(4, 30, 'Profile'),(4, 31, 'Berechtigungen'),(4, 32, 'Sprachen'),(4, 33, 'Übersetzungen'),
-(4, 34, 'Lieferanten'),(4, 35, 'Tabs'),(4, 36, 'Produktmerkmale'),(4, 37, 'Schnellzugriff'),(4, 38, 'Aussehen'),(4, 39, 'Kontaktinformation'),(4, 40, 'Alias'),
+(4, 34, 'Zulieferer'),(4, 35, 'Tabs'),(4, 36, 'Funktionen'),(4, 37, 'Schnellzugriff'),(4, 38, 'Aussehen'),(4, 39, 'Kontaktinformation'),(4, 40, 'Alias'),
 (4, 41, 'Import'),(4, 42, 'Rechnungen'),(4, 43, 'Suche'),(4, 44, 'Lokalisierung'),(4, 46, 'Staaten'),(4, 47, 'Warenrücksendungen'),(4, 48, 'PDF'),
 (4, 49, 'Gutscheine'),(4, 51, 'Einstellungen'),(4, 52, 'Subdomains'),(4, 53, 'DB-Backup'),(4, 54, 'Bestellnachrichten'),
 (4, 55, 'Lieferscheine'),(4, 56, 'SEO & URLs'),(4, 57, 'CMS'),(4, 58, 'Image Mapping'),(4, 59, 'Kundennachrichten'),(4, 60, 'Tracking'),
 (4, 61, 'Suchmaschinen'),(4, 62, 'Referrer'),(4, 63, 'Gruppen'),(4, 64, 'Generatoren'),(4, 65, 'Warenkörbe'),(4, 66, 'Tags'),(4, 67, 'Suche'),
 (4, 68, 'Anhänge'),(4, 69, 'Konfigurationsinformationen'),(4, 70, 'Leistung'),(4, 71, 'Kundenservice'),(4, 72, 'Webservice'),(4, 73, 'Lagerbewegungen'),
-(4, 80, 'Module und Themenkatalog'),(4, 81, 'Mein Konto'),(4, 82, 'Shops'),(4, 83, 'Template'),(4, 84, 'Geotargeting'),(4, 85, 'Steuerregeln'),(4, 86, 'Log'),
-(4,87,'Landkreise/Kanton'),(4,88,'Home');
+(4, 80, 'Module und Themenkatalog'),(4, 81, 'Mein Konto'),(4, 82, 'Shops'),(4, 83, 'Themen'),(4, 84, 'Geotargeting'),(4, 85, 'Steuerregeln'),(4, 86, 'Log'),
+(4,87,'Counties'),(4,88,'Home'), (4, 89, 'Shops'), (4, 90, 'Group Shops'), (4, 91, 'Shop Urls');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (5, 1, 'Catalogo'),(5, 2, 'Clienti'),(5, 3, 'Ordini'),(5, 4, 'Pagamento'),
@@ -906,7 +789,7 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (5, 61, 'Motori di ricerca'),(5, 62, 'Referenti'),(5, 63, 'Gruppi'),(5, 64, 'Generatori'),(5, 65, 'Carrelli shopping'),(5, 66, 'Tag'),(5, 67, 'Cerca'),
 (5, 68, 'Allegati'),(5, 69, 'Informazioni di configurazione'),(5, 70, 'Performance'),(5, 71, 'Servizio clienti'),(5, 72, 'Webservice'),(5, 73, 'Movimenti magazzino'),
 (5, 80, 'Moduli & Temi catalogo'),(5, 81, 'Il mio Account'),(5, 82, 'Negozi'),(5, 83, 'Temi'),(5, 84, 'Geolocalizzazione'),(5, 85, 'Regimi fiscali'),(5, 86, 'Log'),
-(5,87,'Counties'),(5,88,'Home');
+(5,87,'Counties'),(5,88,'Home'), (5, 89, 'Shops'), (5, 90, 'Group Shops'), (5, 91, 'Shop Urls');
 
 INSERT IGNORE INTO `PREFIX_tab_lang` (`id_tab`, `id_lang`, `name`)
     (SELECT `id_tab`, id_lang, (SELECT tl.`name`
@@ -962,132 +845,132 @@ INSERT INTO `PREFIX_meta` (`id_meta`, `page`) VALUES
 (24, 'order-opc'),
 (25, 'guest-tracking');
 
-INSERT INTO `PREFIX_meta_lang` (`id_meta`, `id_lang`, `title`, `description`, `keywords`, `url_rewrite`) VALUES
-(1, 1, '404 error', 'This page cannot be found', 'error, 404, not found', 'page-not-found'),
-(1, 2, 'Erreur 404', 'Cette page est introuvable', 'erreur, 404, introuvable', 'page-non-trouvee'),
-(1, 3, 'Error 404', 'Esta página no se encuentra', 'error, 404, No se ha encontrado', 'pagina-no-encuentra'),
-(2, 1, 'Best sales', 'Our best sales', 'best sales', 'best-sales'),
-(2, 2, 'Meilleures ventes', 'Liste de nos produits les mieux vendus', 'meilleures ventes', 'meilleures-ventes'),
-(2, 3, 'Los más vendidos', 'Lista de los de mayor venta de productos', 'los más vendidos', 'mas-vendidos'),
-(3, 1, 'Contact us', 'Use our form to contact us', 'contact, form, e-mail', 'contact-us'),
-(3, 2, 'Contactez-nous', 'Utilisez notre formulaire pour nous contacter', 'contact, formulaire, e-mail', 'contactez-nous'),
-(3, 3, 'Contáctenos', 'Use nuestro formulario de contacto con nosotros', 'formulario de contacto, e-mail', 'contactenos'),
-(4, 1, '', 'Shop powered by PrestaShop', 'shop, prestashop', ''),
-(4, 2, '', 'Boutique propulsée par PrestaShop', 'boutique, prestashop', ''),
-(4, 3, '', 'Shop powered by PrestaShop', 'tienda, prestashop', ''),
-(5, 1, 'Manufacturers', 'Manufacturers list', 'manufacturer', 'manufacturers'),
-(5, 2, 'Fabricants', 'Liste de nos fabricants', 'fabricants', 'fabricants'),
-(5, 3, 'Fabricantes', 'Lista de Fabricantes', 'fabricantes', 'fabricantes'),
-(6, 1, 'New products', 'Our new products', 'new, products', 'new-products'),
-(6, 2, 'Nouveaux produits', 'Liste de nos nouveaux produits', 'nouveau, produit', 'nouveaux-produits'),
-(6, 3, 'Nuevos Productos', 'Lista de nuestros nuevos productos', 'nuevo, productos', 'nuevos-productos'),
-(7, 1, 'Forgot your password', 'Enter your e-mail address used to register in goal to get e-mail with your new password', 'forgot, password, e-mail, new, reset', 'password-recovery'),
-(7, 2, 'Mot de passe oublié', 'Renseignez votre adresse e-mail afin de recevoir votre nouveau mot de passe.', 'mot de passe, oublié, e-mail, nouveau, regénération', 'mot-de-passe-oublie'),
-(7, 3, 'Olvidaste tu contraseña', 'Ingrese su dirección de correo electrónico para recibir su nueva contraseña.', 'contraseña, has olvidado, e-mail, nuevo, regeneración', 'contrasena-olvidado'),
-(8, 1, 'Prices drop', 'Our special products', 'special, prices drop', 'prices-drop'),
-(8, 2, 'Promotions', 'Nos produits en promotion', 'promotion, réduction', 'promotions'),
-(8, 3, 'Promociones', 'Nuestros productos promocionales', 'promoción, reducción', 'promocion'),
-(9, 1, 'Sitemap', 'Lost ? Find what your are looking for', 'sitemap', 'sitemap'),
-(9, 2, 'Plan du site', 'Perdu ? Trouvez ce que vous cherchez', 'plan, site', 'plan-du-site'),
-(9, 3, 'Mapa del sitio', '¿Perdido? Encuentra lo que buscas', 'plan, sitio', 'mapa-del-sitio'),
-(10, 1, 'Suppliers', 'Suppliers list', 'supplier', 'supplier'),
-(10, 2, 'Fournisseurs', 'Liste de nos fournisseurs', 'fournisseurs', 'fournisseurs'),
-(10, 3, 'Proveedores', 'Lista de Proveedores', 'proveedores', 'proveedores'),
-(11, 1, 'Address', '', '', 'address'),
-(11, 2, 'Adresse', '', '', 'adresse'),
-(11, 3, 'Dirección', '', '', 'direccion'),
-(12, 1, 'Addresses', '', '', 'addresses'),
-(12, 2, 'Adresses', '', '', 'adresses'),
-(12, 3, 'Direcciones', '', '', 'direcciones'),
-(13, 1, 'Authentication', '', '', 'authentication'),
-(13, 2, 'Authentification', '', '', 'authentification'),
-(13, 3, 'Autenticación', '', '', 'autenticacion'),
-(14, 1, 'Cart', '', '', 'cart'),
-(14, 2, 'Panier', '', '', 'panier'),
-(14, 3, 'Carro de la compra', '', '', 'carro-de-la-compra'),
-(15, 1, 'Discount', '', '', 'discount'),
-(15, 2, 'Bons de réduction', '', '', 'bons-de-reduction'),
-(15, 3, 'Descuento', '', '', 'descuento'),
-(16, 1, 'Order history', '', '', 'order-history'),
-(16, 2, 'Historique des commandes', '', '', 'historique-des-commandes'),
-(16, 3, 'Historial de pedidos', '', '', 'historial-de-pedidos'),
-(17, 1, 'Identity', '', '', 'identity'),
-(17, 2, 'Identité', '', '', 'identite'),
-(17, 3, 'Identidad', '', '', 'identidad'),
-(18, 1, 'My account', '', '', 'my-account'),
-(18, 2, 'Mon compte', '', '', 'mon-compte'),
-(18, 3, 'Mi Cuenta', '', '', 'mi-cuenta'),
-(19, 1, 'Order follow', '', '', 'order-follow'),
-(19, 2, 'Détails de la commande', '', '', 'details-de-la-commande'),
-(19, 3, 'Devolución de productos', '', '', 'devolucion-de-productos'),
-(20, 1, 'Order slip', '', '', 'order-slip'),
-(20, 2, 'Avoirs', '', '', 'avoirs'),
-(20, 3, 'Vales', '', '', 'vales'),
-(21, 1, 'Order', '', '', 'order'),
-(21, 2, 'Commande', '', '', 'commande'),
-(21, 3, 'Carrito', '', '', 'carrito'),
-(22, 1, 'Search', '', '', 'search'),
-(22, 2, 'Recherche', '', '', 'recherche'),
-(22, 3, 'Buscar', '', '', 'buscar'),
-(23, 1, 'Stores', '', '', 'stores'),
-(23, 2, 'Magasins', '', '', 'magasins'),
-(23, 3, 'Tiendas', '', '', 'tiendas'),
-(24, 1, 'Order', '', '', 'quick-order'),
-(24, 2, 'Commande', '', '', 'commande-rapide'),
-(24, 3, 'Carrito', '', '', 'pedido-rapido'),
-(25, 1, 'Guest tracking', '', '', 'guest-tracking'),
-(25, 2, 'Suivi de commande invité', '', '', 'suivi-commande-invite'),
-(25, 3, 'Estado del pedido', '', '', 'estado-pedido'),
-(1, 4, 'Fehler 404', 'Seite wurde nicht gefunden', 'Fehler 404, nicht gefunden', 'seite-nicht-gefunden'),
-(2, 4, 'Verkaufshits', 'Unsere Verkaufshits', 'Verkaufshits', 'verkaufshits'),
-(3, 4, 'Kontaktieren Sie uns', 'Nutzen Sie unser Kontaktformular', 'Kontakt, Formular, E-Mail', 'kontaktieren-sie-uns'),
-(4, 4, '', 'Shop powered by PrestaShop', 'Shop, prestashop', ''),
-(5, 4, 'Hersteller', 'Herstellerliste', 'Hersteller', 'hersteller'),
-(6, 4, 'Neue Produkte', 'Unsere neuen Produkte', 'neu, Produkte', 'neue-Produkte'),
-(7, 4, 'Kennwort vergessen', 'Geben Sie die E-Mailadresse ein, die Sie zum Einloggen benutzen, damit Sie eine E-Mail mit dem neuen Kennwort erhalt', 'vergessen, Kennwort, E-Mail, neu, Reset', 'kennwort-wiederherstellung'),
-(8, 4, 'Angebote', 'Unsere Sonderangebote', 'besonders, Angebote', 'angebote'),
-(9, 4, 'Sitemap', 'Verloren? Finden Sie, was Sie suchen', 'sitemap', 'sitemap'),
-(10, 4, 'Zulieferer', 'Zuliefererliste', 'Zulieferer', 'zulieferer'),
-(11, 4, 'Adresse', '', '', 'adresse'),
-(12, 4, 'Adressen', '', '', 'adressen'),
-(13, 4, 'Authentifizierung', '', '', 'authentifizierung'),
-(14, 4, 'Warenkorb', '', '', 'warenkorb'),
-(15, 4, 'Discount', '', '', 'discount'),
-(16, 4, 'Bestellungsverlauf', '', '', 'bestellungsverlauf'),
-(17, 4, 'Kennung', '', '', 'kennung'),
-(18, 4, 'Mein Konto', '', '', 'mein-Konto'),
-(19, 4, 'Bestellungsverfolgung', '', '', 'bestellungsverfolgung'),
-(20, 4, 'Bestellschein', '', '', 'bestellschein'),
-(21, 4, 'Bestellung', '', '', 'bestellung'),
-(22, 4, 'Suche', '', '', 'suche'),
-(23, 4, 'Shops', '', '', 'shops'),
-(24, 4, 'Bestellung', '', '', 'schnell-bestellung'),
-(25, 4, 'Auftragsverfolgung Gast', '', '', 'auftragsverfolgung-gast'),
-(1, 5, 'errore 404', 'Impossibile trovare questa pagina', 'errore, 404, non trovato', 'pagina-non-trovata'),
-(2, 5, 'Vendite migliori', 'Le nostre vendite migliori', 'vendite migliori', 'vendite-migliori'),
-(3, 5, 'Contattaci', 'Usa il nostro modulo per contattarci', 'contatto, modulo, e-mail', 'contattaci'),
-(4, 5, '', 'Negozio powered by PrestaShop', 'negozio, prestashop', ''),
-(5, 5, 'Produttori', 'Elenco produttori', 'produttore', 'produttori'),
-(6, 5, 'Nuovi prodotti', 'I nostri nuovi prodotti', 'nuovi, prodotti', 'nuovi-prodotti'),
-(7, 5, 'Hai dimenticato la password', 'Inserisci l\'indirizzo e-mail usato per registrarti per poter ottenere una e-mail with con la tua nuova password', 'dimenticato, password, e-mail, nuovo, reset', 'password-recupero'),
-(8, 5, 'Riduzioni prezzi', 'I nostri prodotti speciali', 'speciali, riduzione prezzi', 'riduzione-prezzi'),
-(9, 5, 'Mappa del sito', 'Ti sei perso? Trova quello che stai cercando', 'sitemap', 'sitemap'),
-(10, 5, 'Fornitori', 'Elenco fornitori', 'fornitori', 'fornitore'),
-(11, 5, 'Indirizzo', '', '', 'indirizzo'),
-(12, 5, 'Indirizzi', '', '', 'indirizzi'),
-(13, 5, 'Autenticazione', '', '', 'autenticazione'),
-(14, 5, 'Carrello', '', '', 'carrello'),
-(15, 5, 'Sconto', '', '', 'sconto'),
-(16, 5, 'Storico ordine', '', '', 'storico-ordine'),
-(17, 5, 'Identità', '', '', 'identita'),
-(18, 5, 'Il mio account', '', '', 'il-mio-account'),
-(19, 5, 'Seguito ordine', '', '', 'seguito-ordine'),
-(20, 5, 'Nota di ordine', '', '', 'nota-di-ordine'),
-(21, 5, 'Ordine', '', '', 'ordine'),
-(22, 5, 'Cerca', '', '', 'cerca'),
-(23, 5, 'Negozi', '', '', 'negozi'),
-(24, 5, 'Ordine', '', '', 'ordine-veloce'),
-(25, 5, 'Ospite di monitoraggio', '', '', 'ospite-monitoraggio');
+INSERT INTO `PREFIX_meta_lang` (`id_meta`, `id_shop`, `id_lang`, `title`, `description`, `keywords`, `url_rewrite`) VALUES
+(1, 1, 1, '404 error', 'This page cannot be found', 'error, 404, not found', 'page-not-found'),
+(1, 1, 2, 'Erreur 404', 'Cette page est introuvable', 'erreur, 404, introuvable', 'page-non-trouvee'),
+(1, 1, 3, 'Error 404', 'Esta página no se encuentra', 'error, 404, No se ha encontrado', 'pagina-no-encuentra'),
+(2, 1, 1, 'Best sales', 'Our best sales', 'best sales', 'best-sales'),
+(2, 1, 2, 'Meilleures ventes', 'Liste de nos produits les mieux vendus', 'meilleures ventes', 'meilleures-ventes'),
+(2, 1, 3, 'Los más vendidos', 'Lista de los de mayor venta de productos', 'los más vendidos', 'mas-vendidos'),
+(3, 1, 1, 'Contact us', 'Use our form to contact us', 'contact, form, e-mail', 'contact-us'),
+(3, 1, 2, 'Contactez-nous', 'Utilisez notre formulaire pour nous contacter', 'contact, formulaire, e-mail', 'contactez-nous'),
+(3, 1, 3, 'Contáctenos', 'Use nuestro formulario de contacto con nosotros', 'formulario de contacto, e-mail', 'contactenos'),
+(4, 1, 1, '', 'Shop powered by PrestaShop', 'shop, prestashop', ''),
+(4, 1, 2, '', 'Boutique propulsée par PrestaShop', 'boutique, prestashop', ''),
+(4, 1, 3, '', 'Shop powered by PrestaShop', 'tienda, prestashop', ''),
+(5, 1, 1, 'Manufacturers', 'Manufacturers list', 'manufacturer', 'manufacturers'),
+(5, 1, 2, 'Fabricants', 'Liste de nos fabricants', 'fabricants', 'fabricants'),
+(5, 1, 3, 'Fabricantes', 'Lista de Fabricantes', 'fabricantes', 'fabricantes'),
+(6, 1, 1, 'New products', 'Our new products', 'new, products', 'new-products'),
+(6, 1, 2, 'Nouveaux produits', 'Liste de nos nouveaux produits', 'nouveau, produit', 'nouveaux-produits'),
+(6, 1, 3, 'Nuevos Productos', 'Lista de nuestros nuevos productos', 'nuevo, productos', 'nuevos-productos'),
+(7, 1, 1, 'Forgot your password', 'Enter your e-mail address used to register in goal to get e-mail with your new password', 'forgot, password, e-mail, new, reset', 'password-recovery'),
+(7, 1, 2, 'Mot de passe oublié', 'Renseignez votre adresse e-mail afin de recevoir votre nouveau mot de passe.', 'mot de passe, oublié, e-mail, nouveau, regénération', 'mot-de-passe-oublie'),
+(7, 1, 3, 'Olvidaste tu contraseña', 'Ingrese su dirección de correo electrónico para recibir su nueva contraseña.', 'contraseña, has olvidado, e-mail, nuevo, regeneración', 'contrasena-olvidado'),
+(8, 1, 1, 'Prices drop', 'Our special products', 'special, prices drop', 'prices-drop'),
+(8, 1, 2, 'Promotions', 'Nos produits en promotion', 'promotion, réduction', 'promotions'),
+(8, 1, 3, 'Promociones', 'Nuestros productos promocionales', 'promoción, reducción', 'promocion'),
+(9, 1, 1, 'Sitemap', 'Lost ? Find what your are looking for', 'sitemap', 'sitemap'),
+(9, 1, 2, 'Plan du site', 'Perdu ? Trouvez ce que vous cherchez', 'plan, site', 'plan-du-site'),
+(9, 1, 3, 'Mapa del sitio', '¿Perdido? Encuentra lo que buscas', 'plan, sitio', 'mapa-del-sitio'),
+(10, 1, 1, 'Suppliers', 'Suppliers list', 'supplier', 'supplier'),
+(10, 1, 2, 'Fournisseurs', 'Liste de nos fournisseurs', 'fournisseurs', 'fournisseurs'),
+(10, 1, 3, 'Proveedores', 'Lista de Proveedores', 'proveedores', 'proveedores'),
+(11, 1, 1, 'Address', '', '', 'address'),
+(11, 1, 2, 'Adresse', '', '', 'adresse'),
+(11, 1, 3, 'Dirección', '', '', 'direccion'),
+(12, 1, 1, 'Addresses', '', '', 'addresses'),
+(12, 1, 2, 'Adresses', '', '', 'adresses'),
+(12, 1, 3, 'Direcciones', '', '', 'direcciones'),
+(13, 1, 1, 'Authentication', '', '', 'authentication'),
+(13, 1, 2, 'Authentification', '', '', 'authentification'),
+(13, 1, 3, 'Autenticación', '', '', 'autenticacion'),
+(14, 1, 1, 'Cart', '', '', 'cart'),
+(14, 1, 2, 'Panier', '', '', 'panier'),
+(14, 1, 3, 'Carro de la compra', '', '', 'carro-de-la-compra'),
+(15, 1, 1, 'Discount', '', '', 'discount'),
+(15, 1, 2, 'Bons de réduction', '', '', 'bons-de-reduction'),
+(15, 1, 3, 'Descuento', '', '', 'descuento'),
+(16, 1, 1, 'Order history', '', '', 'order-history'),
+(16, 1, 2, 'Historique des commandes', '', '', 'historique-des-commandes'),
+(16, 1, 3, 'Historial de pedidos', '', '', 'historial-de-pedidos'),
+(17, 1, 1, 'Identity', '', '', 'identity'),
+(17, 1, 2, 'Identité', '', '', 'identite'),
+(17, 1, 3, 'Identidad', '', '', 'identidad'),
+(18, 1, 1, 'My account', '', '', 'my-account'),
+(18, 1, 2, 'Mon compte', '', '', 'mon-compte'),
+(18, 1, 3, 'Mi Cuenta', '', '', 'mi-cuenta'),
+(19, 1, 1, 'Order follow', '', '', 'order-follow'),
+(19, 1, 2, 'Détails de la commande', '', '', 'details-de-la-commande'),
+(19, 1, 3, 'Devolución de productos', '', '', 'devolucion-de-productos'),
+(20, 1, 1, 'Order slip', '', '', 'order-slip'),
+(20, 1, 2, 'Avoirs', '', '', 'avoirs'),
+(20, 1, 3, 'Vales', '', '', 'vales'),
+(21, 1, 1, 'Order', '', '', 'order'),
+(21, 1, 2, 'Commande', '', '', 'commande'),
+(21, 1, 3, 'Carrito', '', '', 'carrito'),
+(22, 1, 1, 'Search', '', '', 'search'),
+(22, 1, 2, 'Recherche', '', '', 'recherche'),
+(22, 1, 3, 'Buscar', '', '', 'buscar'),
+(23, 1, 1, 'Stores', '', '', 'stores'),
+(23, 1, 2, 'Magasins', '', '', 'magasins'),
+(23, 1, 3, 'Tiendas', '', '', 'tiendas'),
+(24, 1, 1, 'Order', '', '', 'quick-order'),
+(24, 1, 2, 'Commande', '', '', 'commande-rapide'),
+(24, 1, 3, 'Carrito', '', '', 'pedido-rapido'),
+(25, 1, 1, 'Guest tracking', '', '', 'guest-tracking'),
+(25, 1, 2, 'Suivi de commande invité', '', '', 'suivi-commande-invite'),
+(25, 1, 3, 'Estado del pedido', '', '', 'estado-pedido'),
+(1, 1, 4, 'Fehler 404', 'Seite wurde nicht gefunden', 'Fehler 404, nicht gefunden', 'seite-nicht-gefunden'),
+(2, 1, 4, 'Verkaufshits', 'Unsere Verkaufshits', 'Verkaufshits', 'verkaufshits'),
+(3, 1, 4, 'Kontaktieren Sie uns', 'Nutzen Sie unser Kontaktformular', 'Kontakt, Formular, E-Mail', 'kontaktieren-sie-uns'),
+(4, 1, 4, '', 'Shop powered by PrestaShop', 'Shop, prestashop', ''),
+(5, 1, 4, 'Hersteller', 'Herstellerliste', 'Hersteller', 'hersteller'),
+(6, 1, 4, 'Neue Produkte', 'Unsere neuen Produkte', 'neu, Produkte', 'neue-Produkte'),
+(7, 1, 4, 'Kennwort vergessen', 'Geben Sie die E-Mailadresse ein, die Sie zum Einloggen benutzen, damit Sie eine E-Mail mit dem neuen Kennwort erhalt', 'vergessen, Kennwort, E-Mail, neu, Reset', 'kennwort-wiederherstellung'),
+(8, 1, 4, 'Angebote', 'Unsere Sonderangebote', 'besonders, Angebote', 'angebote'),
+(9, 1, 4, 'Sitemap', 'Verloren? Finden Sie, was Sie suchen', 'sitemap', 'sitemap'),
+(10, 1, 4, 'Zulieferer', 'Zuliefererliste', 'Zulieferer', 'zulieferer'),
+(11, 1, 4, 'Adresse', '', '', 'adresse'),
+(12, 1, 4, 'Adressen', '', '', 'adressen'),
+(13, 1, 4, 'Authentifizierung', '', '', 'authentifizierung'),
+(14, 1, 4, 'Warenkorb', '', '', 'warenkorb'),
+(15, 1, 4, 'Discount', '', '', 'discount'),
+(16, 1, 4, 'Bestellungsverlauf', '', '', 'bestellungsverlauf'),
+(17, 1, 4, 'Kennung', '', '', 'kennung'),
+(18, 1, 4, 'Mein Konto', '', '', 'mein-Konto'),
+(19, 1, 4, 'Bestellungsverfolgung', '', '', 'bestellungsverfolgung'),
+(20, 1, 4, 'Bestellschein', '', '', 'bestellschein'),
+(21, 1, 4, 'Bestellung', '', '', 'bestellung'),
+(22, 1, 4, 'Suche', '', '', 'suche'),
+(23, 1, 4, 'Shops', '', '', 'shops'),
+(24, 1, 4, 'Bestellung', '', '', 'schnell-bestellung'),
+(25, 1, 4, 'Auftragsverfolgung Gast', '', '', 'auftragsverfolgung-gast'),
+(1, 1, 5, 'errore 404', 'Impossibile trovare questa pagina', 'errore, 404, non trovato', 'pagina-non-trovata'),
+(2, 1, 5, 'Vendite migliori', 'Le nostre vendite migliori', 'vendite migliori', 'vendite-migliori'),
+(3, 1, 5, 'Contattaci', 'Usa il nostro modulo per contattarci', 'contatto, modulo, e-mail', 'contattaci'),
+(4, 1, 5, '', 'Negozio powered by PrestaShop', 'negozio, prestashop', ''),
+(5, 1, 5, 'Produttori', 'Elenco produttori', 'produttore', 'produttori'),
+(6, 1, 5, 'Nuovi prodotti', 'I nostri nuovi prodotti', 'nuovi, prodotti', 'nuovi-prodotti'),
+(7, 1, 5, 'Hai dimenticato la password', 'Inserisci l\'indirizzo e-mail usato per registrarti per poter ottenere una e-mail with con la tua nuova password', 'dimenticato, password, e-mail, nuovo, reset', 'password-recupero'),
+(8, 1, 5, 'Riduzioni prezzi', 'I nostri prodotti speciali', 'speciali, riduzione prezzi', 'riduzione-prezzi'),
+(9, 1, 5, 'Mappa del sito', 'Ti sei perso? Trova quello che stai cercando', 'sitemap', 'sitemap'),
+(10, 1, 5, 'Fornitori', 'Elenco fornitori', 'fornitori', 'fornitore'),
+(11, 1, 5, 'Indirizzo', '', '', 'indirizzo'),
+(12, 1, 5, 'Indirizzi', '', '', 'indirizzi'),
+(13, 1, 5, 'Autenticazione', '', '', 'autenticazione'),
+(14, 1, 5, 'Carrello', '', '', 'carrello'),
+(15, 1, 5, 'Sconto', '', '', 'sconto'),
+(16, 1, 5, 'Storico ordine', '', '', 'storico-ordine'),
+(17, 1, 5, 'Identità', '', '', 'identita'),
+(18, 1, 5, 'Il mio account', '', '', 'il-mio-account'),
+(19, 1, 5, 'Seguito ordine', '', '', 'seguito-ordine'),
+(20, 1, 5, 'Nota di ordine', '', '', 'nota-di-ordine'),
+(21, 1, 5, 'Ordine', '', '', 'ordine'),
+(22, 1, 5, 'Cerca', '', '', 'cerca'),
+(23, 1, 5, 'Negozi', '', '', 'negozi'),
+(24, 1, 5, 'Ordine', '', '', 'ordine-veloce'),
+(25, 1, 5, 'Ospite di monitoraggio', '', '', 'ospite-monitoraggio');
 
 /* Stats */
 INSERT INTO `PREFIX_operating_system` (`name`) VALUES ('Windows XP'),('Windows Vista'),('MacOsX'),('Linux');
@@ -1106,7 +989,8 @@ VALUES  ('google','q'),('aol','q'),('yandex','text'),('ask.com','q'),('nhl.com',
 INSERT INTO `PREFIX_subdomain` (`id_subdomain`, `name`) VALUES (NULL, 'www');
 
 /* CMS */
-INSERT INTO `PREFIX_cms` (`id_cms`, `id_cms_category`, `position`, `active`) VALUES (1, 1, 0, 1), (2, 1, 1, 1), (3, 1, 2, 1), (4, 1, 3, 1), (5, 1, 4, 1), (6, 1, 5, 1), (7, 1, 6, 1);
+INSERT INTO `PREFIX_cms` (`id_cms`, `id_cms_category`, `position`, `active`) VALUES (1, 1, 0, 1), (2, 1, 1, 1), (3, 1, 2, 1), (4, 1, 3, 1), (5, 1, 4, 1);
+INSERT INTO `PREFIX_cms_shop` (`id_cms`, `id_shop`) VALUES (1,1), (2,1), (3,1), (4,1), (5,1);
 INSERT INTO `PREFIX_cms_lang` (`id_cms`, `id_lang`, `meta_title`, `meta_description`, `meta_keywords`, `content`, `link_rewrite`) VALUES
 (1, 1, 'Delivery', 'Our terms and conditions of delivery', 'conditions, delivery, delay, shipment, pack', '<h2>Shipments and returns</h2><h3>Your pack shipment</h3><p>Packages are generally dispatched within 2 days after receipt of payment and are shipped via UPS with tracking and drop-off without signature. If you prefer delivery by UPS Extra with required signature, an additional cost will be applied, so please contact us before choosing this method. Whichever shipment choice you make, we will provide you with a link to track your package online.</p><p>Shipping fees include handling and packing fees as well as postage costs. Handling fees are fixed, whereas transport fees vary according to total weight of the shipment. We advise you to group your items in one order. We cannot group two distinct orders placed separately, and shipping fees will apply to each of them. Your package will be dispatched at your own risk, but special care is taken to protect fragile objects.<br /><br />Boxes are amply sized and your items are well-protected.</p>', 'delivery'),
 (1, 2, 'Livraison', 'Nos conditions générales de livraison', 'conditions, livraison, délais, transport, colis', '<h2>Livraisons et retours</h2><h3>Le transport de votre colis</h3><p>Les colis sont g&eacute;n&eacute;ralement exp&eacute;di&eacute;s en 48h apr&egrave;s r&eacute;ception de votre paiement. Le mode d''expédition standard est le Colissimo suivi, remis sans signature. Si vous souhaitez une remise avec signature, un co&ucirc;t suppl&eacute;mentaire s''applique, merci de nous contacter. Quel que soit le mode d''expédition choisi, nous vous fournirons d&egrave;s que possible un lien qui vous permettra de suivre en ligne la livraison de votre colis.</p><p>Les frais d''exp&eacute;dition comprennent l''emballage, la manutention et les frais postaux. Ils peuvent contenir une partie fixe et une partie variable en fonction du prix ou du poids de votre commande. Nous vous conseillons de regrouper vos achats en une unique commande. Nous ne pouvons pas grouper deux commandes distinctes et vous devrez vous acquitter des frais de port pour chacune d''entre elles. Votre colis est exp&eacute;di&eacute; &agrave; vos propres risques, un soin particulier est apport&eacute; au colis contenant des produits fragiles..<br /><br />Les colis sont surdimensionn&eacute;s et prot&eacute;g&eacute;s.</p>', 'livraison'),
@@ -1132,18 +1016,7 @@ INSERT INTO `PREFIX_cms_lang` (`id_cms`, `id_lang`, `meta_title`, `meta_descript
 (2, 5, 'Nota Legale', 'Nota legale', 'nota, legale, crediti', '<h2>Legale</h2><h3>Crediti</h3><p>Creazione e produzione:</p><p>Questo sito web è stato realizzato usando un software open-source<a href="http://www.prestashop.com">PrestaShop</a>&trade;.</p>', 'nota-legale'),
 (3, 5, 'Termini e condizioni d\'uso', 'I nostri termini e condizioni d\'uso', 'condizioni, termini, uso, vendi', '<h2>I tuoi termini e condizioni d\'uso</h2><h3>Regola 1</h3><p>Ecco il contenuto della regola 1</p>\r\n<h3>Regola 2</h3><p>Ecco il contenuto della regola 2</p>\r\n<h3>Regola 3</h3><p>Ecco il contenuto della regola 3</p>', 'termini-e-condizioni-di-uso'),
 (4, 5, 'Chi siamo', 'Per sapere chi siamo', 'chi siamo, informazioni', '<h2>Chi siamo</h2>\r\n<h3>La nostra azienda</h3><p>La nostra azienda</p>\r\n<h3>Il nostro team</h3><p>Il nostro team</p>\r\n<h3>Informazioni</h3><p>Informazioni</p>', 'chi-siamo'),
-(5, 5, 'Pagamento sicuro', 'Il nostro mezzo di pagamento sicuro', 'pagamento sicuro, ssl, visa, mastercard, paypal', '<h2>Pagamento sicuro</h2>\r\n<h3>Il nostro pagamento sicuro</h3><p>Con SSL</p>\r\n<h3>Usando Visa/Mastercard/Paypal</h3><p>Cosa sono questi servizi</p>', 'pagamento-sicuro'),
-(6, 1, 'Privacy policy', 'Privacy policy', 'Privacy policy', '<h2>Privacy policy</h2>\r\n<p>Privacy policy</p>', 'privacy-policy'),
-(7, 1, 'Right of withdrawal', 'Right of withdrawal', 'Right of withdrawal', '<h2>Right of withdrawal</h2>\r\n<p>Right of withdrawal</p>', 'right-of-withdrawal'),
-(6, 2, 'Politique de confidentialité', 'Politique de confidentialité', 'Politique de confidentialité', '<h2>Politique de confidentialité</h2>\r\n<p>Politique de confidentialité</p>', 'politique-de-confidentialite'),
-(7, 2, 'Droits de rétractation', 'Droit de rétractation', 'Droit de rétractation', '<h2>Droit de rétractation</h2>\r\n<p>Droit de rétractation</p>', 'droit-de-retractation'),
-(6, 3, 'Privacy policy', 'Privacy policy', 'Privacy policy', '<h2>Privacy policy</h2>\r\n<p>Privacy policy</p>', 'privacy-policy'),
-(7, 3, 'Right of withdrawal', 'Right of withdrawal', 'Right of withdrawal', '<h2>Right of withdrawal</h2>\r\n<p>Right of withdrawal</p>', 'right-of-withdrawal'),
-(6, 4, 'Privacy policy', 'Privacy policy', 'Privacy policy', '<h2>Privacy policy</h2>\r\n<p>Privacy policy</p>', 'privacy-policy'),
-(7, 4, 'Right of withdrawal', 'Right of withdrawal', 'Right of withdrawal', '<h2>Right of withdrawal</h2>\r\n<p>Right of withdrawal</p>', 'right-of-withdrawal'),
-(6, 5, 'Privacy policy', 'Privacy policy', 'Privacy policy', '<h2>Privacy policy</h2>\r\n<p>Privacy policy</p>', 'privacy-policy'),
-(7, 5, 'Right of withdrawal', 'Right of withdrawal', 'Right of withdrawal', '<h2>Right of withdrawal</h2>\r\n<p>Right of withdrawal</p>', 'right-of-withdrawal');
-
+(5, 5, 'Pagamento sicuro', 'Il nostro mezzo di pagamento sicuro', 'pagamento sicuro, ssl, visa, mastercard, paypal', '<h2>Pagamento sicuro</h2>\r\n<h3>Il nostro pagamento sicuro</h3><p>Con SSL</p>\r\n<h3>Usando Visa/Mastercard/Paypal</h3><p>Cosa sono questi servizi</p>', 'pagamento-sicuro');
 
 INSERT INTO `PREFIX_cms_category_lang` (`id_cms_category`, `id_lang`, `name`, `description`, `link_rewrite`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
 (1, 1, 'Home', '', 'home', NULL, NULL, NULL),
@@ -1162,6 +1035,8 @@ INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (1, 1);
 INSERT INTO `PREFIX_carrier_lang` (`id_carrier`, `id_lang`, `delay`) VALUES (1, 1, 'Pick up in-store'),(1, 2, 'Retrait au magasin'),(1, 3, 'Recogida en la tienda'),(1, 4, 'Abholung im Geschäft'),(1, 5, 'Ritiro in magazzino');
 
 INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (1, 1);
+
+INSERT INTO `PREFIX_carrier_shop` (`id_carrier`, `id_shop`) VALUES (1,1);
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES	('PS_CARRIER_DEFAULT', '1', NOW(), NOW());
 
@@ -1248,6 +1123,7 @@ INSERT INTO `PREFIX_timezone` (`name`) VALUES ('Africa/Abidjan'),('Africa/Accra'
 INSERT INTO `PREFIX_group` (`id_group`, `reduction`, `date_add`, `date_upd`) VALUES	(1, 0, NOW(), NOW());
 
 INSERT INTO `PREFIX_group_lang` (`id_group`, `id_lang`, `name`) VALUES	(1, 1, 'Default'),(1, 2, 'Défaut'),(1, 3, 'Predeterminado'),(1, 4, 'Default'),(1, 5, 'Default');
+INSERT INTO `PREFIX_group_group_shop` (`id_group`, `id_group_shop`) (SELECT `id_group`, 1 FROM `PREFIX_group`);
 
 INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) VALUES (1, 1);
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES ('PS_TAX_ADDRESS_TYPE', 'id_address_delivery', NOW(), NOW());
@@ -1284,27 +1160,16 @@ INSERT INTO `PREFIX_stock_mvt_reason_lang` (`id_stock_mvt_reason`, `id_lang`, `n
 INSERT INTO `PREFIX_address_format` (`id_country`, `format`)
 (SELECT `id_country` as id_country, 'firstname lastname\ncompany\nvat_number\naddress1\naddress2\npostcode city\nCountry:name\nphone' as format FROM `PREFIX_country`);
 
-UPDATE `PREFIX_address_format` set `format`= 'firstname lastname
-company
+UPDATE `PREFIX_address_format` set `format`='company
+firstname lastname
 address1 address2
-city, State:name postcode
+city State:name postcode 
 Country:name
-phone' where `id_country` = 21;
+phone' where `id_country`=21;
 
-UPDATE `PREFIX_address_format` set `format`= 'firstname lastname
-company
-vat_number
-address1
-address2
-postcode city
-State:name
-Country:name
-phone' where `id_country` = 10;
+INSERT INTO `PREFIX_group_shop` (`id_group_shop`, `name`, `active`, `deleted`) VALUES (1, 'Default', 1, 0);
+INSERT INTO `PREFIX_shop` (`id_shop`, `id_group_shop`, `name`, `id_category`, `id_theme`, `active`, `deleted`) VALUES (1, 1, 'Default', 1, 1, 1, 0);
+INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES (NULL, 'PS_SHOP_DEFAULT', '1', NOW(), NOW());
+INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES (NULL, 'PS_GROUP_SHOP_DEFAULT', '1', NOW(), NOW());
 
-UPDATE `PREFIX_address_format` set `format` = 'firstname lastname
-company
-address1
-address2
-city State:name postcode
-Country:name
-phone' WHERE `PREFIX_address_format`.`id_country` = 4;
+INSERT INTO `PREFIX_theme` (`id_theme`, `name`) VALUES (1, 'prestashop');

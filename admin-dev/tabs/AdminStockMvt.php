@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -39,7 +39,7 @@ class AdminStockMvt extends AdminTab
 		'id_stock_mvt' => array('title' => $this->l('ID'), 'width' => 40),
 		'product_name' => array('title' => $this->l('Product Name'), 'width' => 250, 'havingFilter' => true),
 		'quantity' => array('title' => $this->l('Quantity'), 'width' => 40),
-		'reason' => array('title' => $this->l('Reason'), 'width' => 250, 'havingFilter' => true),
+		'reason' => array('title' => $this->l('Reason'), 'width' => 250),
 		'id_order' => array('title' => $this->l('ID Order'), 'width' => 40),
 		'employee' => array('title' => $this->l('Employee'), 'width' => 100, 'havingFilter' => true),
 		);
@@ -47,10 +47,11 @@ class AdminStockMvt extends AdminTab
 		global $cookie;
 		
 		$this->_select = 'CONCAT(pl.name, \' \', GROUP_CONCAT(IFNULL(al.name, \'\'), \'\')) product_name, CONCAT(e.lastname, \' \', e.firstname) employee, mrl.name reason';
-		$this->_join = 'LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (a.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
+		$this->_join = 'INNER JOIN '._DB_PREFIX_.'stock stock ON a.id_stock = stock.id_stock '.Shop::sqlSharedStock('stock', Shop::getCurrentShop(), Shop::getCurrentGroupShop()).'
+							LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (stock.id_product = pl.id_product AND pl.id_lang = '.(int)$cookie->id_lang.')
 							LEFT JOIN `'._DB_PREFIX_.'stock_mvt_reason_lang` mrl ON (a.id_stock_mvt_reason = mrl.id_stock_mvt_reason AND mrl.id_lang = '.(int)$cookie->id_lang.')
 							LEFT JOIN `'._DB_PREFIX_.'employee` e ON (e.id_employee = a.id_employee)
-							LEFT JOIN `'._DB_PREFIX_.'product_attribute_combination` pac ON (pac.id_product_attribute = a.id_product_attribute)
+							LEFT JOIN `'._DB_PREFIX_.'product_attribute_combination` pac ON (pac.id_product_attribute = stock.id_product_attribute)
 							LEFT JOIN `'._DB_PREFIX_.'attribute_lang` al ON (al.id_attribute = pac.id_attribute AND al.id_lang = '.(int)$cookie->id_lang.')';
 		$this->_group = 'GROUP BY a.id_stock_mvt';
 		parent::__construct();

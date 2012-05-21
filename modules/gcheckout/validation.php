@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15258 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 require_once(dirname(__FILE__).'/../../config/config.inc.php');
-
-require_once(realpath(dirname(__FILE__).'/../../init.php'));
-
 require_once(dirname(__FILE__).'/gcheckout.php');
 require_once(dirname(__FILE__).'/library/googleresponse.php');
 require_once(dirname(__FILE__).'/library/googlemerchantcalculations.php');
@@ -36,17 +33,13 @@ require_once(dirname(__FILE__).'/library/googleresult.php');
 require_once(dirname(__FILE__).'/library/googlerequest.php');
 require_once(dirname(__FILE__).'/library/googlecart.php');
 
-if (!$this->active)
-	die(Tools::displayError());
 
 $merchant_id = Configuration::get('GCHECKOUT_MERCHANT_ID');
 $merchant_key = Configuration::get('GCHECKOUT_MERCHANT_KEY');
 $server_type = Configuration::get('GCHECKOUT_MODE');
 
-if (!$merchant_id || !$merchant_key)
-	die(Tools::displayError())
-
 $Gresponse = new GoogleResponse($merchant_id, $merchant_key);
+//$Grequest = new GoogleRequest($merchant_id, $merchant_key, $server_type, $currency);
 
 //Setup the log file
 if (Configuration::get('GCHECKOUT_LOGS'))
@@ -61,7 +54,7 @@ list($root, $data) = $Gresponse->GetParsedXML($xml_response);
 $Gresponse->SetMerchantAuthentication($merchant_id, $merchant_key);
 
 $status = $Gresponse->HttpAuthentication();
-if (!$status)
+if(!$status)
 	die('authentication failed');
 	
   /* Commands to send the various order processing APIs
@@ -77,19 +70,23 @@ if (!$status)
    *
    */
 
-switch ($root) 
-{
-	case "request-received":
+switch ($root) {
+	case "request-received": {
 		break;
-	case "error":
+	}
+	case "error": {
 		break;
-	case "diagnosis":
+	}
+	case "diagnosis": {
 		break;
-	case "checkout-redirect":
+	}
+	case "checkout-redirect": {
 		break;
-	case "merchant-calculation-callback":
+	}
+	case "merchant-calculation-callback": {
 		break;
-	case "new-order-notification":
+	}
+		case "new-order-notification": {
 			// secure_cart[0] => id_cart
 			// secure_cart[1] => secure_key
 
@@ -100,28 +97,31 @@ switch ($root)
 			unset($cart);
 
 			$orderTotal = (float)($data[$root]['order-total']['VALUE']);
-		$gcheckout->validateOrder((int)$secure_cart[0], Configuration::get('PS_OS_PAYMENT'), (float)$orderTotal, 
+			$gcheckout->validateOrder((int)$secure_cart[0], _PS_OS_PAYMENT_, (float)$orderTotal, 
 				$gcheckout->displayName, NULL, array(), NULL, false, $secure_cart[1]);
 			$Gresponse->SendAck();
 			break;
-	case "order-state-change-notification":
+	}
+	case "order-state-change-notification": {
 		$Gresponse->SendAck();
 		break;
-	case "charge-amount-notification":
+	}
+	case "charge-amount-notification": {
 		$Gresponse->SendAck();
 		break;
-	case "chargeback-amount-notification":
+	}
+	case "chargeback-amount-notification": {
 		$Gresponse->SendAck();
 		break;
-	case "refund-amount-notification":
+	}
+	case "refund-amount-notification": {
 		$Gresponse->SendAck();
 		break;
-	case "risk-information-notification":
+	}
+	case "risk-information-notification": {
 		$Gresponse->SendAck();
 		break;
-	case 'authorization-amount-notification':
-		$Gresponse->SendAck();
-		break;
+	}
 	default:
 		$Gresponse->SendBadRequestStatus("Invalid or not supported Message");
 		break;
@@ -138,8 +138,8 @@ switch ($root)
 */
 function get_arr_result($child_node) {
 	$result = array();
-	if (isset($child_node)) {
-		if (is_associative_array($child_node)) {
+	if(isset($child_node)) {
+		if(is_associative_array($child_node)) {
 			$result[] = $child_node;
 		}
 		else {

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7329 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsBestCustomers extends ModuleGrid
@@ -37,7 +37,7 @@ class StatsBestCustomers extends ModuleGrid
 	private $_defaultSortDirection;
 	private $_emptyMessage;
 	private $_pagingMessage;
-	
+
 	function __construct()
 	{
 		$this->name = 'statsbestcustomers';
@@ -45,12 +45,12 @@ class StatsBestCustomers extends ModuleGrid
 		$this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
+
 		$this->_defaultSortColumn = 'totalMoneySpent';
 		$this->_defaultSortDirection = 'DESC';
 		$this->_emptyMessage = $this->l('Empty recordset returned');
 		$this->_pagingMessage = $this->l('Displaying').' {0} - {1} '.$this->l('of').' {2}';
-		
+
 		$this->_columns = array(
 			array(
 				'id' => 'lastname',
@@ -83,18 +83,18 @@ class StatsBestCustomers extends ModuleGrid
 				'width' => 80,
 				'align' => 'right')
 		);
-		
+
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Best customers');
 		$this->description = $this->l('A list of the best customers');
 	}
-	
+
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
 	public function hookAdminStatsModules($params)
 	{
 		$engineParams = array(
@@ -110,7 +110,7 @@ class StatsBestCustomers extends ModuleGrid
 			$this->csvExport($engineParams);
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
-			'.ModuleGrid::engine($engineParams).'
+			'.$this->engine($engineParams).'
 		<p><a href="'.htmlentities($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset><br />
 		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
@@ -129,10 +129,6 @@ class StatsBestCustomers extends ModuleGrid
 		return $this->_html;
 	}
 
-	public function setOption($option)
-	{
-	}
-	
 	public function getData()
 	{		
 		$this->_query = '
@@ -149,8 +145,9 @@ class StatsBestCustomers extends ModuleGrid
 		FROM `'._DB_PREFIX_.'customer` c
 		LEFT JOIN `'._DB_PREFIX_.'guest` g ON c.`id_customer` = g.`id_customer`
 		LEFT JOIN `'._DB_PREFIX_.'connections` co ON g.`id_guest` = co.`id_guest`
-		WHERE co.date_add BETWEEN '.$this->getDate().'
-		GROUP BY c.`id_customer`, c.`lastname`, c.`firstname`, c.`email`';
+		WHERE co.date_add BETWEEN '.$this->getDate()
+			.$this->sqlShopRestriction(true, 'c').
+		'GROUP BY c.`id_customer`, c.`lastname`, c.`firstname`, c.`email`';
 		if (Validate::IsName($this->_sort))
 		{
 			$this->_query .= ' ORDER BY `'.$this->_sort.'`';

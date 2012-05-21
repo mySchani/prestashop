@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7075 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -32,12 +32,13 @@
 {else}
 <script type="text/javascript">
 	// <![CDATA[
+	var baseDir = '{$base_dir_ssl}';
 	var imgDir = '{$img_dir}';
-	var authenticationUrl = '{$link->getPageLink("authentication.php", true)}';
-	var orderOpcUrl = '{$link->getPageLink("order-opc.php", true)}';
-	var historyUrl = '{$link->getPageLink("history.php", true)}';
-	var guestTrackingUrl = '{$link->getPageLink("guest-tracking.php", true)}';
-	var addressUrl = '{$link->getPageLink("address.php", true)}';
+	var authenticationUrl = '{$link->getPageLink("authentication", true)}';
+	var orderOpcUrl = '{$link->getPageLink("order-opc", true)}';
+	var historyUrl = '{$link->getPageLink("history", true)}';
+	var guestTrackingUrl = '{$link->getPageLink("guest-tracking", true)}';
+	var addressUrl = '{$link->getPageLink("address", true)}';
 	var orderProcess = 'order-opc';
 	var guestCheckoutEnabled = {$PS_GUEST_CHECKOUT_ENABLED|intval};
 	var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
@@ -51,7 +52,7 @@
 	var countriesNeedIDNumber = new Array();
 	var countriesNeedZipCode = new Array();
 	var vat_management = {$vat_management|intval};
-
+	
 	var txtWithTax = "{l s='(tax incl.)'}";
 	var txtWithoutTax = "{l s='(tax excl.)'}";
 	var txtHasBeenSelected = "{l s='has been selected'}";
@@ -80,7 +81,7 @@
 	{if $productNumber}
 		<!-- Shopping Cart -->
 		{include file="$tpl_dir./shopping-cart.tpl"}
-		<!-- End Shopping Cart -->
+		<!-- Shopping Cart -->
 		{if $isLogged AND !$isGuest}
 			{include file="$tpl_dir./order-address.tpl"}
 		{else}
@@ -91,7 +92,7 @@
 		<!-- Carrier -->
 		{include file="$tpl_dir./order-carrier.tpl"}
 		<!-- END Carrier -->
-
+	
 		<!-- Payment -->
 		{include file="$tpl_dir./order-payment.tpl"}
 		<!-- END Payment -->

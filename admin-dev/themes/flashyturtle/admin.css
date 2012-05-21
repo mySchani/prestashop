@@ -39,9 +39,9 @@ legend{background:#7AB51D url(thead.png) repeat-x top left;border:1px solid #364
 #menu img{display:inline;padding:0 3px 0 6px;vertical-align:top;width:16px;height:16px}
 #menu li.active{background-position:0 -70px}
 #menu li.active a{color:#000}
-#submenu{clear:both;color:#666;margin:0;padding:0;border-bottom: #A2A8B2 1px solid}
-.withLeftBorder{background:url(bg-submenu.png) repeat-x #DADADA;background-position:0 -1px}
-#submenu li{display:inline;list-style:none;margin:0;background:transparent url(separator_subnav.png) no-repeat right 0;padding-left:8px;padding-right:8px;margin-top:8px;float:left;height:29px}
+#submenu{clear:both;color:#666;margin:0;height:38px;padding:0}
+.withLeftBorder{background:transparent url(separator_subnav.png) no-repeat 0 5px}
+#submenu li{display:inline;list-style:none;margin:0;background:transparent url(separator_subnav.png) no-repeat right 0;padding-left:8px;padding-right:8px;margin-top:8px;float:left;height:20px}
 #submenu li a{text-decoration:underline}
 #menu li{_height:32px;_padding-top:3px}
 #menu li a{_display:inline;_padding:6px 6px 4px}
@@ -54,7 +54,6 @@ hr {height: 1px;color:#DEDEDE;background-color:#DEDEDE}
 #content {background-color:#FFF;border-left:1px solid #383838;border-right:1px solid #383838}
 input[type="text"],input[type="password"],input[type="file"],textarea {border:1px solid #416110}
 select {border: 1px solid #416110}
-select[disabled="disabled"], input[disabled="disabled"],textarea[disabled="disabled"] {border: 1px solid #CCCCCC;color: #AAAAAA}
 .header_module{background:url(header_module.png);padding-left: 0.5em;padding-top: 0.8em;height:20px;color: #812143;border:solid 1px #CCC;}
 a.action_module{color: #488C40;text-decoration: underline;}
 a.header_module_toggle{font-weight: bold;color: #812143;display:block;}

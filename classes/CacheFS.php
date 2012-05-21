@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -45,8 +45,10 @@ class CacheFSCore extends Cache {
 	{
 		$path = _PS_CACHEFS_DIRECTORY_;
 		for ($i = 0; $i < $this->_depth; $i++)
-			$path .= $key[$i].'/';
-		if (@file_put_contents($path.$key, serialize($value)))
+		{
+			$path.=$key[$i].'/';
+		}
+		if(file_put_contents($path.$key, serialize($value)))
 		{
 			$this->_keysCached[$key] = true;
 			return $key;
@@ -56,12 +58,7 @@ class CacheFSCore extends Cache {
 	
 	public function setNumRows($key, $value, $expire = 0)
 	{
-		$this->_setKeys();
-		if (isset($this->_keysCached[$key.'_nrows']))
-			return true;
-		$return = $this->set($key.'_nrows', $value, $expire);
-		$this->_writeKeys();
-		return $return;
+		return $this->set($key.'_nrows', $value, $expire);
 	}
 	
 	public function getNumRows($key)
@@ -90,7 +87,7 @@ class CacheFSCore extends Cache {
 		if (file_exists(_PS_CACHEFS_DIRECTORY_.'keysCached'))
 		{
 			$file = file_get_contents(_PS_CACHEFS_DIRECTORY_.'keysCached');
-			$this->_keysCached = unserialize($file);
+			$this->_keysCached =	unserialize($file);
 		}
 		if (file_exists(_PS_CACHEFS_DIRECTORY_.'tablesCached'))
 		{
@@ -103,17 +100,15 @@ class CacheFSCore extends Cache {
 	public function setQuery($query, $result)
 	{
 		$md5_query = md5($query);
-		if ($this->isBlacklist($query))
-			return true;
-		$this->_setKeys();
 		if (isset($this->_keysCached[$md5_query]))
+			return true;
+		if ($this->isBlacklist($query))
 			return true;
 		$key = $this->set($md5_query, $result);
 		if (preg_match_all('/('._DB_PREFIX_.'[a-z_-]*)`?.*/i', $query, $res))
 			foreach($res[1] AS $table)
-				if (!isset($this->_tablesCached[$table][$key]))
+				if(!isset($this->_tablesCached[$table][$key]))
 					$this->_tablesCached[$table][$key] = true;
-		$this->_writeKeys();
 	}
 
 	public function delete($key, $timeout = 0)
@@ -133,29 +128,29 @@ class CacheFSCore extends Cache {
 
 	public function deleteQuery($query)
 	{
-		$this->_setKeys();
+
 		if (preg_match_all('/('._DB_PREFIX_.'[a-z_-]*)`?.*/i', $query, $res))
 			foreach ($res[1] AS $table)
 				if (isset($this->_tablesCached[$table]))
 				{
-					foreach (array_keys($this->_tablesCached[$table]) AS $fsKey)
+					foreach ($this->_tablesCached[$table] AS $fsKey => $foo)
 					{
 						$this->delete($fsKey);
 						$this->delete($fsKey.'_nrows');
 					}
 					unset($this->_tablesCached[$table]);
 				}
-		$this->_writeKeys();
 	}
 
 	public function flush()
 	{
 	}
 
-	private function _writeKeys()
+	public function __destruct()
 	{
-		@file_put_contents(_PS_CACHEFS_DIRECTORY_.'keysCached', serialize($this->_keysCached));
-		@file_put_contents(_PS_CACHEFS_DIRECTORY_.'tablesCached', serialize($this->_tablesCached));
+		parent::__destruct();
+		file_put_contents(_PS_CACHEFS_DIRECTORY_.'keysCached', serialize($this->_keysCached));
+		file_put_contents(_PS_CACHEFS_DIRECTORY_.'tablesCached', serialize($this->_tablesCached));
 	}
 
 	public static function deleteCacheDirectory()
@@ -167,7 +162,7 @@ class CacheFSCore extends Cache {
 	{
 		if (!$directory)
 			$directory = _PS_CACHEFS_DIRECTORY_;
-		$chars = '0123456789abcdef';
+		$chars = '0123456789abcdefghijklmnopqrstuvwxyz';
 		for ($i = 0; $i < strlen($chars); $i++)
 		{
 			$new_dir = $directory.$chars[$i].'/';

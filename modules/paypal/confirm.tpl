@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,13 +18,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{capture name=path}<a href="order.php">{l s='Your shopping cart' mod='paypal'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='PayPal' mod='paypal'}{/capture}
+{capture name=path}<a href="{$link->getPageLink('order', true)}">{l s='Your shopping cart' mod='paypal'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='PayPal' mod='paypal'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
 <h2>{l s='Order summary' mod='paypal'}</h2>
@@ -55,11 +55,11 @@
 	</p>
 	<p class="cart_navigation">
 		{if isset($paypalError)}
-			<a href="{$base_dir}order.php?step=3" class="button_large">{l s='Return' mod='paypal'}</a><br /><br />
+			<a href="{$link->getPageLink('order', true, NULL, "step=3")}" class="button_large">{l s='Return' mod='paypal'}</a><br /><br />
 			<span style="color: red;">{l s='Session expired, please go back and try again' mod='paypal'}</span>
 		{else}
-			<a href="{$base_dir}order.php?step=3" class="button_large">{l s='Other payment methods' mod='paypal'}</a>
-			<input type="submit" name="submitPayment" value="{l s='I confirm my order' mod='paypal'}" class="exclusive_large" />
+		<a href="{$link->getPageLink('order', true, NULL, "step=3")}" class="button_large">{l s='Other payment methods' mod='paypal'}</a>
+		<input type="submit" name="submitPayment" value="{l s='I confirm my order' mod='paypal'}" class="exclusive_large" />
 		{/if}
 	</p>
 </form>

@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14785 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,7 @@ function updateCarrierList(json)
 	var carriers = json.carriers;
 	
 	/* contains all carrier available for this address */
-	if ((typeof carriers == undefined) || carriers.length == 0)
+	if (carriers.length == 0)
 	{
 		checkedCarrier = 0;
 		$('input[name=id_carrier]:checked').attr('checked', false);
@@ -58,37 +58,22 @@ function updateCarrierList(json)
 			var name = carriers[i].name;
 			if (carriers[i].img != '')
 				name = '<img src="'+carriers[i].img+'" alt="" />';
-			
-			if (carriers[i].is_module > 0 && !isLogged)
+				
+			if (!(carriers[i].is_module && !isLogged))
 				var extraHtml = 'disabled="disabled"';
-			else if (checkedCarrier == carriers[i].id_carrier)
+			else if (checkedCarrier == carriers[i].id_carrier || carriers.length == 1)
 				var extraHtml = 'checked="checked"';
-			else
-				var extraHtml = '';
 			
-			if (carriers[i].price == 0)
-				var price = txtFree;
-			else
-			{
-				if (taxEnabled && displayPrice == 0)
-					var price = '<span class="price">'+formatCurrency(carriers[i].price, currencyFormat, currencySign, currencyBlank)+'</span>';
-				else
-					var price = '<span class="price">'+formatCurrency(carriers[i].price_tax_exc, currencyFormat, currencySign, currencyBlank)+'</span>';
-			}
-
 			html = html + 
 			'<tr class="'+itemType+'">'+
 				'<td class="carrier_action radio"><input type="radio" name="id_carrier" value="'+carriers[i].id_carrier+'" id="id_carrier'+carriers[i].id_carrier+'"  onclick="updateCarrierSelectionAndGift();" '+extraHtml+' /></td>'+
 				'<td class="carrier_name"><label for="id_carrier'+carriers[i].id_carrier+'">'+name+'</label></td>'+
-				'<td class="carrier_infos">'+(carriers[i].delay != null ? carriers[i].delay : '')+'</td>'+
-				'<td class="carrier_price">'+price;
-			if (carriers[i].price != 0)
-			{
-				if (taxEnabled && displayPrice == 0)
-					html = html + ' ' + txtWithTax;
-				else
-					html = html + ' ' + txtWithoutTax;
-			}
+				'<td class="carrier_infos">'+carriers[i].delay+'</td>'+
+				'<td class="carrier_price"><span class="price">'+formatCurrency(carriers[i].price, currencyFormat, currencySign, currencyBlank)+'</span>';
+			if (taxEnabled && displayPrice == 0)
+				html = html + ' ' + txtWithTax;
+			else
+				html = html + ' ' + txtWithoutTax;
 			html = html + '</td>'+
 			'</tr>';
 		}
@@ -151,12 +136,7 @@ function updateAddressSelection()
 					$('#opc_payment_methods-overlay').fadeOut('slow');
 				}
 			},
-			error: function(XMLHttpRequest, textStatus, errorThrown) {
-				alert("TECHNICAL ERROR: unable to save adresses \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-				$('#opc_account-overlay').fadeOut('slow');
-				$('#opc_delivery_methods-overlay').fadeOut('slow');
-				$('#opc_payment_methods-overlay').fadeOut('slow');
-			}
+           error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save adresses \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
 	});
 }
 
@@ -239,11 +219,7 @@ function updateCarrierSelectionAndGift()
 				$('#opc_delivery_methods-overlay').fadeOut('slow');
     		}
     	},
-		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			alert("TECHNICAL ERROR: unable to save carrier \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-			$('#opc_payment_methods-overlay').fadeOut('slow');
-			$('#opc_delivery_methods-overlay').fadeOut('slow');
-		}
+       error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save carrier \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
    });
 }
 
@@ -293,7 +269,7 @@ function saveAddress(type)
 	params += 'id_country='+encodeURIComponent($('#id_country').val())+'&';
 	if ($('#id_state'+(type == 'invoice' ? '_invoice' : '')).val())
 	{
-		params += 'id_state='+encodeURIComponent($('#id_state'+(type == 'invoice' ? '_invoice' : '')).val())+'&';
+	params += 'id_state='+encodeURIComponent($('#id_state'+(type == 'invoice' ? '_invoice' : '')).val())+'&';
 	}
 	params += 'other='+encodeURIComponent($('#other'+(type == 'invoice' ? '_invoice' : '')).val())+'&';
 	params += 'phone='+encodeURIComponent($('#phone'+(type == 'invoice' ? '_invoice' : '')).val())+'&';
@@ -342,12 +318,7 @@ function saveAddress(type)
 				result = true;
 			}
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			alert("TECHNICAL ERROR: unable to save adresses \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-			$('#opc_new_account-overlay').fadeOut('slow');
-			$('#opc_delivery_methods-overlay').fadeOut('slow');
-			$('#opc_payment_methods-overlay').fadeOut('slow');
-		}
+       error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save adresses \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
     });
 
 	return result;
@@ -367,7 +338,6 @@ function updateNewAccountToAddressBlock()
 		data: 'ajax=true&method=getAddressBlockAndCarriersAndPayments&token=' + static_token ,
 		success: function(json)
 		{
-			isLogged = 1;
 			if (json.no_address == 1)
 				document.location.href = addressUrl;
 			
@@ -393,11 +363,7 @@ function updateNewAccountToAddressBlock()
 				});
 			});
 		},
-		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			alert("TECHNICAL ERROR: unable to send login informations \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-			$('#opc_delivery_methods-overlay').fadeOut('slow');
-			$('#opc_payment_methods-overlay').fadeOut('slow');
-		}
+		error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to send login informations \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
 	});
 }
 
@@ -473,7 +439,7 @@ $(function() {
 				async: false,
 				cache: false,
 				dataType : "json",
-				data: 'SubmitLogin=true&ajax=true&email='+encodeURIComponent($('#login_email').val())+'&passwd='+encodeURIComponent($('#login_passwd').val())+'&token=' + static_token ,
+				data: 'SubmitLogin=true&ajax=true&email='+encodeURIComponent($('#login_email').val())+'&passwd='+encodeURIComponent($('#passwd').val())+'&token=' + static_token ,
 				success: function(jsonData)
 				{
 					if (jsonData.hasError)
@@ -617,7 +583,6 @@ $(function() {
 						// force to refresh carrier list
 						if (isGuest)
 						{
-							isLogged = 1;
 							$('#opc_account_saved').fadeIn('slow');
 							$('#submitAccount').hide();
 							updateAddressSelection();
@@ -629,12 +594,7 @@ $(function() {
 					$('#opc_delivery_methods-overlay').fadeOut('slow');
 					$('#opc_payment_methods-overlay').fadeOut('slow');
 				},
-				error: function(XMLHttpRequest, textStatus, errorThrown) {
-					alert("TECHNICAL ERROR: unable to save account \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-					$('#opc_new_account-overlay').fadeOut('slow');
-					$('#opc_delivery_methods-overlay').fadeOut('slow');
-					$('#opc_payment_methods-overlay').fadeOut('slow');
-				}
+				error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save account \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
 			});
 			return false;
 		});
@@ -664,10 +624,7 @@ $(function() {
            		else
            			$('#opc_delivery_methods-overlay').fadeOut('slow');
 			},
-			error: function(XMLHttpRequest, textStatus, errorThrown) {
-				alert("TECHNICAL ERROR: unable to save message \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-				$('#opc_delivery_methods-overlay').fadeOut('slow');
-			}
+           error: function(XMLHttpRequest, textStatus, errorThrown) {alert("TECHNICAL ERROR: unable to save message \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);}
        });
 	});
 	

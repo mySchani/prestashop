@@ -763,8 +763,6 @@ ul#order_step { background-color: white }
 }
 
 /* Default block style */
-div.block-cms h1 a { color: #374853; text-decoration: none; }
-div.block-cms h1 a:hover { text-decoration: underline; }
 div.block {
 	margin-bottom: 1em;
 	width: 191px
@@ -975,14 +973,6 @@ p.price_container { text-align: center }
 /* discount.tpl */
 td.discount_value { white-space: nowrap }
 
-/* address.tpl */
-p.address_navigation { 
-	padding: 1em 0!important;
-	margin-bottom: 1.5em
-}
-p.address_navigation a.button { float: left }
-p.address_navigation input[type=submit].button { float: right }
-
 /* shopping cart */
 .cart_last_product { 
 	width: 300px;
@@ -1175,9 +1165,6 @@ tr.cart_total_price { font-weight: bold }
 	margin: 1em 0
 }
 
-#guest-tracking p.center { width: 100%; text-align: center; }
-#guest-tracking p.center input.exclusive_large { display: inline; }
-
 /* views block */
 #views_block {
 	margin: 0 auto;
@@ -1226,7 +1213,7 @@ span.view_scroll_spacer {
 	background: #d0d3d8 url('../img/block_category_item_bg.jpg') repeat-x;
 	border: solid 1px #d0d3d8;
 	padding: 0.6em;
-	margin-bottom: 1.5em;
+	margin-bottom: 1.5em
 }
 #suppliers_list li a, #manufacturers_list li a {
 	text-decoration: none;
@@ -1490,23 +1477,19 @@ div.star_hover a, div.star a:hover { background-position: 0 -32px }
 	padding: 10px 
 }
 .live_edit_feed_back_ok {
-	color: #374853; 
-	background-color: #DFFAD3; 
-	padding: 4px; 
-	border: 2px solid #72CB67
+    color: #374853; 
+    background-color: #DFFAD3; 
+    padding: 4px; 
+    border: 2px solid #72CB67
 }
 .live_edit_feed_back_ko {
-	color: #374853; 
-	background-color: #FAE2E3; 
-	padding: 4px; 
-	border: 2px solid #EC9B9B
+    color: #374853; 
+    background-color: #FAE2E3; 
+    padding: 4px; 
+    border: 2px solid #EC9B9B
 }
 .add_module_live_edit {
-	background-color: #F1F2F4; 
-	padding: 4px; 
-	border: 2px solid #D0D3D8;
+    background-color: #F1F2F4; 
+    padding: 4px; 
+    border: 2px solid #D0D3D8;
 }
-
-.page404_input { float: left; }
-
-#order #discount_name { width: 130px; }

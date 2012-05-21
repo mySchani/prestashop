@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -48,15 +48,6 @@ class TaxCore extends ObjectModel
 	protected static $_product_country_tax = array();
 	protected static $_product_tax_via_rules = array();
 
-	protected	$webserviceParameters = array(
-		'objectsNodeName' => 'taxes',
-			'fields' => array(
-				'rate' => array('required' => true),
-				'active' => array(),
-				'name' => array('i18n' => true, 'required' => true),
-			),
-	);
-	
 	public function getFields()
 	{
 		parent::validateFields();
@@ -178,7 +169,7 @@ class TaxCore extends ObjectModel
 	*
 	* @return array Taxes
 	*/
-	public static function getTaxes($id_lang = false, $active = 1)
+	static public function getTaxes($id_lang = false, $active = 1)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT t.id_tax, t.rate'.((int)($id_lang) ? ', tl.name, tl.id_lang ' : '').'
@@ -188,7 +179,7 @@ class TaxCore extends ObjectModel
 		ORDER BY `name` ASC' : ''));
 	}
 
-	public static function excludeTaxeOption()
+	static public function excludeTaxeOption()
 	{
 		return !Configuration::get('PS_TAX');
 	}
@@ -196,7 +187,7 @@ class TaxCore extends ObjectModel
 	/*
 	 * @deprecated zones are not related to a tax
 	 */
-	public static function zoneHasTax($id_tax, $id_zone)
+	static public function zoneHasTax($id_tax, $id_zone)
 	{
 	    Tools::displayAsDeprecated();
 		return true;
@@ -207,7 +198,7 @@ class TaxCore extends ObjectModel
 	/**
 	 * @deprecated states are not related to a tax. Check TaxRules.
 	 */
-	public static function getRateByState($id_state, $active = 1)
+	static public function getRateByState($id_state, $active = 1)
 	{
 	    Tools::displayAsDeprecated();
         return false;
@@ -222,7 +213,7 @@ class TaxCore extends ObjectModel
 	 *
 	 * @return float taxe_rate
 	 */
-	public static function getApplicableTax($id_tax, $productTax, $id_address = NULL)
+	static public function getApplicableTax($id_tax, $productTax, $id_address = NULL)
 	{
 		Tools::displayAsDeprecated();
 		return Tax::getApplicableTaxRate($id_tax, $productTax, $id_address);
@@ -240,10 +231,12 @@ class TaxCore extends ObjectModel
 	public static function getApplicableTaxRate($id_tax, $productTax, $id_address = NULL)
 	{
 	    Tools::displayAsDeprecated();
+		global $cart, $cookie, $defaultCountry;
+
 		return $productTax;
 	}
 
-	public static function getTaxIdByRate($rate, $active = 1)
+	static public function getTaxIdByRate($rate, $active = 1)
 	{
 	    Tools::displayAsDeprecated();
 		$tax = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
@@ -267,7 +260,7 @@ class TaxCore extends ObjectModel
 		return $tax ? (int)($tax['id_tax']) : false;
 	}
 
-	public static function getDataByProductId($id_product)
+	static public function getDataByProductId($id_product)
 	{
 	    Tools::displayAsDeprecated();
 

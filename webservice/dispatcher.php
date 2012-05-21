@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,26 +19,11 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14013 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-//set http auth headers for apache+php-cgi work around
-if (isset($_SERVER['HTTP_AUTHORIZATION']) && preg_match('/Basic\s+(.*)$/i', $_SERVER['HTTP_AUTHORIZATION'], $matches))
-{
-	list($name, $password) = explode(':', base64_decode($matches[1]));
-	$_SERVER['PHP_AUTH_USER'] = strip_tags($name);
-}
-
-//set http auth headers for apache+php-cgi work around if variable gets renamed by apache
-if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION']) && preg_match('/Basic\s+(.*)$/i', $_SERVER['REDIRECT_HTTP_AUTHORIZATION'], $matches))
-{
-	list($name, $password) = explode(':', base64_decode($matches[1]));
-	$_SERVER['PHP_AUTH_USER'] = strip_tags($name);
-}
-
 
 ob_start();
 
@@ -61,7 +46,7 @@ else
 if (isset($_REQUEST['xml']))
 {
 	// if a XML is in POST
-	$input_xml = stripslashes($_REQUEST['xml']);
+	$input_xml = $_REQUEST['xml'];
 }
 else
 {

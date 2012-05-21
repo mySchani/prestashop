@@ -42,7 +42,7 @@
 				longname : 'Preview',
 				author : 'Moxiecode Systems AB',
 				authorurl : 'http://tinymce.moxiecode.com',
-				infourl : 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/preview',
+				infourl : 'http://wiki.moxiecode.com/index.php?controller=TinyMCE:Plugins/preview',
 				version : tinymce.majorVersion + "." + tinymce.minorVersion
 			};
 		}

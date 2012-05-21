@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -77,7 +77,7 @@ class AdminCMSContent extends AdminTab
 	{
 		if (Tools::isSubmit('submitDelcms') OR Tools::isSubmit('previewSubmitAddcmsAndPreview') OR Tools::isSubmit('submitAddcms') OR isset($_GET['deletecms']) OR Tools::isSubmit('viewcms') OR (Tools::isSubmit('statuscms') AND Tools::isSubmit('id_cms')) OR (Tools::isSubmit('position') AND !Tools::isSubmit('id_cms_category_to_move')))
 			$this->adminCMS->postProcess();
-		if (Tools::isSubmit('submitDelcms_category') OR Tools::isSubmit('submitAddcms_categoryAndBackToParent') OR Tools::isSubmit('submitAddcms_category') OR isset($_GET['deletecms_category']) OR (Tools::isSubmit('statuscms_category') AND Tools::isSubmit('id_cms_category')) OR (Tools::isSubmit('position') AND Tools::isSubmit('id_cms_category_to_move')))
+		if(Tools::isSubmit('submitDelcms_category') OR Tools::isSubmit('submitAddcms_categoryAndBackToParent') OR Tools::isSubmit('submitAddcms_category') OR isset($_GET['deletecms_category']) OR (Tools::isSubmit('statuscms_category') AND Tools::isSubmit('id_cms_category')) OR (Tools::isSubmit('position') AND Tools::isSubmit('id_cms_category_to_move')))
 			$this->adminCMSCategories->postProcess();
 
 	}

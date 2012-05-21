@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,7 @@ abstract class CacheCore
 {
 	
 	protected static $_instance;
-	protected $_keysCached = array();
+	protected $_keysCached;
 	protected $_tablesCached = array();
 	protected $_blackList = array('cart',
 												'cart_discount',
@@ -45,7 +45,7 @@ abstract class CacheCore
 												'page_viewed');
 	public static function getInstance()
 	{	
-		if (!isset(self::$_instance))
+		if(!isset(self::$_instance))
 		{
 			$caching_system =  _PS_CACHING_SYSTEM_;
 			self::$_instance = new $caching_system();
@@ -57,7 +57,11 @@ abstract class CacheCore
 	protected function __construct()
 	{
 	}
-		
+	
+	protected function __destruct()
+	{
+	}
+	
 	protected function isBlacklist($query)
 	{
 		foreach ($this->_blackList AS $find)
@@ -72,5 +76,5 @@ abstract class CacheCore
 	abstract public function flush();
 	abstract public function setQuery($query, $result);
 	abstract public function deleteQuery($query);
-
+	
 }

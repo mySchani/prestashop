@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14746 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -80,10 +80,10 @@ class AdminCMSCategories extends AdminTab
 		global $currentIndex, $cookie;
 		$id_cms_category = (int)(Tools::getValue('id_cms_category', 1));
 
-		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : null, !$cookie->__get($this->table.'Orderway') ? 'ASC' : null);
+		$this->getList((int)($cookie->id_lang), !$cookie->__get($this->table.'Orderby') ? 'position' : NULL, !$cookie->__get($this->table.'Orderway') ? 'ASC' : NULL);
 		
 		echo '<h3>'.(!$this->_listTotal ? ($this->l('There are no subcategories')) : ($this->_listTotal.' '.($this->_listTotal > 1 ? $this->l('subcategories') : $this->l('subCMS Category')))).' '.$this->l('in CMS Category').' "'.stripslashes(CMSCategory::hideCMSCategoryPosition($this->_CMSCategory->getName())).'"</h3>';
-		echo '<a href="'.__PS_BASE_URI__.substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__)).'?tab=AdminCMSContent&add'.$this->table.'&id_parent='.(int)Tools::getValue('id_cms_category').'&token='.($token != null ? $token : $this->token).'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add a new sub CMS Category').'</a>
+		echo '<a href="'.__PS_BASE_URI__.substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__)).'?tab=AdminCMSContent&add'.$this->table.'&id_parent='.Tools::getValue('id_cms_category').'&token='.($token!=NULL ? $token : $this->token).'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add a new sub CMS Category').'</a>
 		<div style="margin:10px;">';
 		$this->displayList($token);
 		echo '</div>';
@@ -138,6 +138,7 @@ class AdminCMSCategories extends AdminTab
 						$this->_errors[] = Tools::displayError('You need at least one object.').' <b>'.$this->table.'</b><br />'.Tools::displayError('You cannot delete all of the items.');
 					else
 					{
+						$this->deleteImage($object->id);
 						if ($this->deleted)
 						{
 							$object->deleted = 1;

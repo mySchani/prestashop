@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -44,7 +44,6 @@ class AttributeCore extends ObjectModel
 		
 	protected 	$table = 'attribute';
 	protected 	$identifier = 'id_attribute';
-	protected	$image_dir = _PS_COL_IMG_DIR_;
 	
 	protected	$webserviceParameters = array(
 		'objectsNodeName' => 'product_option_values',
@@ -89,26 +88,7 @@ class AttributeCore extends ObjectModel
 			if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_attribute` WHERE `id_product_attribute` IN ('.implode(', ', $combinationIds).')') === false)
 				return false;
 		}
-		$return = parent::delete();
-		if ($return)
-			Module::hookExec('afterDeleteAttribute', array('id_attribute' => $this->id));
-		return $return;
-	}
-	
-	public function update($nullValues = false)
-	{
-		$return = parent::update($nullValues);
-		if ($return)
-			Module::hookExec('afterSaveAttribute', array('id_attribute' => $this->id));
-		return $return;
-	}
-	
-	public function add($autodate = true, $nullValues = false)
-	{
-		$return = parent::add($autodate, $nullValues);
-		if ($return)
-			Module::hookExec('afterSaveAttribute', array('id_attribute' => $this->id));
-		return $return;
+		return parent::delete();
 	}
 
 	/**
@@ -118,7 +98,7 @@ class AttributeCore extends ObjectModel
 	 * @param boolean $notNull Get only not null fields if true
 	 * @return array Attributes
 	 */
-	public static function getAttributes($id_lang, $notNull = false)
+	static public function getAttributes($id_lang, $notNull = false)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT ag.*, agl.*, a.`id_attribute`, al.`name`, agl.`name` AS `attribute_group`
@@ -138,25 +118,28 @@ class AttributeCore extends ObjectModel
 	 * @param integer $qty Quantity needed
 	 * @return boolean Quantity is available or not
 	 */
-	public static function checkAttributeQty($id_product_attribute, $qty)
-	{ 		
-		$result = Db::getInstance()->getRow('
-		SELECT `quantity`
-		FROM `'._DB_PREFIX_.'product_attribute`
-		WHERE `id_product_attribute` = '.(int)($id_product_attribute));
+	static public function checkAttributeQty($id_product_attribute, $qty)
+	{ 
+		$sql = 'SELECT quantity
+				FROM '._DB_PREFIX_.'stock
+				WHERE id_product_attribute = '.(int)$id_product_attribute
+					.Shop::sqlSharedStock();
+		$result = (int)Db::getInstance()->getValue($sql);
 
-		return ($result AND ($qty <= $result['quantity']));
+		return ($result AND $qty <= $result);
 	}
 
 	/**
 	 * Get quantity for product with attributes quantity
 	 *
-	 * @acces public static
+	 * @deprecated since 1.5.0, use Product->getStock()
 	 * @param integer $id_product
 	 * @return mixed Quantity or false
 	 */
-	public static function getAttributeQty($id_product)
+	static public function getAttributeQty($id_product)
 	{
+		Tools::displayAsDeprecated();
+
 		$row = Db::getInstance()->getRow('
 		SELECT SUM(quantity) as quantity
 		FROM `'._DB_PREFIX_.'product_attribute` 
@@ -170,12 +153,14 @@ class AttributeCore extends ObjectModel
 	/**
 	 * Update array with veritable quantity
 	 *
-	 * @acces public static
+	 * @deprecated since 1.5.0
 	 * @param array &$arr
 	 * return bool
 	 */
-	public static function updateQtyProduct(&$arr)
+	static public function updateQtyProduct(&$arr)
 	{
+		Tools::displayAsDeprecated();
+
 		$id_product = (int)($arr['id_product']);
 		$qty = self::getAttributeQty($id_product);
 		
@@ -204,7 +189,7 @@ class AttributeCore extends ObjectModel
 	 * @param integer $id_product_attribute
 	 * @return mixed Minimal Quantity or false
 	 */
-	public static function getAttributeMinimalQty($id_product_attribute)
+	static public function getAttributeMinimalQty($id_product_attribute)
 	{
 		$minimal_quantity = Db::getInstance()->getValue('
 		SELECT `minimal_quantity`

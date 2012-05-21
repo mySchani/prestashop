@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -62,7 +62,7 @@ class AdminCurrencies extends AdminTab
 
 		parent::__construct();
 	}
-
+	
 	public function postProcess()
 	{
 		global $currentIndex;
@@ -74,7 +74,7 @@ class AdminCurrencies extends AdminTab
 				if (Validate::isLoadedObject($object = $this->loadObject()))
 				{
 					if ($object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-						$this->_errors[] = $this->l('You cannot delete the default currency');
+						$this->_errors[] = $this->l('You can\'t delete the default currency');
 					elseif ($object->delete())
 						Tools::redirectAdmin($currentIndex.'&conf=1'.'&token='.$this->token);
 					else
@@ -93,7 +93,7 @@ class AdminCurrencies extends AdminTab
 				if (Validate::isLoadedObject($object = $this->loadObject()))
 				{
 					if ($object->active AND $object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-						$this->_errors[] = $this->l('You cannot disable the default currency');
+						$this->_errors[] = $this->l('You can\'t disable the default currency');
 					elseif ($object->toggleStatus())
 						Tools::redirectAdmin($currentIndex.'&conf=5'.((($id_category = (int)(Tools::getValue('id_category'))) AND Tools::getValue('id_product')) ? '&id_category='.$id_category : '').'&token='.$this->token);
 					else
@@ -127,10 +127,6 @@ class AdminCurrencies extends AdminTab
 	public function displayOptionsList()
 	{
 		global	$currentIndex;
-		
-		$dir = explode(DIRECTORY_SEPARATOR, dirname(__FILE__));
-		for ($i = 0; $i < 2; ++$i)
-			$adminDir = array_pop($dir);
 
 		parent::displayOptionsList();
 		echo '<br /><br />
@@ -146,14 +142,8 @@ class AdminCurrencies extends AdminTab
 				</div>
 			</fieldset>
 		</form>';
-		echo '<br /></br />
-		<fieldset>
-			<legend><img src="../img/admin/tab-tools.gif" />'.$this->l('Currency rates update').'</legend>
-			<p>'.$this->l('Place this URL in crontab or call it manually daily').':<br />
-			<b>'.Tools::getShopDomain(true, true). __PS_BASE_URI__.$adminDir.'/cron_currency_rates.php?secure_key='.md5(_COOKIE_KEY_.Configuration::get('PS_SHOP_NAME')).'</b></p>
-		</fieldset>';
 	}
-	
+
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex;
@@ -186,7 +176,7 @@ class AdminCurrencies extends AdminTab
 				</div>
 				<label>'.$this->l('Symbol:').' </label>
 				<div class="margin-form">
-					<input type="text" size="3" maxlength="8" name="sign" value="'.$this->getFieldValue($obj, 'sign').'" /> <sup>*</sup>
+					<input type="text" size="3" maxlength="8" name="sign" value="'.htmlentities($this->getFieldValue($obj, 'sign'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					<p class="clear">'.$this->l('Will appear on Front Office, e.g., &euro;, $').'...</p>
 				</div>
 				<label>'.$this->l('Conversion rate:').' </label>
@@ -231,7 +221,14 @@ class AdminCurrencies extends AdminTab
 					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
 					<input type="radio" name="active" id="active_off" value="0" '.(!$this->getFieldValue($obj, 'active') ? 'checked="checked" ' : '').'/>
 					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
-				</div>
+				</div>';
+				if (Tools::isMultiShopActivated())
+				{
+					echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+					$this->displayAssoShop();
+					echo '</div>';
+				}
+				echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>

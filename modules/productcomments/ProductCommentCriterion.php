@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -123,7 +123,7 @@ class ProductCommentCriterion extends ObjectModel
 			die(Tools::displayError());
 		if ($grade < 0)
 			$grade = 0;
-		elseif ($grade > 10)
+		else if ($grade > 10)
 			$grade = 10;
 		return (Db::getInstance()->Execute('
 		INSERT INTO `'._DB_PREFIX_.'product_comment_grade`
@@ -138,7 +138,7 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterion
 	 */
-	public static function getByProduct($id_product, $id_lang)
+	static public function getByProduct($id_product, $id_lang)
 	{
 		if (!Validate::isUnsignedId($id_product) ||
 			!Validate::isUnsignedId($id_lang))
@@ -159,7 +159,7 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterions
 	 */
-	public static function getCriterions($id_lang, $type = false, $active = false)
+	static public function getCriterions($id_lang, $type = false, $active = false)
 	{
 		if (!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
@@ -207,7 +207,7 @@ class ProductCommentCriterion extends ObjectModel
 		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product` WHERE `id_product_comment_criterion` = '.(int)$this->id);
 	}
 	
-	public static function getTypes()
+	static public function getTypes()
 	{
 		return array(1 => Tools::displayError('Valid for the entire catalog'), 2 => Tools::displayError('Restricted to some categories'), 3 => Tools::displayError('Restricted to some products'));
 	}

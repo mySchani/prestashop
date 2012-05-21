@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,18 +19,18 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
-include_once(_PS_MODULE_DIR_.'paysafecard/PrepaidServices.php');
+if (!in_array('PrepaidServices', get_declared_classes())) include_once(_PS_MODULE_DIR_.'paysafecard/PrepaidServices.php');
 
-class PaysafeCard extends PSCPrepaidServices
+
+class PaysafeCard extends PrepaidServices
 {
 	public $prefix = 'PS_PSC_';
 	protected $supported_languages = array('de', 'en', 'gr', 'el', 'es', 'it', 'fr', 'nl', 'pl', 'pt', 'si', 'sk', 'tr');
@@ -47,9 +47,9 @@ class PaysafeCard extends PSCPrepaidServices
 
 	protected $supported_currencies = array('EUR', 'GBP', 'CHF', 'USD', 'PLN', 'CZK', 'SEK', 'DKK', 'RON', 'NOK', 'ARS');
 
-	protected $register_url = array('en' => 'http://api.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=8',
-	                                'fr' => 'http://api.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=3',
-	                                'es' => 'http://api.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=9');
+	protected $register_url = array('en' => 'http://www.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=8',
+	                                'fr' => 'http://www.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=3',
+	                                'es' => 'http://www.prestashop.com/partner/url.php?to=http://www.paysafecard.com/index.php?id=947&L=9');
 
 
 	protected $certificat_dir;
@@ -58,26 +58,15 @@ class PaysafeCard extends PSCPrepaidServices
 	{
 		$this->name = 'paysafecard';
 		$this->tab = 'payments_gateways';
-		$this->version = '1.4';
+		$this->version = 1.2;
 		$this->module_dir = dirname(__FILE__);
-		$this->certificat_dir = dirname(__FILE__).'/keyring/';
+        $this->certificat_dir = dirname(__FILE__).'/keyring/';
 		$this->need_instance = 0;
-		$this->author = 'PrestaShop';
 
 		parent::__construct();
 
 		$this->displayName = $this->l('PaysafeCard');
 		$this->description = $this->l('Accepts payments by PaysafeCard.');
-
-		/* For 1.4.3 and less compatibility */
-		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT');
-		if (!Configuration::get('PS_OS_PAYMENT'))
-			foreach ($updateConfig as $u)
-				if (!Configuration::get($u) && defined('_'.$u.'_'))
-					Configuration::updateValue($u, constant('_'.$u.'_'));
-
-		/** Backward compatibility */
-		require(_PS_MODULE_DIR_.$this->name.'/backward_compatibility/backward.php');
 	}
 
 	public function getL($key)
@@ -126,19 +115,6 @@ class PaysafeCard extends PSCPrepaidServices
 						   2 => $this->l('Invalid amount'));
 
 		return $error_msg[$error_code];
-	}
-	
-	/**
-	 * Set the detail of a payment - Call before the validate order init
-	 * correctly the pcc object
-	 * See Authorize documentation to know the associated key => value
-	 * @param array fields
-	 */
-	public function setTransactionDetail($response)
-	{
-		// If Exist we can store the details
-		if (isset($this->pcc))
-			$this->pcc->transaction_id = (string)$response['transaction_id'];
 	}
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14731 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7300 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -46,12 +46,11 @@ class AdminManufacturers extends AdminTab
 		$countries = Country::getCountries((int)($cookie->id_lang));
 		foreach ($countries AS $country)
 			$this->countriesArray[$country['id_country']] = $country['name'];
-		
 		$this->fieldsDisplayAddresses = array(
 		'id_address' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'm!manufacturer_name' => array('title' => $this->l('Manufacturer'), 'width' => 100),
 		'firstname' => array('title' => $this->l('First name'), 'width' => 80),
-		'lastname' => array('title' => $this->l('Last name'), 'width' => 100, 'filter_key' => 'a!lastname'),
+		'lastname' => array('title' => $this->l('Last name'), 'width' => 100, 'filter_key' => 'a!name'),
 		'postcode' => array('title' => $this->l('Postcode/ Zip Code'), 'align' => 'right', 'width' => 50),
 		'city' => array('title' => $this->l('City'), 'width' => 150),
 		'country' => array('title' => $this->l('Country'), 'width' => 100, 'type' => 'select', 'select' => $this->countriesArray, 'filter_key' => 'cl!id_country'));
@@ -78,6 +77,10 @@ class AdminManufacturers extends AdminTab
 			'active' => array('title' => $this->l('Enabled'), 'width' => 25, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false)
 		);
 
+		$countries = Country::getCountries((int)($cookie->id_lang));
+		foreach ($countries AS $country)
+			$this->countriesArray[$country['id_country']] = $country['name'];
+
 		parent::__construct();
 	}
 
@@ -91,7 +94,7 @@ class AdminManufacturers extends AdminTab
 				imageResize(_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg', _PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height']));
 		}
 	}
-
+	
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex, $cookie;
@@ -189,7 +192,14 @@ class AdminManufacturers extends AdminTab
 					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
 					<input type="radio" name="active" id="active_off" value="0" '.(!$this->getFieldValue($manufacturer, 'active') ? 'checked="checked" ' : '').'/>
 					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
-				</div>
+				</div>';
+		if (Tools::isMultiShopActivated())
+		{
+			echo '<label>'.$this->l('GroupShop association:').'</label><div class="margin-form">';
+			$this->displayAssoGroupShop();
+			echo '</div>';
+		}
+		echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -251,7 +261,7 @@ class AdminManufacturers extends AdminTab
 				</div>
 				<table border="0" cellpadding="0" cellspacing="0" class="table width3">
 					<tr>
-						<th>'.$product->name.' <img src="../img/admin/'.($product->active ? 'enabled' : 'disabled').'.gif" /></th>
+						<th>'.$product->name.'</th>
 						'.(!empty($product->reference) ? '<th width="150">'.$this->l('Ref:').' '.$product->reference.'</th>' : '').'
 						'.(!empty($product->ean13) ? '<th width="120">'.$this->l('EAN13:').' '.$product->ean13.'</th>' : '').'
 						'.(!empty($product->upc) ? '<th width="120">'.$this->l('UPC:').' '.$product->upc.'</th>' : '').'
@@ -266,8 +276,8 @@ class AdminManufacturers extends AdminTab
 					<a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button">'.$this->l('Edit').'</a>
 					<a href="?tab=AdminCatalog&id_product='.$product->id.'&deleteproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button" onclick="return confirm(\''.$this->l('Delete item #', __CLASS__, TRUE).$product->id.' ?\');">'.$this->l('Delete').'</a>
 				</div>
-				<h3><a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">'.$product->name.'</a> <img src="../img/admin/'.($product->active ? 'enabled' : 'disabled').'.gif" /></h3>
-				<table border="0" cellpadding="0" cellspacing="0" class="table" style="width:600px">
+				<h3><a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">'.$product->name.'</a></h3>
+				<table border="0" cellpadding="0" cellspacing="0" class="table" style="width: 600px;">
 					<tr>
 	                    <th>'.$this->l('Attribute name').'</th>
 	                    <th width="80">'.$this->l('Reference').'</th>
@@ -295,10 +305,9 @@ class AdminManufacturers extends AdminTab
 					echo '
 					<tr'.($irow++ % 2 ? ' class="alt_row"' : '').' >
 						<td>'.stripslashes($list).'</td>
-						<td>'.(!empty($product_attribute['reference']) ? $product_attribute['reference'] : '-').'</td>
-						<td>'.(!empty($product_attribute['ean13']) ? $product_attribute['ean13'] : '-').'</td>
-						<td>'.(!empty($product_attribute['upc']) ? $product_attribute['upc'] : '-').'</td>
-						'.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<td class="right">'.$product_attribute['quantity'].'</td>' : '').'
+						<td>'.$product_attribute['reference'].'</td>
+						'.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<td>'.$product_attribute['ean13'].'</td><td>'.$product_attribute['upc'].'</td>' : '').'
+						<td class="right">'.$product_attribute['quantity'].'</td>
 					</tr>';
 				}
 				unset($combArray);

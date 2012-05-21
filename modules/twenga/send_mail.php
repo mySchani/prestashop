@@ -15,7 +15,8 @@ if (file_exists($configPath))
 
 	$country = Twenga::getCurrentCountryName();
 
-	$to = 'rts_support@twenga.com';
+	//$to = 'rts_support@twenga.com';
+	$to = 'vincent@prestashop.com';
 	$subject = 'Site prestashop '.$country.' ayant supprimé le module';
 	
 	$template = 'mail';

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,15 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
+ 
 ob_start();
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
+define('PS_ADMIN_DIR', getcwd());
 
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 include(PS_ADMIN_DIR.'/functions.php');
@@ -49,7 +48,7 @@ if ((empty($_SERVER['HTTPS']) OR strtolower($_SERVER['HTTPS']) == 'off')
 		$errors[] = translate('SSL is activated. However, your IP is allowed to use unsecure mode (Maintenance or local IP).').'<br/>';
 	else
 		$warningSslMessage = translate('SSL is activated. Please connect using the following url to log in in secure mode (https).')
-		.'<br/><br/><a href="https://'.Tools::getServerName().Tools::safeOutput($_SERVER['REQUEST_URI']).'">https://'.Tools::getServerName().Tools::safeOutput($_SERVER['REQUEST_URI']).'</a>';
+		.'<br/><br/><a href="https://'.Tools::getServerName().$_SERVER['REQUEST_URI'].'">https://'.Tools::getServerName().$_SERVER['REQUEST_URI'].'</a>';
 }
 
 $cookie = new Cookie('psAdmin', substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__), -10));
@@ -101,12 +100,12 @@ if (Tools::isSubmit('Submit'))
 				die(Tools::displayError());
 			echo '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 			<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'.$iso.'" lang="'.$iso.'">
-				<meta http-equiv="Refresh" content="0;URL='.str_replace('&amp;', '&', Tools::safeOutput($url, true)).'">
+				<meta http-equiv="Refresh" content="0;URL='.Tools::safeOutput($url, true).'">
 				<head>
 					<script language="javascript" type="text/javascript">
-						window.location.replace("'.str_replace('&amp;', '&', Tools::safeOutput($url, true)).'");
+						window.location.replace("'.Tools::safeOutput($url, true).'");
 					</script>
-					<div style="text-align:center; margin-top:250px;"><a href="'.str_replace('&amp;', '&', Tools::safeOutput($url, true)).'">'.translate('Click here to launch Administration panel').'</a></div>
+					<div style="text-align:center; margin-top:250px;"><a href="'.Tools::safeOutput($url, true).'">'.translate('Click here to launch Administration panel').'</a></div>
 				</head>
 			</html>';
 			exit ;
@@ -145,10 +144,10 @@ echo '
 				<form action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'" method="post">';
 
 $randomNb = rand(100, 999);
-if (file_exists(PS_ADMIN_DIR.'/../install') OR file_exists(PS_ADMIN_DIR.'/../admin'))
+if(file_exists(PS_ADMIN_DIR.'/../install') OR file_exists(PS_ADMIN_DIR.'/../admin'))
 {
 	echo '				<span>'.translate('For security reasons, you cannot connect to the Back Office until after you have:').'<br /><br />
-		- '.translate('delete the /install folder').'<br />
+		- '.translate('deleted the /install folder').'<br />
 		- '.translate('renamed the /admin folder (eg. ').'/admin'.$randomNb.')<br />
 		<br />'.translate('Please then access this page by the new url (eg. http://www.domain.tld/admin').$randomNb.')</span>';
 }

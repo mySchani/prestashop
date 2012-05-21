@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -31,51 +31,51 @@ class AdminStores extends AdminTab
 {
 	/** @var array countries list */
 	private $countriesArray = array();
-
+	
 	public function __construct()
 	{
 		global $cookie;
-
+		
 	 	$this->table = 'store';
 	 	$this->className = 'Store';
 	 	$this->lang = false;
 	 	$this->edit = true;
 	 	$this->delete = true;
-
+		
 		$this->fieldImageSettings = array('name' => 'image', 'dir' => 'st');
-
+		
 		$this->_select = 'cl.`name` country, st.`name` state';
 		$this->_join = '
-		LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)$cookie->id_lang.')
+		LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)($cookie->id_lang).')
 		LEFT JOIN `'._DB_PREFIX_.'state` st ON (st.`id_state` = a.`id_state`)';
-
+		
 		$countries = Country::getCountries((int)($cookie->id_lang));
 		foreach ($countries AS $country)
 			$this->countriesArray[$country['id_country']] = $country['name'];
-
+				
 		$this->fieldsDisplay = array(
 			'id_store' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
-			'country' => array('title' => $this->l('Country'), 'width' => 100, 'filter_key' => 'cl!name'),
-			'state' => array('title' => $this->l('State'), 'width' => 100, 'filter_key' => 'st!name'),
+			'country' => array('title' => $this->l('Country'), 'width' => 100),
+			'state' => array('title' => $this->l('State'), 'width' => 100),
 			'city' => array('title' => $this->l('City'), 'width' => 100),
 			'postcode' => array('title' => $this->l('Zip code'), 'width' => 50),
-			'name' => array('title' => $this->l('Name'), 'width' => 120, 'filter_key' => 'a!name'),
+			'name' => array('title' => $this->l('Name'), 'width' => 120),
 			'phone' => array('title' => $this->l('Phone'), 'width' => 70),
 			'fax' => array('title' => $this->l('Fax'), 'width' => 70),
 			'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false)
 		);
-
+		
 		$this->optionTitle = $this->l('Parameters');
 		$this->_fieldsOptions = array(
 			'PS_STORES_DISPLAY_FOOTER' => array('title' => $this->l('Display in the footer:'), 'desc' => $this->l('Display a link to the store locator in the footer'), 'cast' => 'intval', 'type' => 'bool'),
 			'PS_STORES_DISPLAY_SITEMAP' => array('title' => $this->l('Display in the sitemap page:'), 'desc' => $this->l('Display a link to the store locator in the sitemap page'), 'cast' => 'intval', 'type' => 'bool'),
 			'PS_STORES_SIMPLIFIED' => array('title' => $this->l('Show a simplified store locator:'), 'desc' => $this->l('No map, no search, only a store directory'), 'cast' => 'intval', 'type' => 'bool'),
-			'PS_STORES_CENTER_LAT' => array('title' => $this->l('Latitude by default:'), 'desc' => $this->l('Used for the default map position'), 'cast' => 'floatval', 'type' => 'float', 'size' => '10'),
-			'PS_STORES_CENTER_LONG' => array('title' => $this->l('Longitude by default:'), 'desc' => $this->l('Used for the default map position'), 'cast' => 'floatval', 'type' => 'float', 'size' => '10'));
-
+			'PS_STORES_CENTER_LAT' => array('title' => $this->l('Latitude by default:'), 'desc' => $this->l('Used for the position by default of the map'), 'cast' => 'floatval', 'type' => 'float', 'size' => '10'),
+			'PS_STORES_CENTER_LONG' => array('title' => $this->l('Longitude by default:'), 'desc' => $this->l('Used for the position by default of the map'), 'cast' => 'floatval', 'type' => 'float', 'size' => '10'));
+		
 		parent::__construct();
 	}
-
+	
 	protected function postImage($id)
 	{
 		$ret = parent::postImage($id);
@@ -87,14 +87,14 @@ class AdminStores extends AdminTab
 		}
 		return $ret;
 	}
-
+	
 	public function displayOptionsList()
 	{
 		parent::displayOptionsList();
-
+		
 		echo '<br /><p><img src="../img/admin/asterisk.gif" class="middle" /> '.$this->l('You can also replace the icon representing your store in Google Maps. Go to the Preferences tab, and then the Appearance subtab.').'</p>';
 	}
-
+	
 	public function postProcess()
 	{
 		if (isset($_POST['submitAdd'.$this->table]))
@@ -104,19 +104,13 @@ class AdminStores extends AdminTab
 				$_POST[$kp] = trim($vp);
 
 			/* If the selected country does not contain states */
-			$id_state = (int)Tools::getValue('id_state');
+			$id_state = (int)(Tools::getValue('id_state'));
 			if ($id_country = Tools::getValue('id_country') AND $country = new Country((int)($id_country)) AND !(int)($country->contains_states) AND $id_state)
 				$this->_errors[] = Tools::displayError('You have selected a state for a country that does not contain states.');
 
 			/* If the selected country contains states, then a state have to be selected */
 			if ((int)($country->contains_states) AND !$id_state)
 				$this->_errors[] = Tools::displayError('An address located in a country containing states must have a state selected.');
-
-			$latitude = (float)Tools::getValue('latitude');
-			$longitude = (float)Tools::getValue('longitude');
-
-			if(empty($latitude) OR empty($longitude))
-			   $this->_errors[] = Tools::displayError('Latitude and longitude are required.');
 
 			/* Check zip code */
 			if ($country->need_zip_code)
@@ -149,12 +143,12 @@ class AdminStores extends AdminTab
 		if (!sizeof($this->_errors))
 			parent::postProcess();
 	}
-
+	
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex, $cookie;
 		parent::displayForm();
-
+		
 		if (!($obj = $this->loadObject(true)))
 			return;
 		echo '
@@ -232,8 +226,7 @@ class AdminStores extends AdminTab
 					</div>
 					<label>'.$this->l('Latitude / Longitude:').'</label>
 					<div class="margin-form">
-						<input type="text" size="11" maxlength="12" name="latitude" value="'.htmlentities($this->getFieldValue($obj, 'latitude'), ENT_COMPAT, 'UTF-8').'" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" /> / <input type="text" size="11" maxlength="12" name="longitude" value="'.htmlentities($this->getFieldValue($obj, 'longitude'), ENT_COMPAT, 'UTF-8').'" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" />
-						<sup>*</sup>
+						<input type="text" size="8" maxlength="10" name="latitude" value="'.htmlentities($this->getFieldValue($obj, 'latitude'), ENT_COMPAT, 'UTF-8').'" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" /> / <input type="text" size="8" maxlength="10" name="longitude" value="'.htmlentities($this->getFieldValue($obj, 'longitude'), ENT_COMPAT, 'UTF-8').'" onKeyUp="javascript:this.value = this.value.replace(/,/g, \'.\');" />
 						<p class="clear">'.$this->l('Store coords, eg. 45.265469 / -47.226478').'</p>
 					</div>
 					<label>'.$this->l('Phone:').'</label>
@@ -268,7 +261,7 @@ class AdminStores extends AdminTab
 						<p class="clear">'.$this->l('Store window picture').'</p>';
 
 				echo $this->displayImage($obj->id, _PS_STORE_IMG_DIR_.'/'.$obj->id.'.jpg', 350, NULL, Tools::getAdminToken('AdminStores'.(int)(Tab::getIdFromClassName('AdminStores')).(int)($cookie->id_employee)), true);
-
+				
 				echo '</div>
 					<table cellpadding="2" cellspacing="2" style="padding: 10px; margin-top: 15px; border: 1px solid #BBB;">
 						<tr>
@@ -278,7 +271,7 @@ class AdminStores extends AdminTab
 							<td>&nbsp;</td>
 							<td style="font-size: 0.85em;">'.$this->l('Sample: 10:00AM - 9:30PM').'</td>
 						</tr>';
-
+						
 						$days = array();
 						$days[1] = $this->l('Monday');
 						$days[2] = $this->l('Tuesday');
@@ -287,11 +280,11 @@ class AdminStores extends AdminTab
 						$days[5] = $this->l('Friday');
 						$days[6] = $this->l('Saturday');
 						$days[7] = $this->l('Sunday');
-
+						
 						$hours = $this->getFieldValue($obj, 'hours');
 						if (!empty($hours))
 							$hoursUnserialized = unserialize($hours);
-
+						
 						for ($i = 1; $i < 8; $i++)
 							echo '
 							<tr style="color: #7F7F7F; font-size: 0.85em;">
@@ -301,7 +294,14 @@ class AdminStores extends AdminTab
 			echo '
 					</table>
 				</div>
-				<div class="clear"></div>
+				<div class="clear"></div>';
+			if (Tools::isMultiShopActivated())
+			{
+				echo '<label>'.$this->l('Shop association:').'</label><div class="margin-form">';
+				$this->displayAssoShop();
+				echo '</div>';
+			}
+			echo '
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -309,6 +309,7 @@ class AdminStores extends AdminTab
 			</fieldset>
 		</form>';
 	}
+
 }
 
 

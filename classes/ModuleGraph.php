@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7329 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -40,18 +40,19 @@ abstract class ModuleGraphCore extends Module
 		
 	/** @var ModuleGraphEngine graph engine */
 	protected $_render;
-	
+
 	abstract protected function getData($layers);
-	
+
 	public function setEmployee($id_employee)
 	{
 		$this->_employee = new Employee((int)($id_employee));
 	}
+
 	public function setLang($id_lang)
 	{
 		$this->_id_lang = $id_lang;
 	}
-	
+
 	protected function setDateGraph($layers, $legend = false)
 	{
 		// Get dates in a manageable format
@@ -159,6 +160,7 @@ abstract class ModuleGraphCore extends Module
 	protected function csvExport($datas)
 	{
 		global $cookie;
+
 		$this->setEmployee(intval($cookie->id_employee));
 		$this->setLang(intval($cookie->id_lang));
 
@@ -167,11 +169,12 @@ abstract class ModuleGraphCore extends Module
 			$this->setOption($datas['option'], $layers);
 		$this->getData($layers);
 		
+		// @todo use native CSV PHP functions ?
 		// Generate first line (column titles)
 		if (is_array($this->_titles['main']))
 			for ($i = 0; $i <= sizeof($this->_titles['main']); $i++)
 			{
-				if ($i > 0)
+				if($i > 0)
 					$this->_csv .= ';';
 				if (isset($this->_titles['main'][$i]))
 					$this->_csv .= $this->_titles['main'][$i];
@@ -228,12 +231,8 @@ abstract class ModuleGraphCore extends Module
 	
 	public function create($render, $type, $width, $height, $layers)
 	{
-		if (!Validate::isModuleName($render))
-    		die(Tools::displayError());
-    		
 		if (!Tools::file_exists_cache($file = dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php'))
 			die(Tools::displayError());
-			
 		require_once($file);
 		$this->_render = new $render($type);
 		
@@ -248,15 +247,20 @@ abstract class ModuleGraphCore extends Module
 	{
 		$this->_render->draw();
 	}
+	
+	/**
+	 * @todo Set this method as abstracted ? Quid of module compatibility.
+	 */
+	public function setOption($option, $layers = 1)
+	{
+	}
 		
-	public static function engine($params)
-	{		
+	public function engine($params)
+	{
+		global $cookie;
+
 		if (!($render = Configuration::get('PS_STATS_RENDER')))
 			return Tools::displayError('No graph engine selected');
-
-		if (!Validate::isModuleName($render))
-    		die(Tools::displayError());
-    		
 		if (!file_exists(dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php'))
 			return Tools::displayError('Graph engine selected is unavailable.');
 			
@@ -272,12 +276,13 @@ abstract class ModuleGraphCore extends Module
 			$params['width'] = 550;
 		if (!isset($params['height']))
 			$params['height'] = 270;
-		
-		global $cookie;
-		$id_employee = (int)($cookie->id_employee);
-		$drawer = 'drawer.php?render='.$render.'&module='.Tools::safeOutput(Tools::getValue('module')).'&type='.Tools::safeOutput($params['type']).'&layers='.Tools::safeOutput($params['layers']).'&id_employee='.$id_employee.'&id_lang='.$id_lang;
-		if (isset($params['option']))
-			$drawer .= '&option='.$params['option'];
+			
+		$urlParams = $params;
+		$urlParams['render'] = $render;
+		$urlParams['module'] = Tools::getValue('module');
+		$urlParams['id_employee'] = $id_employee;
+		$urlParams['id_lang'] = $id_lang;
+		$drawer = 'drawer.php?' . http_build_query($urlParams);
 			
 		require_once(dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php');
 		return call_user_func(array($render, 'hookGraphEngine'), $params, $drawer);

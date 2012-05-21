@@ -2,9 +2,9 @@
 <module>
 	<name>treepodia</name>
 	<displayName><![CDATA[Treepodia]]></displayName>
-	<version><![CDATA[1.6.1]]></version>
+	<version><![CDATA[1.2]]></version>
 	<description><![CDATA[Cover your entire catalog with product videos in 24 hours.]]></description>
-	<author><![CDATA[PrestaShop]]></author>
+	<author><![CDATA[]]></author>
 	<tab><![CDATA[front_office_features]]></tab>
 	<is_configurable>1</is_configurable>
 	<need_instance>1</need_instance>

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -43,8 +43,8 @@ class AdminLocalization extends AdminPreferences
 			'PS_VOLUME_UNIT' => array('title' => $this->l('Volume unit:'), 'desc' => $this->l('The volume unit of your shop'), 'validation' => 'isWeightUnit', 'required' => true, 'type' => 'text'),
 			'PS_DIMENSION_UNIT' => array('title' => $this->l('Dimension unit:'), 'desc' => $this->l('The dimension unit of your shop (eg. cm or in)'), 'validation' => 'isDistanceUnit', 'required' => true, 'type' => 'text'));
 		$this->_fieldsOptions = array(
-			'PS_LOCALE_LANGUAGE' => array('title' => $this->l('Language locale:'), 'desc' => $this->l('Your server\'s language locale.'), 'validation' => 'isLanguageIsoCode', 'type' => 'text'),
-			'PS_LOCALE_COUNTRY' => array('title' => $this->l('Country locale:'), 'desc' => $this->l('Your server\'s country locale.'), 'validation' => 'isLanguageIsoCode', 'type' => 'text')
+			'PS_LOCALE_LANGUAGE' => array('title' => $this->l('Language locale:'), 'desc' => $this->l('Your server\'s language locale.'), 'validation' => 'isLanguageIsoCode', 'type' => 'text', 'visibility' => Shop::CONTEXT_ALL),
+			'PS_LOCALE_COUNTRY' => array('title' => $this->l('Country locale:'), 'desc' => $this->l('Your server\'s country locale.'), 'validation' => 'isLanguageIsoCode', 'type' => 'text', 'visibility' => Shop::CONTEXT_ALL)
 		);
 
 		parent::__construct();
@@ -100,15 +100,11 @@ class AdminLocalization extends AdminPreferences
 			<label>'.$this->l('Localization pack you want to import:').'</label>
 			<div class="margin-form">
 			<select id="iso_localization_pack" name="iso_localization_pack">';
-			$localization_packs = Tools::simplexml_load_file('http://www.prestashop.com/rss/localization.xml');
+			$localization_packs = @simplexml_load_file('http://www.prestashop.com/rss/localization.xml');
 			if (!$localization_packs)
-			{
-				$localizationFile = dirname(__FILE__).'/../../localization/localization.xml';
-				if (file_exists($localizationFile))
-					$localization_packs = simplexml_load_file($localizationFile);
-			}
+				$localization_packs = simplexml_load_file(dirname(__FILE__).'/../../localization/localization.xml');
 			if ($localization_packs)
-				foreach ($localization_packs->pack as $pack)
+				foreach($localization_packs->pack as $pack)
 						echo '<option value="'.$pack->iso.'">'.$pack->name.'</option>';
 			else
 				echo '<option value="0">'.$this->l('Cannot connect to prestashop.com').'</option>';

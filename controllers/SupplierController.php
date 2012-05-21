@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,14 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class SupplierControllerCore extends FrontController
 {
-	public $php_self = 'supplier.php';
-	
 	protected $supplier;
 	
 	public function setMedia()
@@ -37,71 +35,47 @@ class SupplierControllerCore extends FrontController
 		Tools::addCSS(_THEME_CSS_DIR_.'product_list.css');
 	}
 	
-	public function canonicalRedirection()
-	{
-		if (Validate::isLoadedObject($this->supplier) && Configuration::get('PS_CANONICAL_REDIRECT') && strtoupper($_SERVER['REQUEST_METHOD']) == 'GET')
-		{
-			$canonicalURL = self::$link->getSupplierLink($this->supplier);
-			if (!preg_match('/^'.Tools::pRegexp($canonicalURL, '/').'([&?].*)?$/', Tools::getProtocol().$_SERVER['HTTP_HOST'].$_SERVER['REQUEST_URI']))
-			{
-				header('HTTP/1.0 301 Moved');
-				header('Cache-Control: no-cache');
-				if (defined('_PS_MODE_DEV_') AND _PS_MODE_DEV_)
-					die('[Debug] This page has moved<br />Please use the following URL instead: <a href="'.$canonicalURL.'">'.$canonicalURL.'</a>');
-				Tools::redirectLink($canonicalURL);
-			}
-		}
-	}
-	
-	public function preProcess()
-	{
-		if ($id_supplier = (int)Tools::getValue('id_supplier'))
-		{
-			$this->supplier = new Supplier($id_supplier, self::$cookie->id_lang);
-
-			if (!Validate::isLoadedObject($this->supplier) OR !$this->supplier->active)
-			{
-				header('HTTP/1.1 404 Not Found');
-				header('Status: 404 Not Found');
-				$this->errors[] = Tools::displayError('Supplier does not exist.');
-			}
-			else
-				$this->canonicalRedirection();
-		}
-
-		parent::preProcess();
-	}
-	
 	public function process()
 	{
-		if (Validate::isLoadedObject($this->supplier) AND $this->supplier->active)
+		if ($id_supplier = Tools::getValue('id_supplier'))
 		{
-			$nbProducts = $this->supplier->getProducts($this->supplier->id, NULL, NULL, NULL, $this->orderBy, $this->orderWay, true);
-			$this->pagination((int)$nbProducts);
-			self::$smarty->assign(array(
-				'nb_products' => $nbProducts,
-				'products' => $this->supplier->getProducts($this->supplier->id, (int)self::$cookie->id_lang, (int)$this->p, (int)$this->n, $this->orderBy, $this->orderWay),
-				'path' => ($this->supplier->active ? Tools::safeOutput($this->supplier->name) : ''),
-				'supplier' => $this->supplier));
+			$this->supplier = new Supplier((int)$id_supplier, self::$cookie->id_lang);
+			if (Validate::isLoadedObject($this->supplier) AND $this->supplier->active AND $this->supplier->isAssociatedToGroupShop((int)$this->id_current_shop))
+			{
+				$nbProducts = $this->supplier->getProducts($id_supplier, NULL, NULL, NULL, $this->orderBy, $this->orderWay, true);
+				$this->pagination((int)$nbProducts);
+				self::$smarty->assign(array(
+					'nb_products' => $nbProducts,
+					'products' => $this->supplier->getProducts($id_supplier, (int)self::$cookie->id_lang, (int)$this->p, (int)$this->n, $this->orderBy, $this->orderWay),
+					'path' => ($this->supplier->active ? Tools::safeOutput($this->supplier->name) : ''),
+					'supplier' => $this->supplier));
+			}
+			else
+			{
+				header('HTTP/1.1 404 Not Found');
+				header('Status: 404 Not Found');			
+				$this->errors[] = Tools::displayError('Supplier does not exist');
+			}
 		}
-		elseif (!Tools::getValue('id_supplier'))
+		else
 		{
 			if (Configuration::get('PS_DISPLAY_SUPPLIERS'))
 			{
-				$result = Supplier::getSuppliers(true, (int)self::$cookie->id_lang, true);
-				$nbProducts = count($result);
+				$data = call_user_func(array('Supplier', 'getSuppliers'), true, (int)(self::$cookie->id_lang), true);
+				$nbProducts = count($data);
 				$this->pagination($nbProducts);
-				
-				$suppliers = Supplier::getSuppliers(true, (int)self::$cookie->id_lang, true, $this->p, $this->n);
-				foreach ($suppliers AS &$row)
-					$row['image'] = (!file_exists(_PS_SUPP_IMG_DIR_.'/'.$row['id_supplier'].'-medium.jpg')) ? Language::getIsoById((int)self::$cookie->id_lang).'-default' : $row['id_supplier'];
-				
+		
+				$data = call_user_func(array('Supplier', 'getSuppliers'), true, (int)(self::$cookie->id_lang), true, $this->p, $this->n);
+				$imgDir = _PS_SUPP_IMG_DIR_;
+				foreach ($data AS &$item)
+					$item['image'] = (!file_exists($imgDir.'/'.$item['id_supplier'].'-medium.jpg')) ? 
+						Language::getIsoById((int)(self::$cookie->id_lang)).'-default' :	$item['id_supplier'];
 				self::$smarty->assign(array(
-					'pages_nb' => ceil($nbProducts / (int)$this->n),
-					'nbSuppliers' => $nbProducts,
-					'mediumSize' => Image::getSize('medium'),
-					'suppliers' => $suppliers,
-					'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
+				'pages_nb' => ceil($nbProducts / (int)($this->n)),
+				'nbSuppliers' => $nbProducts,
+				'mediumSize' => Image::getSize('medium'),
+				'suppliers' => $data,
+				'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
 				));
 			}
 			else

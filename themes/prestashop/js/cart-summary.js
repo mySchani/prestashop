@@ -1,5 +1,5 @@
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -169,11 +169,6 @@ function upQuantity(id, qty)
     			updateCartSummary(jsonData.summary);
     			updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 				updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
-				// if we are in one page checkout
-				if (typeof(orderProcess) != 'undefined')
-					updateCarrierSelectionAndGift();
-				else
-					updateCartMinQuantity();
 	    		if (jsonData.carriers != null)
 					updateCarrierList(jsonData);
     		}
@@ -230,11 +225,6 @@ function downQuantity(id, qty)
 	    			updateCartSummary(jsonData.summary);
 	    			updateHookShoppingCart(jsonData.HOOK_SHOPPING_CART);
 					updateHookShoppingCartExtra(jsonData.HOOK_SHOPPING_CART_EXTRA);
-					// if we are in one page checkout
-					if (typeof(orderProcess) != 'undefined')
-						updateCarrierSelectionAndGift();
-					else
-						updateCartMinQuantity();
 	    			if (jsonData.carriers != null)
 						updateCarrierList(jsonData);
 	    		}
@@ -254,10 +244,6 @@ function updateCartSummary(json)
 	// Update products prices + discount
 	var i;
 	var nbrProducts = 0;
-
-	if (typeof json == 'undefined')
-		return;
-
 	for (i=0;i<json.products.length;i++)
 	{
 		key_for_blockcart = json.products[i].id_product+'_'+json.products[i].id_product_attribute;
@@ -418,42 +404,3 @@ function updateHookShoppingCartExtra(html)
 	$('#HOOK_SHOPPING_CART_EXTRA').html(html);
 }
 
-function updateCartMinQuantity()
-{
-	$.ajax({
-       type: 'POST',
-       url: baseDir + 'order.php',
-       async: false,
-       cache: false,
-       dataType : "json",
-       data: 'ajax=true&checkMinQuantity=true&token=' + static_token ,
-       success: function(jsonData)
-       {
-       		if (jsonData.hasError)
-    		{
-    			var errors = '';
-    			for(error in jsonData.errors)
-    				//IE6 bug fix
-    				if(error != 'indexOf')
-    					errors += jsonData.errors[error] + "\n";
-    			alert(errors);
-    		}
-    		else
-    			if (jsonData.data)
-    			{
-    				var html = $(jsonData.data);
-    				// Hide 
-    				html.hide();
-    				$('#order_step').after(html);
-    				html.slideDown('slow');
-    			}
-    			else
-    				$('.error').slideUp('slow', function(){
-    					$(this).remove();
-    				});
-    	},
-		error: function(XMLHttpRequest, textStatus, errorThrown) {
-			alert("TECHNICAL ERROR: unable to check minimal quantity \n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
-		}
-   });	
-}

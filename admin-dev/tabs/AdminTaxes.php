@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14703 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7060 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -42,16 +42,12 @@ class AdminTaxes extends AdminTab
 		'rate' => array('title' => $this->l('Rate'), 'align' => 'center', 'suffix' => '%', 'width' => 50),
 		'active' => array('title' => $this->l('Enabled'), 'width' => 25, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false));
 
-		$ecotax_desc = '';
-		if (Configuration::get('PS_USE_ECOTAX'))
-			$ecotax_desc = $this->l('If you disable the ecotax, the ecotax for all your products will be set to 0');
-
 		$this->optionTitle = $this->l('Tax options');
 		$this->_fieldsOptions = array(
 		'PS_TAX' => array('title' => $this->l('Enable tax:'), 'desc' => $this->l('Select whether or not to include tax on purchases'), 'cast' => 'intval', 'type' => 'bool'),
 		'PS_TAX_DISPLAY' => array('title' => $this->l('Display tax in cart:'), 'desc' => $this->l('Select whether or not to display tax on a distinct line in the cart'), 'cast' => 'intval', 'type' => 'bool'),
 		'PS_TAX_ADDRESS_TYPE' => array('title' => $this->l('Base on:'), 'cast' => 'pSQL', 'type' => 'select', 'list' => array(array('name' => $this->l('Invoice Address'), 'id' => 'id_address_invoice'), array('name' => $this->l('Delivery Address'), 'id' => 'id_address_delivery')), 'identifier' => 'id'),
-		'PS_USE_ECOTAX' => array('title' => $this->l('Use ecotax'), 'desc' => $ecotax_desc, 'validation' => 'isBool', 'cast' => 'intval', 'type' => 'bool'),
+		'PS_USE_ECOTAX' => array('title' => $this->l('Use ecotax'), 'validation' => 'isBool', 'cast' => 'intval', 'type' => 'bool'),
 		);
 
 		if (Configuration::get('PS_USE_ECOTAX'))
@@ -110,7 +106,7 @@ class AdminTaxes extends AdminTab
 	{
 		global $currentIndex;
 
-		if (Tools::getValue('submitAdd'.$this->table))
+		if(Tools::getValue('submitAdd'.$this->table))
 		{
 		 	/* Checking fields validity */
 			$this->validateRules();
@@ -188,23 +184,9 @@ class AdminTaxes extends AdminTab
         $confirm = ($value AND TaxRule::isTaxInUse($id)) ? 'onclick="return confirm(\''. $this->l('This tax is currently in use in a tax rule. If you continue this tax will be removed from the tax rule, are you sure?').'\')"' : '';
 
 	    echo '<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&'.$active.
-	        ((int)$id_category && (int)$id_product ? '&id_category='.(int)$id_category : '').'&token='.($token != null ? $token : $this->token).'" '.$confirm.'>
+	        ((int)$id_category AND (int)$id_product ? '&id_category='.$id_category : '').'&token='.($token!=NULL ? $token : $this->token).'" '.$confirm.'>
 	        <img src="../img/admin/'.($value ? 'enabled.gif' : 'disabled.gif').'"
 	        alt="'.($value ? $this->l('Enabled') : $this->l('Disabled')).'" title="'.($value ? $this->l('Enabled') : $this->l('Disabled')).'" /></a>';
-	}
-
-	public function updateOptionPsUseEcotax($value)
-	{
-		$old_value = (int)Configuration::get('PS_USE_ECOTAX');
-
-		if ($old_value != $value)
-		{
-			// Reset ecotax
-			if ($value == 0)
-				Product::resetEcoTax();
-
-			Configuration::updateValue('PS_USE_ECOTAX', (int)$value);
-		}
 	}
 }
 

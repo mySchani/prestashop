@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,21 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class ContactControllerCore extends FrontController
 {
-	public $php_self = 'contact-form.php';
-	public $ssl = true;
+	public function __construct()
+	{
+		$this->php_self = 'contact';
+		$this->ssl = true;
+
+		parent::__construct();
+	}
 
 	public function preProcess()
 	{
@@ -98,7 +103,7 @@ class ContactControllerCore extends FrontController
 				else
 				{
 					$customer = new Customer();
-					$customer->getByEmail($from);
+					$customer->getByEmail($from, NULL, (int)$this->id_current_group_shop, (int)$this->id_current_shop);
 				}
 
 				$contact = new Contact($id_contact, self::$cookie->id_lang);
@@ -107,17 +112,17 @@ class ContactControllerCore extends FrontController
 						$id_customer_thread = (int)Tools::getValue('id_customer_thread')
 						AND (int)Db::getInstance()->getValue('
 						SELECT cm.id_customer_thread FROM '._DB_PREFIX_.'customer_thread cm
-						WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND token = \''.pSQL(Tools::getValue('token')).'\'')
+						WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop='.(int)$this->id_current_shop.' AND token = \''.pSQL(Tools::getValue('token')).'\'')
 					) OR (
 						$id_customer_thread = (int)Db::getInstance()->getValue('
 						SELECT cm.id_customer_thread FROM '._DB_PREFIX_.'customer_thread cm
-						WHERE cm.email = \''.pSQL($from).'\' AND cm.id_order = '.(int)(Tools::getValue('id_order')).'')
+						WHERE cm.email = \''.pSQL($from).'\' AND cm.id_shop='.(int)$this->id_current_shop.' AND cm.id_order = '.(int)(Tools::getValue('id_order')).'')
 					)))
 				{
 					$fields = Db::getInstance()->ExecuteS('
 					SELECT cm.id_customer_thread, cm.id_contact, cm.id_customer, cm.id_order, cm.id_product, cm.email
 					FROM '._DB_PREFIX_.'customer_thread cm
-					WHERE email = \''.pSQL($from).'\' AND ('.
+					WHERE email = \''.pSQL($from).'\' AND cm.id_shop='.(int)$this->id_current_shop.' AND ('.
 						($customer->id ? 'id_customer = '.(int)($customer->id).' OR ' : '').'
 						id_order = '.(int)(Tools::getValue('id_order')).')');
 					$score = 0;
@@ -143,7 +148,7 @@ class ContactControllerCore extends FrontController
 				}
 				$old_message = Db::getInstance()->getValue('
 					SELECT cm.message FROM '._DB_PREFIX_.'customer_message cm
-					WHERE cm.id_customer_thread = '.(int)($id_customer_thread).'
+					WHERE cm.id_customer_thread = '.(int)($id_customer_thread).'AND cm.id_shop='.(int)$this->id_current_shop.'
 					ORDER BY date_add DESC');
 				if ($old_message == htmlentities($message, ENT_COMPAT, 'UTF-8'))
 				{
@@ -153,8 +158,8 @@ class ContactControllerCore extends FrontController
 				}
 				if (!empty($contact->email))
 				{
-					if (Mail::Send((int)self::$cookie->id_lang, 'contact', Mail::l('Message from contact form', (int)self::$cookie->id_lang), array('{email}' => $from, '{message}' => stripslashes($message)), $contact->email, $contact->name, $from, ((int)(self::$cookie->id_customer) ? $customer->firstname.' '.$customer->lastname : ''), $fileAttachment)
-						AND Mail::Send((int)self::$cookie->id_lang, 'contact_form', Mail::l('Your message has been correctly sent', (int)self::$cookie->id_lang), array('{message}' => stripslashes($message)), $from))
+					if (Mail::Send((int)(self::$cookie->id_lang), 'contact', Mail::l('Message from contact form'), array('{email}' => $from, '{message}' => stripslashes($message)), $contact->email, $contact->name, $from, ((int)(self::$cookie->id_customer) ? $customer->firstname.' '.$customer->lastname : ''), $fileAttachment)
+						AND Mail::Send((int)(self::$cookie->id_lang), 'contact_form', Mail::l('Your message has been correctly sent'), array('{message}' => stripslashes($message)), $from))
 						self::$smarty->assign('confirmation', 1);
 					else
 						$this->errors[] = Tools::displayError('An error occurred while sending message.');
@@ -179,6 +184,7 @@ class ContactControllerCore extends FrontController
 						$ct = new CustomerThread();
 						if (isset($customer->id))
 							$ct->id_customer = (int)($customer->id);
+						$ct->id_shop = (int)$this->id_current_shop;
 						if ($id_order = (int)Tools::getValue('id_order'))
 							$ct->id_order = $id_order;
 						if ($id_product = (int)Tools::getValue('id_product'))
@@ -203,7 +209,7 @@ class ContactControllerCore extends FrontController
 						if ($cm->add())
 						{
 							if (empty($contact->email))
-								Mail::Send((int)self::$cookie->id_lang, 'contact_form', Mail::l('Your message has been correctly sent', (int)self::$cookie->id_lang), array('{message}' => stripslashes($message)), $from);
+								Mail::Send((int)(self::$cookie->id_lang), 'contact_form', Mail::l('Your message has been correctly sent'), array('{message}' => stripslashes($message)), $from);
 							self::$smarty->assign('confirmation', 1);
 						}
 						else
@@ -240,11 +246,10 @@ class ContactControllerCore extends FrontController
 		{
 			$customerThread = Db::getInstance()->getRow('
 			SELECT cm.* FROM '._DB_PREFIX_.'customer_thread cm
-			WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND token = \''.pSQL($token).'\'');
+			WHERE cm.id_customer_thread = '.(int)$id_customer_thread.' AND cm.id_shop='.(int)$this->id_current_shop.' AND token = \''.pSQL($token).'\'');
 			self::$smarty->assign('customerThread', $customerThread);
 		}
-
-		self::$smarty->assign(array('contacts' => Contact::getContacts((int)(self::$cookie->id_lang)),
+		self::$smarty->assign(array('contacts' => Contact::getContacts((int)self::$cookie->id_lang, (int)$this->id_current_shop),
 		'message' => html_entity_decode(Tools::getValue('message'))
 		));
 	}

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,14 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 if (file_exists(dirname(__FILE__).'/../config/settings.inc.php'))
 	include_once(dirname(__FILE__).'/../config/settings.inc.php');
+//include_once(dirname(__FILE__).'/../classes/MySQL.php');
 
 abstract class DbCore
 {
@@ -83,7 +84,7 @@ abstract class DbCore
 		else
 			$idServer = ($nServers > 2 AND ($id = ++self::$_idServer % (int)$nServers) !== 0) ? $id : 1;
 
-		if (!isset(self::$_instance[$idServer]))
+		if(!isset(self::$_instance[$idServer]))
 			self::$_instance[(int)($idServer)] = new MySQL(self::$_servers[(int)($idServer)]['server'], self::$_servers[(int)($idServer)]['user'], self::$_servers[(int)($idServer)]['password'], self::$_servers[(int)($idServer)]['database']);
 		
 		return self::$_instance[(int)($idServer)];
@@ -132,7 +133,7 @@ abstract class DbCore
 				$query .= '`'.$key.'`,';
 			$query = rtrim($query, ',').') VALUES (';
 			foreach ($values AS $key => $value)
-				$query .= '\''.(is_bool($value) ? (int)$value : $value).'\',';
+				$query .= '\''.$value.'\',';
 			$query = rtrim($query, ',').')';
 			if ($limit)
 				$query .= ' LIMIT '.(int)($limit);
@@ -142,7 +143,7 @@ abstract class DbCore
 		{
 			$query = 'UPDATE `'.$table.'` SET ';
 			foreach ($values AS $key => $value)
-				$query .= '`'.$key.'` = \''.(is_bool($value) ? (int)$value : $value).'\',';
+				$query .= '`'.$key.'` = \''.$value.'\',';
 			$query = rtrim($query, ',');
 			if ($where)
 				$query .= ' WHERE '.$where;
@@ -177,7 +178,7 @@ abstract class DbCore
 				$query .= '`'.$key.'`,';
 			$query = rtrim($query, ',').') VALUES (';
 			foreach ($values AS $key => $value)
-				$query .= (($value === '' || $value === null) ? 'NULL' : '\''.(is_bool($value) ? (int)$value : $value).'\'').',';
+				$query .= (($value === '' OR $value === NULL) ? 'NULL' : '\''.$value.'\'').',';
 			$query = rtrim($query, ',').')';
 			if ($limit)
 				$query .= ' LIMIT '.(int)($limit);
@@ -187,7 +188,7 @@ abstract class DbCore
 		{
 			$query = 'UPDATE `'.$table.'` SET ';
 			foreach ($values AS $key => $value)
-				$query .= '`'.$key.'` = '.(($value === '' || $value === null) ? 'NULL' : '\''.(is_bool($value) ? (int)$value : $value).'\'').',';
+				$query .= '`'.$key.'` = '.(($value === '' OR $value === NULL) ? 'NULL' : '\''.$value.'\'').',';
 			$query = rtrim($query, ',');
 			if ($where)
 				$query .= ' WHERE '.$where;
@@ -242,31 +243,25 @@ abstract class DbCore
 	 */
 	abstract public function nextRow($result = false);
 	
-	/*
-	 * return sql server version.
-	 * used in Order.php to allow or not subquery in update
-	 */
-	abstract public function getServerVersion();
-
 	/**
 		 * Alias of Db::getInstance()->ExecuteS
 		 *
 		 * @acces string query The query to execute
 		 * @return array Array of line returned by MySQL
 		 */
-	public static function s($query, $use_cache = 1)
+	static public function s($query, $use_cache = 1)
 	{
 		return Db::getInstance()->ExecuteS($query, true, $use_cache);
 	}
 	
-	public static function ps($query, $use_cache = 1)
+	static public function ps($query, $use_cache = 1)
 	{
 		$ret = Db::s($query, $use_cache);
 		p($ret);
 		return $ret;
 	}
 	
-	public static function ds($query, $use_cache = 1)
+	static public function ds($query, $use_cache = 1)
 	{
 		Db::s($query, $use_cache);
 		die();
@@ -319,11 +314,6 @@ function pSQL($string, $htmlOK = false)
 	return $string;
 }
 
-function bqSQL($string)
-{
-	return str_replace('`', '\`', pSQL($string));
-}
-
 /**
  * Convert \n and \r\n and \r to <br />
  *
@@ -334,3 +324,5 @@ function nl2br2($string)
 {
 	return str_replace(array("\r\n", "\r", "\n"), '<br />', $string);
 }
+
+

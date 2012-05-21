@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -75,13 +75,14 @@ class ContactCore extends ObjectModel
 	  * @param integer $id_lang Language ID
 	  * @return array Contacts
 	  */
-	public static function getContacts($id_lang)
+	static public function getContacts($id_lang, $id_shop = false)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'contact` c
-		LEFT JOIN `'._DB_PREFIX_.'contact_lang` cl ON c.`id_contact` = cl.`id_contact`
-		WHERE cl.`id_lang` = '.(int)($id_lang).'
+		'.($id_shop ? 'LEFT JOIN '._DB_PREFIX_.'contact_shop cs ON (cs.id_contact = c.id_contact)' : '').'
+		LEFT JOIN `'._DB_PREFIX_.'contact_lang` cl ON (c.`id_contact` = cl.`id_contact`)
+		WHERE cl.`id_lang` = '.(int)($id_lang).($id_shop ? ' AND cs.id_shop='.(int)$id_shop : '').'
 		ORDER BY `name` ASC');
 	}
 }

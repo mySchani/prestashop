@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */ 
@@ -40,8 +40,8 @@ class AdminGeolocation extends AdminTab
 		
 		echo '
 		<form method="POST" action="'.$currentIndex.'&token='.Tools::getValue('token').'">
-			<fieldset class="width3">
-				<legend><img src="../img/admin/world.gif" alt="" />'.$this->l('Geolocation by IP').'</legend>
+			<fieldset>
+				<legend><img src="../img/admin/world.gif" alt="" /> '.$this->l('Geolocation by IP').'</legend>
 				
 				<label>'.$this->l('Geolocation by IP:').'</label>
 				<div class="margin-form">
@@ -59,8 +59,8 @@ class AdminGeolocation extends AdminTab
 		$allowedCountries = explode(';', Configuration::get('PS_ALLOWED_COUNTRIES'));
 		echo '
 		<form method="POST" action="'.$currentIndex.'&token='.Tools::getValue('token').'">
-			<fieldset style="margin-top: 10px;" class="width3">
-				<legend><img src="../img/admin/world.gif" alt="" />'.$this->l('Options').'</legend>
+			<fieldset style="margin-top:10px;">
+				<legend><img src="../img/admin/world.gif" alt="" /> '.$this->l('Options').'</legend>
 				
 				<div class="hint" style="display:block;margin-bottom:20px;">
 					'.$this->l('The following features are only available if you enable the Geolocation by IP feature.').'
@@ -69,8 +69,8 @@ class AdminGeolocation extends AdminTab
 				<label>'.$this->l('Geolocation behavior for restricted countries:').'</label>
 				<div class="margin-form">
 					<select name="PS_GEOLOCATION_BEHAVIOR">
-						<option value="'._PS_GEOLOCATION_NO_CATALOG_.'" '.(Configuration::get('PS_GEOLOCATION_BEHAVIOR') == _PS_GEOLOCATION_NO_CATALOG_ ? 'selected' : '').'>'.$this->l('Visitors cannot see your catalog').'</option>
-						<option value="'._PS_GEOLOCATION_NO_ORDER_.'" '.(Configuration::get('PS_GEOLOCATION_BEHAVIOR') == _PS_GEOLOCATION_NO_ORDER_ ? 'selected' : '').'>'.$this->l('Visitors can see your catalog but cannot make an order').'</option>
+						<option value="'._PS_GEOLOCATION_NO_CATALOG_.'" '.(Configuration::get('PS_GEOLOCATION_BEHAVIOR') == _PS_GEOLOCATION_NO_CATALOG_ ? 'selected' : '').'>'.$this->l('Visitors can\'t see your catalog').'</option>
+						<option value="'._PS_GEOLOCATION_NO_ORDER_.'" '.(Configuration::get('PS_GEOLOCATION_BEHAVIOR') == _PS_GEOLOCATION_NO_ORDER_ ? 'selected' : '').'>'.$this->l('Visitors can see your catalog but can\'t make an order').'</option>
 					</select>	
 				</div>
 				
@@ -80,15 +80,15 @@ class AdminGeolocation extends AdminTab
 				<div class="margin-form">
 					<select name="PS_GEOLOCATION_NA_BEHAVIOR">
 						<option value="-1" '.(Configuration::get('PS_GEOLOCATION_NA_BEHAVIOR') == -1 ? 'selected' : '').'>'.$this->l('All features are available').'</option>
-						<option value="'._PS_GEOLOCATION_NO_CATALOG_.'" '.(Configuration::get('PS_GEOLOCATION_NA_BEHAVIOR') == _PS_GEOLOCATION_NO_CATALOG_ ? 'selected' : '').'>'.$this->l('Visitors cannot see your catalog').'</option>
-						<option value="'._PS_GEOLOCATION_NO_ORDER_.'" '.(Configuration::get('PS_GEOLOCATION_NA_BEHAVIOR') == _PS_GEOLOCATION_NO_ORDER_ ? 'selected' : '').'>'.$this->l('Visitors can see your catalog but cannot make an order').'</option>
+						<option value="'._PS_GEOLOCATION_NO_CATALOG_.'" '.(Configuration::get('PS_GEOLOCATION_NA_BEHAVIOR') == _PS_GEOLOCATION_NO_CATALOG_ ? 'selected' : '').'>'.$this->l('Visitors can\'t see your catalog').'</option>
+						<option value="'._PS_GEOLOCATION_NO_ORDER_.'" '.(Configuration::get('PS_GEOLOCATION_NA_BEHAVIOR') == _PS_GEOLOCATION_NO_ORDER_ ? 'selected' : '').'>'.$this->l('Visitors can see your catalog but can\'t make an order').'</option>
 					</select>	
 				</div>
 				
 				<div class="clear" style="margin-top:10px;"></div>
 				
 				<label>'.$this->l('Select countries that can access your store:').'</label>
-				<div class="margin-form" style="float: left; padding-left: 0; width: 317px; margin-top: 6px; height: 300px; overflow-y: auto;">
+				<div class="margin-form">
 					<table class="table" cellspacing="0">
 						<thead>
 							<tr>
@@ -109,8 +109,7 @@ class AdminGeolocation extends AdminTab
 						</tbody>
 					</table>
 				</div>
-				<div class="clear"></div>
-				<br />
+				
 				<div class="margin-form">
 					<input type="submit" class="button" name="submitGeolocationCountries" value="'.$this->l('Save').'" />
 				</div>
@@ -118,8 +117,8 @@ class AdminGeolocation extends AdminTab
 		</form>
 		
 		<form method="POST" action="'.$currentIndex.'&token='.Tools::getValue('token').'">
-			<fieldset style="margin-top: 10px;" class="width3">
-				<legend><img src="../img/admin/world.gif" alt="" />'.$this->l('Whitelist of IP addresses').'</legend>
+			<fieldset style="margin-top:10px;">
+				<legend><img src="../img/admin/world.gif" alt="" /> '.$this->l('Whitelist of IP addresses').'</legend>
 				
 				<div class="hint" style="display:block;margin-bottom:20px;">
 					'.$this->l('You can add many IP addresses, these addresses will always be allowed to access your shop (e.g. Google bots IP).').'

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Followup extends Module
@@ -108,7 +108,7 @@ class Followup extends Module
 		
 		echo '
 		<h2>'.$this->l('Customer follow-up').'</h2>
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset style="width: 400px; float: left;">
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<p>'.$this->l('Four kinds of e-mail alerts available in order to stay in touch with your customers!').'<br /><br />
@@ -273,18 +273,13 @@ class Followup extends Module
 	/* Each cart which wasn't transformed into an order */
 	private function cancelledCart($count = false)
 	{
-		$emailLogs = $this->getLogsEmail(1);
-		$sql = '
-			SELECT c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
-			FROM '._DB_PREFIX_.'cart c
-			LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_cart = c.id_cart)
-			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = c.id_customer)
-			WHERE DATE_SUB(CURDATE(),INTERVAL 7 DAY) <= c.date_add AND cu.id_customer IS NOT NULL AND o.id_order IS NULL';
-
-		if (!empty($emailLogs))
-			$sql .= ' AND c.id_cart NOT IN ('.join(',', $emailLogs).')';
-
-		$emails = Db::getInstance()->ExecuteS($sql);
+		$emails = Db::getInstance()->ExecuteS('
+		SELECT c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+		FROM '._DB_PREFIX_.'cart c
+		LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_cart = c.id_cart)
+		LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = c.id_customer)
+		WHERE DATE_SUB(CURDATE(),INTERVAL 7 DAY) <= c.date_add AND cu.id_customer IS NOT NULL AND o.id_order IS NULL AND c.id_cart NOT IN 
+		('.join(',', $this->getLogsEmail(1)).')');
 		
 		if ($count OR !sizeof($emails))
 			return sizeof($emails);
@@ -296,7 +291,7 @@ class Followup extends Module
 				if ($voucher !== false)
 				{
 					$templateVars = array('{email}' => $email['email'], '{lastname}' => $email['lastname'], '{firstname}' => $email['firstname'], '{amount}' => $conf['PS_FOLLOW_UP_AMOUNT_1'], '{days}' => $conf['PS_FOLLOW_UP_DAYS_1'], '{voucher_num}' => $voucher->name);
-					$result = Mail::Send((int)($email['id_lang']), 'followup_1', Mail::l('Your cart and your discount', $email['id_lang']), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+					$result = Mail::Send((int)($email['id_lang']), 'followup_1', Mail::l('Your cart and your discount'), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 					$this->logEmail(1, (int)($voucher->id), (int)($email['id_customer']), (int)($email['id_cart']));
 				}
 		}
@@ -312,7 +307,7 @@ class Followup extends Module
 		);
 		static $executed = false;
 		
-		if (!$executed)
+		if(!$executed)
 		{
 			$query = '
 			SELECT id_cart, id_customer, id_email_type FROM '._DB_PREFIX_.'log_email
@@ -344,18 +339,13 @@ class Followup extends Module
 	/* For all validated orders, a discount if re-ordering before x days */
 	private function reOrder($count = false)
 	{
-		$emailLogs =  $this->getLogsEmail(2);
-		$sql = '
-			SELECT o.id_order, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
-			FROM '._DB_PREFIX_.'orders o
-			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
-			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
-			WHERE o.valid = 1 AND c.date_add >= DATE_SUB(CURDATE(),INTERVAL 7 DAY) AND o.id_cart';
-
-		if (!empty($emailLogs))
-			$sql .= ' NOT IN ('.join(',', $emailLogs).')';
-
-		$emails = Db::getInstance()->ExecuteS($sql);
+		$emails = Db::getInstance()->ExecuteS('
+		SELECT o.id_order, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+		FROM '._DB_PREFIX_.'orders o
+		LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
+		LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
+		WHERE o.valid = 1 AND c.date_add >= DATE_SUB(CURDATE(),INTERVAL 7 DAY) AND o.id_cart NOT IN 
+		('.join(',', $this->getLogsEmail(2)).')');
 
 		if ($count OR !sizeof($emails))
 			return sizeof($emails);
@@ -367,7 +357,7 @@ class Followup extends Module
 				if ($voucher !== false)
 				{
 					$templateVars = array('{email}' => $email['email'], '{lastname}' => $email['lastname'], '{firstname}' => $email['firstname'], '{amount}' => $conf['PS_FOLLOW_UP_AMOUNT_2'], '{days}' => $conf['PS_FOLLOW_UP_DAYS_2'], '{voucher_num}' => $voucher->name);
-					$result = Mail::Send((int)($email['id_lang']), 'followup_2', Mail::l('Thanks for your order', $email['id_lang']), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+					$result = Mail::Send((int)($email['id_lang']), 'followup_2', Mail::l('Thanks for your order'), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 					$this->logEmail(2, (int)($voucher->id), (int)($email['id_customer']), (int)($email['id_cart']));
 				}
 		}
@@ -376,23 +366,15 @@ class Followup extends Module
 	/* For all customers with more than x euros in 90 days */
 	private function bestCustomer($count = false)
 	{
-		$emailLogs =  $this->getLogsEmail(3);
-
-		$sql = '
-			SELECT SUM(o.total_paid) total, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
-			FROM '._DB_PREFIX_.'orders o
-			LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
-			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
-			WHERE o.valid = 1 AND DATE_SUB(CURDATE(),INTERVAL 90 DAY) <= o.date_add AND cu.id_customer';
-
-		if (!empty($emailLogs))
-			$sql .= ' NOT IN ('.join(',', $emailLogs).')';
-
-		$sql .= '
-			GROUP BY o.id_customer
-			HAVING total >= '.(float)(Configuration::get('PS_FOLLOW_UP_THRESHOLD_3'));
-
-		$emails = Db::getInstance()->ExecuteS($sql);
+		$emails = Db::getInstance()->ExecuteS('
+		SELECT SUM(o.total_paid) total, c.id_cart, c.id_lang, cu.id_customer, cu.firstname, cu.lastname, cu.email
+		FROM '._DB_PREFIX_.'orders o
+		LEFT JOIN '._DB_PREFIX_.'customer cu ON (cu.id_customer = o.id_customer)
+		LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
+		WHERE o.valid = 1 AND DATE_SUB(CURDATE(),INTERVAL 90 DAY) <= o.date_add AND cu.id_customer NOT IN
+		('.join(',', $this->getLogsEmail(3)).')
+		GROUP BY o.id_customer
+		HAVING total >= '.(float)(Configuration::get('PS_FOLLOW_UP_THRESHOLD_3')));
 		
 		if ($count OR !sizeof($emails))
 			return sizeof($emails);
@@ -404,7 +386,7 @@ class Followup extends Module
 				if ($voucher !== false)
 				{
 					$templateVars = array('{email}' => $email['email'], '{lastname}' => $email['lastname'], '{firstname}' => $email['firstname'], '{amount}' => $conf['PS_FOLLOW_UP_AMOUNT_3'], '{days}' => $conf['PS_FOLLOW_UP_DAYS_3'], '{voucher_num}' => $voucher->name);
-					$result = Mail::Send((int)($email['id_lang']), 'followup_3', Mail::l('You are one of our best customers', $email['id_lang']), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+					$result = Mail::Send((int)($email['id_lang']), 'followup_3', Mail::l('You are one of our best customers'), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 					$this->logEmail(3, (int)($voucher->id), (int)($email['id_customer']), (int)($email['id_cart']));
 				}
 		}
@@ -421,25 +403,21 @@ class Followup extends Module
 	 */
 	private function badCustomer($count = false)
 	{
-		$emailLogs =  $this->getLogsEmail(4);
-		$sql = '
+		$emails = Db::getInstance()->ExecuteS('
 			SELECT c.id_lang, c.id_cart, cu.id_customer, cu.firstname, cu.lastname, cu.email, (SELECT COUNT(o.id_order) FROM '._DB_PREFIX_.'orders o WHERE o.id_customer = cu.id_customer and o.valid = 1) nb_orders
 			FROM '._DB_PREFIX_.'customer cu
 			LEFT JOIN '._DB_PREFIX_.'orders o ON (o.id_customer = cu.id_customer)
 			LEFT JOIN '._DB_PREFIX_.'cart c ON (c.id_cart = o.id_cart)
 			WHERE cu.id_customer NOT IN
-			(SELECT o.id_customer FROM '._DB_PREFIX_.'orders o WHERE DATE_SUB(CURDATE(),INTERVAL '.(int)(Configuration::get('PS_FOLLOW_UP_DAYS_THRESHOLD_4')).' DAY) <= o.date_add)';
-
-		if (!empty($emailLogs))
-			$sql .= 'AND cu.id_customer NOT IN ('.join(',', $emailLogs).')';
-
-		$sql .= 'GROUP BY cu.id_customer HAVING nb_orders >= 1';
-
-		$emails = Db::getInstance()->ExecuteS($sql);
-
+			(SELECT o.id_customer FROM '._DB_PREFIX_.'orders o WHERE DATE_SUB(CURDATE(),INTERVAL '.(int)(Configuration::get('PS_FOLLOW_UP_DAYS_THRESHOLD_4')).' DAY) <= o.date_add)
+			AND cu.id_customer NOT IN
+			('.join(',',$this->getLogsEmail(4)).')
+		GROUP BY cu.id_customer
+		HAVING nb_orders >= 1');
+		
 		if ($count OR !sizeof($emails))
 			return sizeof($emails);
-
+			
 		$conf = Configuration::getMultiple(array('PS_FOLLOW_UP_AMOUNT_4', 'PS_FOLLOW_UP_DAYS_4'));
 		foreach ($emails AS $email)
 		{
@@ -447,7 +425,7 @@ class Followup extends Module
 				if ($voucher !== false)
 				{
 					$templateVars = array('{email}' => $email['email'], '{lastname}' => $email['lastname'], '{firstname}' => $email['firstname'], '{amount}' => $conf['PS_FOLLOW_UP_AMOUNT_4'], '{days}' => $conf['PS_FOLLOW_UP_DAYS_4'], '{days_threshold}' => (int)(Configuration::get('PS_FOLLOW_UP_DAYS_THRESHOLD_4')), '{voucher_num}' => $voucher->name);
-					$result = Mail::Send((int)($email['id_lang']), 'followup_4', Mail::l('We miss you', $email['id_lang']), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+					$result = Mail::Send((int)($email['id_lang']), 'followup_4', Mail::l('We miss you'), $templateVars, $email['email'], $email['firstname'].' '.$email['lastname'], NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 					$this->logEmail(4, (int)($voucher->id), (int)($email['id_customer']), (int)($email['id_cart']));
 				}
 		}

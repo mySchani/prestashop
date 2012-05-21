@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class LoyaltyModule extends ObjectModel
@@ -63,7 +63,7 @@ class LoyaltyModule extends ObjectModel
 		$this->historize();
 	}
 
-	public static function getByOrderId($id_order)
+	static public function getByOrderId($id_order)
 	{
 		if (!Validate::isUnsignedId($id_order))
 			return false;
@@ -76,14 +76,14 @@ class LoyaltyModule extends ObjectModel
 		return isset($result['id_loyalty']) ? $result['id_loyalty'] : false;
 	}
 
-	public static function getOrderNbPoints($order)
+	static public function getOrderNbPoints($order)
 	{
 		if (!Validate::isLoadedObject($order))
 			return false;
 		return self::getCartNbPoints(new Cart((int)$order->id_cart));
 	}
 
-	public static function getCartNbPoints($cart, $newProduct = NULL)
+	static public function getCartNbPoints($cart, $newProduct = NULL)
 	{
 		$total = 0;
 		if (Validate::isLoadedObject($cart))
@@ -118,7 +118,7 @@ class LoyaltyModule extends ObjectModel
 		return self::getNbPointsByPrice($total);
 	}
 
-	public static function getVoucherValue($nbPoints, $id_currency = NULL)
+	static public function getVoucherValue($nbPoints, $id_currency = NULL)
 	{
 		global $cookie;
 		
@@ -128,7 +128,7 @@ class LoyaltyModule extends ObjectModel
 		return (int)$nbPoints * (float)Tools::convertPrice(Configuration::get('PS_LOYALTY_POINT_VALUE'), new Currency((int)$id_currency));
 	}
 
-	public static function getNbPointsByPrice($price)
+	static public function getNbPointsByPrice($price)
 	{
 		global $cookie;
 
@@ -147,7 +147,7 @@ class LoyaltyModule extends ObjectModel
 		return (int)$points;
 	}
 
-	public static function getPointsByCustomer($id_customer)
+	static public function getPointsByCustomer($id_customer)
 	{
 		return 
 		Db::getInstance()->getValue('
@@ -163,7 +163,7 @@ class LoyaltyModule extends ObjectModel
 		AND f.id_loyalty_state = '.(int)LoyaltyStateModule::getCancelId().' AND points < 0');	
 	}
 
-	public static function getAllByIdCustomer($id_customer, $id_lang, $onlyValidate = false, $pagination = false, $nb = 10, $page = 1)
+	static public function getAllByIdCustomer($id_customer, $id_lang, $onlyValidate = false, $pagination = false, $nb = 10, $page = 1)
 	{
 		$query = '
 		SELECT f.id_order AS id, f.date_add AS date, (o.total_paid - o.total_shipping) total_without_shipping, f.points, f.id_loyalty, f.id_loyalty_state, fsl.name state
@@ -179,7 +179,7 @@ class LoyaltyModule extends ObjectModel
 		return Db::getInstance()->ExecuteS($query);
 	}
 
-	public static function getDiscountByIdCustomer($id_customer, $last=false)
+	static public function getDiscountByIdCustomer($id_customer, $last=false)
 	{
 		$query = '
 		SELECT f.id_discount AS id_discount, f.date_upd AS date_add
@@ -195,7 +195,7 @@ class LoyaltyModule extends ObjectModel
 		return Db::getInstance()->ExecuteS($query);
 	}
 
-	public static function registerDiscount($discount)
+	static public function registerDiscount($discount)
 	{
 		if (!Validate::isLoadedObject($discount))
 			die(Tools::displayError('Incorrect object Discount.'));
@@ -216,7 +216,7 @@ class LoyaltyModule extends ObjectModel
 		}
 	}
 
-	public static function getOrdersByIdDiscount($id_discount)
+	static public function getOrdersByIdDiscount($id_discount)
 	{
 		$items = Db::getInstance()->ExecuteS('
 		SELECT f.id_order AS id_order, f.points AS points, f.date_upd AS date

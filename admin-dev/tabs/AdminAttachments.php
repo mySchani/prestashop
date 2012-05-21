@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,9 +29,6 @@ include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
 class AdminAttachments extends AdminTab
 {
-	
-	private $_productAttachements = array();
-	
 	public function __construct()
 	{
 		global $cookie;
@@ -52,13 +49,6 @@ class AdminAttachments extends AdminTab
 
 	public function postProcess()
 	{
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
 		if (Tools::isSubmit('submitAdd'.$this->table))
 		{
 			if ($id = (int)(Tools::getValue('id_attachment')) AND $a = new Attachment($id))
@@ -83,14 +73,14 @@ class AdminAttachments extends AdminTab
 						$_POST['mime'] = $_FILES['file']['type'];
 					}
 				}
-				elseif (array_key_exists('file', $_FILES) && (int)$_FILES['file']['error'] === 1) 
+				else if (array_key_exists('file', $_FILES) && (int)$_FILES['file']['error'] === 1) 
 				{
 					$max_upload = (int)(ini_get('upload_max_filesize'));
 					$max_post = (int)(ini_get('post_max_size'));
 					$upload_mb = min($max_upload, $max_post);
 					$this->_errors[] = $this->l('the File').' <b>'.$_FILES['file']['name'].'</b> '.$this->l('exceeds the size allowed by the server. This limit is set to').' <b>'.$upload_mb.$this->l('Mb').'</b>';
 				}
-				elseif (!empty($_FILES['file']['tmp_name']))
+				else if (!empty($_FILES['file']['tmp_name']))
 					$this->_errors[] = $this->l('No file or your file isn\'t uploadable, check your server configuration about the upload maximum size.');
 			}
 			$this->validateRules();
@@ -140,39 +130,5 @@ class AdminAttachments extends AdminTab
 				<div class="small"><sup>*</sup> '.$this->l('Required field').'</div>
 			</fieldset>
 		</form>';
-	}
-	
-	public function getList($id_lang, $orderBy = NULL, $orderWay = NULL, $start = 0, $limit = NULL)
-	{
-		parent::getList((int)$id_lang, $orderBy, $orderWay, $start, $limit);
-		if (sizeof($this->_list))
-			$this->_productAttachements = Attachment::getProductAttached((int)$id_lang, $this->_list);	
-	}
-	
-	protected function _displayDeleteLink($token = NULL, $id)
-	{
-	    global $currentIndex;
-		
-		$_cacheLang['Delete'] = $this->l('Delete');
-		$_cacheLang['DeleteItem'] = $this->l('Delete item #', __CLASS__, TRUE, FALSE);
-		
-		if (isset($this->_productAttachements[$id]))
-		{
-			$productList = '';
-			foreach($this->_productAttachements[$id] as $product)
-				$productList .= $product.', ';
-		}
-		echo '
-			<script>
-				function confirmProductAttached(productList)
-				{
-					if (confirm(\''.$_cacheLang['DeleteItem'].$id.'\'))
-						return confirm(\''.$this->l('This attachment is used by the following products:').'\r\n\' + productList);
-					return false;
-				}
-			</script>
-			<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&delete'.$this->table.'&token='.($token!=NULL ? $token : $this->token).'"
-			onclick="'.(isset($this->_productAttachements[$id]) ? 'return confirmProductAttached(\''.$productList.'\')' : 'return confirm(\''.$_cacheLang['DeleteItem'].$id.' ?'.(!is_null($this->specificConfirmDelete) ? '\r'.rtrim($this->specificConfirmDelete, ', ') : '').'\')' ).'">
-			<img src="../img/admin/delete.gif" alt="'.$_cacheLang['Delete'].'" title="'.$_cacheLang['Delete'].'" /></a>';
 	}
 }

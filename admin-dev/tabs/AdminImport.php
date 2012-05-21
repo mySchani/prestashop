@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,16 +19,15 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14645 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 include_once(PS_ADMIN_DIR.'/../images.inc.php');
 @ini_set('max_execution_time', 0);
-// No max line limit since the lines can be more than 4096. Performance impact is not significant.
-define('MAX_LINE_SIZE', 0);
+define('MAX_LINE_SIZE', 4096);
 
 define('UNFRIENDLY_ERROR', false); // Used for validatefields diying without user friendly error or not
 
@@ -83,7 +82,7 @@ class AdminImport extends AdminTab
 
 				self::$required_fields = array('id_product', 'options');
 				$this->available_fields = array(
-					'no' => array('label' => $this->l('Ignore this column')),
+					'no' => array('label' => $this->l('Ignore this column')), 
 					'id_product' => array('label' => $this->l('Product ID').'*'),
 					'options' => array('label' => $this->l('Options (Group:Value)').'*'),
 					'reference' => array('label' => $this->l('Reference')),
@@ -95,10 +94,7 @@ class AdminImport extends AdminTab
 					'ecotax' => array('label' => $this->l('Ecotax')),
 					'quantity' => array('label' => $this->l('Quantity')),
 					'weight' => array('label' => $this->l('Weight')),
-					'default_on' => array('label' => $this->l('Default')),
-					'image_position' => array('label' => $this->l('Image position'),
-						'help' => $this->l('Position of the product image to use for this combination. If you use this field, leave image URL empty.')),
-					'image_url' => array('label' => $this->l('Image URL')),
+					'default_on' => array('label' => $this->l('Default'))
 				);
 
 				self::$default_values = array(
@@ -172,9 +168,6 @@ class AdminImport extends AdminTab
 				'link_rewrite' => array('label' => $this->l('URL rewritten')),
 				'available_now' => array('label' => $this->l('Text when in-stock')),
 				'available_later' => array('label' => $this->l('Text if back-order allowed')),
-				'available_for_order' => array('label' => $this->l('Available for order')),
-				'date_add' => array('label' => $this->l('Date add product')),
-				'show_price' => array('label' => $this->l('Show price')),
 				'image' => array('label' => $this->l('Image URLs (x,y,z...)')),
 				'delete_existing_images' => array(
 											'label' => $this->l('Delete existing images (0 = no, 1 = yes)'),
@@ -193,7 +186,6 @@ class AdminImport extends AdminTab
 				'description_short' => array((int)(Configuration::get('PS_LANG_DEFAULT')) => ''),
 				'link_rewrite' => array((int)(Configuration::get('PS_LANG_DEFAULT')) => ''),
 				'online_only' => 0,
-				'date_add' => date('Y-m-d H:i:s'),
 				'condition' => 'new');
 
 				break;
@@ -255,7 +247,7 @@ class AdminImport extends AdminTab
 				//Overwrite validators AS name is not MultiLangField
 				self::$validators = array(
 				'description' => array('AdminImport', 'createMultiLangField'),
-				'short_description' => array('AdminImport', 'createMultiLangField'),
+				'description_short' => array('AdminImport', 'createMultiLangField'),
 				'meta_title' => array('AdminImport', 'createMultiLangField'),
 				'meta_keywords' => array('AdminImport', 'createMultiLangField'),
 				'meta_description' => array('AdminImport', 'createMultiLangField'));
@@ -275,15 +267,6 @@ class AdminImport extends AdminTab
 		parent::__construct();
 	}
 
-	private static function rewindBomAware($handle)
-	{
-		// A rewind wrapper that skip BOM signature wrongly
-		rewind($handle);
-		if (($bom = fread($handle,3)) != "\xEF\xBB\xBF") {
-			rewind($handle);
-		}
-	}
-
 	private static function getBoolean($field)
 	{
 		return (boolean)$field;
@@ -298,18 +281,11 @@ class AdminImport extends AdminTab
 
 	private static function split($field)
 	{
-		if (empty($field))
-			return array();
 		$separator = ((is_null(Tools::getValue('multiple_value_separator')) OR trim(Tools::getValue('multiple_value_separator')) == '' ) ? ',' : Tools::getValue('multiple_value_separator'));
-		$temp = tmpfile();
-		fwrite($temp,$field);
-		rewind($temp);
-		$tab = fgetcsv($temp, MAX_LINE_SIZE, $separator);
-		fclose($temp);
-		if (empty($tab) || (!is_array($tab)))
-			return array();
+		$tab = explode($separator, $field);
+		$res = array_map('strval', $tab);
+		$res = array_map('trim', $tab);
 		return $tab;
-
 	}
 
 	private static function createMultiLangField($field)
@@ -380,8 +356,7 @@ class AdminImport extends AdminTab
 	{
 		$res = array();
 		foreach (self::$column_mask AS $type => $nb)
-			if ($type != '')
-				$res[$type] = isset($row[$nb]) ? $row[$nb] : null;
+			$res[$type] = isset($row[$nb]) ? $row[$nb] : null;
 		return $res;
 	}
 
@@ -396,7 +371,7 @@ class AdminImport extends AdminTab
 	{
 		$members = get_object_vars($entity);
 		foreach (self::$default_values AS $k => $v)
-			if ((array_key_exists($k, $members) && $entity->$k === null) || !array_key_exists($k, $members))
+			if ((array_key_exists($k, $members) AND $entity->$k === NULL) OR !array_key_exists($k, $members))
 				$entity->$k = $v;
 	}
 
@@ -415,7 +390,22 @@ class AdminImport extends AdminTab
 		return true;
 	}
 
-	public static function array_walk(&$array, $funcname, &$user_data = false)
+	public static function fgetcsv($handle, $lenght, $delimiter)
+	{
+		if (feof($handle))
+			return false;
+		$line = fgets($handle, $lenght);
+		if ($line === false)
+			return false;
+		$tmpTab = explode($delimiter, $line);
+
+		foreach ($tmpTab AS &$row)
+			if (preg_match ('/^".*"$/Uims',$row))
+				$row = trim($row, '"');
+		return $tmpTab;
+	}
+
+	static public function array_walk(&$array, $funcname, &$user_data = false)
 	{
 		if (!is_callable($funcname)) return false;
 
@@ -425,18 +415,20 @@ class AdminImport extends AdminTab
 		return true;
 	}
 
+
+
 	/**
 	 * copyImg copy an image located in $url and save it in a path
-	 * according to $entity->$id_entity .
+	 * according to $entity->$id_entity . 
 	 * $id_image is used if we need to add a watermark
-	 *
+	 * 
 	 * @param int $id_entity id of product or category (set in entity)
-	 * @param int $id_image (default null) id of the image if watermark enabled.
+	 * @param int $id_image (default null) id of the image if watermark enabled. 
 	 * @param string $url path or url to use
 	 * @param string entity 'products' or 'categories'
 	 * @return void
 	 */
-	private static function copyImg($id_entity, $id_image = null, $url, $entity = 'products')
+	private static function copyImg($id_entity, $id_image = NULL, $url, $entity = 'products')
 	{
 		$tmpfile = tempnam(_PS_TMP_IMG_DIR_, 'ps_import');
 		$watermark_types = explode(',', Configuration::get('WATERMARK_TYPES'));
@@ -446,14 +438,15 @@ class AdminImport extends AdminTab
 			default:
 			case 'products':
 				$imageObj = new Image($id_image);
-				$path = $imageObj->getPathForCreation();
+				$imageObj->createImgFolder();
+				$path = _PS_PROD_IMG_DIR_.$imageObj->getImgPath();
 			break;
 			case 'categories':
 				$path = _PS_CAT_IMG_DIR_.(int)($id_entity);
 			break;
 		}
-		$url_source_file = str_replace(' ', '%20', trim($url));
-		if (@copy($url_source_file, $tmpfile))
+
+		if (copy(trim($url), $tmpfile))
 		{
 			imageResize($tmpfile, $path.'.jpg');
 			$imagesTypes = ImageType::getImagesTypes($entity);
@@ -485,9 +478,6 @@ class AdminImport extends AdminTab
 				$line = $this->utf8_encode_array($line);
 			$info = self::getMaskedRow($line);
 
-			if (!isset($info['id']) || (int)$info['id'] < 2)
-				continue;
-
 			self::setDefaultValues($info);
 			$category = new Category();
 			self::array_walk($info, array('AdminImport', 'fillInfo'), $category);
@@ -518,7 +508,7 @@ class AdminImport extends AdminTab
 					}
 				}
 			}
-			if (isset($category->link_rewrite) && !empty($category->link_rewrite[$defaultLanguageId]))
+			if (isset($category->link_rewrite) AND !empty($category->link_rewrite[$defaultLanguageId]))
 				$valid_link = Validate::isLinkRewrite($category->link_rewrite[$defaultLanguageId]);
 			else
 				$valid_link = false;
@@ -552,18 +542,17 @@ class AdminImport extends AdminTab
 				/* No automatic nTree regeneration for import */
 				$category->doNotRegenerateNTree = true;
 
-				// If id category AND id category already in base, and not root category, trying to update
-				if ($category->id AND $category->categoryExists($category->id) AND $category->id != 1)
+				// If id category AND id category already in base, trying to update
+				if ($category->id AND $category->categoryExists($category->id))
 					$res = $category->update();
-				if ($category->id == 1)
-					$this->_errors[] = Tools::displayError('Root category cannot be modify');
+
 				// If no id_category or update failed
 				if (!$res)
 					$res = $category->add();
 			}
 			//copying images of categories
 			if (isset($category->image) AND !empty($category->image))
-				if (!(self::copyImg($category->id, null, $category->image, 'categories')))
+				if (!(self::copyImg($category->id, NULL, $category->image, 'categories')))
 					$this->_warnings[] = $category->image.' '.Tools::displayError('Cannot be copied');
 			// If both failed, mysql error
 			if (!$res)
@@ -572,6 +561,7 @@ class AdminImport extends AdminTab
 				$this->_errors[] = ($fieldError !== true ? $fieldError : '').($langFieldError !== true ? $langFieldError : '').mysql_error();
 			}
 		}
+
 		/* Import has finished, we can regenerate the categories nested tree */
 		Category::regenerateEntireNtree();
 
@@ -590,25 +580,27 @@ class AdminImport extends AdminTab
 			if (Tools::getValue('convert'))
 				$line = $this->utf8_encode_array($line);
 			$info = self::getMaskedRow($line);
-			if (array_key_exists('id', $info) AND (int)($info['id']) AND Product::existsInDatabase((int)($info['id']), 'product'))
+			if (array_key_exists('id', $info) AND (int)($info['id']) AND Product::existsInDatabase((int)($info['id'])))
 			{
 				$product = new Product((int)($info['id']));
 				$categoryData = Product::getProductCategories((int)($product->id));
 				foreach ($categoryData as $tmp)
-					$product->category[] = $tmp;
+					$product->category[] = $tmp['id_category'];
 			}
 			else
 				$product = new Product();
 			self::setEntityDefaultValues($product);
 			self::array_walk($info, array('AdminImport', 'fillInfo'), $product);
+            $trg_id = (int)$product->id_tax_rules_group;
 
-			if ((int)$product->id_tax_rules_group != 0)
+			if ($product->id_tax_rules_group == 0 || !Validate::isLoadedObject(new TaxRulesGroup($trg_id)))
+				$this->_addProductWarning('id_tax_rules_group', $product->id_tax_rules_group, Tools::displayError('Invalid tax rule group ID, you first need a group with this ID.'));
+			else
 			{
-				if (Validate::isLoadedObject(new TaxRulesGroup($product->id_tax_rules_group)))
-				    $product->tax_rate = TaxRulesGroup::getTaxesRate((int)$product->id_tax_rules_group, Configuration::get('PS_COUNTRY_DEFAULT'), 0, 0);
-				else
-					$this->_addProductWarning('id_tax_rules_group', $product->id_tax_rules_group, Tools::displayError('Invalid tax rule group ID, you first need a group with this ID.'));
+			    $product->tax_rate = TaxRulesGroup::getTaxesRate((int)$product->id_tax_rules_group, Configuration::get('PS_COUNTRY_DEFAULT'), 0, 0);
+				
 			}
+			
 			if (isset($product->manufacturer) AND is_numeric($product->manufacturer) AND Manufacturer::manufacturerExists((int)($product->manufacturer)))
 				$product->id_manufacturer = (int)($product->manufacturer);
 			elseif (isset($product->manufacturer) AND is_string($product->manufacturer) AND !empty($product->manufacturer))
@@ -714,7 +706,6 @@ class AdminImport extends AdminTab
 
 			$product->id_category_default = isset($product->id_category[0]) ? (int)($product->id_category[0]) : '';
 			$link_rewrite = (is_array($product->link_rewrite) && count($product->link_rewrite)) ? $product->link_rewrite[$defaultLanguageId] : '';
-
 			$valid_link = Validate::isLinkRewrite($link_rewrite);
 
 			if ((isset($product->link_rewrite[$defaultLanguageId]) AND empty($product->link_rewrite[$defaultLanguageId])) OR !$valid_link)
@@ -734,31 +725,19 @@ class AdminImport extends AdminTab
 			if ($fieldError === true AND $langFieldError === true)
 			{
 				// check quantity
-				if ($product->quantity == null)
+				if ($product->quantity == NULL)
 					$product->quantity = 0;
+				// If id product AND id product already in base, trying to update
+				if ($product->id AND Product::existsInDatabase((int)($product->id)))
+				{
 
-				// If match ref is specified AND ref product AND ref product already in base, trying to update
-				if (Tools::getValue('match_ref') == 1 AND $product->reference AND Product::existsRefInDatabase($product->reference))
-				{
-					$datas = Db::getInstance()->getRow('SELECT `date_add`, `id_product` FROM `'._DB_PREFIX_.'product` WHERE `reference` = "'.$product->reference.'"');
-					$product->id = pSQL($datas['id_product']);
-					$product->date_add = pSQL($datas['date_add']);
-					$res = $product->update();
-				} // Else If id product AND id product already in base, trying to update
-				else if ($product->id AND Product::existsInDatabase((int)($product->id), 'product'))
-				{
 					$datas = Db::getInstance()->getRow('SELECT `date_add` FROM `'._DB_PREFIX_.'product` WHERE `id_product` = '.(int)($product->id));
 					$product->date_add = pSQL($datas['date_add']);
 					$res = $product->update();
 				}
 				// If no id_product or update failed
 				if (!$res)
-				{
-					if (isset($product->date_add) && $product->date_add != '')
-						$res = $product->add(false);
-					else
-						$res = $product->add();
-				}
+					$res = $product->add();
 			}
 			// If both failed, mysql error
 			if (!$res)
@@ -783,7 +762,7 @@ class AdminImport extends AdminTab
 					$specificPrice->reduction = (isset($info['reduction_price']) AND $info['reduction_price']) ? $info['reduction_price'] : $info['reduction_percent'] / 100;
 					$specificPrice->reduction_type = (isset($info['reduction_price']) AND $info['reduction_price']) ? 'amount' : 'percentage';
 					$specificPrice->from = (isset($info['reduction_from']) AND Validate::isDate($info['reduction_from'])) ? $info['reduction_from'] : '0000-00-00 00:00:00';
-					$specificPrice->to = (isset($info['reduction_to']) AND Validate::isDate($info['reduction_to'])) ? $info['reduction_to'] : '0000-00-00 00:00:00';
+					$specificPrice->to = (isset($info['reduction_to']) AND Validate::isDate($info['reduction_to']))  ? $info['reduction_to'] : '0000-00-00 00:00:00';
 					if (!$specificPrice->add())
 						$this->_addProductWarning($info['name'], $product->id, $this->l('Discount is invalid'));
 				}
@@ -832,7 +811,7 @@ class AdminImport extends AdminTab
 						$product->deleteImages();
 				elseif (isset($product->image) AND is_array($product->image) AND sizeof($product->image))
 					$product->deleteImages();
-
+				
 				if (isset($product->image) AND is_array($product->image) and sizeof($product->image))
 				{
 					$productHasImages = (bool)Image::getImages((int)($cookie->id_lang), (int)($product->id));
@@ -875,7 +854,6 @@ class AdminImport extends AdminTab
 
 	public function attributeImport()
 	{
-		global $cookie;
 		$defaultLanguage = Configuration::get('PS_LANG_DEFAULT');
 		$groups = array();
 		foreach (AttributeGroup::getAttributesGroups($defaultLanguage) AS $group)
@@ -896,48 +874,8 @@ class AdminImport extends AdminTab
 			$info = array_map('trim', $info);
 
 			self::setDefaultValues($info);
-
 			$product = new Product((int)($info['id_product']), false, $defaultLanguage);
-			$id_image = null;
-
-			if (isset($info['image_url']) && $info['image_url'])
-			{
-				$productHasImages = (bool)Image::getImages((int)($cookie->id_lang), (int)($product->id));
-				$url = $info['image_url'];
-				$image = new Image();
-				$image->id_product = (int)($product->id);
-				$image->position = Image::getHighestPosition($product->id) + 1;
-				$image->cover = (!$productHasImages) ? true : false;
-				$image->legend = self::createMultiLangField($product->name);
-
-				if (($fieldError = $image->validateFields(UNFRIENDLY_ERROR, true)) === true AND ($langFieldError = $image->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true AND $image->add())
-				{
-					if (!self::copyImg($product->id, $image->id, $url))
-						$this->_warnings[] = Tools::displayError('Error copying image: ').$url;
-					else
-						$id_image = array($image->id);
-				}
-				else
-				{
-					$this->_warnings[] = $image->legend[$defaultLanguageId].(isset($image->id_product) ? ' ('.$image->id_product.')' : '').' '.Tools::displayError('Cannot be saved');
-					$this->_errors[] = ($fieldError !== true ? $fieldError : '').($langFieldError !== true ? $langFieldError : '').mysql_error();
-				}
-			} elseif (isset($info['image_position']) && $info['image_position'])
-			{
-				$images = $product->getImages($defaultLanguage);
-
-				if ($images)
-					foreach ($images as $row)
-						if ($row['position'] == (int)$info['image_position'])
-						{
-							$id_image = array($row['id_image']);
-							break;
-						}
-				if (!$id_image)
-					$this->_warnings[] = sprintf(Tools::displayError('No image found for combination with id_product = %s and image position = %s.'), $product->id, (int)$info['image_position']);
-			}
-
-			$id_product_attribute = $product->addProductAttribute((float)($info['price']), (float)($info['weight']), 0, (float)($info['ecotax']), (int)($info['quantity']), $id_image, strval($info['reference']), strval($info['supplier_reference']), strval($info['ean13']), (int)($info['default_on']), null, strval($info['upc']));
+			$id_product_attribute = $product->addProductAttribute((float)($info['price']), (float)($info['weight']), 0, (float)($info['ecotax']), (int)($info['quantity']), null, strval($info['reference']), strval($info['supplier_reference']), strval($info['ean13']), (int)($info['default_on']), strval($info['upc']));
 			foreach (explode($fsep, $info['options']) as $option)
 			{
 				list($group, $attribute) = array_map('trim', explode(':', $option));
@@ -959,7 +897,7 @@ class AdminImport extends AdminTab
 				{
 					$obj = new Attribute();
 					$obj->id_attribute_group = $groups[$group];
-					$obj->name[$defaultLanguage] = str_replace('\n', '', str_replace('\r', '', $attribute));
+					$obj->name[$defaultLanguage] = $attribute;
 					if (($fieldError = $obj->validateFields(UNFRIENDLY_ERROR, true)) === true AND ($langFieldError = $obj->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true)
 					{
 						$obj->add();
@@ -1032,9 +970,9 @@ class AdminImport extends AdminTab
 				if (Country::getNameById(Configuration::get('PS_LANG_DEFAULT'), (int)($address->country)))
 					$address->id_country = (int)($address->country);
 			}
-			elseif (isset($address->country) AND is_string($address->country) AND !empty($address->country))
+			elseif(isset($address->country) AND is_string($address->country) AND !empty($address->country))
 			{
-				if ($id_country = Country::getIdByName(null, $address->country))
+				if ($id_country = Country::getIdByName(NULL, $address->country))
 					$address->id_country = (int)($id_country);
 				else
 				{
@@ -1060,7 +998,7 @@ class AdminImport extends AdminTab
 				if (State::getNameById((int)($address->state)))
 					$address->id_state = (int)($address->state);
 			}
-			elseif (isset($address->state) AND is_string($address->state) AND !empty($address->state))
+			elseif(isset($address->state) AND is_string($address->state) AND !empty($address->state))
 			{
 				if ($id_state = State::getIdByName($address->state))
 					$address->id_state = (int)($id_state);
@@ -1083,9 +1021,9 @@ class AdminImport extends AdminTab
 				}
 			}
 
-			if (isset($address->customer_email) and !empty($address->customer_email))
-			{
-				if ( Validate::isEmail($address->customer_email))
+			if(isset($address->customer_email) and !empty($address->customer_email))
+			{	
+				if( Validate::isEmail($address->customer_email))
 				{
 					$customer = Customer::customerExists($address->customer_email, true);
 					if ($customer)
@@ -1156,28 +1094,21 @@ class AdminImport extends AdminTab
 			$info = self::getMaskedRow($line);
 
 			self::setDefaultValues($info);
-
-			if (array_key_exists('id', $info) && (int)$info['id'] && Manufacturer::existsInDatabase((int)$info['id'], 'manufacturer'))
-				$manufacturer = new Manufacturer((int)$info['id']);
-			else
-				$manufacturer = new Manufacturer();
-
+			$manufacturer = new Manufacturer();
 			self::array_walk($info, array('AdminImport', 'fillInfo'), $manufacturer);
 
 			$res = false;
-			if (($field_error = $manufacturer->validateFields(UNFRIENDLY_ERROR, true)) === true &&
-				($lang_field_error = $manufacturer->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true)
+			if (($fieldError = $manufacturer->validateFields(UNFRIENDLY_ERROR, true)) === true AND ($langFieldError = $manufacturer->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true)
 			{
-				if ($manufacturer->id && $manufacturer->manufacturerExists($manufacturer->id))
+				if ($manufacturer->id AND $manufacturer->manufacturerExists($manufacturer->id))
 					$res = $manufacturer->update();
 				if (!$res)
 					$res = $manufacturer->add();
 			}
-
 			if (!$res)
 			{
 				$this->_errors[] = mysql_error().' '.$info['name'].(isset($info['id']) ? ' (ID '.$info['id'].')' : '').' '.Tools::displayError('Cannot be saved');
-				$this->_errors[] = ($field_error !== true ? $field_error : '').($lang_field_error !== true ? $lang_field_error : '').mysql_error();
+				$this->_errors[] = ($fieldError !== true ? $fieldError : '').($langFieldError !== true ? $langFieldError : '').mysql_error();
 			}
 		}
 		$this->closeCsvFile($handle);
@@ -1195,13 +1126,9 @@ class AdminImport extends AdminTab
 			$info = self::getMaskedRow($line);
 
 			self::setDefaultValues($info);
-
-			if (array_key_exists('id', $info) AND (int)($info['id']) AND Supplier::existsInDatabase((int)($info['id']), 'supplier'))
-				$supplier = new Supplier((int)($info['id']));
-			else
-				$supplier = new Supplier();
-
+			$supplier = new Supplier();
 			self::array_walk($info, array('AdminImport', 'fillInfo'), $supplier);
+
 			if (($fieldError = $supplier->validateFields(UNFRIENDLY_ERROR, true)) === true AND ($langFieldError = $supplier->validateFieldsLang(UNFRIENDLY_ERROR, true)) === true)
 			{
 				$res = false;
@@ -1235,10 +1162,10 @@ class AdminImport extends AdminTab
 		if ((Tools::getValue('import')) AND (isset($this->_warnings) AND !sizeof($this->_warnings)))
 			echo '<div class="module_confirmation conf confirm"><img src="../img/admin/ok.gif" alt="" title="" style="margin-right:5px; float:left;" />'.$this->l('The .CSV file has been imported into your shop.').'</div>';
 
-		if (!is_writable(PS_ADMIN_DIR.'/import/'))
+		if(!is_writable(PS_ADMIN_DIR.'/import/'))
 			$this->displayWarning($this->l('directory import on admin directory must be writable (CHMOD 755 / 777)'));
 
-		if (isset($this->_warnings) AND sizeof($this->_warnings))
+		if(isset($this->_warnings) AND sizeof($this->_warnings))
 		{
 			$warnings = array();
 			foreach ($this->_warnings as $warning)
@@ -1253,23 +1180,11 @@ class AdminImport extends AdminTab
 					{
 						$(\'.info\').cluetip({
 						splitTitle: \'|\',
-						showTitle: false
-						});
+					    showTitle: false
+					 	});
 					};
 			</script>';
 		echo '
-		<fieldset style="float:right;margin:0 10px 10px 0">
-			<legend><img src="../img/admin/excel_file.png">'.$this->l('Sample files').'</legend>
-				<ul style="">
-					<li style="text-decoration: underline"><a href="../docs/csv_import/categories_import.csv">'.$this->l('Categories sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/products_import.csv">'.$this->l('Products sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/combinations_import.csv">'.$this->l('Combinations sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/customers_import.csv">'.$this->l('Customers sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/addresses_import.csv">'.$this->l('Addresses sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/manufacturers_import.csv">'.$this->l('Manufacturers sample file').'</a></li>
-					<li style="text-decoration: underline"><a href="../docs/csv_import/suppliers_import.csv">'.$this->l('Suppliers sample file').'</a></li>
-				</ul>
-		</fieldset>
 		<fieldset class="width3">
 			<legend><img src="../img/admin/import.gif" />'.$this->l('Upload').'</legend>
 			<form action="'.$currentIndex.'&token='.$this->token.'" method="POST" enctype="multipart/form-data">
@@ -1290,122 +1205,98 @@ class AdminImport extends AdminTab
 		uasort($filesToImport, array('AdminImport', '_usortFiles'));
 		foreach ($filesToImport AS $k => &$filename)
 			//exclude .  ..  .svn and index.php and all hidden files
-			if (preg_match('/^\..*|index.php/Ui', $filename))
+			if (preg_match('/^\..*|index\.php/i', $filename))
 				unset($filesToImport[$k]);
 		unset($filename);
-		echo '
-		<div class="space">
-				<form id="preview_import" action="'.$currentIndex.'&token='.$this->token.'" method="post" style="display:inline" enctype="multipart/form-data" class="clear" onsubmit="if ($(\'#truncate\').get(0).checked) {if (confirm(\''.$this->l('Are you sure you want to delete', __CLASS__, true, false).'\' + \' \' + $(\'#entity > option:selected\').text().toLowerCase() + \''.$this->l('?', __CLASS__, true, false).'\')){this.submit();} else {return false;}}">
-					<fieldset style="float: left; width: 550px">
-						<legend><img src="../img/admin/import.gif" />'.$this->l('Import').'</legend>
-						<label class="clear">'.$this->l('Select which entity to import:').' </label>
-						<div class="margin-form">
-							<select name="entity" id="entity">';
-		foreach ($this->entities AS $entity => $i)
-		{
-			echo '<option value="'.$i.'"';
-			if (Tools::getValue('entity') == $i)
-				echo ' selected="selected" ';
-			echo'>'.$entity.'</option>';
-		}
-		echo '				</select>
-						</div>';
 		if (sizeof($filesToImport))
 		{
 			echo '
-						<label class="clear">'.$this->l('Select your .CSV file:').' </label>
-						<div class="margin-form">
-							<select name="csv">';
+			<div class="space">
+					<form id="preview_import" action="'.$currentIndex.'&token='.$this->token.'" method="post" style="display:inline" enctype="multipart/form-data" class="clear" onsubmit="if ($(\'#truncate\').get(0).checked) {if (confirm(\''.$this->l('Are you sure you want to delete', __CLASS__, true, false).'\' + \' \' + $(\'#entity > option:selected\').text().toLowerCase() + \''.$this->l('?', __CLASS__, true, false).'\')){this.submit();} else {return false;}}">
+						<fieldset style="float: left; width: 550px">
+							<legend><img src="../img/admin/import.gif" />'.$this->l('Import').'</legend>
+							<label class="clear">'.$this->l('Select which entity to import:').' </label>
+							<div class="margin-form">
+								<select name="entity" id="entity">';
+			foreach ($this->entities AS $entity => $i)
+			{
+				echo '<option value="'.$i.'"';
+				if (Tools::getValue('entity') == $i)
+					echo ' selected="selected" ';
+				echo'>'.$entity.'</option>';
+			}
+			echo '				</select>
+							</div>
+							<label class="clear">'.$this->l('Select your .CSV file:').' </label>
+							<div class="margin-form">
+								<select name="csv">';
 			foreach ($filesToImport AS $filename)
 				echo '<option value="'.$filename.'">'.$filename.'</option>';
 			echo '				</select> ('.sizeof($filesToImport).' '.(sizeof($filesToImport) > 1 ? $this->l('files available') : $this->l('file available')).')
-						</div>
-						<label class="clear">'.$this->l('Select language of the file (the locale must be installed):').' </label>
-						<div class="margin-form">
-							<select name="iso_lang">';
-						foreach ($this->_languages AS $lang)
-							echo '<option value="'.$lang['iso_code'].'" '.($lang['id_lang'] == $cookie->id_lang ? 'selected="selected"' : '').'>'.$lang['name'].'</option>';
-						echo '</select></div><label for="convert" class="clear">'.$this->l('iso-8859-1 encoded file').' </label>
-						<div class="margin-form">
-							<input name="convert" id="convert" type="checkbox" style="margin-top: 6px;"/>
-						</div>
-						<label class="clear">'.$this->l('Field separator:').' </label>
-						<div class="margin-form">
-							<input type="text" size="2" value=";" name="separator"/>
-							'.$this->l('e.g. ').'"1<span class="bold" style="color: red">;</span>Ipod<span class="bold" style="color: red">;</span>129.90<span class="bold" style="color: red">;</span>5"
-						</div>
-						<label class="clear">'.$this->l('Multiple value separator:').' </label>
-						<div class="margin-form">
-							<input type="text" size="2" value="," name="multiple_value_separator"/>
-							'.$this->l('e.g. ').'"Ipod;red.jpg<span class="bold" style="color: red">,</span>blue.jpg<span class="bold" style="color: red">,</span>green.jpg;129.90"
-						</div>
-						<label for="truncate" class="clear">'.$this->l('Delete all').' <span id="entitie">'.$this->l('categories').'</span> '.$this->l('before import ?').' </label>
-						<div class="margin-form">
-							<input name="truncate" id="truncate" type="checkbox"/>
-						</div>
-						<label for="match_ref" class="clear" style="display: none">'.$this->l('Use product reference as key ?').'</label>
-						<div class="margin-form">
-							<input name="match_ref" id="match_ref" type="checkbox" style="margin-top: 6px; display:none"/>
-						</div>
-						<div class="space margin-form">
-							<input type="submit" name="submitImportFile" value="'.$this->l('Next step').'" class="button"/>
-						</div>
-						<div class="warn">
-							<p>'.$this->l('Note that the category import does not support categories of the same name').'.</p>
-
-							<p>'.$this->l('Note that references are not specified as UNIQUE in the database').'.</p>
-						</div>
-						';
-				}
-				else
-					echo '
-					<div class="warn">
-						'.$this->l('No CSV file is available, please upload one file above.').'<br /><br />
-						'.$this->l('You can get many informations about CSV import at:').' <a href="http://www.prestashop.com/wiki/Troubleshooting_6/" target="_blank">http://www.prestashop.com/wiki/Troubleshooting_6/</a><br /><br />
-						'.$this->l('More about CSV format at: ').' <a href="http://en.wikipedia.org/wiki/Comma-separated_values" target="_blank">http://en.wikipedia.org/wiki/Comma-separated_values</a>
-					</div>';
-					echo '
+							</div>
+							<label class="clear">'.$this->l('Select language of the file (the locale must be installed):').' </label>
+							<div class="margin-form">
+								<select name="iso_lang">';
+							foreach ($this->_languages AS $lang)
+								echo '<option value="'.$lang['iso_code'].'" '.($lang['id_lang'] == $cookie->id_lang ? 'selected="selected"' : '').'>'.$lang['name'].'</option>';
+							echo '</select></div><label for="convert" class="clear">'.$this->l('iso-8859-1 encoded file').' </label>
+							<div class="margin-form">
+								<input name="convert" id="convert" type="checkbox" style="margin-top: 6px;"/>
+							</div>
+							<label class="clear">'.$this->l('Field separator:').' </label>
+							<div class="margin-form">
+								<input type="text" size="2" value=";" name="separator"/>
+								'.$this->l('e.g. ').'"1<span class="bold" style="color: red">;</span>Ipod<span class="bold" style="color: red">;</span>129.90<span class="bold" style="color: red">;</span>5"
+							</div>
+							<label class="clear">'.$this->l('Multiple value separator:').' </label>
+							<div class="margin-form">
+								<input type="text" size="2" value="," name="multiple_value_separator"/>
+								'.$this->l('e.g. ').'"Ipod;red.jpg<span class="bold" style="color: red">,</span>blue.jpg<span class="bold" style="color: red">,</span>green.jpg;129.90"
+							</div>
+							<label for="truncate" class="clear">'.$this->l('Delete all').' <span id="entitie">'.$this->l('categories').'</span> '.$this->l('before import ?').' </label>
+							<div class="margin-form">
+								<input name="truncate" id="truncate" type="checkbox" style="margin-top: 6px;"/>
+							</div>
+							<div class="space margin-form">
+								<input type="submit" name="submitImportFile" value="'.$this->l('Next step').'" class="button"/>
+							</div>
+							<div>
+								'.$this->l('Note that the category import does not support categories of the same name').'
+							</div>
+						</fieldset>
+					</form>
+					<fieldset style="display: inline; float: right; margin-left: 20px;">
+					<legend><img src="../img/admin/import.gif" />'.$this->l('Fields available').'</legend>
+					<div id="availableFields" style="min-height: 218px; width: 300px;">'.$this->getAvailableFields().'</div>
 					</fieldset>
-				</form>
-				<fieldset style="display: inline; float: right; margin-left: 20px;">
-				<legend><img src="../img/admin/import.gif" />'.$this->l('Fields available').'</legend>
-				<div id="availableFields" style="min-height: 218px; width: 300px;">'.$this->getAvailableFields().'</div>
-				</fieldset>
-				<div class="clear" style="float:right; padding-right: 120px;">
-				'.$this->l('* Required Fields').'
+					<div class="clear" style="float:right; padding-right: 120px;">
+					'.$this->l('* Required Fields').'
+					</div>
 				</div>
-			</div>
-			<div class="clear">&nbsp;</div>
-			<script type="text/javascript">
-				$("select#entity").change( function() {
-					if ($("#entity > option:selected").val() != 1)
-					{
-						$("label[for=match_ref],#match_ref").hide();
-					}
-					if ($("#entity > option:selected").val() == 1)
-					{
-						$("label[for=match_ref],#match_ref").show();
-					}
-					$("#entitie").html($("#entity > option:selected").text().toLowerCase());
-					$.getJSON("'.dirname($currentIndex).'/ajax.php",
-						{
-						getAvailableFields:1,
-						entity: $("#entity").val()},
-								function(j)
-								{
-									var fields = "";
-									$("#availableFields").empty();
-									for (var i = 0; i < j.length; i++)
-										fields += j[i].field;
-									$("#availableFields").html(fields);
-									activeClueTip();
-								}
-					);
-				});
-			</script>';
+				<div class="clear">&nbsp;</div>
+				<script type="text/javascript">
+					$("select#entity").change( function() {
+						$("#entitie").html($("#entity > option:selected").text().toLowerCase());
+						$.getJSON("'.dirname($currentIndex).'/ajax.php", 
+							{
+							getAvailableFields:1,
+							entity: $("#entity").val()},
+									function(j)
+									{
+										var fields = "";
+										$("#availableFields").empty();
+										for (var i = 0; i < j.length; i++)
+											fields += j[i].field;
+										$("#availableFields").html(fields);
+										activeClueTip();
+									}
+						);
+					});
+				</script>';
 
-			if (Tools::getValue('entity'))
-				echo' <script type="text/javascript">$("select#entity").change();</script>';
+				if (Tools::getValue('entity'))
+					echo' <script type="text/javascript">$("select#entity").change();</script>';
+		}
 	}
 
 	public function utf8_encode_array($array)
@@ -1415,14 +1306,14 @@ class AdminImport extends AdminTab
 				$array[$key] = utf8_encode($value);
 		else
 			$array = utf8_encode($array);
-
+		
 		return $array;
 	}
 
 	private function getNbrColumn($handle, $glue)
 	{
 		$tmp = fgetcsv($handle, MAX_LINE_SIZE, $glue);
-		self::rewindBomAware($handle);
+		fseek($handle, 0);
 		return sizeof($tmp);
 	}
 
@@ -1439,13 +1330,15 @@ class AdminImport extends AdminTab
 
 	private function openCsvFile()
 	{
-		$handle = fopen(dirname(__FILE__).'/../import/'.strval(preg_replace('/\.{2,}/', '.',Tools::getValue('csv'))), 'r');
+		 $handle = fopen(dirname(__FILE__).'/../import/'.strval(preg_replace('/\.{2,}/', '.',Tools::getValue('csv'))), 'r');
 
+		/* No BOM allowed */
+		$bom = fread($handle, 3);
+		if ($bom != '\xEF\xBB\xBF')
+			rewind($handle);
 
 		if (!$handle)
 			die(Tools::displayError('Cannot read the CSV file'));
-
-		self::rewindBomAware($handle);
 
 		for ($i = 0; $i < (int)(Tools::getValue('skip')); ++$i)
 			$line = fgetcsv($handle, MAX_LINE_SIZE, Tools::getValue('separator', ';'));
@@ -1492,14 +1385,14 @@ class AdminImport extends AdminTab
 			echo '</tr>';
 		}
 		echo '</table>';
-		self::rewindBomAware($handle);
+		fseek($handle, 0);
 	}
 
 	public function displayCSV()
 	{
 		global $currentIndex;
 		$importMatchs = Db::getInstance()->ExecuteS('SELECT * FROM '._DB_PREFIX_.'import_match');
-
+		
 		echo '
 		<script src="'._PS_JS_DIR_.'adminImport.js"></script>
 		<script type="text/javascript">
@@ -1517,7 +1410,7 @@ class AdminImport extends AdminTab
 				</select>
 				<a class="button" id="loadImportMatchs" href="#">'.$this->l('Load').'</a>
 				<a class="button" id="deleteImportMatchs" href="#">'.$this->l('Delete').'</a>';
-
+		
 		echo '</div></div><h3>'.$this->l('Please set the value type of each column').'</h3>
 		<div id="error_duplicate_type" class="warning warn" style="display:none;">
 			<h3>'.$this->l('Columns cannot have the same value type').'</h3>
@@ -1537,15 +1430,13 @@ class AdminImport extends AdminTab
 
 		echo '
 		<form action="'.$currentIndex.'&token='.$this->token.'" method="post" id="import_form" name="import_form">
-			'.$this->l('Skip').' <input type="text" size="2" name="skip" value="0" /> '.$this->l('lines').'
+			'.$this->l('Skip').' <input type="text" size="2" name="skip" value="0" /> '.$this->l('lines').'.
 			<input type="hidden" name="csv" value="'.Tools::getValue('csv').'" />
 			<input type="hidden" name="convert" value="'.Tools::getValue('convert').'" />
 			<input type="hidden" name="entity" value="'.(int)(Tools::getValue('entity')).'" />
 			<input type="hidden" name="iso_lang" value="'.Tools::getValue('iso_lang').'" />';
 		if (Tools::getValue('truncate'))
 			echo '<input type="hidden" name="truncate" value="1" />';
-		if (Tools::getValue('match_ref'))
-			echo '<input type="hidden" name="match_ref" value="1" />';
 		echo '
 			<input type="hidden" name="separator" value="'.strval(trim(Tools::getValue('separator'))).'">
 			<input type="hidden" name="multiple_value_separator" value="'.strval(trim(Tools::getValue('multiple_value_separator'))).'">
@@ -1615,8 +1506,6 @@ class AdminImport extends AdminTab
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'specific_price_priority');
 				Image::deleteAllImages(_PS_PROD_IMG_DIR_);
-				if (!file_exists(_PS_PROD_IMG_DIR_))
-					mkdir(_PS_PROD_IMG_DIR_);
 				break;
 			case $this->entities[$this->l('Customers')]:
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'customer');
@@ -1628,7 +1517,6 @@ class AdminImport extends AdminTab
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'attribute_impact');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'product_attribute`');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'product_attribute_combination`');
-				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'product_attribute_image`');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'attribute_group`');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'attribute_group_lang`');
 				Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'attribute`');
@@ -1656,13 +1544,7 @@ class AdminImport extends AdminTab
 	public function postProcess()
 	{
 		global $currentIndex;
-		/* PrestaShop demo mode */
-		if (_PS_MODE_DEMO_)
-		{
-			$this->_errors[] = Tools::displayError('This functionnality has been disabled.');
-			return;
-		}
-		/* PrestaShop demo mode*/
+
 		if (Tools::isSubmit('submitFileUpload'))
 		{
 			if (isset($_FILES['file']) AND !empty($_FILES['file']['error']))
@@ -1692,7 +1574,7 @@ class AdminImport extends AdminTab
 						$this->_errors[] = Tools::displayError('No file was uploaded');
 						break;
 					break;
-				}
+				}	
 			}
 			elseif (!file_exists($_FILES['file']['tmp_name']) OR !@move_uploaded_file($_FILES['file']['tmp_name'], dirname(__FILE__).'/../import/'.$_FILES['file']['name'].'.'.date('Ymdhis')))
 				$this->_errors[] = $this->l('an error occurred while uploading and copying file');
@@ -1739,12 +1621,12 @@ class AdminImport extends AdminTab
 
 	public static function setLocale()
 	{
-		$iso_lang = trim(Tools::getValue('iso_lang'));
+		$iso_lang  = trim(Tools::getValue('iso_lang'));
 		setlocale(LC_COLLATE, strtolower($iso_lang).'_'.strtoupper($iso_lang).'.UTF-8');
 		setlocale(LC_CTYPE, strtolower($iso_lang).'_'.strtoupper($iso_lang).'.UTF-8');
 	}
 
-	protected function _addProductWarning($product_name, $product_id = null, $message = '')
+	protected function _addProductWarning($product_name, $product_id = NULL, $message = '')
 	{
 		$this->_warnings[] = $product_name.(isset($product_id) ? ' (ID '.$product_id.')' : '').' '.Tools::displayError($message);
 	}

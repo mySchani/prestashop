@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,24 +19,22 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
-
+define('PS_ADMIN_DIR', getcwd());
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 /* Getting cookie or logout */
 require_once(dirname(__FILE__).'/init.php');
 	
-if (!isset($_GET['iso_lang']) OR empty($_GET['iso_lang']))
+if(!isset($_GET['iso_lang']) OR empty($_GET['iso_lang']))
 	die('fail:0');
-if (!isset($_GET['ps_version']) OR empty($_GET['ps_version']))
+if(!isset($_GET['ps_version']) OR empty($_GET['ps_version']))
 	die('fail:0');
-if (@fsockopen('www.prestashop.com', 80))
+if(@fsockopen('www.prestashop.com', 80))
 {
 	// Get all iso code available
 	$lang_packs = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='.(string)$_GET['ps_version'].'&iso_lang='.(string)$_GET['iso_lang']);

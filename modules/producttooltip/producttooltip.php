@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class ProductToolTip extends Module
@@ -46,8 +46,8 @@ class ProductToolTip extends Module
 	
 	public function install()
 	{
-		if (!parent::install())
-			return false;
+	 	if (!parent::install())
+	 		return false;
 			
 		/* Default configuration values */
 		Configuration::updateValue('PS_PTOOLTIP_PEOPLE', 1);
@@ -55,8 +55,8 @@ class ProductToolTip extends Module
 		Configuration::updateValue('PS_PTOOLTIP_DATE_ORDER', 1);
 		Configuration::updateValue('PS_PTOOLTIP_DAYS', 3);
 		Configuration::updateValue('PS_PTOOLTIP_LIFETIME', 30);
-				
-	 	return $this->registerHook('header') AND $this->registerHook('productfooter');
+
+	 	return $this->registerHook('productfooter');
 	}
 	
 	public function uninstall()
@@ -87,7 +87,7 @@ class ProductToolTip extends Module
 
 		/* Configuration form */
 		$output = '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 		<fieldset class="width2" style="float: left;">
 			<legend><img src="'.__PS_BASE_URI__.'modules/producttooltip/logo.gif" alt="" />'.$this->l('Product tooltips').'</legend>
 			<p>
@@ -131,12 +131,6 @@ class ProductToolTip extends Module
 		return $output;
 	}
 	
-	public function hookHeader($params)
-	{
-		Tools::addCSS(__PS_BASE_URI__.'css/jquery.jgrowl.css', 'all');
-		Tools::addJS(__PS_BASE_URI__.'js/jquery/jquery.jgrowl-1.2.1.min.js');
-	}
-	
 	public function hookProductFooter($params)
 	{
 		global $smarty, $cookie;
@@ -171,7 +165,7 @@ class ProductToolTip extends Module
 			WHERE od.product_id = '.(int)($id_product).' AND o.date_add >= \''.pSQL($date).'\'
 			ORDER BY o.date_add DESC');
 			
-			if (isset($order['date_add']) && Validate::isDateFormat($order['date_add'])  && $order['date_add'] != '0000-00-00 00:00:00')
+			if (isset($order['date_add']))
 				$smarty->assign('date_last_order', $order['date_add']);
 			else
 			{
@@ -183,11 +177,11 @@ class ProductToolTip extends Module
 					FROM '._DB_PREFIX_.'cart_product cp
 					WHERE cp.id_product = '.(int)($id_product));
 			
-					if (isset($cart['date_add']) && Validate::isDateFormat($cart['date_add'])  && $cart['date_add'] != '0000-00-00 00:00:00')
+					if (isset($cart['date_add']))
 						$smarty->assign('date_last_cart', $cart['date_add']);
 				}
 			}
-		}
+		}		
 
 		if ((isset($nbPeople['nb']) AND $nbPeople['nb'] > 0) OR isset($order['date_add']) OR isset($cart['date_add']))
 			return $this->display(__FILE__, 'producttooltip.tpl');

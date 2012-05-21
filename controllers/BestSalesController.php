@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,24 +19,29 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class BestSalesControllerCore extends FrontController
 {
-	public $php_self = 'best-sales.php';
-
+	public function __construct()
+	{
+		$this->php_self = 'best-sales.php';
+	
+		parent::__construct();
+	}
+	
 	public function process()
 	{
 		$this->productSort();
-		$nbProducts = (int)(ProductSale::getNbSales());
+		$nbProducts = (int)(ProductSale::getNbSales((int)$this->id_current_shop));
 		$this->pagination($nbProducts);
 		
 		self::$smarty->assign(array(
-			'products' => ProductSale::getBestSales((int)(self::$cookie->id_lang), (int)($this->p) - 1, (int)($this->n), $this->orderBy, $this->orderWay),
+			'products' => ProductSale::getBestSales((int)(self::$cookie->id_lang), (int)($this->p) - 1, (int)($this->n), $this->orderBy, $this->orderWay, (int)$this->id_current_shop),
 			'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
 			'nbProducts' => $nbProducts,
 			'homeSize' => Image::getSize('home')

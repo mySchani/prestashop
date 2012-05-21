@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15060 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -35,7 +35,7 @@
 		var reg = new RegExp('^ajax_id_product_([\\d+]*)$', 'g');
 		var res = reg.exec(rel);
 		
-		if (res.length > 2)
+		if (res.lenght > 2)
 			Treepodia.getProduct('{/literal}{$account_id}{literal}', res[1]).logAddToCart();
 	}
 	
@@ -47,7 +47,7 @@
 		});
 		
 		//for product page 'add' button...
-		$('body#product #add_to_cart input').mouseup(function(){
+		$('body#product p#add_to_cart input').mouseup(function(){
 			sendProductToTreepodia($(this).attr('rel'));
 			return false;
 		});

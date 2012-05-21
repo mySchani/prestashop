@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,25 +19,29 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (Configuration::get('VATNUMBER_MANAGEMENT') AND file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php'))
+if(Configuration::get('VATNUMBER_MANAGEMENT') AND file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php'))
 	include_once(_PS_MODULE_DIR_.'vatnumber/vatnumber.php');
 
 class AddressControllerCore extends FrontController
 {
-	public $auth = true;
-	public $guestAllowed = true;
-	public $php_self = 'address.php';
-	public $authRedirection = 'addresses.php';
-	public $ssl = true;
-		
 	protected $_address;
 
+	public function __construct()
+	{
+		$this->auth = true;
+		$this->guestAllowed = true;
+		$this->php_self = 'address.php';
+		$this->authRedirection = 'addresses.php';
+		$this->ssl = true;
+	
+		parent::__construct();
+	}
+	
 	public function preProcess()
 	{
 		parent::preProcess();
@@ -71,7 +75,7 @@ class AddressControllerCore extends FrontController
 					if (self::$cart->id_address_delivery == $this->_address->id)
 						unset(self::$cart->id_address_delivery);
 					if ($this->_address->delete())
-						Tools::redirect('addresses.php');
+						Tools::redirect('index.php?controller=addresses');
 					$this->errors[] = Tools::displayError('This address cannot be deleted.');
 				}
 				self::$smarty->assign(array('address' => $this->_address, 'id_address' => (int)$id_address));
@@ -79,7 +83,7 @@ class AddressControllerCore extends FrontController
 			elseif (Tools::isSubmit('ajax'))
 				exit;
 			else
-				Tools::redirect('addresses.php');
+				Tools::redirect('index.php?controller=addresses');
 		}
 		if (Tools::isSubmit('submitAddress'))
 		{
@@ -93,7 +97,7 @@ class AddressControllerCore extends FrontController
 				die(Tools::displayError());
 
 			/* US customer: normalize the address */
-			if ($address->id_country == Country::getByIso('US'))
+			if($address->id_country == Country::getByIso('US'))
 			{
 				include_once(_PS_TAASC_PATH_.'AddressStandardizationSolution.php');
 				$normalize = new AddressStandardizationSolution;
@@ -170,8 +174,8 @@ class AddressControllerCore extends FrontController
 					}
 				}
 				elseif (self::$cookie->is_guest)
-					Tools::redirect('addresses.php');
-				
+					Tools::redirect('index.php?controller=addresses');
+
 				if ($result = $address->save())
 				{
 					/* In order to select this new address : order-address.tpl */
@@ -227,7 +231,7 @@ class AddressControllerCore extends FrontController
 
 		/* Secure restriction for guest */
 		if (self::$cookie->is_guest)
-			Tools::redirect('addresses.php');
+			Tools::redirect('index.php?controller=addresses');
 
 		if (Tools::isSubmit('id_country') AND Tools::getValue('id_country') != NULL AND is_numeric(Tools::getValue('id_country')))
 			$selectedCountry = (int)Tools::getValue('id_country');
@@ -241,19 +245,15 @@ class AddressControllerCore extends FrontController
 		}
 		else
 			$selectedCountry = (int)Configuration::get('PS_COUNTRY_DEFAULT');
-
-		if (Configuration::get('PS_RESTRICT_DELIVERED_COUNTRIES'))
-			$countries = Carrier::getDeliveredCountries((int)self::$cookie->id_lang, true, true);
-		else
-			$countries = Country::getCountries((int)self::$cookie->id_lang, true);
-
+			
+		$countries = Country::getCountries((int)self::$cookie->id_lang, true, NULL, $this->id_current_shop);
 		$countriesList = '';
 		foreach ($countries AS $country)
 			$countriesList .= '<option value="'.(int)($country['id_country']).'" '.($country['id_country'] == $selectedCountry ? 'selected="selected"' : '').'>'.htmlentities($country['name'], ENT_COMPAT, 'UTF-8').'</option>';
 
 		if ((Configuration::get('VATNUMBER_MANAGEMENT') AND file_exists(_PS_MODULE_DIR_.'vatnumber/vatnumber.php')) && VatNumber::isApplicable(Configuration::get('PS_COUNTRY_DEFAULT')))
 			self::$smarty->assign('vat_display', 2);
-		elseif (Configuration::get('VATNUMBER_MANAGEMENT'))
+		else if(Configuration::get('VATNUMBER_MANAGEMENT'))
 			self::$smarty->assign('vat_display', 1);
 		else
 			self::$smarty->assign('vat_display', 0);
@@ -276,7 +276,7 @@ class AddressControllerCore extends FrontController
 
 		$id_country = is_null($this->_address)? 0 : (int)$this->_address->id_country;
 
-		$dlv_adr_fields = AddressFormat::getOrderedAddressFields($id_country, true, true);
+		$dlv_adr_fields = AddressFormat::getOrderedAddressFields($id_country, $split_all = true);
 		self::$smarty->assign('ordered_adr_fields', $dlv_adr_fields);
 	}
 	

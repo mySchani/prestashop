@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7040 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -63,7 +63,7 @@ if ($cookie->isLogged())
 					continue;
 				else
 				{
-					if ($products[$i]['id_product_attribute'] != 0 && isset($combination_imgs[$products[$i]['id_product_attribute']][0]))
+					if ($products[$i]['id_product_attribute'] != 0)
 					{
 						$combination_imgs = $obj->getCombinationImages((int)($cookie->id_lang));
 						$products[$i]['cover'] = $obj->id.'-'.$combination_imgs[$products[$i]['id_product_attribute']][0]['id_image'];

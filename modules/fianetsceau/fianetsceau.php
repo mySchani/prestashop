@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,12 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15238 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7310 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 	
 class FianetSceau extends Module
@@ -40,8 +39,7 @@ class FianetSceau extends Module
 		$this->limited_countries = array('fr');
 		
 	 	parent::__construct();
-
-		$this->author = 'PrestaShop';
+		
 		$this->displayName = $this->l('FIA-NET Seal of Confidence');
 		$this->description = $this->l('Turn your visitors into buyers by creating confidence in your site.');
 		if (!Configuration::get('FIANET_SCEAU_PRIVATEKEY'))
@@ -92,7 +90,7 @@ class FianetSceau extends Module
 		$output = '<h2>'.$this->displayName.'</h2>';
 		if (!is_callable('curl_init'))
 			$output .= parent::displayError('You need to enable Curl library to use this module');
-		elseif (Tools::isSubmit('submitFianet'))
+		else if (Tools::isSubmit('submitFianet'))
 			$output .= self::getProcess();
 	
 		$output .= '
@@ -198,7 +196,7 @@ class FianetSceau extends Module
 		return false;
 	}
 	
-	public function hookUpdateOrderStatus($params)
+	public function	hookUpdateOrderStatus($params)
 	{
 		$this->id_order = (int)$params['id_order'];
 		$res = Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'fianet_seal` a WHERE a.id_order = '.(int)$params['id_order']);

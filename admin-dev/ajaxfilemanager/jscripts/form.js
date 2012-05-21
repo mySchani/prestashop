@@ -7,7 +7,7 @@
  *   http://www.opensource.org/licenses/mit-license.php
  *   http://www.gnu.org/licenses/gpl.html
  *
- * Revision: $Id: form.js 6594 2011-05-23 07:11:44Z mMarinetti $
+ * Revision: $Id: form.js 6844 2011-06-03 14:46:51Z dMetzger $
  * Version: 1.0.3
  */
  (function($) {

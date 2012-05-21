@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,6 +28,7 @@
 class CustomerThreadCore extends ObjectModel
 {
 	public $id;
+	public $id_shop;
 	public $id_lang;
 	public $id_contact;
 	public $id_customer;
@@ -44,26 +45,14 @@ class CustomerThreadCore extends ObjectModel
 	
 	protected $fieldsRequired = array('id_lang', 'id_contact', 'token');
 	protected $fieldsSize = array('email' => 254);
-	protected $fieldsValidate = array('id_lang' => 'isUnsignedId', 'id_contact' => 'isUnsignedId', 'id_customer' => 'isUnsignedId',
+	protected $fieldsValidate = array('id_lang' => 'isUnsignedId', 'id_contact' => 'isUnsignedId', 'id_shop' => 'isUnsignedId', 'id_customer' => 'isUnsignedId',
 									'id_order' => 'isUnsignedId', 'id_product' => 'isUnsignedId', 'email' => 'isEmail', 'token' => 'isGenericName');
 
-	protected	$webserviceParameters = array(
-			'fields' => array(
-					'id_lang' => array('xlink_resource' => 'languages'),
-					'id_contact' => array('xlink_resource' => 'employees'),
-					'id_customer' => array('xlink_resource' => 'customers'),
-					'id_order' => array('xlink_resource' => 'orders'),
-					'id_product' => array('xlink_resource' => 'products'),
-					'status' => array(),
-					'email' => array(),
-					'token' => array(),
-			),
-	);
-	
 	public	function getFields()
 	{
 	 	parent::validateFields();
 		$fields['id_lang'] = (int)($this->id_lang);
+		$fields['id_shop'] = (int)$this->id_shop;
 		$fields['id_contact'] = (int)($this->id_contact);
 		$fields['id_customer'] = (int)($this->id_customer);
 		$fields['id_order'] = (int)($this->id_order);
@@ -90,6 +79,6 @@ class CustomerThreadCore extends ObjectModel
 		SELECT * FROM '._DB_PREFIX_.'customer_thread ct
 		LEFT JOIN '._DB_PREFIX_.'customer_message cm ON ct.id_customer_thread = cm.id_customer_thread
 		WHERE id_customer = '.(int)($id_customer));
-	}
+	}	
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7445 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -29,7 +29,6 @@ class MetaCore extends ObjectModel
 {
 	/** @var string Name */
 	public 		$page;
-	
 	public 		$title;
 	public 		$description;
 	public 		$keywords;
@@ -42,7 +41,8 @@ class MetaCore extends ObjectModel
 	protected	$fieldsRequiredLang = array();
 	protected	$fieldsSizeLang = array('title' => 128, 'description' => 255, 'keywords' => 255, 'url_rewrite' => 255);
 	protected	$fieldsValidateLang = array('title' => 'isGenericName', 'description' => 'isGenericName', 'keywords' => 'isGenericName', 'url_rewrite' => 'isLinkRewrite');
-	
+
+	protected	$langMultiShop = true;
 	protected 	$table = 'meta';
 	protected 	$identifier = 'id_meta';
 		
@@ -58,23 +58,23 @@ class MetaCore extends ObjectModel
 		return parent::getTranslationsFields(array('title', 'description', 'keywords', 'url_rewrite'));
 	}
 	
-	public static function getPages($excludeFilled = false, $addPage = false)
+	static public function getPages($excludeFilled = false, $addPage = false)
 	{
 		$selectedPages = array();
-		if (!$files = scandir(_PS_ROOT_DIR_))
+		if (!$files = scandir(_PS_ROOT_DIR_.'/controllers'))
 			die(Tools::displayError('Cannot scan root directory'));
 		
 		// Exclude pages forbidden
-		$exludePages = array('category', 'changecurrency', 'cms', 'footer', 'header', 'images.inc', 'init',
+		$exludePages = array('category', 'changecurrency', 'cms', 'footer', 'header',
 		'pagination', 'product', 'product-sort', 'statistics');
 		foreach ($files as $file)
-			if (preg_match('/^[a-z0-9_.-]*\.php$/i', $file) AND !in_array(str_replace('.php', '', $file), $exludePages))
-				$selectedPages[] = str_replace('.php', '', $file);
+			if (preg_match('/^[a-z0-9_.-]*\.php$/i', $file) AND !in_array(strtolower(str_replace('Controller.php', '', $file)), $exludePages))
+				$selectedPages[] = strtolower(str_replace('Controller.php', '', $file));
 		// Exclude page already filled
 		if ($excludeFilled)
 		{
 			$metas = self::getMetas();
-			foreach ($metas as $meta)
+			foreach ($metas as $k => $meta)
 				if (in_array($meta['page'], $selectedPages))
 					unset($selectedPages[array_search($meta['page'], $selectedPages)]);
 		}
@@ -87,7 +87,7 @@ class MetaCore extends ObjectModel
 		return $selectedPages;
 	}
 	
-	public static function getMetas()
+	static public function getMetas()
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
@@ -95,19 +95,24 @@ class MetaCore extends ObjectModel
 		ORDER BY page ASC');
 	}
 
-	public static function getMetasByIdLang($id_lang)
+	static public function getMetasByIdLang($id_lang, $id_shop = false)
 	{
+		if (!$id_shop)
+			$id_shop = (int)Configuration::get('PS_SHOP_DEFAULT');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'meta` m
 		LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON m.`id_meta` = ml.`id_meta`
-		WHERE ml.`id_lang` = '.(int)($id_lang).' 
+		WHERE ml.`id_lang` = '.(int)($id_lang).
+		($id_shop ? ' AND ml.id_shop='.(int)$id_shop : '').'
 		ORDER BY page ASC');
 		
 	}
 	
-	public static function getMetaByPage($page, $id_lang)
+	static public function getMetaByPage($page, $id_lang, $id_shop = false)
 	{
+		if (!$id_shop)
+			$id_shop = (int)Configuration::get('PS_SHOP_DEFAULT');
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT *
 		FROM '._DB_PREFIX_.'meta m
@@ -123,8 +128,7 @@ class MetaCore extends ObjectModel
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
 									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC'),
-									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+									Configuration::get('PS_HTACCESS_SPECIFIC')
 									);
 	}
 
@@ -135,8 +139,7 @@ class MetaCore extends ObjectModel
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
 									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC'),
-									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+									Configuration::get('PS_HTACCESS_SPECIFIC')
 									);
 	}
 	
@@ -148,8 +151,7 @@ class MetaCore extends ObjectModel
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 								(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
 								(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-								Configuration::get('PS_HTACCESS_SPECIFIC'),
-								(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+								Configuration::get('PS_HTACCESS_SPECIFIC')
 								);
 	}
 	
@@ -167,12 +169,11 @@ class MetaCore extends ObjectModel
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
 									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
 									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC'),
-									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
+									Configuration::get('PS_HTACCESS_SPECIFIC')
 									);
 	}
 
-	public static function getEquivalentUrlRewrite($new_id_lang, $id_lang, $url_rewrite)
+	static public function getEquivalentUrlRewrite($new_id_lang, $id_lang, $url_rewrite)
 	{
 		return Db::getInstance()->getValue('
 		SELECT url_rewrite

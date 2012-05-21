@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -27,6 +27,7 @@
 {if !$opc}
 	<script type="text/javascript">
 	// <![CDATA[
+	var baseDir = '{$base_dir_ssl}';
 	var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
 	var currencyRate = '{$currencyRate|floatval}';
 	var currencyFormat = '{$currencyFormat|intval}';
@@ -64,7 +65,7 @@
 {/if}
 
 {if !$opc}
-	<p class="cart_navigation"><a href="{$link->getPageLink('order.php', true)}?step=2" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a></p>
+	<p class="cart_navigation"><a href="{$link->getPageLink('order', true, NULL, "step=2")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a></p>
 {else}
 	</div>
 {/if}

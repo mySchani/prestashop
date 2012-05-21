@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,11 +18,17 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7077 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+
+<script type="text/javascript">
+//<![CDATA[
+	var baseDir = '{$base_dir_ssl}';
+//]]>
+</script>
 
 <script type="text/javascript">
 // <![CDATA[
@@ -32,7 +38,7 @@
 	//]]>
 </script>
 
-{capture name=path}<a href="{$link->getPageLink('my-account.php', true)}">{l s='My account' mod='referralprogram'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Referral Program' mod='referralprogram'}{/capture}
+{capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account' mod='referralprogram'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Referral Program' mod='referralprogram'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
 <h2>{l s='Referral program' mod='referralprogram'}</h2>
@@ -106,9 +112,9 @@
 					{section name=friends start=0 loop=$nbFriends step=1}
 					<tr class="{if $smarty.section.friends.index % 2}item{else}alternate_item{/if}">
 						<td class="align_right">{$smarty.section.friends.iteration}</td>
-						<td><input type="text" class="text" name="friendsLastName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsLastName[$smarty.section.friends.index])}{$smarty.post.friendsLastName[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
-						<td><input type="text" class="text" name="friendsFirstName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsFirstName[$smarty.section.friends.index])}{$smarty.post.friendsFirstName[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
-						<td><input type="text" class="text" name="friendsEmail[{$smarty.section.friends.index}]" size="20" value="{if isset($smarty.post.friendsEmail[$smarty.section.friends.index])}{$smarty.post.friendsEmail[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsLastName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsLastName[$smarty.section.friends.index])}{$smarty.post.friendsLastName[$smarty.section.friends.index]}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsFirstName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsFirstName[$smarty.section.friends.index])}{$smarty.post.friendsFirstName[$smarty.section.friends.index]}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsEmail[{$smarty.section.friends.index}]" size="20" value="{if isset($smarty.post.friendsEmail[$smarty.section.friends.index])}{$smarty.post.friendsEmail[$smarty.section.friends.index]}{/if}" /></td>
 					</tr>
 					{/section}
 				</tbody>
@@ -155,7 +161,7 @@
 			{foreach from=$pendingFriends item=pendingFriend name=myLoop}
 				<tr>
 					<td>
-						<input type="checkbox" name="friendChecked[{$pendingFriend.id_referralprogram}]" id="friendChecked[{$pendingFriend.id_referralprogram}]" value="{$pendingFriend.id_referralprogram}" />
+						<input type="checkbox" name="friendChecked[{$pendingFriend.id_referralprogram}]" id="friendChecked[{$pendingFriend.id_referralprogram}]" value="1" />
 					</td>
 					<td>
 						<label for="friendChecked[{$pendingFriend.id_referralprogram}]">{$pendingFriend.lastname|substr:0:22}</label>
@@ -212,6 +218,6 @@
 </div>
 
 <ul class="footer_links">
-	<li><a href="{$link->getPageLink('my-account.php', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account.php', true)}">{l s='Back to Your Account' mod='referralprogram'}</a></li>
+	<li><a href="{$link->getPageLink('my-account', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account', true)}">{l s='Back to Your Account' mod='referralprogram'}</a></li>
 	<li><a href="{$base_dir}"><img src="{$img_dir}icon/home.gif" alt="" class="icon" /></a><a href="{$base_dir_ssl}">{l s='Home' mod='referralprogram'}</a></li>
 </ul>

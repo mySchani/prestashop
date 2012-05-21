@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -29,9 +29,13 @@
 	{if $editorial->body_home_logo_link}<a href="{$editorial->body_home_logo_link|escape:'htmlall':'UTF-8'}" title="{$editorial->body_title|escape:'htmlall':'UTF-8'|stripslashes}">{/if}
 	{if $homepage_logo}<img src="{$link->getMediaLink($image_path)}" alt="{$editorial->body_title|escape:'htmlall':'UTF-8'|stripslashes}" {if $image_width}width="{$image_width}"{/if} {if $image_height}height="{$image_height}" {/if}/>{/if}
 	{if $editorial->body_home_logo_link}</a>{/if}
-	{if $editorial->body_logo_subheading}<p id="editorial_image_legend">{$editorial->body_logo_subheading|stripslashes}</p>{/if}
-	{if $editorial->body_title}<h1>{$editorial->body_title|stripslashes}</h1>{/if}
-	{if $editorial->body_subheading}<h2>{$editorial->body_subheading|stripslashes}</h2>{/if}
-	{if $editorial->body_paragraph}<div class="rte">{$editorial->body_paragraph|stripslashes}</div>{/if}
+	{if $editorial->body_logo_subheading}<p id="editorial_image_legend">{$editorial->body_logo_subheading|stripslashes}</p>
+	{elseif $editorial->body_logo_subheading}<p id="editorial_image_legend">{$editorial->body_logo_subheading}</p>{/if} 
+	{if $editorial->body_title}<h1>{$editorial->body_title|stripslashes}</h1>
+	{elseif $editorial->body_title}<h1>{$editorial->body_title|stripslashes}</h1>{/if}
+	{if $editorial->body_subheading}<h2>{$editorial->body_subheading|stripslashes}</h2>
+	{elseif $editorial->body_subheading}<h2>{$editorial->body_subheading|stripslashes}</h2>{/if}
+	{if $editorial->body_paragraph}<div class="rte">{$editorial->body_paragraph|stripslashes}</div>
+	{elseif $editorial->body_paragraph}<div class="rte">{$editorial->body_paragraph|stripslashes}</div>{/if}
 </div>
 <!-- /Module Editorial -->

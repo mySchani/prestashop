@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -77,11 +77,11 @@ class	LoggerCore extends ObjectModel
 		return $fields;
 	}
 
-	public static function sendByMail($log)
+	static public function sendByMail($log)
 	{
 		/* Send e-mail to the shop owner only if the minimal severity level has been reached */
 		if (intval(Configuration::get('PS_LOGS_BY_EMAIL')) <= intval($log->severity))
-			Mail::Send((int)Configuration::get('PS_LANG_DEFAULT'), 'log_alert', Mail::l('Log: You have a new alert from your shop', (int)Configuration::get('PS_LANG_DEFAULT')), array(), Configuration::get('PS_SHOP_EMAIL'));
+			Mail::Send((int)Configuration::get('PS_LANG_DEFAULT'), 'log_alert', Mail::l('Log: You have a new alert from your shop'), array(), Configuration::get('PS_SHOP_EMAIL'));
 	}
 
 	/**
@@ -95,7 +95,7 @@ class	LoggerCore extends ObjectModel
 	 * @param boolean $allowDuplicate if set to true, can log several time the same information (not recommended)
 	 * @return boolean true if succeed
 	 */
-	public static function addLog($message, $severity = 1, $errorCode = NULL, $objectType = NULL, $objectId = NULL, $allowDuplicate = false)
+	static public function addLog($message, $severity = 1, $errorCode = NULL, $objectType = NULL, $objectId = NULL, $allowDuplicate = false)
 	{
 		$log = new Logger();
 		$log->severity = intval($severity);

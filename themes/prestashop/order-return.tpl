@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7471 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -60,7 +60,7 @@
 								{if $type == $smarty.const._CUSTOMIZE_FILE_}
 								<ul class="customizationUploaded">
 									{foreach from=$datas item='data'}
-										<li><img src="{$pic_dir}{$data.value}_small" alt="" class="customizationUploaded" /></li>
+										<li>WAHOU<img src="{$pic_dir}{$data.value}_small" alt="" class="customizationUploaded" /></li>
 									{/foreach}
 								</ul>
 								{elseif $type == $smarty.const._CUSTOMIZE_TEXTFIELD_}
@@ -93,11 +93,11 @@
 <p class="bold">{l s='REMINDER:'}</p>
 <div>
 	- {l s='All products must be returned in their original packaging without damage or wear.'}
-	<br />- {l s='Please print out the'} <a href="{$link->getPageLink('pdf-order-return.php', true)}?id_order_return={$orderRet->id|intval}">{l s='PDF document'}</a> {l s='and slip it into your package.'}
-	<br />- {l s='Please see PDF document'} (<a href="{$link->getPageLink('pdf-order-return.php', true)}?id_order_return={$orderRet->id|intval}">{l s='for the correct address'}</a>)
+	<br />- {l s='Please print out the'} <a href="{$link->getPageLink('pdf-order-return', true, NULL, "id_order_return={$orderRet->id|intval}")}">{l s='PDF document'}</a> {l s='and slip it into your package.'}
+	<br />- {l s='Please see PDF document'} (<a href="{$link->getPageLink('pdf-order-return', true, NULL, "id_order_return={$orderRet->id|intval}")}">{l s='for the correct address'}</a>)
 	<br /><br />
 	{l s='Upon receiving your package, you will be notified by e-mail. We will then begin processing the reimbursement of your order total.'}
-	<br /><br /><a href="{$link->getPageLink('contact-form.php', true)}">{l s='Let us know if you have any questions.'}</a>
+	<br /><br /><a href="{$link->getPageLink('contact', true)}">{l s='Let us know if you have any questions.'}</a>
 	<br />
 	<p class="bold">{l s='If the conditions of return listed above are not respected, we reserve the right to refuse your package and/or reimbursement.'}</p>
 </div>

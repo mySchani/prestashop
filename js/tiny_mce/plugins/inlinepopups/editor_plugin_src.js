@@ -25,7 +25,7 @@
 				longname : 'InlinePopups',
 				author : 'Moxiecode Systems AB',
 				authorurl : 'http://tinymce.moxiecode.com',
-				infourl : 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/inlinepopups',
+				infourl : 'http://wiki.moxiecode.com/index.php?controller=TinyMCE:Plugins/inlinepopups',
 				version : tinymce.majorVersion + "." + tinymce.minorVersion
 			};
 		}
@@ -219,10 +219,7 @@
 				t.focus(id);
 
 				if (n.nodeName == 'A' || n.nodeName == 'a') {
-					if (n.className == 'mceClose') {
-						t.close(null, id);
-						return Event.cancel(e);
-					} else if (n.className == 'mceMax') {
+					if (n.className == 'mceMax') {
 						w.oldPos = w.element.getXY();
 						w.oldSize = w.element.getSize();
 

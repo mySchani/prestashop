@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,125 +19,144 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14903 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7307 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class StatsProduct extends ModuleGraph
 {
-	private $_html = '';
+    private $_html = '';
 	private $_query = '';
 	private $_option = 0;
 	private $_id_product = 0;
 
-	function __construct()
-	{
-		$this->name = 'statsproduct';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
+    function __construct()
+    {
+        $this->name = 'statsproduct';
+        $this->tab = 'analytics_stats';
+        $this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
-		parent::__construct();
+        parent::__construct();
+		
+        $this->displayName = $this->l('Product details');
+        $this->description = $this->l('Get detailed statistics for each product.');
+    }
 
-		$this->displayName = $this->l('Product details');
-		$this->description = $this->l('Get detailed statistics for each product.');
-	}
-	
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
 	}
-	
+
 	public function getTotalBought($id_product)
 	{
 		$dateBetween = ModuleGraph::getDateBetween();
-		return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT SUM(od.`product_quantity`) AS total
-		FROM `'._DB_PREFIX_.'order_detail` od
-		LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
-		WHERE od.`product_id` = '.(int)($id_product).'
-		AND o.valid = 1
-		AND o.`date_add` BETWEEN '.$dateBetween.'');
+		$sql = 'SELECT SUM(od.`product_quantity`) AS total
+				FROM `'._DB_PREFIX_.'order_detail` od
+				LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
+				WHERE od.`product_id` = '.(int)$id_product.'
+					'.$this->sqlShopRestriction(false, 'o').'
+					AND o.valid = 1
+					AND o.`date_add` BETWEEN '.$dateBetween;
+		return (int)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
-	
+
 	public function getTotalSales($id_product)
 	{
 		$dateBetween = ModuleGraph::getDateBetween();
-		return (float)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT SUM(od.`product_quantity` * od.`product_price`) AS total
-		FROM `'._DB_PREFIX_.'order_detail` od
-		LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
-		WHERE od.`product_id` = '.(int)($id_product).'
-		AND o.valid = 1
-		AND o.`date_add` BETWEEN '.$dateBetween.'');
+		$sql = 'SELECT SUM(od.`product_quantity` * od.`product_price`) AS total
+				FROM `'._DB_PREFIX_.'order_detail` od
+				LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
+				WHERE od.`product_id` = '.(int)($id_product).'
+					'.$this->sqlShopRestriction(false, 'o').'
+					AND o.valid = 1
+					AND o.`date_add` BETWEEN '.$dateBetween;
+		return (float)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
-	
+
 	public function getTotalViewed($id_product)
 	{
 		$dateBetween = ModuleGraph::getDateBetween();
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT SUM(pv.`counter`) AS total
-		FROM `'._DB_PREFIX_.'page_viewed` pv
-		LEFT JOIN `'._DB_PREFIX_.'date_range` dr ON pv.`id_date_range` = dr.`id_date_range`
-		LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
-		LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
-		WHERE pt.`name` = \'product.php\'
-		AND p.`id_object` = '.(int)($id_product).'
-		AND dr.`time_start` BETWEEN '.$dateBetween.'
-		AND dr.`time_end` BETWEEN '.$dateBetween.'');
+		$sql = 'SELECT SUM(pv.`counter`) AS total
+				FROM `'._DB_PREFIX_.'page_viewed` pv
+				LEFT JOIN `'._DB_PREFIX_.'date_range` dr ON pv.`id_date_range` = dr.`id_date_range`
+				LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
+				LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
+				WHERE pt.`name` = \'product.php\'
+					'.$this->sqlShopRestriction(false, 'pv').'
+					AND p.`id_object` = '.(int)($id_product).'
+					AND dr.`time_start` BETWEEN '.$dateBetween.'
+					AND dr.`time_end` BETWEEN '.$dateBetween;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return isset($result['total']) ? $result['total'] : 0;
 	}
-	
+
 	private function getProducts($id_lang)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT p.`id_product`, p.reference, pl.`name`, IFNULL((SELECT SUM(pa.quantity) FROM '._DB_PREFIX_.'product_attribute pa WHERE pa.id_product = p.id_product), p.quantity) as quantity
-		FROM `'._DB_PREFIX_.'product` p
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.`id_product` = pl.`id_product`
-		'.(Tools::getValue('id_category') ? 'LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON p.`id_product` = cp.`id_product`' : '').'
-		WHERE pl.`id_lang` = '.(int)($id_lang).'
-		'.(Tools::getValue('id_category') ? 'AND cp.id_category = '.(int)(Tools::getValue('id_category')) : '').'
-		ORDER BY pl.`name`');
+		$joinShop = $whereShop = '';
+		if ($this->shopID || $this->shopGroupID)
+		{
+			$joinShop = ' LEFT JOIN '._DB_PREFIX_.'product_shop ps ON ps.id_product = p.id_product ';
+			if ($this->shopID)
+				$whereShop = ' ps.id_shop = '.$this->shopID.' AND ';
+			else if ($this->shopGroupID)
+				$whereShop = 'ps.id_shop IN (SELECT id_shop FROM '._DB_PREFIX_.'shop WHERE id_group_shop = '.$this->shopGroupID.') AND';
+		}
+		
+		$sql = 'SELECT p.`id_product`, p.reference, pl.`name`, IFNULL(
+					(SELECT SUM(pa.quantity) FROM '._DB_PREFIX_.'product_attribute pa WHERE pa.id_product = p.id_product), p.quantity) as quantity
+				FROM `'._DB_PREFIX_.'product` p
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON p.`id_product` = pl.`id_product`
+				'.$joinShop.'
+				'.(Tools::getValue('id_category') ? 'LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON p.`id_product` = cp.`id_product`' : '').'
+				WHERE '.$whereShop.'
+					pl.`id_lang` = '.(int)($id_lang).'
+					'.(Tools::getValue('id_category') ? 'AND cp.id_category = '.(int)(Tools::getValue('id_category')) : '').'
+				ORDER BY pl.`name`';
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
 	}
-	
+
 	private function getSales($id_product, $id_lang)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT o.date_add, o.id_order, o.id_customer, od.product_quantity, (od.product_price * od.product_quantity) as total, od.tax_name, od.product_name
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
-		WHERE o.date_add BETWEEN '.$this->getDate().' AND o.valid = 1
-		AND od.product_id = '.(int)($id_product));
+		$sql = 'SELECT o.date_add, o.id_order, o.id_customer, od.product_quantity, (od.product_price * od.product_quantity) as total, od.tax_name, od.product_name
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
+				WHERE o.date_add BETWEEN '.$this->getDate().'
+					'.$this->sqlShopRestriction(false, 'o').'
+					AND o.valid = 1
+					AND od.product_id = '.(int)($id_product);
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
 	}
-	
+
 	private function getCrossSales($id_product, $id_lang)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT pl.name as pname, pl.id_product, SUM(od.product_quantity) as pqty, AVG(od.product_price) as pprice
-		FROM `'._DB_PREFIX_.'orders` o
-		LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = od.product_id AND pl.id_lang = '.(int)($id_lang).')
-		WHERE o.id_customer IN (
-			SELECT o.id_customer
-			FROM `'._DB_PREFIX_.'orders` o
-			LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
-			WHERE o.date_add BETWEEN '.$this->getDate().'
-			AND o.valid = 1
-			AND od.product_id = '.(int)($id_product).'
-		)
-		AND o.date_add BETWEEN '.$this->getDate().'
-		AND o.valid = 1
-		AND od.product_id != '.(int)($id_product).'
-		GROUP BY od.product_id
-		ORDER BY pqty DESC');
+		$sql = 'SELECT pl.name as pname, pl.id_product, SUM(od.product_quantity) as pqty, AVG(od.product_price) as pprice
+				FROM `'._DB_PREFIX_.'orders` o
+				LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = od.product_id AND pl.id_lang = '.(int)($id_lang).')
+				WHERE o.id_customer IN (
+						SELECT o.id_customer
+						FROM `'._DB_PREFIX_.'orders` o
+						LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.id_order = od.id_order
+						WHERE o.date_add BETWEEN '.$this->getDate().'
+						AND o.valid = 1
+						AND od.product_id = '.(int)($id_product).'
+					)
+					'.$this->sqlShopRestriction(false, 'o').'
+					AND o.date_add BETWEEN '.$this->getDate().'
+					AND o.valid = 1
+					AND od.product_id != '.(int)($id_product).'
+				GROUP BY od.product_id
+				ORDER BY pqty DESC';
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
 	}
-	
+
 	public function hookAdminStatsModules($params)
 	{
 		global $cookie, $currentIndex;
@@ -156,7 +175,7 @@ class StatsProduct extends ModuleGraph
 					$this->csvExport(array('layers' => 2, 'type' => 'line', 'option' => '1-'.$id_product));	
 				elseif (Tools::getValue('exportType') == 2)
 					$this->csvExport(array('type' => 'pie', 'option' => '3-'.$id_product));
-			$product = new Product($id_product, false, (int)$cookie->id_lang);
+			$product = new Product($id_product, false, (int)($cookie->id_lang));
 			$totalBought = $this->getTotalBought($product->id);
 			$totalSales = $this->getTotalSales($product->id);
 			$totalViewed = $this->getTotalViewed($product->id);
@@ -165,12 +184,12 @@ class StatsProduct extends ModuleGraph
 			<p>'.$this->l('Sales (-Tx):').' '.Tools::displayprice($totalSales, $currency).'</p>
 			<p>'.$this->l('Total viewed:').' '.$totalViewed.'</p>
 			<p>'.$this->l('Conversion rate:').' '.number_format($totalViewed ? $totalBought / $totalViewed : 0, 2).'</p>
-			<center>'.ModuleGraph::engine(array('layers' => 2, 'type' => 'line', 'option' => '1-'.$id_product)).'</center>
+			<center>'.$this->engine(array('layers' => 2, 'type' => 'line', 'option' => '1-'.$id_product)).'</center>
 			<br />
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
 			if ($hasAttribute = $product->hasAttributes() AND $totalBought)
-				$this->_html .= '<h3 class="space">'.$this->l('Attribute sales distribution').'</h3><center>'.ModuleGraph::engine(array('type' => 'pie', 'option' => '3-'.$id_product)).'</center><br />
-			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=2"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br />';
+				$this->_html .= '<h3 class="space">'.$this->l('Attribute sales distribution').'</h3><center>'.$this->engine(array('type' => 'pie', 'option' => '3-'.$id_product)).'</center><br />
+			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1&exportType=2"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p><br />';
 			if ($totalBought)
 			{
 				$sales = $this->getSales($id_product, $cookie->id_lang);
@@ -188,14 +207,14 @@ class StatsProduct extends ModuleGraph
 						<th>'.$this->l('Price').'</th>
 					</tr>
 				</thead><tbody>';
-				$tokenOrder = Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)$cookie->id_employee);
-				$tokenCustomer = Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)$cookie->id_employee);
+				$tokenOrder = Tools::getAdminToken('AdminOrders'.(int)(Tab::getIdFromClassName('AdminOrders')).(int)($cookie->id_employee));
+				$tokenCustomer = Tools::getAdminToken('AdminCustomers'.(int)(Tab::getIdFromClassName('AdminCustomers')).(int)($cookie->id_employee));
 				foreach ($sales as $sale)
 					$this->_html .= '
 					<tr>
-						<td>'.Tools::displayDate($sale['date_add'], (int)$cookie->id_lang, false).'</td>
-						<td align="center"><a href="?tab=AdminOrders&id_order='.$sale['id_order'].'&vieworder&token='.$tokenOrder.'">'.(int)$sale['id_order'].'</a></td>
-						<td align="center"><a href="?tab=AdminCustomers&id_customer='.$sale['id_customer'].'&viewcustomer&token='.$tokenCustomer.'">'.(int)$sale['id_customer'].'</a></td>
+						<td>'.Tools::displayDate($sale['date_add'], (int)($cookie->id_lang), false).'</td>
+						<td align="center"><a href="?tab=AdminOrders&id_order='.$sale['id_order'].'&vieworder&token='.$tokenOrder.'">'.(int)($sale['id_order']).'</a></td>
+						<td align="center"><a href="?tab=AdminCustomers&id_customer='.$sale['id_customer'].'&viewcustomer&token='.$tokenCustomer.'">'.(int)($sale['id_customer']).'</a></td>
 						'.($hasAttribute ? '<td>'.$sale['product_name'].'</td>' : '').'
 						<td>'.(int)($sale['product_quantity']).'</td>
 						<td>'.Tools::displayprice($sale['total'], $currency).'</td>
@@ -216,7 +235,7 @@ class StatsProduct extends ModuleGraph
 							<th>'.$this->l('Average price').'</th>
 						</tr>
 					</thead><tbody>';
-					$tokenProducts = Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$cookie->id_employee);
+					$tokenProducts = Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee));
 					foreach ($crossSelling as $selling)
 						$this->_html .= '
 						<tr>
@@ -230,7 +249,7 @@ class StatsProduct extends ModuleGraph
 		}
 		else
 		{
-			$categories = Category::getCategories((int)$cookie->id_lang, true, false);
+			$categories = Category::getCategories((int)($cookie->id_lang), true, false);
 			$this->_html .= '
 			<label>'.$this->l('Choose a category').'</label>
 			<div class="margin-form">
@@ -257,9 +276,9 @@ class StatsProduct extends ModuleGraph
 				</tr>
 			</thead><tbody>';
 			foreach ($this->getProducts($cookie->id_lang) AS $product)
-				$this->_html .= '<tr><td>'.$product['reference'].'</td><td><a href="'.$currentIndex.'&token='.Tools::safeOutput(Tools::getValue('token')).'&module='.$this->name.'&id_product='.$product['id_product'].'">'.$product['name'].'</a></td><td>'.$product['quantity'].'</td></tr>';
+				$this->_html .= '<tr><td>'.$product['reference'].'</td><td><a href="'.$currentIndex.'&token='.Tools::getValue('token').'&module='.$this->name.'&id_product='.$product['id_product'].'">'.$product['name'].'</a></td><td>'.$product['quantity'].'</td></tr>';
 			$this->_html .= '</tbody></table><br /></div><br />
-				<a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a><br />';
+				<a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a><br />';
 		}
 		
 		$this->_html .= '</fieldset><br />
@@ -276,7 +295,7 @@ class StatsProduct extends ModuleGraph
 		</fieldset>';
 		return $this->_html;
 	}
-	
+
 	public function setOption($option, $layers = 1)
 	{
 		$options = explode('-', $option);
@@ -291,37 +310,39 @@ class StatsProduct extends ModuleGraph
 				$this->_titles['main'][0] = $this->l('Popularity');
 				$this->_titles['main'][1] = $this->l('Sales');
 				$this->_titles['main'][2] = $this->l('Visits (x100)');
-				$this->_query[0] = '
-					SELECT o.`date_add`, SUM(od.`product_quantity`) AS total
-					FROM `'._DB_PREFIX_.'order_detail` od
-					LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
-					WHERE od.`product_id` = '.(int)($this->_id_product).'
-					AND o.valid = 1
-					AND o.`date_add` BETWEEN '.$dateBetween.'
-					GROUP BY o.`date_add`';
-				$this->_query[1] = '
-					SELECT dr.`time_start` AS date_add, (SUM(pv.`counter`) / 100) AS total
-					FROM `'._DB_PREFIX_.'page_viewed` pv
-					LEFT JOIN `'._DB_PREFIX_.'date_range` dr ON pv.`id_date_range` = dr.`id_date_range`
-					LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
-					LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
-					WHERE pt.`name` = \'product.php\'
-					AND p.`id_object` = '.(int)($this->_id_product).'
-					AND dr.`time_start` BETWEEN '.$dateBetween.'
-					AND dr.`time_end` BETWEEN '.$dateBetween.'
-					GROUP BY dr.`time_start`';
-				break;
+				$this->_query[0] = 'SELECT o.`date_add`, SUM(od.`product_quantity`) AS total
+						FROM `'._DB_PREFIX_.'order_detail` od
+						LEFT JOIN `'._DB_PREFIX_.'orders` o ON o.`id_order` = od.`id_order`
+						WHERE od.`product_id` = '.(int)($this->_id_product).'
+							'.$this->sqlShopRestriction(false, 'o').'
+							AND o.valid = 1
+							AND o.`date_add` BETWEEN '.$dateBetween.'
+						GROUP BY o.`date_add`';
+
+				$this->_query[1] = 'SELECT dr.`time_start` AS date_add, (SUM(pv.`counter`) / 100) AS total
+						FROM `'._DB_PREFIX_.'page_viewed` pv
+						LEFT JOIN `'._DB_PREFIX_.'date_range` dr ON pv.`id_date_range` = dr.`id_date_range`
+						LEFT JOIN `'._DB_PREFIX_.'page` p ON pv.`id_page` = p.`id_page`
+						LEFT JOIN `'._DB_PREFIX_.'page_type` pt ON pt.`id_page_type` = p.`id_page_type`
+						WHERE pt.`name` = \'product.php\'
+							'.$this->sqlShopRestriction(false, 'pv').'
+							AND p.`id_object` = '.(int)($this->_id_product).'
+							AND dr.`time_start` BETWEEN '.$dateBetween.'
+							AND dr.`time_end` BETWEEN '.$dateBetween.'
+						GROUP BY dr.`time_start`';
+			break;
+
 			case 3:
-				$this->_query = '
-					SELECT product_attribute_id, SUM(od.`product_quantity`) AS total
-					FROM `'._DB_PREFIX_.'orders` o
-					LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
-					WHERE od.`product_id` = '.(int)($this->_id_product).'
-					AND o.valid = 1
-					AND o.`date_add` BETWEEN '.$dateBetween.'
-					GROUP BY od.`product_attribute_id`';
+				$this->_query = 'SELECT product_attribute_id, SUM(od.`product_quantity`) AS total
+						FROM `'._DB_PREFIX_.'orders` o
+						LEFT JOIN `'._DB_PREFIX_.'order_detail` od ON o.`id_order` = od.`id_order`
+						WHERE od.`product_id` = '.(int)($this->_id_product).'
+							'.$this->sqlShopRestriction(false, 'o').'
+							AND o.valid = 1
+							AND o.`date_add` BETWEEN '.$dateBetween.'
+						GROUP BY od.`product_attribute_id`';
 				$this->_titles['main'] = $this->l('Attributes');
-				break;
+			break;
 				
 			case 42:
 				$this->_titles['main'][1] = $this->l('Ref.');
@@ -330,13 +351,13 @@ class StatsProduct extends ModuleGraph
 				break;
 		}
 	}
-	
+
 	protected function getData($layers)
 	{
 		global $cookie;
 		if ($this->_option == 42)
 		{
-			$products = $this->getProducts((int)$cookie->id_lang);
+			$products = $this->getProducts(intval($cookie->id_lang));
 			foreach ($products AS $product)
 			{
 				$this->_values[0][] =  $product['reference'];
@@ -373,7 +394,7 @@ class StatsProduct extends ModuleGraph
 			}
 		}
 	}
-	
+
 	protected function setAllTimeValues($layers)
 	{
 		for ($i = 0; $i < $layers; $i++)
@@ -383,7 +404,7 @@ class StatsProduct extends ModuleGraph
 			    $this->_values[$i][(int)(substr($row['date_add'], 0, 4))] += $row['total'];
 		}
 	}
-	
+
 	protected function setYearValues($layers)
 	{
 		for ($i = 0; $i < $layers; $i++)
@@ -393,7 +414,7 @@ class StatsProduct extends ModuleGraph
 			    $this->_values[$i][(int)(substr($row['date_add'], 5, 2))] += $row['total'];
 		}
 	}
-	
+
 	protected function setMonthValues($layers)
 	{
 		for ($i = 0; $i < $layers; $i++)
@@ -414,6 +435,3 @@ class StatsProduct extends ModuleGraph
 		}
 	}
 }
-
-
-

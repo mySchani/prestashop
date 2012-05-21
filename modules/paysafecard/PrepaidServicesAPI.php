@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-class PSCPrepaidServicesAPI
+class PrepaidServicesAPI
 {
 	const DISPOSITION_CREATED = 'R';
 	const DISPOSITION_DISPOSED = 'S';
@@ -70,9 +70,8 @@ class PSCPrepaidServicesAPI
 			$data_array = explode("\n", $data,7);
 			$resultcode = trim($data_array[0]);
 			$errorcode = trim($data_array[1]);
-			//$errormessage = trim($data_array[2]);
-			// Todo : Find a way to have translation
-      $errormessage = 'Transaction could not be initiated due to connection problems. If the problem persists, please contact our support.';
+			$errormessage = trim($data_array[2]);
+      
 			return array($resultcode, $errorcode, $errormessage);
 		} else {
 			$resultcode = '9001';
@@ -146,10 +145,8 @@ class PSCPrepaidServicesAPI
 			$dataarray=explode("\n", $data,7);
 			$resultcode=trim($dataarray[0]);
 			$errorcode=trim($dataarray[1]);
-			//$errormessage=trim($dataarray[2]);
+			$errormessage=trim($dataarray[2]);
 			
-			$errormessage = 'The transaction could not be completed. This may have happened due to a temporary connection problem.'.
-			' Please press the "reload" button in your browser or the link below to reload this page to retry completing your transaction. ';
 			return array ($resultcode, $errorcode, $errormessage);
 		} else {
 			$resultcode = '9001';

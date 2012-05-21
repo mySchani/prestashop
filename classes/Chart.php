@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 6844 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -107,7 +107,7 @@ class ChartCore
 			$options = 'xaxis:{mode:"time",timeformat:\''.addslashes($this->format).'\',min:'.$this->from.'000,max:'.$this->to.'000}';
 			if ($this->granularity == 'd')
 				foreach ($this->curves as $curve)
-					for ($i = $this->from; $i <= $this->to; $i = strtotime('+1 day', $i))
+					for ($i = $this->from; $i <= $this->to; $i += 86400)
 						if (!$curve->getPoint($i))
 							$curve->setPoint($i, 0);
 		}

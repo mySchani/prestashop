@@ -44,7 +44,7 @@
 				longname : 'Style',
 				author : 'Moxiecode Systems AB',
 				authorurl : 'http://tinymce.moxiecode.com',
-				infourl : 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/style',
+				infourl : 'http://wiki.moxiecode.com/index.php?controller=TinyMCE:Plugins/style',
 				version : tinymce.majorVersion + "." + tinymce.minorVersion
 			};
 		}

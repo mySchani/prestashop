@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,13 +18,19 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7075 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-{capture name=path}<a href="{$link->getPageLink('my-account.php', true)}">{l s='My account'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Your personal information'}{/capture}
+<script type="text/javascript">
+//<![CDATA[
+	var baseDir = '{$base_dir_ssl}';
+//]]>
+</script>
+
+{capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Your personal information'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
 <h1>{l s='Your personal information'}</h1>
@@ -39,7 +45,7 @@
 {else}
 	<h3>{l s='Please do not hesitate to update your personal information if it has changed.'}</h3>
 	<p class="required"><sup>*</sup>{l s='Required field'}</p>
-	<form action="{$link->getPageLink('identity.php', true)}" method="post" class="std">
+	<form action="{$link->getPageLink('identity', true)}" method="post" class="std">
 		<fieldset>
 			<p class="radio">
 				<span>{l s='Title'}</span>
@@ -128,6 +134,6 @@
 {/if}
 
 <ul class="footer_links">
-	<li><a href="{$link->getPageLink('my-account.php', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account.php', true)}">{l s='Back to Your Account'}</a></li>
+	<li><a href="{$link->getPageLink('my-account', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account', true)}">{l s='Back to Your Account'}</a></li>
 	<li><a href="{$base_dir}"><img src="{$img_dir}icon/home.gif" alt="" class="icon" /></a><a href="{$base_dir}">{l s='Home'}</a></li>
 </ul>

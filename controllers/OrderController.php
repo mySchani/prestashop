@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 15172 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -58,33 +58,18 @@ class OrderControllerCore extends ParentOrderController
 
 		$orderTotal = self::$cart->getOrderTotal();
 		$minimalPurchase = Tools::convertPrice((float)Configuration::get('PS_PURCHASE_MINIMUM'), $currency);
-		if (self::$cart->getOrderTotal(false, Cart::ONLY_PRODUCTS) < $minimalPurchase && $this->step != -1)
+		if (self::$cart->getOrderTotal(false) < $minimalPurchase && $this->step != -1)
 		{
 			$this->step = 0;
 			$this->errors[] = Tools::displayError('A minimum purchase total of').' '.Tools::displayPrice($minimalPurchase, $currency).
 			' '.Tools::displayError('is required in order to validate your order.');
 		}
 
-		if (Tools::getValue('ajax') && Tools::isSubmit('checkMinQuantity'))
-			if (count($this->errors))
-			{
-				self::$smarty->assign('errors', $this->errors);
-				$errors = self::$smarty->fetch(_PS_THEME_DIR_.'errors.tpl');
-				die('{"hasError" : false, "errors" : [""], "data" : '.Tools::jsonEncode($errors).'}');
-			}
-			else
-				die('{"hasError" : false, "errors" : [""]}');
-
 		if (!self::$cookie->isLogged(true) AND in_array($this->step, array(1, 2, 3)))
-			Tools::redirect('authentication.php?back='.urlencode('order.php?step='.$this->step));
+			Tools::redirect('index.php?controller=authentication&back='.urlencode('order.php&step='.$this->step));
 
 		if ($this->nbProducts)
 			self::$smarty->assign('virtual_cart', $isVirtualCart);
-
-		// Update carrier selected on preProccess in order to fix a bug of
-		// block cart when it's hooked on leftcolumn
-		if ($this->step == 3 && Tools::isSubmit('processCarrier'))
-			$this->processCarrier();
 	}
 
 	public function displayHeader()
@@ -95,8 +80,6 @@ class OrderControllerCore extends ParentOrderController
 
 	public function process()
 	{
-		global $cookie;
-
 		parent::process();
 
 		/* 4 steps to the order */
@@ -109,23 +92,19 @@ class OrderControllerCore extends ParentOrderController
 				$this->_assignAddress();
 				break;
 			case 2:
-				$this->_assignAddress();
-				if (Tools::isSubmit('processAddress'))
+				if(Tools::isSubmit('processAddress'))
 					$this->processAddress();
 				$this->autoStep();
 				$this->_assignCarrier();
 				break;
 			case 3:
-
-				//Test that the conditions (so active) were accepted by the customer
-				if ($cgv = Tools::getValue('cgv'))
-					$cookie->cgv = $cgv;
-				else
-					$cgv = (isset($cookie->cgv) ? $cookie->cgv : false);
-
-				if (Configuration::get('PS_CONDITIONS') AND (!Validate::isBool($cgv) OR $cgv == false))
-					Tools::redirect('order.php?step=2');
-
+				//Test that the conditions (so active) were accepted by the customer 
+				$cgv = Tools::getValue('cgv');
+				if (Configuration::get('PS_CONDITIONS') AND (!Validate::isBool($cgv)))
+					Tools::redirect('index.php?controller=order&step=2');
+				
+				if(Tools::isSubmit('processCarrier'))
+					$this->processCarrier();
 				$this->autoStep();
 				/* Bypass payment step if total is 0 */
 				if (($id_order = $this->_checkFreeOrder()) AND $id_order)
@@ -133,11 +112,11 @@ class OrderControllerCore extends ParentOrderController
 					if (self::$cookie->is_guest)
 					{
 						$email = self::$cookie->email;
-						self::$cookie->mylogout(); // If guest we clear the cookie for security reason
-						Tools::redirect('guest-tracking.php?id_order='.(int)$id_order.'&email='.urlencode($email));
+						self::$cookie->logout(); // If guest we clear the cookie for security reason
+						Tools::redirect('index.php?controller=guest-tracking&id_order='.(int)$id_order.'&email='.urlencode($email));
 					}
 					else
-						Tools::redirect('history.php');
+						Tools::redirect('index.php?controller=history');
 				}
 				$this->_assignPayment();
 				break;
@@ -152,9 +131,9 @@ class OrderControllerCore extends ParentOrderController
 		$addressDelivery = new Address((int)(self::$cart->id_address_delivery));
 		$addressInvoice = new Address((int)(self::$cart->id_address_invoice));
 
-		$invoiceAddressFields = AddressFormat::getOrderedAddressFields($addressInvoice->id_country, false, true);
-		$deliveryAddressFields = AddressFormat::getOrderedAddressFields($addressDelivery->id_country, false, true);
-
+		$invoiceAddressFields = AddressFormat::getOrderedAddressFields($addressInvoice->id_country);
+		$deliveryAddressFields = AddressFormat::getOrderedAddressFields($addressDelivery->id_country);
+		
 		self::$smarty->assign(array(
 			'inv_adr_fields' => $invoiceAddressFields,
 			'dlv_adr_fields' => $deliveryAddressFields));
@@ -165,7 +144,7 @@ class OrderControllerCore extends ParentOrderController
 		global $currency;
 
 		parent::displayContent();
-
+		
 		self::$smarty->assign(array(
 			'currencySign' => $currency->sign,
 			'currencyRate' => $currency->conversion_rate,
@@ -206,7 +185,7 @@ class OrderControllerCore extends ParentOrderController
 		global $isVirtualCart;
 
 		if ($this->step >= 2 AND (!self::$cart->id_address_delivery OR !self::$cart->id_address_invoice))
-			Tools::redirect('order.php?step=1');
+			Tools::redirect('index.php?controller=order&step=1');
 		$delivery = new Address((int)(self::$cart->id_address_delivery));
 		$invoice = new Address((int)(self::$cart->id_address_invoice));
 
@@ -216,10 +195,10 @@ class OrderControllerCore extends ParentOrderController
 				unset(self::$cart->id_address_delivery);
 			if ($invoice->deleted)
 				unset(self::$cart->id_address_invoice);
-			Tools::redirect('order.php?step=1');
+			Tools::redirect('index.php?controller=order&step=1');
 		}
 		elseif ($this->step >= 3 AND !self::$cart->id_carrier AND !$isVirtualCart)
-			Tools::redirect('order.php?step=2');
+			Tools::redirect('index.php?controller=order&step=2');
 	}
 
 	/*
@@ -259,7 +238,6 @@ class OrderControllerCore extends ParentOrderController
 		if (sizeof($this->errors))
 		{
 			self::$smarty->assign('errors', $this->errors);
-			$this->displayHeader();
 			$this->_assignCarrier();
 			$this->step = 2;
 			$this->displayContent();
@@ -275,6 +253,8 @@ class OrderControllerCore extends ParentOrderController
 		parent::_assignAddress();
 
 		self::$smarty->assign('cart', self::$cart);
+		if (self::$cookie->is_guest)
+			Tools::redirect('index.php?controller=order&step=2');
 	}
 
 	/* Carrier step */
@@ -301,7 +281,7 @@ class OrderControllerCore extends ParentOrderController
 
 		// Redirect instead of displaying payment modules if any module are grefted on
 		Hook::backBeforePayment('order.php?step=3');
-
+		
 		/* We may need to display an order summary */
 		self::$smarty->assign(self::$cart->getSummaryDetails());
 		self::$smarty->assign(array(
@@ -309,7 +289,7 @@ class OrderControllerCore extends ParentOrderController
 			'taxes_enabled' => (int)(Configuration::get('PS_TAX'))
 		));
 		self::$cookie->checkedTOS = '1';
-
+		
 		parent::_assignPayment();
 	}
 }

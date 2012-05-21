@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,8 +18,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14514 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7465 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
@@ -65,7 +65,6 @@ var productAvailableForOrder = {if (isset($restricted_country_mode) AND $restric
 var productShowPrice = '{if !$PS_CATALOG_MODE}{$product->show_price}{else}0{/if}';
 var productUnitPriceRatio = '{$product->unit_price_ratio}';
 var idDefaultImage = {if isset($cover.id_image_only)}{$cover.id_image_only}{else}0{/if};
-var ipa_default = {if isset($ipa_default)}{$ipa_default}{else}0{/if};
 
 // Customizable field
 var img_ps_dir = '{$img_ps_dir}';
@@ -150,7 +149,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 			<img src="{$link->getImageLink($product->link_rewrite, $cover.id_image, 'large')}"
 				{if $jqZoomEnabled}class="jqzoom" alt="{$link->getImageLink($product->link_rewrite, $cover.id_image, 'thickbox')}"{else} title="{$product->name|escape:'htmlall':'UTF-8'}" alt="{$product->name|escape:'htmlall':'UTF-8'}" {/if} id="bigpic" width="{$largeSize.width}" height="{$largeSize.height}" />
 		{else}
-			<img src="{$img_prod_dir}{$lang_iso}-default-large.jpg" id="bigpic" alt="" title="{$cover.legend|escape:'htmlall':'UTF-8'}" width="{$largeSize.width}" height="{$largeSize.height}" />
+			<img src="{$img_prod_dir}{$lang_iso}-default-large.jpg" id="bigpic" alt="" title="{$product->name|escape:'htmlall':'UTF-8'}" width="{$largeSize.width}" height="{$largeSize.height}" />
 		{/if}
 		</div>
 
@@ -164,7 +163,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 					{foreach from=$images item=image name=thumbnails}
 					{assign var=imageIds value="`$product->id`-`$image.id_image`"}
 					<li id="thumbnail_{$image.id_image}">
-						<a href="{$link->getImageLink($product->link_rewrite, $imageIds, 'thickbox')}" rel="other-views" class="thickbox {if (isset($image.cover) AND $image.cover == 1) OR (!isset($image.cover) AND $smarty.foreach.thumbnails.first)}shown{/if}" title="{$image.legend|htmlspecialchars}">
+						<a href="{$link->getImageLink($product->link_rewrite, $imageIds, 'thickbox')}" rel="other-views" class="thickbox {if $smarty.foreach.thumbnails.first}shown{/if}" title="{$image.legend|htmlspecialchars}">
 							<img id="thumb_{$image.id_image}" src="{$link->getImageLink($product->link_rewrite, $imageIds, 'medium')}" alt="{$image.legend|htmlspecialchars}" height="{$mediumSize.height}" width="{$mediumSize.width}" />
 						</a>
 					</li>
@@ -224,7 +223,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 
 		{if ($product->show_price AND !isset($restricted_country_mode)) OR isset($groups) OR $product->reference OR (isset($HOOK_PRODUCT_ACTIONS) && $HOOK_PRODUCT_ACTIONS)}
 		<!-- add to cart form-->
-		<form id="buy_block" {if $PS_CATALOG_MODE AND !isset($groups) AND $product->quantity > 0}class="hidden"{/if} action="{$link->getPageLink('cart.php')}" method="post">
+		<form id="buy_block" {if $PS_CATALOG_MODE AND !isset($groups) AND $product->quantity > 0}class="hidden"{/if} action="{$link->getPageLink('cart')}" method="post">
 
 			<!-- hidden datas -->
 			<p class="hidden">
@@ -261,7 +260,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 					</span>
 					{if $priceDisplay == 2}
 						<br />
-						<span id="pretaxe_price"><span id="pretaxe_price_display">{convertPrice price=$product->getPrice(false, $smarty.const.NULL, 2)}</span>&nbsp;{l s='tax excl.'}</span>
+						<span id="pretaxe_price"><span id="pretaxe_price_display">{convertPrice price=$product->getPrice(false, $smarty.const.NULL)}</span>&nbsp;{l s='tax excl.'}</span>
 					{/if}
 					<br />
 				</p>
@@ -328,7 +327,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 			</p>
 
 			<!-- minimal quantity wanted -->
-			<p id="minimal_quantity_wanted_p"{if $product->minimal_quantity <= 1 OR !$product->available_for_order OR $PS_CATALOG_MODE} style="display: none;"{/if}>{l s='You must add '} <b id="minimal_quantity_label">{$product->minimal_quantity}</b> {l s=' as a minimum quantity to buy this product.'}</p>
+			<p id="minimal_quantity_wanted_p"{if $product->minimal_quantity <= 1 OR !$product->available_for_order OR $PS_CATALOG_MODE} style="display: none;"{/if}>{l s='You must add '}<b id="minimal_quantity_label">{$product->minimal_quantity}</b>{l s=' as a minimum quantity to buy this product.'}</p>
 			{if $product->minimal_quantity > 1}
 			<script type="text/javascript">
 				checkMinimalQuantity();
@@ -350,13 +349,11 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 				<span {if $product->quantity > 1} style="display: none;"{/if} id="quantityAvailableTxt">{l s='item in stock'}</span>
 				<span {if $product->quantity == 1} style="display: none;"{/if} id="quantityAvailableTxtMultiple">{l s='items in stock'}</span>
 			</p>
-			{/if}
+     		{/if}
 			<!-- Out of stock hook -->
-			{if !$allow_oosp}
 			<p id="oosHook"{if $product->quantity > 0} style="display: none;"{/if}>
 				{$HOOK_PRODUCT_OOS}
 			</p>
-			{/if}
 
 			<p class="warning_inline" id="last_quantities"{if ($product->quantity > $last_qties OR $product->quantity <= 0) OR $allow_oosp OR !$product->available_for_order OR $PS_CATALOG_MODE} style="display: none;"{/if} >{l s='Warning: Last items in stock!'}</p>
 
@@ -397,7 +394,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 				{if $quantity_discount.price != 0 OR $quantity_discount.reduction_type == 'amount'}
 					-{convertPrice price=$quantity_discount.real_value|floatval}
 				{else}
-					-{$quantity_discount.real_value|floatval}%
+    				-{$quantity_discount.real_value|floatval}%
 				{/if}
 				</td>
 			{/foreach}
@@ -434,7 +431,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 	{if $attachments}
 		<ul id="idTab9" class="bullet">
 		{foreach from=$attachments item=attachment}
-			<li><a href="{$link->getPageLink('attachment.php', true)}?id_attachment={$attachment.id_attachment}">{$attachment.name|escape:'htmlall':'UTF-8'}</a><br />{$attachment.description|escape:'htmlall':'UTF-8'}</li>
+			<li><a href="{$link->getPageLink('attachment', true, NULL, "id_attachment={$attachment.id_attachment}")}">{$attachment.name|escape:'htmlall':'UTF-8'}</a><br />{$attachment.description|escape:'htmlall':'UTF-8'}</li>
 		{/foreach}
 		</ul>
 	{/if}
@@ -456,7 +453,7 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 								{if $accessory.show_price AND !isset($restricted_country_mode) AND !$PS_CATALOG_MODE}<span class="price">{if $priceDisplay != 1}{displayWtPrice p=$accessory.price}{else}{displayWtPrice p=$accessory.price_tax_exc}{/if}</span>{/if}
 								<a class="button" href="{$accessoryLink|escape:'htmlall':'UTF-8'}" title="{l s='View'}">{l s='View'}</a>
 								{if ($accessory.allow_oosp || $accessory.quantity > 0) AND $accessory.available_for_order AND !isset($restricted_country_mode) AND !$PS_CATALOG_MODE}
-									<a class="exclusive button ajax_add_to_cart_button" href="{$link->getPageLink('cart.php')}?qty=1&amp;id_product={$accessory.id_product|intval}&amp;token={$static_token}&amp;add" rel="ajax_id_product_{$accessory.id_product|intval}" title="{l s='Add to cart'}">{l s='Add to cart'}</a>
+									<a class="exclusive button ajax_add_to_cart_button" href="{$link->getPageLink('cart', true, NULL, "qty=1&amp;id_product={$accessory.id_product|intval}&amp;token={$static_token}&amp;add")}" rel="ajax_id_product_{$accessory.id_product|intval}" title="{l s='Add to cart'}">{l s='Add to cart'}</a>
 								{else}
 									<span class="exclusive">{l s='Add to cart'}</span>
 									<span class="availability">{if (isset($accessory.quantity_all_versions) && $accessory.quantity_all_versions > 0)}{l s='Product available with different options'}{else}{l s='Out of stock'}{/if}</span>
@@ -524,7 +521,6 @@ var fieldRequired = '{l s='Please fill in all required fields, then save the cus
 			</ul>
 			{/if}
 			<p style="clear: left;" id="customizedDatas">
-				<input type="hidden" name="ipa_customization" id="ipa_customization" value="{$ipa_customization}" />
 				<input type="hidden" name="quantityBackup" id="quantityBackup" value="" />
 				<input type="hidden" name="submitCustomizedDatas" value="1" />
 				<input type="button" class="button" value="{l s='Save'}" onclick="javascript:saveCustomization()" />

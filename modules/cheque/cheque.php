@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,13 +19,13 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7095 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_PS_VERSION_'))
+if (!defined('_CAN_LOAD_FILES_'))
 	exit;
 
 class Cheque extends PaymentModule
@@ -153,7 +153,7 @@ class Cheque extends PaymentModule
 			return ;
 		
 		if (!$this->_checkCurrency($cart))
-			Tools::redirectLink(__PS_BASE_URI__.'order.php');
+			Tools::redirect('index.php?controller=order');
 
 		global $cookie, $smarty;
 		
@@ -195,7 +195,7 @@ class Cheque extends PaymentModule
 
 		global $smarty;
 		$state = $params['objOrder']->getCurrentState();
-		if ($state == Configuration::get('PS_OS_CHEQUE') OR $state == Configuration::get('PS_OS_OUTOFSTOCK'))
+		if ($state == _PS_OS_CHEQUE_ OR $state == _PS_OS_OUTOFSTOCK_)
 			$smarty->assign(array(
 				'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
 				'chequeName' => $this->chequeName,

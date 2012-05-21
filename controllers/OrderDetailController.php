@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,20 +19,20 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14006 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 7091 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 class OrderDetailControllerCore extends FrontController
 {
-	public $auth = true;
-	public $authRedirection = 'history.php';
-	public $ssl = true;
-	
 	public function __construct()
 	{
+		$this->auth = true;
+		$this->authRedirection = 'history.php';
+		$this->ssl = true;
+
 		parent::__construct();
 
 		header("Cache-Control: no-cache, must-revalidate");
@@ -42,6 +42,7 @@ class OrderDetailControllerCore extends FrontController
 	public function preProcess()
 	{
 		parent::preProcess();
+		
 
 		if (Tools::isSubmit('submitMessage'))
 		{
@@ -54,7 +55,7 @@ class OrderDetailControllerCore extends FrontController
 				$this->errors[] = Tools::displayError('Message cannot be blank');
 			elseif (!Validate::isMessage($msgText))
 				$this->errors[] = Tools::displayError('Message is invalid (HTML is not allowed)');
-			if (!sizeof($this->errors))
+			if(!sizeof($this->errors))
 			{
 				$order = new Order((int)($idOrder));
 				if (Validate::isLoadedObject($order) AND $order->id_customer == self::$cookie->id_customer)
@@ -75,7 +76,7 @@ class OrderDetailControllerCore extends FrontController
 					$toName = strval(Configuration::get('PS_SHOP_NAME'));
 					$customer = new Customer((int)(self::$cookie->id_customer));
 					if (Validate::isLoadedObject($customer))
-						Mail::Send((int)self::$cookie->id_lang, 'order_customer_comment', Mail::l('Message from a customer', (int)self::$cookie->id_lang),
+						Mail::Send((int)(self::$cookie->id_lang), 'order_customer_comment', Mail::l('Message from a customer'),
 						array(
 						'{lastname}' => $customer->lastname,
 						'{firstname}' => $customer->firstname,
@@ -84,7 +85,7 @@ class OrderDetailControllerCore extends FrontController
 						'{message}' => $message->message),
 						$to, $toName, $customer->email, $customer->firstname.' '.$customer->lastname);
 					if (Tools::getValue('ajax') != 'true')
-						Tools::redirect('order-detail.php?id_order='.(int)($idOrder));
+						Tools::redirect('index.php?controller=order-detail&id_order='.(int)($idOrder));
 				}
 				else
 				{
@@ -145,7 +146,6 @@ class OrderDetailControllerCore extends FrontController
 					'messages' => Message::getMessagesByOrderId((int)($order->id)),
 					'CUSTOMIZE_FILE' => _CUSTOMIZE_FILE_,
 					'CUSTOMIZE_TEXTFIELD' => _CUSTOMIZE_TEXTFIELD_,
-			'isRecyclable' => Configuration::get('PS_RECYCLABLE_PACK'),
 					'use_tax' => Configuration::get('PS_TAX'),
 					'group_use_tax' => (Group::getPriceDisplayMethod($customer->id_default_group) == PS_TAX_INC),
 					'customizedDatas' => $customizedDatas));
@@ -164,16 +164,6 @@ class OrderDetailControllerCore extends FrontController
 		}
 	}
 
-	public function setMedia()
-	{
-		if (Tools::getValue('ajax') != 'true')
-		{
-			parent::setMedia();
-			Tools::addCSS(_THEME_CSS_DIR_.'history.css');
-			Tools::addCSS(_THEME_CSS_DIR_.'addresses.css');
-		}
-	}
-	
 	public function displayHeader()
 	{
 		if (Tools::getValue('ajax') != 'true')
