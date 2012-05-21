@@ -25,8 +25,14 @@
 */
 
 $(document).ready(function() {
-	$('table.tableDnD').tableDnD({
-	
+initTableDnD();
+})
+
+function initTableDnD(table)
+{
+	if (typeof(table) == 'undefined')
+		table = 'table.tableDnD';
+	$(table).tableDnD({
 		onDragStart: function(table, row) {
 			originalOrder = $.tableDnD.serialize();
 			reOrder = ':even';
@@ -38,7 +44,6 @@ $(document).ready(function() {
 		onDragClass: 'myDragClass',
 		onDrop: function(table, row) {
 			if (originalOrder != $.tableDnD.serialize()) {
-			
 				var way = (originalOrder.indexOf(row.id) < $.tableDnD.serialize().indexOf(row.id))? 1 : 0;
 				var ids = row.id.split('_');
 				var tableDrag = $('#' + table.id);
@@ -84,85 +89,124 @@ $(document).ready(function() {
 						token: token
 					};
 				}
-
+				if (table.id == 'imageTable') {
+					params = {
+						ajaxProductImagesPositions: true,
+						id_image: ids[1],
+						way: way,
+						token: token
+					};
+				}
+				if (table.id.indexOf('attribute') != -1 && table.id != 'attribute_group') {
+					params = {
+						ajaxAttributesPositions: true,
+						id_attribute_group: ids[1],
+						id_attribute: ids[2],
+						way: way,
+						token: token
+					};
+				}
+				
+				if (table.id == 'attribute_group') {
+					params = {
+						ajaxGroupsAttributesPositions: true,
+						id_attribute_group: ids[1],
+						way: way,
+						token: token
+					}
+				}
+				
+				if (table.id == 'feature') {
+					params = {
+						ajaxFeaturesPositions: true,
+						id_feature : ids[2],
+						way: way,
+						token: token
+					}
+				}
+				
+				if (table.id == 'carrier') {
+					params = {
+						ajaxCarriersPositions: true,
+						id_carrier : ids[2],
+						way: way,
+						token: token
+					}
+				}
+				
 				$.ajax({
 					type: 'POST',
 					async: false,
 					url: 'ajax.php?' + $.tableDnD.serialize(),
 					data: params,
 					success: function(data) {
-					if (come_from == 'AdminModulesPositions') {
-							tableDrag.find('tr').removeClass('alt_row');
-							tableDrag.find('tr' + reOrder).addClass('alt_row');
-							tableDrag.find('td.positions').each(function(i) {
-								$(this).html(i+1);
-							});
-							tableDrag.find('td.dragHandle a:hidden').show();
-							tableDrag.find('td.dragHandle:first a:even').hide();
-							tableDrag.find('td.dragHandle:last a:odd').hide();
+						if (come_from == 'AdminModulesPositions') 
+						{
+								tableDrag.find('tr').removeClass('alt_row');
+								tableDrag.find('tr' + reOrder).addClass('alt_row');
+								tableDrag.find('td.positions').each(function(i) {
+									$(this).html(i+1);
+								});
+								tableDrag.find('td.dragHandle a:hidden').show();
+								tableDrag.find('td.dragHandle:first a:even').hide();
+								tableDrag.find('td.dragHandle:last a:odd').hide();
 						}
-						else if (table.id == 'product') {
-							var reg = /_[0-9][0-9]*$/g;
-							tableDrag.find('tbody tr').each(function(i) {
-								$(this).attr('id', $(this).attr('id').replace(reg, '_' + i));
-								
-								// Update link position
-								var up_reg  = new RegExp('position=[-]?[0-9]+&');
-								
-								// Up links
-								$(this).find('td.dragHandle a:odd').attr('href', $(this).find('td.dragHandle a:odd').attr('href').replace(up_reg, 'position='+ (i - 1) +'&'));
-								
-								// Down links
-								$(this).find('td.dragHandle a:even').attr('href', $(this).find('td.dragHandle a:even').attr('href').replace(up_reg, 'position='+ (i + 1) +'&'));
-								
-						});
-							tableDrag.find('tr').not('.nodrag').removeClass('alt_row');
-							tableDrag.find('tr:not(".nodrag"):odd').addClass('alt_row');
-							tableDrag.find('tr td.dragHandle a:hidden').show();
-							
-							if (alternate) {
-								tableDrag.find('tr td.dragHandle:first a:odd').hide();
-								tableDrag.find('tr td.dragHandle:last a:even').hide();
-							}
-							else {
-								tableDrag.find('tr td.dragHandle:first a:even').hide();
-								tableDrag.find('tr td.dragHandle:last a:odd').hide();
-							}
-						}
-						else 
+						else if (table.id == 'imageTable')
 						{
 							var reg = /_[0-9]$/g;
+							var up_reg  = new RegExp('imgPosition=[0-9]+&');
 							tableDrag.find('tbody tr').each(function(i) {
-								$(this).attr('id', $(this).attr('id').replace(reg, '_' + i));
-								
 								// Update link position
-								var up_reg  = new RegExp('position=[-]?[0-9]+&');
-								
 								// Up links
-								$(this).find('td.dragHandle a:odd').attr('href', $(this).find('td.dragHandle a:odd').attr('href').replace(up_reg, 'position='+ (i - 1) +'&'));
+								$(this).find('td.dragHandle a:first').attr('href', $(this).find('td.dragHandle a:first').attr('href').replace(up_reg, 'imgPosition='+ i +'&'));//, 'imgPosition='+ (i - 1) +'&'));
+								// Down links
+								$(this).find('td.dragHandle a:last').attr('href', $(this).find('td.dragHandle a:last').attr('href').replace(up_reg, 'imgPosition='+ (i + 2) +'&'));
+								// Position image cell
+								$(this).find('td.positionImage').html(i + 1);
+							
+							});
+							tableDrag.find('tr td.dragHandle a:hidden').show();
+							tableDrag.find('tr td.dragHandle:first a:first').hide();
+							tableDrag.find('tr td.dragHandle:last a:last').hide();
+						}
+						else
+						{
+							if (table.id == 'product' || table.id.indexOf('attribute') != -1 || table.id == 'attribute_group' || table.id == 'feature')
+							{
+								var reg = /_[0-9][0-9]*$/g;
+							}
+							else
+							{
+								var reg = /_[0-9]$/g;
+							}
+							
+							var up_reg  = new RegExp('position=[-]?[0-9]+&');
+							tableDrag.children('tbody').children('tr').each(function(i) {
+								$(this).attr('id', $(this).attr('id').replace(reg, '_' + i));
+								// Update link position
+								// Up links
+								$(this).children('td.dragHandle a:odd').attr('href', $(this).children('td.dragHandle a:odd').attr('href').replace(up_reg, 'position='+ (i - 1) +'&'));
 								
 								// Down links
-								$(this).find('td.dragHandle a:even').attr('href', $(this).find('td.dragHandle a:even').attr('href').replace(up_reg, 'position='+ (i + 1) +'&'));
+								$(this).children('td.dragHandle a:even').attr('href', $(this).children('td.dragHandle a:even').attr('href').replace(up_reg, 'position='+ (i + 1) +'&'));
 								
-						});
-							
-							tableDrag.find('tr').not('.nodrag').removeClass('alt_row');
-							tableDrag.find('tr:not(".nodrag"):odd').addClass('alt_row');
-							tableDrag.find('tr td.dragHandle a:hidden').show();
-							
+							});
+							tableDrag.children('tbody').children('tr').not('.nodrag').removeClass('alt_row').removeClass('not_alt_row');
+							tableDrag.children('tbody').children('tr:not(".nodrag"):odd').addClass('alt_row');
+							tableDrag.children('tbody').children('tr:not(".nodrag"):even').addClass('not_alt_row');
+							tableDrag.children('tbody').children('tr').children('td.dragHandle').children('a:hidden').show();
 							if (alternate) {
-								tableDrag.find('tr td.dragHandle:first a:odd').hide();
-								tableDrag.find('tr td.dragHandle:last a:even').hide();
+								tableDrag.children('tbody').children('tr').children('td.dragHandle:first').children('a:odd').hide();
+								tableDrag.children('tbody').children('tr').children('td.dragHandle:last').children('a:even').hide();
 							}
 							else {
-								tableDrag.find('tr td.dragHandle:first a:even').hide();
-								tableDrag.find('tr td.dragHandle:last a:odd').hide();
+								tableDrag.children('tbody').children('tr').children('td.dragHandle:first').children('a:even').hide();
+								tableDrag.children('tbody').children('tr').children('td.dragHandle:last').children('a:odd').hide();
 							}
-
 						}
 					}
 				});
 			}
 		}
 	});
-})
+}

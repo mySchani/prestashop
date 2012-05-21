@@ -25,15 +25,11 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('PS_ADMIN_DIR', getcwd());
+define('_PS_ADMIN_DIR_', getcwd());
 
-include(PS_ADMIN_DIR.'/../config/config.inc.php');
+include(_PS_ADMIN_DIR_.'/../config/config.inc.php');
 
-if (!class_exists('Cookie'))
-	exit();
-
-$cookie = new Cookie('psAdmin', substr($_SERVER['SCRIPT_NAME'], strlen(__PS_BASE_URI__), -10));
-if (!$cookie->isLoggedBack())
+if (!isset(Context::getContext()->employee) || !Context::getContext()->employee->isLoggedBack())
 	die;
 
 if (isset($_FILES['virtual_product_file']) AND is_uploaded_file($_FILES['virtual_product_file']['tmp_name']) AND 

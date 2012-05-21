@@ -58,7 +58,7 @@ class StateCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_country'] = (int)($this->id_country);
 		$fields['id_zone'] = (int)($this->id_zone);
 		$fields['iso_code'] = pSQL(strtoupper($this->iso_code));
@@ -69,7 +69,7 @@ class StateCore extends ObjectModel
 
 	public static function getStates($id_lang = false, $active = false)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT `id_state`, `id_country`, `id_zone`, `iso_code`, `name`, `active`
 		FROM `'._DB_PREFIX_.'state`
 		'.($active ? 'WHERE active = 1' : '').'
@@ -82,7 +82,7 @@ class StateCore extends ObjectModel
 	* @param integer $id_state Country ID
 	* @return string State name
 	*/
-	static public function getNameById($id_state)
+	public static function getNameById($id_state)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `name`
@@ -98,7 +98,7 @@ class StateCore extends ObjectModel
 	* @param string $id_state Country ID
 	* @return integer state id
 	*/
-	static public function getIdByName($state)
+	public static function getIdByName($state)
     {
 	  	$result = Db::getInstance()->getRow('
 		SELECT `id_state`
@@ -114,7 +114,7 @@ class StateCore extends ObjectModel
 	* @param string $iso_code Iso code
 	* @return integer state id
 	*/
-	static public function getIdByIso($iso_code)
+	public static function getIdByIso($iso_code)
     {
 	  	return Db::getInstance()->getValue('
 			SELECT `id_state`
@@ -136,13 +136,13 @@ class StateCore extends ObjectModel
 		if (!$this->isUsed())
 		{
 			/* Database deletion */
-			$result = Db::getInstance()->Execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
+			$result = Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
 			if (!$result)
 				return false;
 
 			/* Database deletion for multilingual fields related to the object */
 			if (method_exists($this, 'getTranslationsFieldsChild'))
-				Db::getInstance()->Execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'_lang` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
+				Db::getInstance()->execute('DELETE FROM `'.pSQL(_DB_PREFIX_.$this->table).'_lang` WHERE `'.pSQL($this->identifier).'` = '.(int)($this->id));
 			return $result;
 		}
 		else
@@ -178,7 +178,7 @@ class StateCore extends ObjectModel
         if (empty($id_country))
             die(Tools::displayError());
 
-        return Db::getInstance()->ExecuteS('
+        return Db::getInstance()->executeS('
         SELECT *
         FROM `'._DB_PREFIX_.'state` s
         WHERE s.`id_country` = '.(int)$id_country

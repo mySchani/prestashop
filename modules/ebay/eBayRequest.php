@@ -57,7 +57,7 @@ class eBayRequest
 
 	private $compatibilityLevel;
 
-
+	private $debug = false;
 
 	/******************************************************************/
 	/** Constructor And Request Methods *******************************/
@@ -89,7 +89,7 @@ class eBayRequest
 
 		$this->apiUrl = 'https://api.ebay.com/ws/api.dll';
 		$this->apiCall = $apiCall;
-		$this->compatibilityLevel = 719;
+		$this->compatibilityLevel = 741;
 
 		$this->runame = 'Prestashop-Prestash-70a5-4-pepwa';
 
@@ -125,6 +125,14 @@ class eBayRequest
 		// Close the connection
 		curl_close($connection);
 		
+		// Debug
+		if ($this->debug == true)
+		{
+			if (!file_exists(dirname(__FILE__).'/log/request.php'))
+				file_put_contents(dirname(__FILE__).'/log/request.php', "<?php\n\n", FILE_APPEND | LOCK_EX);
+			file_put_contents(dirname(__FILE__).'/log/request.php', date('d/m/Y H:i:s')."\n\n".$request."\n\n".$response."\n\n-------------------\n\n", FILE_APPEND | LOCK_EX); 
+		}
+
 		// Return the response
 		return $response;
 	}
@@ -355,7 +363,7 @@ class eBayRequest
 
 
 	/******************************************************************/
-	/** Add Product Methods *******************************************/
+	/** Add / Update / End Product Methods ****************************/
 	/******************************************************************/
 
 
@@ -389,6 +397,7 @@ class eBayRequest
 		$requestXml .= '      <CategoryID>'.$datas['categoryId'].'</CategoryID>'."\n";
 		$requestXml .= '    </PrimaryCategory>'."\n";
 		$requestXml .= '    <ConditionID>1000</ConditionID>'."\n";
+		if (!isset($datas['noPriceUpdate']))
 		$requestXml .= '    <StartPrice>'.$datas['price'].'</StartPrice>'."\n";
 		$requestXml .= '    <CategoryMappingAllowed>true</CategoryMappingAllowed>'."\n";
 		$requestXml .= '    <Country>FR</Country>'."\n";
@@ -505,6 +514,7 @@ class eBayRequest
 		$requestXml .= '    <ItemID>'.$datas['itemID'].'</ItemID>'."\n";
 		$requestXml .= '    <SKU>prestashop-'.$datas['id_product'].'</SKU>';
 		$requestXml .= '    <Quantity>'.$datas['quantity'].'</Quantity>'."\n";
+		if (!isset($datas['noPriceUpdate']))
 		$requestXml .= '    <StartPrice>'.$datas['price'].'</StartPrice>'."\n";
 		if (Configuration::get('EBAY_SYNC_OPTION_RESYNC') != 1)
 		{
@@ -576,6 +586,86 @@ class eBayRequest
 			return false;
 		return true;
 	}
+
+
+
+	function endFixedPriceItem($datas = array())
+	{
+		// Check data
+		if (!$datas)
+			return false;
+
+		// Set Api Call
+		$this->apiCall = 'EndFixedPriceItem';
+
+		// Build the request Xml string
+		$requestXml = '<?xml version="1.0" encoding="utf-8"?>'."\n";
+		$requestXml .= '<EndFixedPriceItemRequest xmlns="urn:ebay:apis:eBLBaseComponents">'."\n";
+		$requestXml .= '  <ErrorLanguage>fr_FR</ErrorLanguage>'."\n";
+		$requestXml .= '  <WarningLevel>High</WarningLevel>'."\n";
+		$requestXml .= '  <ItemID>'.$datas['itemID'].'</ItemID>'."\n";
+		$requestXml .= '  <SKU>prestashop-'.$datas['id_product'].'</SKU>';
+		$requestXml .= '  <EndingReason>NotAvailable</EndingReason>'."\n";
+		$requestXml .= '  <RequesterCredentials>'."\n";
+		$requestXml .= '    <eBayAuthToken>'.Configuration::get('EBAY_API_TOKEN').'</eBayAuthToken>'."\n";
+		$requestXml .= '  </RequesterCredentials>'."\n";
+		$requestXml .= '  <WarningLevel>High</WarningLevel>'."\n";
+		$requestXml .= '</EndFixedPriceItemRequest>'."\n";
+
+
+		// Send the request and get response
+		$responseXml = $this->makeRequest($requestXml);
+		if (stristr($responseXml, 'HTTP 404') || $responseXml == '')
+		{
+			$this->error = 'Error sending '.$this->apiCall.' request';
+			return false;
+		}
+
+		// Loading XML tree in array
+		$this->response = simplexml_load_string($responseXml);
+
+
+		// Checking Errors
+		$this->error = '';
+		$this->errorCode = '';
+		if (isset($this->response->Errors) && isset($this->response->Ack) && (string)$this->response->Ack != 'Success' && (string)$this->response->Ack != 'Warning')
+			foreach ($this->response->Errors as $e)
+			{
+				// if product no longer on eBay, we log the error code
+				if ((int)$e->ErrorCode == 291)
+					$this->errorCode = (int)$e->ErrorCode;
+
+				// We log error message
+				if ($e->SeverityCode == 'Error')
+				{
+					if ($this->error != '')
+						$this->error .= '<br />';
+					$this->error .= (string)$e->LongMessage;
+					if (isset($e->ErrorParameters->Value))
+						$this->error .= '<br />'.(string)$e->ErrorParameters->Value;
+				}
+			}
+
+		// Checking Success
+		$this->itemID = 0;
+		if (isset($this->response->Ack) && ((string)$this->response->Ack == 'Success' || (string)$this->response->Ack == 'Warning'))
+		{
+			$this->fees = 0;
+			$this->itemID = (string)$this->response->ItemID;
+			if (isset($this->response->Fees->Fee))
+				foreach ($this->response->Fees->Fee as $f)
+					$this->fees += (float)$f->Fee;
+		}
+		elseif ($this->error == '')
+			$this->error = 'Sorry, technical problem, try again later.';
+
+		if (!empty($this->error))
+			return false;
+
+		return true;
+	}
+
+
 
 
 
@@ -654,6 +744,7 @@ class eBayRequest
 			{
 				$requestXml .= '      <Variation>'."\n";
 				$requestXml .= '        <SKU>prestashop-'.$key.'</SKU>'."\n";
+				if (!isset($datas['noPriceUpdate']))
 				$requestXml .= '        <StartPrice>'.$variation['price'].'</StartPrice>'."\n";
 				$requestXml .= '        <Quantity>'.$variation['quantity'].'</Quantity>'."\n";
 				$requestXml .= '        <VariationSpecifics>'."\n";
@@ -806,6 +897,7 @@ class eBayRequest
 			// Generate Variations Set
 			$requestXml .= '      <VariationSpecificsSet>'."\n";
 			foreach ($datas['variationsList'] as $group => $v)
+				if (isset($group) && !empty($group))
 			{
 				$requestXml .= '        <NameValueList>'."\n";
 				$requestXml .= '          <Name>'.$group.'</Name>'."\n";
@@ -820,6 +912,7 @@ class eBayRequest
 			{
 				$requestXml .= '      <Variation>'."\n";
 				$requestXml .= '        <SKU>prestashop-'.$key.'</SKU>'."\n";
+				if (!isset($datas['noPriceUpdate']))
 				$requestXml .= '        <StartPrice>'.$variation['price'].'</StartPrice>'."\n";
 				$requestXml .= '        <Quantity>'.$variation['quantity'].'</Quantity>'."\n";
 				$requestXml .= '        <VariationSpecifics>'."\n";
@@ -929,13 +1022,25 @@ class eBayRequest
 	}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 	/******************************************************************/
 	/** Order Methods *************************************************/
 	/******************************************************************/
 
 
 
-	function getOrders($CreateTimeFrom, $CreateTimeTo)
+	function getOrders($CreateTimeFrom, $CreateTimeTo, $page)
 	{
 		// Check data
 		if (!$CreateTimeFrom || !$CreateTimeTo)
@@ -953,6 +1058,11 @@ class eBayRequest
 		$requestXml .= '  <CreateTimeFrom>'.$CreateTimeFrom.'</CreateTimeFrom>'."\n";
 		$requestXml .= '  <CreateTimeTo>'.$CreateTimeTo.'</CreateTimeTo>'."\n";
 		$requestXml .= '  <OrderRole>Seller</OrderRole>'."\n";
+		//$requestXml .= '  <OrderStatus>Completed</OrderStatus>'."\n";
+		$requestXml .= '  <Pagination>'."\n";
+		$requestXml .= '    <EntriesPerPage>100</EntriesPerPage>'."\n";
+		$requestXml .= '    <PageNumber>'.$page.'</PageNumber>'."\n";
+		$requestXml .= '  </Pagination>'."\n";
 		$requestXml .= '  <RequesterCredentials>'."\n";
 		$requestXml .= '    <eBayAuthToken>'.Configuration::get('EBAY_API_TOKEN').'</eBayAuthToken>'."\n";
 		$requestXml .= '  </RequesterCredentials>'."\n";
@@ -985,26 +1095,69 @@ class eBayRequest
 		if (isset($this->response->OrderArray))
 			foreach ($this->response->OrderArray->Order as $order)
 			{
-				$name = explode(' ', (string)$order->ShippingAddress->Name);
+				$name = str_replace(array('_', ',', '  '), array('', '', ' '), (string)$order->ShippingAddress->Name); 
+				$name = preg_replace('/\-?\d+/', '', $name);
+				$name = explode(' ', $name, 2);
 				$itemList = array();
-				foreach ($order->TransactionArray->Transaction as $transaction)
+				for ($i = 0; isset($order->TransactionArray->Transaction[$i]); $i++)
 				{
+					$transaction = $order->TransactionArray->Transaction[$i];
+
 					$id_product = 0;
-					$id_attribute = 0;
+					$id_product_attribute = 0;
 					$quantity = (string)$transaction->QuantityPurchased;
-					if (isset($transaction->item->SKU))
+					if (isset($transaction->Item->SKU))
 					{
-						$tmp = explode('-', (string)$transaction->item->SKU);
+						$tmp = explode('-', (string)$transaction->Item->SKU);
+						if (isset($tmp[1]))
 						$id_product = $tmp[1];
+						if (isset($tmp[2]))
+							$id_product_attribute = $tmp[2];
 					}
 					if (isset($transaction->Variation->SKU))
 					{
 						$tmp = explode('-', (string)$transaction->Variation->SKU);
+						if (isset($tmp[1]))
 						$id_product = $tmp[1];
+						if (isset($tmp[2]))
 						$id_product_attribute = $tmp[2];
 					}
+
+					$id_product = (int)Db::getInstance()->getValue('SELECT `id_product` FROM `'._DB_PREFIX_.'product` WHERE `id_product` = '.(int)$id_product);
+					$id_product_attribute = (int)Db::getInstance()->getValue('SELECT `id_product_attribute` FROM `'._DB_PREFIX_.'product_attribute` WHERE `id_product` = '.(int)$id_product.' AND `id_product_attribute` = '.(int)$id_product_attribute);
 					if ($id_product > 0)
 						$itemList[] = array('id_product' => $id_product, 'id_product_attribute' => $id_product_attribute, 'quantity' => $quantity, 'price' => (string)$transaction->TransactionPrice);
+					else
+					{
+						$reference = '-----------------------';
+						$skuItem = (string)$transaction->Item->SKU;
+						$skuVariation = (string)$transaction->Variation->SKU;
+						$customLabel = (string)$transaction->SellingManagerProductDetails->CustomLabel;
+						if ($customLabel != '') $reference = $customLabel;
+						else
+						{
+							if ($skuVariation != '') $reference = $skuVariation;
+							else $reference = $skuItem;
+						}
+						
+						$reference = trim($reference);
+						if (!empty($reference))
+						{
+						$id_product = Db::getInstance()->getValue('
+						SELECT `id_product` FROM `'._DB_PREFIX_.'product`
+						WHERE `reference` = \''.pSQL($reference).'\'');
+						if ((int)$id_product > 0)
+							$itemList[] = array('id_product' => $id_product, 'id_product_attribute' => 0, 'quantity' => $quantity, 'price' => (string)$transaction->TransactionPrice);
+						else
+						{
+							$row = Db::getInstance()->getValue('
+							SELECT `id_product`, `id_product_attribute` FROM `'._DB_PREFIX_.'product_attribute`
+							WHERE `reference` = \''.pSQL($reference).'\'');
+							if ((int)$row['id_product'] > 0)
+								$itemList[] = array('id_product' => $row['id_product'], 'id_product_attribute' => $row['id_product_attribute'], 'quantity' => $quantity, 'price' => (string)$transaction->TransactionPrice);
+				}
+					}
+				}
 				}
 
 				$orderList[] = array(
@@ -1013,8 +1166,8 @@ class eBayRequest
 					'status' => (string)$order->CheckoutStatus->Status,
 					'date' => substr((string)$order->CreatedTime, 0, 10).' '.substr((string)$order->CreatedTime, 11, 8),
 					'name' => (string)$order->ShippingAddress->Name,
-					'firstname' => $name[0],
-					'familyname' => $name[1],
+					'firstname' => substr(trim($name[0]), 0, 32),
+					'familyname' => (isset($name[1]) ? substr(trim($name[1]), 0, 32) : substr(trim($name[0]), 0, 32)),
 					'address1' => (string)$order->ShippingAddress->Street1,
 					'address2' => (string)$order->ShippingAddress->Street2,
 					'city' => (string)$order->ShippingAddress->CityName,
@@ -1027,7 +1180,10 @@ class eBayRequest
 					'shippingServiceCost' => (string)$order->ShippingServiceSelected->ShippingServiceCost,
 					'email' => (string)$order->TransactionArray->Transaction[0]->Buyer->Email,
 					'product_list' => $itemList,
-					'object' => $order
+					'payment_method' => (string)$order->CheckoutStatus->PaymentMethod,
+					'id_order_seller' => (string)$order->ShippingDetails->SellingManagerSalesRecordNumber,
+					'date_add' => substr((string)$order->CreatedTime, 0, 10).' '.substr((string)$order->CreatedTime, 11, 8),
+					//'object' => $order
 				);
 			}
 

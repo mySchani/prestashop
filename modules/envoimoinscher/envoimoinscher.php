@@ -24,7 +24,8 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 	
 class Envoimoinscher extends Module
@@ -36,8 +37,6 @@ class Envoimoinscher extends Module
 	const INSTALL_SQL_FILE = 'install.sql';
 	function __construct()
 	{
-		global $cookie;
-		
 		$this->name = 'envoimoinscher';
 		$this->tab = 'shipping_logistics';
 		$this->version = '1.0';
@@ -81,8 +80,6 @@ class Envoimoinscher extends Module
 	 */
 	public function install()
 	{
-		global $cookie;
-		
 		if (!file_exists(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
 			return false;
 		elseif (!$sql = file_get_contents(dirname(__FILE__).'/'.self::INSTALL_SQL_FILE))
@@ -90,7 +87,7 @@ class Envoimoinscher extends Module
 		$sql = str_replace(array('PREFIX_', 'ENGINE_TYPE'), array(_DB_PREFIX_, _MYSQL_ENGINE_), $sql);
 		$sql = preg_split("/;\s*[\r\n]+/", $sql);
 		foreach ($sql AS $query)
-			if ($query AND sizeof($query) AND !Db::getInstance()->Execute(trim($query)))
+			if ($query AND sizeof($query) AND !Db::getInstance()->execute(trim($query)))
 				return false;
 		if (substr(_PS_VERSION_, 2, 3) <= 3.1)
 		{
@@ -98,7 +95,7 @@ class Envoimoinscher extends Module
 					$this->_errors[] = $this->l('Please manually copy ') .dirname(__FILE__).'/AdminEnvoiMoinsCher.gif'.' in the '._PS_IMG_DIR_.'/t/AdminEnvoiMoinsCher.gif folder located in your admin directory.';
 		}
 		if (!parent::install() OR  !Configuration::updateValue('EMC_EMAILS', 1) OR !$this->registerHook('AdminOrder') OR !self::adminInstall()
-		OR !Db::getInstance()->Execute('CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'envoimoinscher` (`id_order` int(10) unsigned NOT NULL, `shipping_number` varchar(30) NOT NULL ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=latin1;'))
+		OR !Db::getInstance()->execute('CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'envoimoinscher` (`id_order` int(10) unsigned NOT NULL, `shipping_number` varchar(30) NOT NULL ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=latin1;'))
 			return false;
 		return true; 					
 	}
@@ -121,9 +118,7 @@ class Envoimoinscher extends Module
 	 */
 	public function uninstall()
 	{
-		global $cookie;
-		
-		Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'envoimoinscher_contenu`');
+		Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'envoimoinscher_contenu`');
 		
 		$tab = new Tab(Tab::getIdFromClassName('AdminEnvoiMoinsCher'));
 		if (!parent::uninstall() OR !$tab->delete() OR !$this->unregisterHook('AdminOrder'))
@@ -158,12 +153,11 @@ class Envoimoinscher extends Module
 	
 	private function _displayForm()
 	{
-		global $cookie;
 		$genderTab = array(1 => 'M.', 2 => 'Mme', 9 => '', 0 => '');
-		$features = Feature::getFeatures($cookie->id_lang);
-		$order_states = OrderState::getOrderStates($cookie->id_lang);
-		$carriers = Carrier::getCarriers($cookie->id_lang);
-		$countries = Country::getCountries($cookie->id_lang);
+		$features = Feature::getFeatures($this->context->language->id);
+		$order_states = OrderState::getOrderStates($this->context->language->id);
+		$carriers = Carrier::getCarriers($this->context->language->id);
+		$countries = Country::getCountries($this->context->language->id);
 		$confs = Configuration::getMultiple(array('PS_SHOP_NAME', 'EMC_LOGIN', 'EMC_GENDER', 'EMC_LAST_NAME', 'EMC_FIRST_NAME', 'EMC_ADDRESS', 'EMC_ZIP_CODE', 'EMC_CITY', 'EMC_COUNTRY',
 											 'EMC_PHONE', 'EMC_EMAIL'));
 		$link = '<a href="http://www.envoimoinscher.com/inscription.html?tracking=prestashop_module_v1
@@ -178,10 +172,10 @@ class Envoimoinscher extends Module
 		&facturation.contact_ville='.(isset($confs['EMC_CITY']) ? htmlspecialchars($confs['EMC_CITY'], ENT_COMPAT, 'UTF-8') : '' ).'
 		&facturation.contact_tel='.(isset($confs['EMC_PHONE']) ? htmlspecialchars($confs['EMC_PHONE'], ENT_COMPAT, 'UTF-8') : '' ).'
 		&facturation.contact_email='.(isset($confs['EMC_EMAIL']) ? htmlspecialchars($confs['EMC_EMAIL'], ENT_COMPAT, 'UTF-8') : '' ).'
-		&url_renvoi='.urlencode(Tools::getProtocol().htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').$_SERVER['REQUEST_URI']).'">';
+		&url_renvoi='.urlencode(Tools::getProtocol().htmlspecialchars($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').Tools::safeOutput($_SERVER['REQUEST_URI'])).'">';
 		
 						
-		$this->_html .= '<form action="'.$_SERVER['REQUEST_URI'].'" method="post" class="form">
+		$this->_html .= '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="form">
 		<div style="float: right; width: 440px; height: 165px; border: 1px dashed rgb(102, 102, 102); padding: 8px; margin-left: 12px;margin-top: 11px;">'.$link.'
 			<h3>'.$this->l('Create Envoimoinscher account:').'</h3>
 			<p style="text-align:justify">'.$this->l('To create your account on Envoimoinscher, click the image below. You will go to a dedicated personal space where you will find the necessary tools for easy management of your shipments.').'</p>
@@ -534,7 +528,7 @@ class Envoimoinscher extends Module
 		$order = new Order($params['id_order']);
 		if ($order->id_carrier == Configuration::get('EMC_CARRIER'))
 		{
-			$return = Db::getInstance()->ExecuteS('SELECT * FROM '._DB_PREFIX_.'envoimoinscher WHERE id_order = \''.(int)($order->id).'\' LIMIT 1');
+			$return = Db::getInstance()->executeS('SELECT * FROM '._DB_PREFIX_.'envoimoinscher WHERE id_order = \''.(int)($order->id).'\' LIMIT 1');
 			if (isset($return[0]['shipping_number']))
 			{
 				$html = '<br><br><fieldset style="width: 400px;"><legend><img src="'.$this->_path.'logo.gif" alt="" /> '.$this->l('Envoimoinscher').'</legend>';

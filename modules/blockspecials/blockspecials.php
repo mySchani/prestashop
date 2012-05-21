@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -24,9 +24,10 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
-	
+
 class BlockSpecials extends Module
 {
 	private $_html = '';
@@ -36,7 +37,7 @@ class BlockSpecials extends Module
     {
         $this->name = 'blockspecials';
         $this->tab = 'pricing_promotion';
-        $this->version = 0.8;
+        $this->version = '0.8';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -65,7 +66,7 @@ class BlockSpecials extends Module
 	public function displayForm()
 	{
 		return '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Always display block').'</label>
@@ -85,29 +86,29 @@ class BlockSpecials extends Module
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-		
-		global $smarty;
-		if (!$special = Product::getRandomSpecial((int)($params['cookie']->id_lang), false, false, $this->shopID) AND !Configuration::get('PS_BLOCK_SPECIALS_DISPLAY'))
+
+		if (!$special = Product::getRandomSpecial((int)$params['cookie']->id_lang) AND !Configuration::get('PS_BLOCK_SPECIALS_DISPLAY'))
 			return;
-		$smarty->assign(array(
+
+		$this->templateAssign(array(
 			'special' => $special,
 			'priceWithoutReduction_tax_excl' => Tools::ps_round($special['price_without_reduction'], 2),
-			'mediumSize' => Image::getSize('medium')
+			'mediumSize' => Image::getSize('medium'),
 		));
-		
+
 		return $this->display(__FILE__, 'blockspecials.tpl');
 	}
-		
+
 	public function hookLeftColumn($params)
 	{
 		return $this->hookRightColumn($params);
 	}
-		
+
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-		Tools::addCSS(($this->_path).'blockspecials.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockspecials.css', 'all');
 	}
 }
 

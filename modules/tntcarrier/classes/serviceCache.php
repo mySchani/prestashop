@@ -6,33 +6,18 @@ class serviceCache
 	private $_dateNow;
 	private $_idCard;
 	private $_zipCode;
-	private $_company;
-	private $_shipZipCode;
-	private $_city;
-	private $_companyCity;
 	
-	public	function __construct($id_card, $zipcode, $city, $company, $shipZipCode, $companyCity)
+	public	function __construct($id_card, $zipcode)
 	{
-		$this->_dateBefore = date("Y-m-d H:i:s", mktime(date("H"), date("i") - 10, date("s"), date("m")  , date("d"), date("Y")));
+		$this->_dateBefore = date("Y-m-d H:i:s", mktime(date("H"), date("i") - 15, date("s"), date("m")  , date("d"), date("Y")));
 		$this->_dateNow = date('Y-m-d H:i:s');
-		$this->_idCard = (int)$id_card;
-		$this->_zipCode = pSQL($zipcode);
-		$this->_city = pSQL($city);
-		$this->_company = pSQL($company);
-		$this->_shipZipCode = pSQL($shipZipCode);
-		$this->_companyCity = pSQL($companyCity);
+		$this->_idCard = $id_card;
+		$this->_zipCode = $zipcode;
 	}
 	
 	public function getFaisabilityAtThisTime()
 	{
-		if (Db::getInstance()->getValue('SELECT * FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` 
-		WHERE `date` >= "'.$this->_dateBefore.'" AND `date` <= "'.$this->_dateNow.'" 
-		AND id_card = "'.$this->_idCard.'" 
-		AND zipcode = "'.$this->_zipCode.'" 
-		AND city = "'.$this->_city.'" 
-		AND company = "'.$this->_company.'" 
-		AND company_city = "'.$this->_companyCity.'" 
-		AND ship_zip_code = "'.$this->_shipZipCode.'"'))
+		if (Db::getInstance()->getValue('SELECT * FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `date` >= "'.$this->_dateBefore.'" AND `date` <= "'.$this->_dateNow.'" AND id_card = "'.(int)($this->_idCard).'" AND zipcode = "'.$this->_zipCode.'"'))
 			return true;
 		return false;
 	}
@@ -42,77 +27,31 @@ class serviceCache
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `id_card` = "'.(int)($this->_idCard).'"');
 	}
 	
-	public function clean()
-	{
-		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `date` <= "'.$this->_dateBefore.'" ');
-	}
-	
-	
 	public static function deleteServices($idCard)
 	{
 		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `id_card` = "'.(int)($idCard).'"');
 	}
 	
-	public function errorCodePostal()
+	public function putInCache($service, $serviceRelais)
 	{
-		Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `date`, `zipcode`, `city`, `company`, `company_city`, `ship_zip_code`, `error`) 
-									VALUES ("'.(int)($this->_idCard).'", "'.$this->_dateNow.'", "'.$this->_zipCode.'", "'.$this->_city.'", "'.$this->_company.'", "'.$this->_companyCity.'","'.$this->_shipZipCode.'", "1")');
-	}
-	
-	public static function getError($idCart)
-	{
-		return (Db::getInstance()->getValue('SELECT error FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `id_card` = "'.(int)($idCart).'"'));
-	}
-
-	public static function getDueDate($idCart, $services)
-	{
-		$duedate = array();
-		foreach ($services as $key => $val)
-		{
-			$date  = Db::getInstance()->getValue('SELECT due_date FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `code` = "'.pSQL($val['option']).'"');
-			$dateSaturday = Db::getInstance()->getValue('SELECT due_date FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE `code` = "'.pSQL($val['option']).'S"');
-			if ($dateSaturday == null)
-				$duedate[$val['id_carrier']] = date("d/m/Y", strtotime($date));
-			else
-				$duedate[$val['id_carrier']] = date("d/m/Y", strtotime($dateSaturday));
-		}
-		return $duedate;
-	}
-
-	public function putInCache($s)
-	{
-		foreach ($s as $key => $val)
-		{
-			if (is_array($val->Service))
-				foreach ($val->Service as $k => $v)
-				{
-					if ($v->saturdayDelivery == '0')
-						$serviceCode = $v->serviceCode;
-					else
-						$serviceCode = $v->serviceCode.'S';
-					Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `code`, `date`, `zipcode`, `city`, `company`, `company_city`, `ship_zip_code`, `due_date`)
-												VALUES ("'.(int)($this->_idCard).'", "'.pSQL($serviceCode).'","'.$this->_dateNow.'", "'.$this->_zipCode.'", "'.$this->_city.'", "'.$this->_company.'", "'.$this->_companyCity.'","'.$this->_shipZipCode.'", "'.$v->dueDate.'")');
-				}
-			else
+		if (isset($service))
 			{
-				if ($val->Service->saturdayDelivery == '0')
-					$serviceCode = $val->Service->serviceCode;
+				if (is_array($service->Service))
+					foreach ($service->Service as $k => $v)
+						Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `code`, `date`, `zipcode`) VALUES ("'.(int)($this->_idCard).'", "'.$v->serviceCode.'","'.$this->_dateNow.'", "'.$this->_zipCode.'")');
 				else
-					$serviceCode = $val->Service->serviceCode.'S';
-				Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `code`, `date`, `zipcode`, `city`, `company`, `company_city`, `ship_zip_code`, `due_date`)
-											VALUES ("'.(int)($this->_idCard).'", "'.pSQL($serviceCode).'","'.$this->_dateNow.'", "'.$this->_zipCode.'", "'.$this->_city.'", "'.$this->_company.'", "'.$this->_companyCity.'", "'.$this->_shipZipCode.'", "'.$val->Service->dueDate.'")');
+						Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `code`, `date`, `zipcode`) VALUES ("'.(int)($this->_idCard).'", "'.$service->Service->serviceCode.'","'.$this->_dateNow.'", "'.$this->_zipCode.'")');
 			}
-		}
+		if (isset($serviceRelais))
+			{
+				foreach ($serviceRelais as $v)
+					Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_cache_service` (`id_card`, `code`, `date`, `zipcode`) VALUES ("'.(int)($this->_idCard).'", "'.$v->serviceCode.'","'.$this->_dateNow.'", "'.$this->_zipCode.'")');
+			}
 	}
 	
 	public function getServices()
 	{
 		return (Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE id_card = "'.(int)($this->_idCard).'"'));
-	}
-	
-	public static function getServicesCart($idCard)
-	{
-		return (Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'tnt_carrier_cache_service` WHERE id_card = "'.(int)($idCard).'"'));
 	}
 }
 

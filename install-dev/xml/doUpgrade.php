@@ -30,9 +30,16 @@ $engineType = 'ENGINE_TYPE';
 
 if (function_exists('date_default_timezone_set'))
 	date_default_timezone_set('Europe/Paris');
-	
-define('_PS_MODULE_DIR_', realpath(INSTALL_PATH).'/../modules/');
-define('_PS_INSTALLER_PHP_UPGRADE_DIR_', realpath(INSTALL_PATH).'/php/');
+
+// if _PS_ROOT_DIR_ is defined, use it instead of "guessing" the module dir.
+if (defined('_PS_ROOT_DIR_') AND !defined('_PS_MODULE_DIR_'))
+	define('_PS_MODULE_DIR_', _PS_ROOT_DIR_.'/modules/');
+else if (!defined('_PS_MODULE_DIR_'))
+	define('_PS_MODULE_DIR_', INSTALL_PATH.'/../modules/');
+
+if(!defined('_PS_INSTALLER_PHP_UPGRADE_DIR_'))
+	define('_PS_INSTALLER_PHP_UPGRADE_DIR_',  INSTALL_PATH.DIRECTORY_SEPARATOR.'php/');
+
 // Only if loyalty module is installed
 require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_module_loyalty.php');
 // desactivate non-native module
@@ -104,6 +111,8 @@ require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'alter_cms_block.php');
 
 require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'alter_blocklink.php');
 
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'alter_productcomments_guest_index.php');
+
 require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_module_loyalty.php');
 
 require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_module_followup.php');
@@ -122,6 +131,20 @@ require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'migrate_block_info_to_cms_block.php
 
 require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'create_multistore.php');
 
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'add_order_state.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'remove_tab.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_order_detail_taxes.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_feature_detachable_cache.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'add_accounting_tab.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'hook_blocksearch_on_header.php');
+
+require_once(_PS_INSTALLER_PHP_UPGRADE_DIR_.'update_order_canada.php');
+
 //old version detection
 global $oldversion, $logger;
 $oldversion = false;
@@ -133,14 +156,14 @@ if (file_exists(SETTINGS_FILE) AND file_exists(DEFINES_FILE))
 }
 else
 {
-	die('<action result="fail" error="30" />'."\n");
 	$logger->logError('The config/settings.inc.php file was not found.');
+	die('<action result="fail" error="30" />'."\n");
 }
 
 if (!file_exists(DEFINES_FILE))
 {
-	die('<action result="fail" error="37" />'."\n");
 	$logger->logError('The config/settings.inc.php file was not found.');
+	die('<action result="fail" error="37" />'."\n");
 }
 include_once(SETTINGS_FILE);
 
@@ -156,7 +179,8 @@ include_once(DEFINES_FILE);
 
 $oldversion = _PS_VERSION_;
 
-$versionCompare =  version_compare(INSTALL_VERSION, _PS_VERSION_);
+$versionCompare =  version_compare(INSTALL_VERSION, $oldversion);
+
 if ($versionCompare == '-1')
 {
 	$logger->logError('This installer is too old.');
@@ -164,7 +188,7 @@ if ($versionCompare == '-1')
 }
 elseif ($versionCompare == 0)
 {
-	$logger->logError('You already have the '.INSTALL_VERSION.' version.');
+	$logger->logError(sprintf('You already have the %s version.',INSTALL_VERSION));
 	die('<action result="fail" error="28" />'."\n");
 }
 elseif ($versionCompare === false)
@@ -198,9 +222,27 @@ if (empty($upgradeFiles))
 }
 natcasesort($upgradeFiles);
 $neededUpgradeFiles = array();
+
+// fix : complete version number if there is not all 4 numbers
+// for example replace 1.4.3 by 1.4.3.0
+// consequences : file 1.4.3.0.sql will be skipped if oldversion = 1.4.3
+// @since 1.4.4.0
+$arrayVersion = preg_split('#\.#', $oldversion);
+$versionNumbers = sizeof($arrayVersion);
+
+if ($versionNumbers != 4)
+	$arrayVersion = array_pad($arrayVersion, 4, '0');
+
+$oldversion = implode('.', $arrayVersion);
+// end of fix
+
 foreach ($upgradeFiles AS $version)
-	if (version_compare($version, _PS_VERSION_) == 1 AND version_compare(INSTALL_VERSION, $version) != -1)
+{
+
+	if (version_compare($version, $oldversion) == 1 AND version_compare(INSTALL_VERSION, $version) != -1)
 		$neededUpgradeFiles[] = $version;
+}
+
 if (empty($neededUpgradeFiles))
 {
 	$logger->logError('No upgrade is possible.');
@@ -209,7 +251,7 @@ if (empty($neededUpgradeFiles))
 
 
 //refresh conf file
-include(INSTALL_PATH.'/classes/AddConfToFile.php');
+require_once(INSTALL_PATH.'/classes/AddConfToFile.php');
 $oldLevel = error_reporting(E_ALL);
 $mysqlEngine = (defined('_MYSQL_ENGINE_') ? _MYSQL_ENGINE_ : 'MyISAM');
 $datas = array(
@@ -220,7 +262,7 @@ $datas = array(
 	array('_DB_PASSWD_', _DB_PASSWD_),
 	array('_DB_PREFIX_', _DB_PREFIX_),
 	array('_MYSQL_ENGINE_', $mysqlEngine),
-	array('_PS_CACHING_SYSTEM_', (defined('_PS_CACHING_SYSTEM_') AND _PS_CACHING_SYSTEM_ != 'MemCached') ? _PS_CACHING_SYSTEM_ : 'MCached'),
+	array('_PS_CACHING_SYSTEM_', (defined('_PS_CACHING_SYSTEM_') AND _PS_CACHING_SYSTEM_ != 'CacheMemcache') ? _PS_CACHING_SYSTEM_ : 'CacheMemcache'),
 	array('_PS_CACHE_ENABLED_', defined('_PS_CACHE_ENABLED_') ? _PS_CACHE_ENABLED_ : '0'),
 	array('_MEDIA_SERVER_1_', defined('_MEDIA_SERVER_1_') ? _MEDIA_SERVER_1_ : ''),
 	array('_MEDIA_SERVER_2_', defined('_MEDIA_SERVER_2_') ? _MEDIA_SERVER_2_ : ''),
@@ -283,9 +325,9 @@ if ($confFile->error != false)
 
 // Settings updated, compile and cache directories must be emptied
 $arrayToClean = array(
-	INSTALL_PATH.'/../tools/smarty/cache/', 
-	INSTALL_PATH.'/../tools/smarty/compile/', 
-	INSTALL_PATH.'/../tools/smarty_v2/cache/', 
+	INSTALL_PATH.'/../tools/smarty/cache/',
+	INSTALL_PATH.'/../tools/smarty/compile/',
+	INSTALL_PATH.'/../tools/smarty_v2/cache/',
 	INSTALL_PATH.'/../tools/smarty_v2/compile/');
 foreach ($arrayToClean as $dir)
 	if (!file_exists($dir))
@@ -299,8 +341,8 @@ foreach ($arrayToClean as $dir)
 $depth = Configuration::get('PS_CACHEFS_DIRECTORY_DEPTH');
 if($depth)
 {
-	CacheFS::deleteCacheDirectory();
-	CacheFS::createCacheDirectories((int)$depth);
+	CacheFs::deleteCacheDirectory();
+	CacheFs::createCacheDirectories((int)$depth);
 }
 
 //sql file execution
@@ -358,7 +400,7 @@ foreach($sqlContent as $query)
 		<sqlQuery><![CDATA['.htmlentities($query).']]></sqlQuery>
 	</request>'."\n";
 		}
-		elseif(!Db::getInstance()->Execute($query))
+		elseif(!Db::getInstance()->execute($query))
 		{
 			$logger->logError('SQL query: '."\r\n".$query);
 			$logger->logError('SQL error: '."\r\n".Db::getInstance()->getMsgError());

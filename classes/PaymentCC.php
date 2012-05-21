@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,6 +25,12 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ *
+ * @deprecated 1.5.0.1
+ * @see OrderPaymentCore
+ *
+ */
 class PaymentCCCore extends ObjectModel
 {
 	public $id_order;
@@ -48,7 +54,7 @@ class PaymentCCCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_order'] = (int)($this->id_order);
 		$fields['id_currency'] = (int)($this->id_currency);
 		$fields['amount'] = (float)($this->amount);
@@ -60,15 +66,28 @@ class PaymentCCCore extends ObjectModel
 		$fields['date_add'] = pSQL($this->date_add);
 		return $fields;
 	}
-	
+
 	public function add($autodate = true, $nullValues = false)
 	{
 		if (parent::add($autodate, $nullValues))
 		{
-			Module::hookExec('paymentCCAdded', array('paymentCC' => $this));
+			Hook::exec('paymentCCAdded', array('paymentCC' => $this));
 			return true;
 		}
 		return false;
+	}
+
+	/**
+	* Get the detailed payment of an order
+	* @param int $id_order
+	* @return array
+	* @deprecated 1.5.0.1
+	* @see OrderPaymentCore
+	*/
+	public static function getByOrderId($id_order)
+	{
+		Tools::displayAsDeprecated();
+		return null;
 	}
 }
 

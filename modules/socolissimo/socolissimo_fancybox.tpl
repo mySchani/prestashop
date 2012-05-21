@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -18,16 +18,11 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 6735 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
-
-<style type="text/css">
-	.soBackward_compat_tab {literal}{ text-align: center; }{/literal}
-	.soBackward_compat_tab a {literal}{ margin: 10px; }{/literal}
-</style>
 
 <a href="#" class="iframe" style="display:none" id="soLink"></a>
 {if isset($opc) && $opc}
@@ -50,10 +45,6 @@
 {/if}
 <script type="text/javascript">
 var soInputs = new Object();
-var soBwdCompat = "{$SOBWD_C}";
-var soCarrierId = "{$id_carrier}";
-var soToken = "{$token}";
-
 {foreach from=$inputs item=input key=name name=myLoop}
 		soInputs.{$name} = "{$input|strip_tags|addslashes}";
 {/foreach}
@@ -74,7 +65,7 @@ var soToken = "{$token}";
 			'enableEscapeButton' : true,
 			'type'				: 'iframe',
 			onStart: function () {
-				$('#soLink').attr('href', 'modules/socolissimo/redirect.php' + serialiseInput(soInputs));
+				$('#soLink').attr('href', 'modules/socolissimo/redirect.php'+serialiseInput(soInputs));
 			},
 			onClosed    :   function() {
          	   $.ajax({
@@ -83,16 +74,11 @@ var soToken = "{$token}";
 			       async: false,
 			       cache: false,
 			       dataType : "json",
-			       data: "token=" + soToken,
+			       data: 'token={$token"}',
 			       success: function(jsonData)
 			       {
-			       		if (jsonData && typeof jsonData.answer != undefined && !opc)
-					      {
-						      if (jsonData.answer)
-							      $('#form').submit();
-						      else if (jsonData.msg.length)
-						        alert(jsonData.msg);
-					      }
+			       		if (jsonData.result && !opc)
+			       			$('#form').submit();
 			       },
 			       error: function(XMLHttpRequest, textStatus, errorThrown)
 				   {
@@ -104,18 +90,10 @@ var soToken = "{$token}";
 		$(document).ready(function() 
 		{	
 			var interval;	
-
-			// 1.4 way
-			if (!soBwdCompat)
-			{
-				$('input[name=id_carrier]').change(function() {
-					so_click();	
-				});
-				so_click();
-			}
-			// 1.5 way
-			else if (soCarrierId)
-				so_click();
+			$('input[name=id_carrier]').change(function() {
+				so_click();	
+			});
+			so_click();	
 		});
 		
 	
@@ -135,8 +113,7 @@ var soToken = "{$token}";
 						modifyCarrierLine(true);
 					},10);
 		}
-		else if ((!soBwdCompat && $('#id_carrier' + soCarrierId).is(':not(:checked)')) ||
-			(soBwdCompat && soCarrierId == 0))
+		else if ($('#id_carrier{/literal}{$id_carrier}{literal}').is(':not(:checked)'))
 		{
 			$('[name=processCarrier]').unbind('click').click(function () {
 				return true;
@@ -154,19 +131,6 @@ var soToken = "{$token}";
 
 function modifyCarrierLine(edit)
 {
-	var container = '#id_carrier' + soCarrierId;
-
-	if (soBwdCompat && soCarrierId > 0)
-	{
-		var carrier_block = $('input[class=delivery_option_radio]:checked').parent('div.delivery_option');
-	
-			// Simulate 1.4 table to store the fetched relay point 
-			$(carrier_block).append(
-				'<div><table width="' + $(carrier_block).width() + '"><tr>'
-					+	  '<td class="soBackward_compat_tab"><input type="hidden" id="id_carrier' + soCarrierId + '" value="' + soCarrierId + '" /></td>'
-					+ '</tr></table></div>');
-	}
-
 	if ($('#button_socolissimo').length != 0)
 	{
 		clearInterval(interval);
@@ -175,20 +139,20 @@ function modifyCarrierLine(edit)
 	}
 	
 	$('#button_socolissimo').remove();
-
-	if (edit && $('input[name=id_carrier]:checked').attr('value') == soCarrierId)
-		$(container).parent().prepend('<a style="margin-left:5px;" class="button" id="button_socolissimo" href="#" onclick="redirect();return;" >{/literal}{$edit_label}{literal}</a>');
+	if (edit && $('input[name=id_carrier]:checked').attr('value') == {/literal}{$id_carrier}{literal})
+		$('#id_carrier{/literal}{$id_carrier}{literal}').parent().prepend('<a style="margin-left:5px;" class="button" id="button_socolissimo" href="#" onclick="redirect();return;" >{/literal}{$edit_label}{literal}</a>');
 	else
-		$(container).parent().prepend('<a style="margin-left:5px;" class="exclusive" id="button_socolissimo" href="#" onclick="redirect();return;" >{/literal}{$select_label}{literal}</a>');
-
+		$('#id_carrier{/literal}{$id_carrier}{literal}').parent().prepend('<a style="margin-left:5px;" class="exclusive" id="button_socolissimo" href="#" onclick="redirect();return;" >{/literal}{$select_label}{literal}</a>');
+		
 	if (already_select_delivery)
 	{
-		$(container).css('display', 'block');
-		$(container).css('margin', 'auto');
-		$(container).css('margin-top', '5px');
+		$('#id_carrier{/literal}{$id_carrier}{literal}').css('display', 'block');
+		$('#id_carrier{/literal}{$id_carrier}{literal}').css('margin', 'auto');
+		$('#id_carrier{/literal}{$id_carrier}{literal}').css('margin-top', '5px');
 	}
 	else
-		$(container).css('display', 'none');
+		$('#id_carrier{/literal}{$id_carrier}{literal}').css('display', 'none');	
+	
 }
 
 function redirect()
@@ -196,13 +160,14 @@ function redirect()
 	document.location.href = '{/literal}{$urlSo}{literal}'+serialiseInput(soInputs);
 }
 
+
 function serialiseInput(inputs)
 {
 	updateGiftData();
-	soInputs.TRPARAMPLUS = soInputs.carrier_id + '|' + soInputs.gift + '|' + soInputs.gift_message;
-	var str = '?firstcall=1&';
+	soInputs.TRPARAMPLUS = soInputs.carrier_id+'|'+soInputs.gift+'|'+soInputs.gift_message;
+	str = '?firstcall=1&';
 	for ( var cle in inputs )
-   		str += cle + '=' + inputs[cle] + '&';
+   		str += cle+'='+inputs[cle]+'&';
    	
 	return str;
 }

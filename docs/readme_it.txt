@@ -21,8 +21,8 @@ needs please refer to http://www.prestashop.com for more information.
 @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 International Registered Trademark & Property of PrestaShop SA
 
-NAME: Prestashop 1.4.7.2
-VERSION: 1.4.7.2
+NAME: Prestashop 1.5.0.1
+VERSION: 1.5.0.1
 
 PREPARAZIONE
 ===========
@@ -30,7 +30,7 @@ PREPARAZIONE
 Per installare PrestaShop, hai bisogno di un server remoto o nel tuo computer (MAMP), con accesso ad un database come MySQL.
 Dovrai accedere a phpMyAdmin per creare un database e per indicare le informazioni nel database all'installatore.
 
-Sei non hai un host e non sai come creare il tuo negozio, ti offriamo un negozio gi√† pronto che ti far√† realizzare il tuo negozio online in meno di 10 minuti senza nessun bisogno di competenze tecniche.
+Sei non hai un host e non sai come creare il tuo negozio, ti offriamo un negozio gi‡ pronto che ti far‡ realizzare il tuo negozio online in meno di 10 minuti senza nessun bisogno di competenze tecniche.
 Ti invitiamo a visitare: 
 	http://www.prestabox.com/
 
@@ -54,7 +54,7 @@ INFORMAZIONI
 =============
 
 Per qualsiasi informazione ulteriore (come fare per?), leggi il nostro wiki:
-	http://doc.prestashop.com
+	http://www.prestashop.com/wiki/
 
 FORUM
 ======

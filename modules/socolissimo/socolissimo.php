@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Socolissimo extends CarrierModule
@@ -55,11 +55,9 @@ class Socolissimo extends CarrierModule
 
 	function __construct()
 	{
-		global $cookie;
-
 		$this->name = 'socolissimo';
 		$this->tab = 'shipping_logistics';
-		$this->version = '2.0';
+		$this->version = '2.1';
 		$this->author = 'PrestaShop';
 		$this->limited_countries = array('fr');
 
@@ -108,13 +106,11 @@ class Socolissimo extends CarrierModule
 
 	public function install()
 	{
-		global $cookie;
-
 		if (!parent::install() OR !Configuration::updateValue('SOCOLISSIMO_ID', NULL) OR !Configuration::updateValue('SOCOLISSIMO_KEY', NULL)
 		 OR !Configuration::updateValue('SOCOLISSIMO_URL', 'https://ws.colissimo.fr/pudo-fo/storeCall.do') OR !Configuration::updateValue('SOCOLISSIMO_PREPARATION_TIME', 1)
 		 OR !Configuration::updateValue('SOCOLISSIMO_OVERCOST', 3.6) OR !$this->registerHook('extraCarrier') OR !$this->registerHook('AdminOrder') OR !$this->registerHook('updateCarrier')
-		 OR !$this->registerHook('newOrder') OR !Configuration::updateValue('SOCOLISSIMO_SUP_URL', 'http://ws.colissimo.fr/supervision-pudo/supervision.jsp')
-		 OR !Configuration::updateValue('SOCOLISSIMO_SUP', true))
+		 OR !$this->registerHook('newOrder') OR !$this->registerHook('paymentTop') OR !Configuration::updateValue('SOCOLISSIMO_SUP_URL', 'http://ws.colissimo.fr/supervision-pudo/supervision.jsp')
+		 OR !Configuration::updateValue('SOCOLISSIMO_SUP', true) OR !Configuration::updateValue('SOCOLISSIMO_USE_FANCYBOX', true))
 			return false;
 
 
@@ -142,37 +138,37 @@ class Socolissimo extends CarrierModule
 				  PRIMARY KEY  (`id_cart`,`id_customer`)
 				) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8;';
 
-		if(!Db::getInstance()->Execute($sql))
+		if(!Db::getInstance()->execute($sql))
 			return false;
 
 		//add carrier in back office
 		if(!$this->createSoColissimoCarrier($this->_config))
 			return false;
-		
+
 		return true;
 	}
 
 	public function uninstall()
 	{
-		global $cookie;
-				
 		$so_id = (int)Configuration::get('SOCOLISSIMO_CARRIER_ID');
-		
-		if (!parent::uninstall() 
-			OR !Db::getInstance()->Execute('DROP TABLE IF EXISTS`'._DB_PREFIX_.'socolissimo_delivery_info`')
-		    OR !$this->unregisterHook('extraCarrier') 
-		    OR !$this->unregisterHook('payment') 
+
+		if (!parent::uninstall()
+			OR !Db::getInstance()->execute('DROP TABLE IF EXISTS`'._DB_PREFIX_.'socolissimo_delivery_info`')
+		    OR !$this->unregisterHook('extraCarrier')
+		    OR !$this->unregisterHook('payment')
 		    OR !$this->unregisterHook('AdminOrder')
-		    OR !$this->unregisterHook('newOrder') 
+		    OR !$this->unregisterHook('newOrder')
 		    OR !$this->unregisterHook('updateCarrier')
-		    OR !Configuration::deleteByName('SOCOLISSIMO_ID') 
-		    OR !Configuration::deleteByName('SOCOLISSIMO_KEY') 
+		    OR !$this->unregisterHook('paymentTop')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_ID')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_USE_FANCYBOX')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_KEY')
 		    OR !Configuration::deleteByName('SOCOLISSIMO_URL')
-		    OR !Configuration::deleteByName('SOCOLISSIMO_OVERCOST') 
-		    OR !Configuration::deleteByName('SOCOLISSIMO_PREPARATION_TIME') 
-		    OR !Configuration::deleteByName('SOCOLISSIMO_CARRIER_ID') 
-		    OR !Configuration::deleteByName('SOCOLISSIMO_SUP') 
-		    OR !Configuration::deleteByName('SOCOLISSIMO_SUP_URL') 
+		    OR !Configuration::deleteByName('SOCOLISSIMO_OVERCOST')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_PREPARATION_TIME')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_CARRIER_ID')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_SUP')
+		    OR !Configuration::deleteByName('SOCOLISSIMO_SUP_URL')
 		    OR !Configuration::deleteByName('SOCOLISSIMO_OVERCOST_TAX'))
 			return false;
 
@@ -181,7 +177,7 @@ class Socolissimo extends CarrierModule
 		//if socolissimo carrier is default set other one as default
 		if(Configuration::get('PS_CARRIER_DEFAULT') == (int)($soCarrier->id))
 		{
-			$carriersD = Carrier::getCarriers((int)($cookie->id_lang));
+			$carriersD = Carrier::getCarriers($this->context->language->id);
 			foreach($carriersD as $carrierD)
 				if ($carrierD['active'] AND !$carrierD['deleted'] AND ($carrierD['name'] != $this->_config['name']))
 					Configuration::updateValue('PS_CARRIER_DEFAULT', $carrierD['id_carrier']);
@@ -200,7 +196,7 @@ class Socolissimo extends CarrierModule
 		$this->_html .= '<h2>' . $this->l('So Colissimo').'</h2>';
 		if (Configuration::get('PS_ORDER_PROCESS_TYPE') == 1)
 			$this->_html .= '<div class="alert error"><img src="'._PS_IMG_.'admin/forbbiden.gif" alt="nok" />&nbsp;'.$this->l('So Colissimo isn\'t compliant with One Page Checkout feature, in order to use this module, please activate the standard order process (Preferences > "Order process type")').'</div>';
-		
+
 		if (!empty($_POST) AND Tools::isSubmit('submitSave'))
 		{
 			$this->_postValidation();
@@ -217,9 +213,7 @@ class Socolissimo extends CarrierModule
 
 	private function _displayForm()
 	{
-		global $cookie;
-
-		$this->_html .= '<form action="'.$_SERVER['REQUEST_URI'].'" method="post" class="form">
+		$this->_html .= '<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="form">
 		<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" /> '.$this->l('Description').'</legend>'.
 		$this->l('SoColissimo is a service offered by La Poste, which allows you to offer buyers 5 modes of delivery.').' :
 		<br/><br/><ul style ="list-style:disc outside none;margin-left:30px;">
@@ -239,26 +233,26 @@ class Socolissimo extends CarrierModule
 		<div class="margin-form">
 		<p  style="width:500px">'.$this->l('To open your SoColissimo account, please contact "La Poste" at this phone number: 3634 (French phone number).').'</p>
 		</div>
-		
+
 		<label>'.$this->l('ID So').' : </label>
 		<div class="margin-form">
-		<input type="text" name="id_user" value="'.Tools::getValue('id_user', Configuration::get('SOCOLISSIMO_ID')).'" />
+		<input type="text" name="id_user" value="'.Tools::safeOutput(Tools::getValue('id_user', Configuration::get('SOCOLISSIMO_ID'))).'" />
 		<p>' . $this->l('Id user for back office SoColissimo.') . '</p>
 		</div>
 
 		<label>'.$this->l('Key').' : </label>
 		<div class="margin-form">
-		<input type="text" name="key" value="'.Tools::getValue('key', Configuration::get('SOCOLISSIMO_KEY')).'" />
+		<input type="text" name="key" value="'.Tools::safeOutput(Tools::getValue('key', Configuration::get('SOCOLISSIMO_KEY'))).'" />
 		<p>'.$this->l('Secure key for back office SoColissimo.').'</p>
 		</div>
-		
+
 		<label>'.$this->l('Preparation time').' : </label>
 		<div class="margin-form">
 		<input type="text" size="5" name="dypreparationtime" value="'.(int)(Tools::getValue('dypreparationtime',Configuration::get('SOCOLISSIMO_PREPARATION_TIME'))).'" /> '.$this->l('Day(s)').'
 		<p>' . $this->l('Average time of preparation of materials.') . ' <br><span style="color:red">'
 		.$this->l('Average time must be the same in Coliposte back office.').'</span></p>
 		</div>
-		
+
 		<label>'.$this->l('Overcost').' : </label>
 		<div class="margin-form">
 		<input size="11" type="text" size="5" name="overcost" onkeyup="this.value = this.value.replace(/,/g, \'.\');"
@@ -278,6 +272,15 @@ class Socolissimo extends CarrierModule
 		<p>' . $this->l('Url of back office SoColissimo.') . '</p>
 		</div>
 
+		<label>'.$this->l('Fancybox').' : </label>
+		<div class="margin-form">
+			<input type="radio" name="SOCOLISSIMO_USE_FANCYBOX" id="fancybox_on" value="1" '.(Configuration::get('SOCOLISSIMO_USE_FANCYBOX') ? 'checked="checked" ' : '').'/>
+			<label class="t" for="fancybox_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
+			<input type="radio" name="SOCOLISSIMO_USE_FANCYBOX" id="fancybox_off" value="0" '.(!Configuration::get('SOCOLISSIMO_USE_FANCYBOX') ? 'checked="checked" ' : '').'/>
+			<label class="t" for="fancybox_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
+			<p>'.$this->l('If you enable this option, the page of socolissimo will displayed in a fancybox').'</p>
+		</div>
+
 		<label>'.$this->l('Supervision').' : </label>
 		<div class="margin-form">
 			<input type="radio" name="sup_active" id="active_on" value="1" '.(Configuration::get('SOCOLISSIMO_SUP') ? 'checked="checked" ' : '').'/>
@@ -290,7 +293,7 @@ class Socolissimo extends CarrierModule
 		<label>'.$this->l('Url Supervision').' : </label>
 		<div class="margin-form">
 		<input type="text" size="45" name="url_sup" value="'.htmlentities(Tools::getValue('url_sup',Configuration::get('SOCOLISSIMO_SUP_URL')),ENT_NOQUOTES, 'UTF-8').'" />
-		<p>' . $this->l('Url of supervision.') . '</p>
+		<p>' . $this->l('The URL of supervision is to ensure the availability of the service socolissimo. It is not advisable to disabled.') . '</p>
 		</div>
 
 		<div class="margin-form">
@@ -335,13 +338,14 @@ class Socolissimo extends CarrierModule
 	private function _postProcess()
 	{
 
-		if (Configuration::updateValue('SOCOLISSIMO_ID', Tools::getValue('id_user')) 
-		AND Configuration::updateValue('SOCOLISSIMO_KEY', Tools::getValue('key')) 
-		AND Configuration::updateValue('SOCOLISSIMO_URL', pSQL(Tools::getValue('url_so'))) 
-		AND Configuration::updateValue('SOCOLISSIMO_PREPARATION_TIME', (int)(Tools::getValue('dypreparationtime'))) 
+		if (Configuration::updateValue('SOCOLISSIMO_ID', Tools::getValue('id_user'))
+		AND Configuration::updateValue('SOCOLISSIMO_KEY', Tools::getValue('key'))
+		AND Configuration::updateValue('SOCOLISSIMO_URL', pSQL(Tools::getValue('url_so')))
+		AND Configuration::updateValue('SOCOLISSIMO_PREPARATION_TIME', (int)(Tools::getValue('dypreparationtime')))
 		AND Configuration::updateValue('SOCOLISSIMO_OVERCOST', (float)(Tools::getValue('overcost')))
 		AND Configuration::updateValue('SOCOLISSIMO_SUP_URL', Tools::getValue('url_sup'))
 		AND Configuration::updateValue('SOCOLISSIMO_OVERCOST_TAX', Tools::getValue('id_tax_rules_group'))
+		AND Configuration::updateValue('SOCOLISSIMO_USE_FANCYBOX', Tools::getValue('SOCOLISSIMO_USE_FANCYBOX'))
 		AND Configuration::updateValue('SOCOLISSIMO_SUP', (int)(Tools::getValue('sup_active'))))
 		{
 			//save old carrier id if change
@@ -359,14 +363,9 @@ class Socolissimo extends CarrierModule
 
 	public function hookExtraCarrier($params)
 	{
-		global $smarty, $cookie;
-
+		global $cookie;
 		$customer = new Customer($params['address']->id_customer);
-		$gender = array('1'=>'MR','2'=>'MME');
-		if (in_array((int)($customer->id_gender),array(1,2)))
-			$cecivility = $gender[(int)($customer->id_gender)];
-		else
-			$cecivility = 'MR';
+		$gender = new Gender($customer->id_gender);
 		$carrierSo = new Carrier((int)(Configuration::get('SOCOLISSIMO_CARRIER_ID')));
 
 		if (isset($carrierSo) AND $carrierSo->active)
@@ -381,7 +380,7 @@ class Socolissimo extends CarrierModule
 							'ORDERID' => $orderId,
 							'CENAME' => substr($this->lower($params['address']->lastname),0, 34),
 							'TRCLIENTNUMBER' => $this->upper((int)($params['address']->id_customer)),
-							'CECIVILITY' => $cecivility,
+							'CECIVILITY' => $gender->name,
 							'CEFIRSTNAME' => substr($this->lower($params['address']->firstname),0,29),
 							'CECOMPANYNAME' => substr($this->upper($params['address']->company),0,38),
 							'CEEMAIL' => $params['cookie']->email,
@@ -392,41 +391,56 @@ class Socolissimo extends CarrierModule
 							'CETOWN' => substr($this->upper($params['address']->city),0,32),
 							'DYWEIGHT' => ((float)($params['cart']->getTotalWeight()) * 1000),
 							'SIGNATURE' => htmlentities($signature,ENT_NOQUOTES, 'UTF-8'),
-							'TRPARAMPLUS' => (int)($carrierSo->id),
+							'carrier_id' => (int)($carrierSo->id),
+							'gift' => '',
+							'gift_message' => '',
+							'TRPARAMPLUS' => '',
 							'DYFORWARDINGCHARGES' => number_format((float)($params['cart']->getOrderShippingCost($carrierSo->id)), 2, ',', ''),
 							'DYPREPARATIONTIME' => (int)(Configuration::Get('SOCOLISSIMO_PREPARATION_TIME')),
 							'TRRETURNURLKO' => htmlentities($this->url,ENT_NOQUOTES, 'UTF-8'),
 							'TRRETURNURLOK' => htmlentities($this->url,ENT_NOQUOTES, 'UTF-8'));
-			
+
 			$serialsInput = '';
 			foreach($inputs as $key => $val)
 				$serialsInput .= '&'.$key.'='.$val;
 			$serialsInput = ltrim($serialsInput, '&');
 			$row['id_carrier'] = (int)($carrierSo->id);
-			$smarty->assign(array('urlSo' => Configuration::get('SOCOLISSIMO_URL').'?trReturnUrlKo='.htmlentities($this->url,ENT_NOQUOTES, 'UTF-8'),'id_carrier' => (int)($row['id_carrier']),
-								  'inputs' => $inputs, 'serialsInput' => $serialsInput, 'finishProcess' => $this->l('To choose SoColissimo, click on a delivery method')));
+
+			$this->context->smarty->assign(array(
+				'select_label' => $this->l('Select delivery mode'),
+				'edit_label' => $this->l('Edit delivery mode'),
+				'token' => sha1('socolissimo'._COOKIE_KEY_.$cookie->id_cart),
+				'urlSo' => Configuration::get('SOCOLISSIMO_URL').'?trReturnUrlKo='.htmlentities($this->url,ENT_NOQUOTES, 'UTF-8'),
+				'id_carrier' => (int)$row['id_carrier'],
+				'inputs' => $inputs, 'serialsInput' => $serialsInput, 'finishProcess' => $this->l('To choose SoColissimo, click on a delivery method'),
+			));
 
 			$country = new Country((int)($params['address']->id_country));
-			$carriers = Carrier::getCarriers($cookie->id_lang,  true , false,false, NULL, ALL_CARRIERS);
+
+			$carriers = Carrier::getCarriers($this->context->language->id, true , false, false, null, (defined('ALL_CARRIERS') ? ALL_CARRIERS : Carrier::ALL_CARRIERS));
+
 			$ids = array();
 			foreach($carriers as $carrier)
 				$ids[] = $carrier['id_carrier'];
 
-			if ($this->getDeliveryInfos((int)$cookie->id_cart, (int)$cookie->id_customer))
-				$smarty->assign('already_select_delivery', true);
+			if ($params['cart']->id_carrier == Configuration::Get('SOCOLISSIMO_CARRIER_ID') && $this->getDeliveryInfos($this->context->cart->id, $this->context->customer->id))
+				$this->context->smarty->assign('already_select_delivery', true);
 			else
-				$smarty->assign('already_select_delivery', false);
-			
-			if (($country->iso_code == 'FR') AND (Configuration::Get('SOCOLISSIMO_ID') != NULL) 
+				$this->context->smarty->assign('already_select_delivery', false);
+
+			if (($country->iso_code == 'FR') AND (Configuration::Get('SOCOLISSIMO_ID') != NULL)
 				AND (Configuration::get('SOCOLISSIMO_KEY') != NULL) AND $this->checkAvailibility()
-				AND $this->checkSoCarrierAvailable((int)(Configuration::get('SOCOLISSIMO_CARRIER_ID'))) 
+				AND $this->checkSoCarrierAvailable((int)(Configuration::get('SOCOLISSIMO_CARRIER_ID')))
 				AND in_array((int)(Configuration::get('SOCOLISSIMO_CARRIER_ID')),$ids))
 				{
-					return $this->display(__FILE__, 'socolissimo_carrier.tpl');
+					if (Configuration::get('PS_ORDER_PROCESS_TYPE') || Configuration::get('SOCOLISSIMO_USE_FANCYBOX'))
+						return $this->display(__FILE__, 'socolissimo_fancybox.tpl');
+					else
+						return $this->display(__FILE__, 'socolissimo_redirect.tpl');
 				}
 				else
 				{
-					$smarty->assign('ids', explode('|',Configuration::get('SOCOLISSIMO_CARRIER_ID_HIST')));
+					$this->context->smarty->assign('ids', explode('|',Configuration::get('SOCOLISSIMO_CARRIER_ID_HIST')));
 					return $this->display(__FILE__, 'socolissimo_error.tpl');
 				}
 
@@ -435,7 +449,6 @@ class Socolissimo extends CarrierModule
 
 	public function hooknewOrder($params)
 	{
-		global $cookie;
 		if ($params['order']->id_carrier != Configuration::get('SOCOLISSIMO_CARRIER_ID'))
 			return;
 		$order = $params['order'];
@@ -446,10 +459,10 @@ class Socolissimo extends CarrierModule
 	public function hookAdminOrder($params)
 	{
 
-	$deliveryMode = array('DOM' => 'Livraison à domicile', 'BPR' => 'Livraison en Bureau de Poste',
-						  'A2P' => 'Livraison Commerce de proximité', 'MRL' => 'Livraison Commerce de proximité',
-						  'CIT' => 'Livraison en Cityssimo', 'ACP' => 'Agence ColiPoste', 'CDI' => 'Centre de distribution',
-						  'RDV' => 'Livraison sur Rendez-vous');
+		$deliveryMode = array('DOM' => 'Livraison à domicile', 'BPR' => 'Livraison en Bureau de Poste',
+			'A2P' => 'Livraison Commerce de proximité', 'MRL' => 'Livraison Commerce de proximité',
+			'CIT' => 'Livraison en Cityssimo', 'ACP' => 'Agence ColiPoste', 'CDI' => 'Centre de distribution',
+			'RDV' => 'Livraison sur Rendez-vous');
 
 		$order = new Order($params['id_order']);
 		$addressDelivery = new Address((int)($order->id_address_delivery), (int)($params['cookie']->id_lang));
@@ -512,6 +525,12 @@ class Socolissimo extends CarrierModule
 
 	}
 
+	public function hookpaymentTop($params)
+	{
+		if ($params['cart']->id_carrier == Configuration::Get('SOCOLISSIMO_CARRIER_ID') AND !$this->getDeliveryInfos((int)$params['cookie']->id_cart, (int)$params['cookie']->id_customer))
+			$params['cart']->id_carrier = 0;
+	}
+
 	public function make_key($ceName, $dyPraparationTime, $dyForwardingCharges, $trClientNumber, $orderId)
 	{
 		return sha1(Configuration::get('SOCOLISSIMO_ID').$ceName.$dyPraparationTime.$dyForwardingCharges.$trClientNumber.self::formatOrderId($orderId).Configuration::get('SOCOLISSIMO_KEY'));
@@ -548,7 +567,7 @@ class Socolissimo extends CarrierModule
 				$groups = Group::getgroups(true);
 				foreach ($groups as $group)
 				{
-					Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'carrier_group VALUE (\''.(int)($carrier->id).'\',\''.(int)($group['id_group']).'\')');
+					Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'carrier_group VALUE (\''.(int)($carrier->id).'\',\''.(int)($group['id_group']).'\')');
 				}
 				$rangePrice = new RangePrice();
 				$rangePrice->id_carrier = $carrier->id;
@@ -565,9 +584,9 @@ class Socolissimo extends CarrierModule
 				$zones = Zone::getZones(true);
 				foreach ($zones as $zone)
 				{
-					Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'carrier_zone VALUE (\''.(int)($carrier->id).'\',\''.(int)($zone['id_zone']).'\')');
-					Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'delivery VALUE (\'\',\''.(int)($carrier->id).'\',\''.(int)($rangePrice->id).'\',NULL,\''.(int)($zone['id_zone']).'\',\'1\')');
-					Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'delivery VALUE (\'\',\''.(int)($carrier->id).'\',NULL,\''.(int)($rangeWeight->id).'\',\''.(int)($zone['id_zone']).'\',\'1\')');
+					Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'carrier_zone  (id_carrier, id_zone) VALUE (\''.(int)($carrier->id).'\',\''.(int)($zone['id_zone']).'\')');
+					Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'delivery (id_carrier, id_range_price, id_range_weight, id_zone, price) VALUE (\''.(int)($carrier->id).'\',\''.(int)($rangePrice->id).'\',NULL,\''.(int)($zone['id_zone']).'\',\'1\')');
+					Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'delivery (id_carrier, id_range_price, id_range_weight, id_zone, price) VALUE (\''.(int)($carrier->id).'\',NULL,\''.(int)($rangeWeight->id).'\',\''.(int)($zone['id_zone']).'\',\'1\')');
 				}
 				//copy logo
 				if (!copy(dirname(__FILE__).'/socolissimo.jpg',_PS_SHIP_IMG_DIR_.'/'.$carrier->id.'.jpg'))
@@ -699,7 +718,7 @@ class Socolissimo extends CarrierModule
 	{
 		if (Configuration::get('SOCOLISSIMO_SUP'))
 		{
-			$ctx = stream_context_create(array('http' => array('timeout' => 1)));
+			$ctx = @stream_context_create(array('http' => array('timeout' => 1)));
 			$return = @file_get_contents(Configuration::get('SOCOLISSIMO_SUP_URL'), 0, $ctx);
 
 			if(ini_get('allow_url_fopen') == 0)
@@ -727,9 +746,8 @@ class Socolissimo extends CarrierModule
 
 	private function checkSoCarrierAvailable($id_carrier)
 	{
-		global $cart, $defaultCountry;
 		$carrier = new Carrier((int)($id_carrier));
-		$address = new Address((int)($cart->id_address_delivery));
+		$address = new Address((int)($this->context->cart->id_address_delivery));
 		$id_zone = Address::getZoneById((int)($address->id));
 
 		// Get only carriers that are compliant with shipping method
@@ -743,31 +761,30 @@ class Socolissimo extends CarrierModule
 		if ($carrier->range_behavior)
 		{
 			// Get id zone
-	        if (isset($cart->id_address_delivery) AND $cart->id_address_delivery)
-				$id_zone = Address::getZoneById((int)($cart->id_address_delivery));
+	        if (isset($this->context->cart->id_address_delivery) AND $this->context->cart->id_address_delivery)
+				$id_zone = Address::getZoneById((int)($this->context->cart->id_address_delivery));
 			else
-				$id_zone = (int)$defaultCountry->id_zone;
+				$id_zone = (int)$this->context->country->id_zone;
 
 			// Get only carriers that have a range compatible with cart
-			if ((Configuration::get('PS_SHIPPING_METHOD') AND (!Carrier::checkDeliveryPriceByWeight((int)($carrier->id), $cart->getTotalWeight(), $id_zone)))
-			OR (!Configuration::get('PS_SHIPPING_METHOD') AND (!Carrier::checkDeliveryPriceByPrice((int)($carrier->id), $cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING), $id_zone, $cart->id_currency))))
+			if ((Configuration::get('PS_SHIPPING_METHOD') AND (!Carrier::checkDeliveryPriceByWeight((int)($carrier->id), $this->context->cart->getTotalWeight(), $id_zone)))
+			OR (!Configuration::get('PS_SHIPPING_METHOD') AND (!Carrier::checkDeliveryPriceByPrice((int)($carrier->id), $this->context->cart->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING), $id_zone, $this->context->cart->id_currency))))
 				{
 					return false;
 				}
 		}
 		return true;
 	}
-	
+
 	public function getOrderShippingCost($params,$shipping_cost)
 	{
-		global $cart;
-		$deliveryInfo = $this->getDeliveryInfos($cart->id, $cart->id_customer);
+		$deliveryInfo = $this->getDeliveryInfos($this->context->cart->id, $this->context->cart->id_customer);
 		if (!empty($deliveryInfo))
 			if ($deliveryInfo['delivery_mode'] == 'RDV')
 				$shipping_cost += (float)(Configuration::get('SOCOLISSIMO_OVERCOST'));
 		return $shipping_cost;
-	}	
-	
+	}
+
 	public function getOrderShippingCostExternal($params){}
 
 }

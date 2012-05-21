@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class productsCategory extends Module
@@ -74,7 +74,7 @@ class productsCategory extends Module
 			$this->_html .= $this->displayConfirmation($this->l('Settings updated successfully'));
 		}
 		$this->_html .= '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 		<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 			<label>'.$this->l('Display price on products').'</label>
 			<div class="margin-form">
@@ -101,8 +101,6 @@ class productsCategory extends Module
 	
 	public function hookProductFooter($params)
 	{
-		global $smarty, $cookie;
-		
 		$idProduct = (int)(Tools::getValue('id_product'));
 		$product = new Product((int)($idProduct));
 
@@ -120,7 +118,7 @@ class productsCategory extends Module
 			return;
 
 		// Get infos
-		$categoryProducts = $category->getProducts((int)($cookie->id_lang), 1, 100); /* 100 products max. */
+		$categoryProducts = $category->getProducts($this->context->language->id, 1, 100); /* 100 products max. */
 		$sizeOfCategoryProducts = (int)sizeof($categoryProducts);
 		$middlePosition = 0;
 		
@@ -140,9 +138,9 @@ class productsCategory extends Module
 					if ($categoryProduct['id_product'] != $idProduct)
 					{
 						if ($taxes == 0 OR $taxes == 2)
-							$categoryProducts[$key]['displayed_price'] = Product::getPriceStatic((int)$categoryProduct['id_product'], true, NULL);
+							$categoryProducts[$key]['displayed_price'] = Product::getPriceStatic((int)$categoryProduct['id_product'], true, NULL, 2);
 						elseif ($taxes == 1)
-							$categoryProducts[$key]['displayed_price'] = Product::getPriceStatic((int)$categoryProduct['id_product'], false, NULL);
+							$categoryProducts[$key]['displayed_price'] = Product::getPriceStatic((int)$categoryProduct['id_product'], false, NULL, 2);
 					}
 		
 			// Get positions
@@ -166,7 +164,7 @@ class productsCategory extends Module
 		}
 		
 		// Display tpl
-		$smarty->assign(array(
+		$this->context->smarty->assign(array(
 			'categoryProducts' => $categoryProducts,
 			'middlePosition' => (int)$middlePosition,
 			'ProdDisplayPrice' => Configuration::get('PRODUCTSCATEGORY_DISPLAY_PRICE')));
@@ -176,7 +174,8 @@ class productsCategory extends Module
 	
 	public function hookHeader($params)
 	{
-		Tools::addCSS($this->_path.'productscategory.css', 'all');
-		Tools::addJS(array($this->_path.'productscategory.js', _PS_JS_DIR_.'jquery/jquery.serialScroll-1.2.2-min.js'));
+		$this->context->controller->addCSS($this->_path.'productscategory.css', 'all');
+		$this->context->controller->addJS($this->_path.'productscategory.js');
+		$this->context->controller->addJqueryPlugin('serialScroll');
 	}
 }

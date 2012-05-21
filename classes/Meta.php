@@ -48,17 +48,17 @@ class MetaCore extends ObjectModel
 		
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		return array('page' => pSQL($this->page));
 	}
 	
 	public function getTranslationsFieldsChild()
 	{
-		parent::validateFieldsLang();
-		return parent::getTranslationsFields(array('title', 'description', 'keywords', 'url_rewrite'));
+		$this->validateFieldsLang();
+		return $this->getTranslationsFields(array('title', 'description', 'keywords', 'url_rewrite'));
 	}
 	
-	static public function getPages($excludeFilled = false, $addPage = false)
+	public static function getPages($excludeFilled = false, $addPage = false)
 	{
 		$selectedPages = array();
 		if (!$files = scandir(_PS_ROOT_DIR_.'/controllers'))
@@ -74,7 +74,7 @@ class MetaCore extends ObjectModel
 		if ($excludeFilled)
 		{
 			$metas = self::getMetas();
-			foreach ($metas as $k => $meta)
+			foreach ($metas as $meta)
 				if (in_array($meta['page'], $selectedPages))
 					unset($selectedPages[array_search($meta['page'], $selectedPages)]);
 		}
@@ -87,37 +87,41 @@ class MetaCore extends ObjectModel
 		return $selectedPages;
 	}
 	
-	static public function getMetas()
+	public static function getMetas()
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT *
 		FROM '._DB_PREFIX_.'meta
 		ORDER BY page ASC');
 	}
 
-	static public function getMetasByIdLang($id_lang, $id_shop = false)
+	static public function getMetasByIdLang($id_lang, Shop $shop = null)
 	{
-		if (!$id_shop)
-			$id_shop = (int)Configuration::get('PS_SHOP_DEFAULT');
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT *
-		FROM `'._DB_PREFIX_.'meta` m
-		LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON m.`id_meta` = ml.`id_meta`
-		WHERE ml.`id_lang` = '.(int)($id_lang).
-		($id_shop ? ' AND ml.id_shop='.(int)$id_shop : '').'
-		ORDER BY page ASC');
+		if (!$shop)
+			$shop = Context::getContext()->shop;
+
+		$sql = 'SELECT *
+				FROM `'._DB_PREFIX_.'meta` m
+				LEFT JOIN `'._DB_PREFIX_.'meta_lang` ml ON m.`id_meta` = ml.`id_meta`
+				WHERE ml.`id_lang` = '.(int)$id_lang
+					.$shop->addSqlRestrictionOnLang('ml').
+				'ORDER BY page ASC';
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 		
 	}
-	
-	static public function getMetaByPage($page, $id_lang, $id_shop = false)
+
+	static public function getMetaByPage($page, $id_lang, Context $context = null)
 	{
-		if (!$id_shop)
-			$id_shop = (int)Configuration::get('PS_SHOP_DEFAULT');
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT *
-		FROM '._DB_PREFIX_.'meta m
-		LEFT JOIN '._DB_PREFIX_.'meta_lang ml on (m.id_meta = ml.id_meta)
-		WHERE m.page = \''.pSQL($page).'\' AND ml.id_lang = '.(int)($id_lang));
+		if (!$context)
+			$context = Context::getContext();
+
+		$sql = 'SELECT *
+				FROM '._DB_PREFIX_.'meta m
+				LEFT JOIN '._DB_PREFIX_.'meta_lang ml on (m.id_meta = ml.id_meta)
+				WHERE m.page = \''.pSQL($page).'\'
+					AND ml.id_lang = '.(int)$id_lang
+					.$context->shop->addSqlRestrictionOnLang('ml');
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 	}
 
 	public function update($nullValues = false)
@@ -126,9 +130,10 @@ class MetaCore extends ObjectModel
 			return false;			
 									
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
-									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
-									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC')
+									(int)Configuration::get('PS_REWRITING_SETTINGS'),
+									(int)Configuration::get('PS_HTACCESS_CACHE_CONTROL'),
+									'',
+									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
 									);
 	}
 
@@ -137,9 +142,10 @@ class MetaCore extends ObjectModel
 		if (!parent::add($autodate, $nullValues));
 		
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
-									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
-									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC')
+									(int)Configuration::get('PS_REWRITING_SETTINGS'),
+									(int)Configuration::get('PS_HTACCESS_CACHE_CONTROL'),
+									'',
+									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
 									);
 	}
 	
@@ -149,9 +155,10 @@ class MetaCore extends ObjectModel
 			return false;
 		
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
-								(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
-								(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-								Configuration::get('PS_HTACCESS_SPECIFIC')
+								(int)Configuration::get('PS_REWRITING_SETTINGS'),
+								(int)Configuration::get('PS_HTACCESS_CACHE_CONTROL'),
+								'',
+								(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
 								);
 	}
 	
@@ -167,13 +174,14 @@ class MetaCore extends ObjectModel
 		}
 		
 		return Tools::generateHtaccess(dirname(__FILE__).'/../.htaccess',
-									(int)(Configuration::get('PS_REWRITING_SETTINGS')),		
-									(int)(Configuration::get('PS_HTACCESS_CACHE_CONTROL')), 
-									Configuration::get('PS_HTACCESS_SPECIFIC')
+									(int)Configuration::get('PS_REWRITING_SETTINGS'),		
+									(int)Configuration::get('PS_HTACCESS_CACHE_CONTROL'), 
+									'',
+									(int)Configuration::get('PS_HTACCESS_DISABLE_MULTIVIEWS')
 									);
 	}
 
-	static public function getEquivalentUrlRewrite($new_id_lang, $id_lang, $url_rewrite)
+	public static function getEquivalentUrlRewrite($new_id_lang, $id_lang, $url_rewrite)
 	{
 		return Db::getInstance()->getValue('
 		SELECT url_rewrite

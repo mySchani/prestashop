@@ -56,11 +56,13 @@ if (!file_exists(dirname(__FILE__).'/settings.inc.php'))
 	exit;
 }
 require_once(dirname(__FILE__).'/settings.inc.php');
+require_once(dirname(__FILE__).'/defines.inc.php');
+require_once(dirname(__FILE__).'/autoload.php');
 
 /* Redefine REQUEST_URI if empty (on some webservers...) */
 if (!isset($_SERVER['REQUEST_URI']) OR empty($_SERVER['REQUEST_URI']))
 {
-	if (substr($_SERVER['SCRIPT_NAME'], -9) == 'index.php')
+	if (substr($_SERVER['SCRIPT_NAME'], -9) == 'index.php' && empty($_SERVER['QUERY_STRING']))
 		$_SERVER['REQUEST_URI'] = dirname($_SERVER['SCRIPT_NAME']).'/';
 	else
 	{
@@ -70,35 +72,21 @@ if (!isset($_SERVER['REQUEST_URI']) OR empty($_SERVER['REQUEST_URI']))
 	}
 }
 
-/* Autoload */
-require_once(dirname(__FILE__).'/autoload.php');
+// Trying to redefine HTTP_HOST if empty (on some webservers...)
+if (!isset($_SERVER['HTTP_HOST']) || empty($_SERVER['HTTP_HOST']))
+	$_SERVER['HTTP_HOST'] = @getenv('HTTP_HOST');
+
 
 if (!defined('_PS_MAGIC_QUOTES_GPC_'))
 	define('_PS_MAGIC_QUOTES_GPC_',         get_magic_quotes_gpc());
-if (!defined('_PS_MYSQL_REAL_ESCAPE_STRING_'))
-	define('_PS_MYSQL_REAL_ESCAPE_STRING_', function_exists('mysql_real_escape_string'));
 
-/* aliases */
-function p($var) {
-	return (Tools::p($var));
-}
-function d($var) {
-	Tools::d($var);
-}
-
-function ppp($var) {
-	return (Tools::p($var));
-}
-function ddd($var) {
-	Tools::d($var);
-}
 /* Set the current Shop */
-Shop::setCurrentShop();
-define('_THEME_NAME_', Shop::getCurrentTheme());
-define('__PS_BASE_URI__', Shop::getCurrentBaseURI());
+Context::getContext()->shop = Shop::initialize();
+define('_THEME_NAME_', Context::getContext()->shop->getTheme());
+define('__PS_BASE_URI__', Context::getContext()->shop->getBaseURI());
 
-/* Include all defines */
-require_once(dirname(__FILE__).'/defines.inc.php');
+/* Include all defines related to base uri and theme name */
+require_once(dirname(__FILE__).'/defines_uri.inc.php');
 
 if (!defined('_PS_MODULE_DIR_'))
 	define('_PS_MODULE_DIR_',           _PS_ROOT_DIR_.'/modules/');
@@ -113,15 +101,70 @@ Configuration::loadConfiguration();
 Language::loadLanguages();
 
 /* Loading default country */
-global $defaultCountry;
-$defaultCountry = new Country((int)(Configuration::get('PS_COUNTRY_DEFAULT')), Configuration::get('PS_LANG_DEFAULT'));
+$defaultCountry = new Country(Configuration::get('PS_COUNTRY_DEFAULT'), Configuration::get('PS_LANG_DEFAULT'));
+Context::getContext()->country = $defaultCountry;
 
 /* It is not safe to rely on the system's timezone settings, and this would generate a PHP Strict Standards notice. */
 if (function_exists('date_default_timezone_set'))
 	@date_default_timezone_set(Configuration::get('PS_TIMEZONE'));
 
+/* Instantiate cookie */
+$cookieLifetime = (time() + (((int)Configuration::get('PS_COOKIE_LIFETIME_BO') > 0 ? (int)Configuration::get('PS_COOKIE_LIFETIME_BO') : 1)* 3600));
+if (defined('_PS_ADMIN_DIR_'))
+	$cookie = new Cookie('psAdmin', '', $cookieLifetime);
+else
+	$cookie = new Cookie('ps', '', $cookieLifetime);
+Context::getContext()->cookie = $cookie;
+
+/* Create employee if in BO, customer else */
+if (defined('_PS_ADMIN_DIR_'))
+{
+	$employee = new Employee($cookie->id_employee);
+	Context::getContext()->employee = $employee;
+
+	$cookie->id_lang = (int)$employee->id_lang;
+}
+else
+{
+	if (isset($cookie->id_customer) && (int)$cookie->id_customer)
+	{
+		$customer = new Customer($cookie->id_customer);
+		$customer->logged = $cookie->logged;
+	}
+	else
+		$customer = new Customer();
+
+	$customer->id_guest = $cookie->id_guest;
+	Context::getContext()->customer = $customer;
+}
+
+// if the language stored in the cookie is not available language, use default language
+if (isset($cookie->id_lang) && $cookie->id_lang)
+	$language = new Language($cookie->id_lang);
+if (!isset($language) || !Validate::isLoadedObject($language))
+	$language = new Language(Configuration::get('PS_LANG_DEFAULT'));
+Context::getContext()->language = $language;
+
+/* Define order state */
+// DEPRECATED : these defines are going to be deleted on 1.6 version of Prestashop
+// USE : Configuration::get() method in order to getting the id of order state
+define('_PS_OS_CHEQUE_',      Configuration::get('PS_OS_CHEQUE'));
+define('_PS_OS_PAYMENT_',     Configuration::get('PS_OS_PAYMENT'));
+define('_PS_OS_PREPARATION_', Configuration::get('PS_OS_PREPARATION'));
+define('_PS_OS_SHIPPING_',    Configuration::get('PS_OS_SHIPPING'));
+define('_PS_OS_DELIVERED_',   Configuration::get('PS_OS_DELIVERED'));
+define('_PS_OS_CANCELED_',    Configuration::get('PS_OS_CANCELED'));
+define('_PS_OS_REFUND_',      Configuration::get('PS_OS_REFUND'));
+define('_PS_OS_ERROR_',       Configuration::get('PS_OS_ERROR'));
+define('_PS_OS_OUTOFSTOCK_',  Configuration::get('PS_OS_OUTOFSTOCK'));
+define('_PS_OS_BANKWIRE_',    Configuration::get('PS_OS_BANKWIRE'));
+define('_PS_OS_PAYPAL_',      Configuration::get('PS_OS_PAYPAL'));
+define('_PS_OS_WS_PAYMENT_', Configuration::get('PS_OS_WS_PAYMENT'));
+
 /* Smarty */
 require_once(dirname(__FILE__).'/smarty.config.inc.php');
+
+Context::getContext()->smarty = $smarty;
 /* Possible value are true, false, 'URL'
  (for 'URL' append SMARTY_DEBUG as a parameter to the url)
  default is false for production environment */

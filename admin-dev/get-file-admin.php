@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('PS_ADMIN_DIR', getcwd());
-
-include(PS_ADMIN_DIR.'/../get-file.php');
-
+define('_PS_ADMIN_DIR_', getcwd());
+require(dirname(dirname(__FILE__)).'/config/config.inc.php');
+Controller::getController('GetFileController')->run();

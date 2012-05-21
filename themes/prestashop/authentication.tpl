@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -23,6 +23,27 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
+
+{*
+** Compatibility code for Prestashop older than 1.4.2 using a recent theme
+** Ignore list isn't require here
+** $address exist in every PrestaShop version
+*}
+
+{* Will be deleted for 1.5 version and more *}
+{* Smarty code compatibility v2 *}
+{* If ordered_adr_fields doesn't exist, it's a PrestaShop older than 1.4.2 *}
+{if !isset($dlv_all_fields)}
+		{$dlv_all_fields.0 = 'company'}
+		{$dlv_all_fields.1 = 'firstname'}
+		{$dlv_all_fields.2 = 'lastname'}
+		{$dlv_all_fields.3 = 'address1'}
+		{$dlv_all_fields.4 = 'address2'}
+		{$dlv_all_fields.5 = 'postcode'}
+		{$dlv_all_fields.6 = 'city'}
+		{$dlv_all_fields.7 = 'country'}
+		{$dlv_all_fields.8 = 'state'}
+{/if}
 
 {capture name=path}{l s='Login'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
@@ -79,6 +100,57 @@ $(function(){ldelim}
 {include file="$tpl_dir./errors.tpl"}
 {assign var='stateExist' value=false}
 {if !isset($email_create)}
+	<script type="text/javascript">
+	{literal}
+	$(document).ready(function(){
+		$('#create-account_form').submit(function(){
+			submitFunction();
+			return false;
+		});
+		$('#SubmitCreate').click(function(){
+			submitFunction();
+		});
+	});
+	function submitFunction()
+	{
+		//send the ajax request to the server
+		$.ajax({
+			type: 'POST',
+			url: baseDir + 'index.php',
+			async: true,
+			cache: false,
+			dataType : "json",
+			data: 'controller=authentication&SubmitCreate=1&ajax=true&email_create='+$('#email_create').val()+'&token='+token,
+			success: function(jsonData)
+			{
+				if (jsonData.hasError)
+				{
+					var errors = '';
+					for(error in jsonData.errors)
+						//IE6 bug fix
+						if(error != 'indexOf')
+							errors += jsonData.errors[error] + "\n";
+					alert(errors);
+				}
+				else
+				{
+					// adding a div to display a transition
+					$('#center_column').html('<div id="noSlide">'+$('#center_column').html()+'</div>');
+					$('#noSlide').fadeOut('slow', function(){
+						$('#noSlide').html(jsonData.page);
+					});
+					$('#noSlide').fadeIn('slow');
+					document.location = '#account-creation';
+				}
+			},
+			error: function(XMLHttpRequest, textStatus, errorThrown)
+			{
+				alert("TECHNICAL ERROR: unable to load form.\n\nDetails:\nError thrown: " + XMLHttpRequest + "\n" + 'Text status: ' + textStatus);
+			}
+		});
+	}
+	{/literal}
+	</script>
 	<form action="{$link->getPageLink('authentication', true)}" method="post" id="create-account_form" class="std">
 		<fieldset>
 			<h3>{l s='Create your account'}</h3>
@@ -89,7 +161,7 @@ $(function(){ldelim}
 			</p>
 			<p class="submit">
 			{if isset($back)}<input type="hidden" class="hidden" name="back" value="{$back|escape:'htmlall':'UTF-8'}" />{/if}
-				<input type="submit" id="SubmitCreate" name="SubmitCreate" class="button_large" value="{l s='Create your account'}" />
+				<input type="button" id="SubmitCreate" name="SubmitCreate" class="button_large" value="{l s='Create your account'}" />
 				<input type="hidden" class="hidden" name="SubmitCreate" value="{l s='Create your account'}" />
 			</p>
 		</fieldset>
@@ -109,7 +181,7 @@ $(function(){ldelim}
 				{if isset($back)}<input type="hidden" class="hidden" name="back" value="{$back|escape:'htmlall':'UTF-8'}" />{/if}
 				<input type="submit" id="SubmitLogin" name="SubmitLogin" class="button" value="{l s='Log in'}" />
 			</p>
-			<p class="lost_password"><a href="{$link->getPageLink('password')}', ">{l s='Forgot your password?'}</a></p>
+			<p class="lost_password"><a href="{$link->getPageLink('password')}">{l s='Forgot your password?'}</a></p>
 		</fieldset>
 	</form>
 	{if isset($inOrderProcess) && $inOrderProcess && $PS_GUEST_CHECKOUT_ENABLED}
@@ -119,18 +191,18 @@ $(function(){ldelim}
 				<div id="opc_account_form" style="display: block; ">
 					<!-- Account -->
 					<p class="required text">
-						<label for="email">{l s='E-mail address'}</label>
+						<label for="guest_email">{l s='E-mail address'}</label>
 						<input type="text" class="text" id="guest_email" name="guest_email" value="{if isset($smarty.post.guest_email)}{$smarty.post.guest_email}{/if}">
 						<sup>*</sup>
 					</p>
 					<p class="radio required">
 						<span>{l s='Title'}</span>
-						<input type="radio" name="id_gender" id="id_gender1" value="1" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == '1'}checked="checked"{/if}>
-						<label for="id_gender1" class="top">{l s='Mr.'}</label>
-						<input type="radio" name="id_gender" id="id_gender2" value="2" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == '2'}checked="checked"{/if}>
-						<label for="id_gender2" class="top">{l s='Ms.'}</label>
+						{foreach from=$genders key=k item=gender}
+							<input type="radio" name="id_gender" id="id_gender{$gender->id}" value="{$gender->id}" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == $gender->id}checked="checked"{/if} />
+							<label for="id_gender{$gender->id}" class="top">{$gender->name}</label>
+						{/foreach}
 					</p>
-										<p class="required text">
+					<p class="required text">
 						<label for="firstname">{l s='First name'}</label>
 						<input type="text" class="text" id="firstname" name="firstname" onblur="$('#customer_firstname').val($(this).val());" value="{if isset($smarty.post.firstname)}{$smarty.post.firstname}{/if}">
 						<input type="hidden" class="text" id="customer_firstname" name="customer_firstname" value="{if isset($smarty.post.firstname)}{$smarty.post.firstname}{/if}">
@@ -177,7 +249,7 @@ $(function(){ldelim}
 							{/foreach}
 						</select>
 					</p>
-					{if $newsletter}
+					{if isset($newsletter) && $newsletter}
 						<p class="checkbox">
 							<input type="checkbox" name="newsletter" id="newsletter" value="1" {if isset($smarty.post.newsletter) && $smarty.post.newsletter == '1'}checked="checked"{/if}>
 							<label for="newsletter">{l s='Sign up for our newsletter'}</label>
@@ -234,7 +306,7 @@ $(function(){ldelim}
 							</select>
 							<sup>*</sup>
 						</p>
-						{elseif $field_name eq "State:name"}
+						{elseif $field_name eq "State:name" || $field_name eq 'state'}
 						{assign var='stateExist' value=true}
 
 						<p class="required id_state select">
@@ -275,8 +347,8 @@ $(function(){ldelim}
 					<sup>*</sup>
 				</p>
 			</fieldset>
-			<p class="cart_navigation required submit">		
-				<span><sup>*</sup>{l s='Required field'}</span>			
+			<p class="cart_navigation required submit">
+				<span><sup>*</sup>{l s='Required field'}</span>
 				<input type="submit" class="button" name="submitGuestAccount" id="submitGuestAccount" style="float:right" value="{l s='Continue'}">
 			</p>
 		</form>
@@ -288,10 +360,10 @@ $(function(){ldelim}
 		<h3>{l s='Your personal information'}</h3>
 		<p class="radio required">
 			<span>{l s='Title'}</span>
-			<input type="radio" name="id_gender" id="id_gender1" value="1" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == 1}checked="checked"{/if} />
-			<label for="id_gender1" class="top">{l s='Mr.'}</label>
-			<input type="radio" name="id_gender" id="id_gender2" value="2" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == 2}checked="checked"{/if} />
-			<label for="id_gender2" class="top">{l s='Ms.'}</label>
+			{foreach from=$genders key=k item=gender}
+				<input type="radio" name="id_gender" id="id_gender{$gender->id}" value="{$gender->id}" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == $gender->id}checked="checked"{/if} />
+				<label for="id_gender{$gender->id}" class="top">{$gender->name}</label>
+			{/foreach}
 		</p>
 		<p class="required text">
 			<label for="customer_firstname">{l s='First name'}</label>
@@ -349,7 +421,7 @@ $(function(){ldelim}
 				{/foreach}
 			</select>
 		</p>
-		{if $newsletter}
+		{if isset($newsletter) && $newsletter}
 		<p class="checkbox" >
 			<input type="checkbox" name="newsletter" id="newsletter" value="1" {if isset($smarty.post.newsletter) AND $smarty.post.newsletter == 1} checked="checked"{/if} />
 			<label for="newsletter">{l s='Sign up for our newsletter'}</label>
@@ -360,6 +432,7 @@ $(function(){ldelim}
 		</p>
 		{/if}
 	</fieldset>
+	{if isset($PS_REGISTRATION_PROCESS_TYPE) && $PS_REGISTRATION_PROCESS_TYPE}
 	<fieldset class="account_creation">
 		<h3>{l s='Your address'}</h3>
 		{foreach from=$dlv_all_fields item=field_name}
@@ -392,7 +465,7 @@ $(function(){ldelim}
 					<label for="address1">{l s='Address'}</label>
 					<input type="text" class="text" name="address1" id="address1" value="{if isset($smarty.post.address1)}{$smarty.post.address1}{/if}" />
 					<sup>*</sup>
-					<span class="inline-infos">{l s='Street address, P.O. box, compagny name, c/o'}</span>
+					<span class="inline-infos">{l s='Street address, P.O. box, company name, c/o'}</span>
 				</p>
 			{elseif $field_name eq "address2"}
 				<p class="text">
@@ -427,7 +500,7 @@ $(function(){ldelim}
 					</select>
 					<sup>*</sup>
 				</p>
-			{elseif $field_name eq "State:name"}
+			{elseif $field_name eq "State:name" || $field_name eq 'state'}
 				{assign var='stateExist' value=true}
 				<p class="required id_state select">
 					<label for="id_state">{l s='State'}</label>
@@ -476,14 +549,17 @@ $(function(){ldelim}
 			<sup>*</sup>
 		</p>
 	</fieldset>
+	{/if}
 	{$HOOK_CREATE_ACCOUNT_FORM}
 	<p class="cart_navigation required submit">
 		<input type="hidden" name="email_create" value="1" />
 		<input type="hidden" name="is_new_customer" value="1" />
 		{if isset($back)}<input type="hidden" class="hidden" name="back" value="{$back|escape:'htmlall':'UTF-8'}" />{/if}
-		<input type="submit" name="submitAccount" id="submitAccount" value="{l s='Register'}" class="exclusive" />
 		<span><sup>*</sup>{l s='Required field'}</span>
 	</p>
-
+	<p class="cart_navigation">
+		<a href="{$link->getPageLink("authentication")}" id="submitBack" class="button">{l s='Back'}</a>
+		<input type="submit" name="submitAccount" id="submitAccount" value="{l s='Register'}" class="exclusive" />
+	</p>
 </form>
 {/if}

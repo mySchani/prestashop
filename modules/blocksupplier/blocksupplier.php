@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockSupplier extends Module
@@ -60,10 +60,9 @@ class BlockSupplier extends Module
 
 	function hookLeftColumn($params)
 	{
-		global $smarty, $link;
-		$smarty->assign(array(
+		$this->context->smarty->assign(array(
 			'suppliers' => Supplier::getSuppliers(false),
-			'link' => $link,
+			'link' => $this->context->link,
 			'text_list' => Configuration::get('SUPPLIER_DISPLAY_TEXT'),
 			'text_list_nb' => Configuration::get('SUPPLIER_DISPLAY_TEXT_NB'),
 			'form_list' => Configuration::get('SUPPLIER_DISPLAY_FORM'),
@@ -101,7 +100,7 @@ class BlockSupplier extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Use a plain-text list').'</label>
 				<div class="margin-form">
@@ -133,7 +132,7 @@ class BlockSupplier extends Module
 	
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blocksupplier.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blocksupplier.css', 'all');
 	}
 }
 

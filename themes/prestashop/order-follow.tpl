@@ -24,12 +24,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">
-//<![CDATA[
-	var baseDir = '{$base_dir_ssl}';
-//]]>
-</script>
-
 {capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Return Merchandise Authorization (RMA)'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
@@ -56,8 +50,8 @@
 		<tbody>
 		{foreach from=$ordersReturn item=return name=myLoop}
 			<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{else}item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{/if}">
-				<td class="bold"><a class="color-myaccount" href="javascript:showOrder(0, {$return.id_order_return|intval}, '{$link->getPageLink('order-return')}', ');">{l s='#'}{$return.id_order_return|string_format:"%06d"}</a></td>
-				<td class="history_method"><a class="color-myaccount" href="javascript:showOrder(1, {$return.id_order|intval}, '{$link->getPageLink('order-detail')}', ');">{l s='#'}{$return.id_order|string_format:"%06d"}</a></td>
+				<td class="bold"><a class="color-myaccount" href="javascript:showOrder(0, {$return.id_order_return|intval}, '{$link->getPageLink('order-return')}');">{l s='#'}{$return.id_order_return|string_format:"%06d"}</a></td>
+				<td class="history_method"><a class="color-myaccount" href="javascript:showOrder(1, {$return.id_order|intval}, '{$link->getPageLink('order-detail')}');">{l s='#'}{$return.id_order|string_format:"%06d"}</a></td>
 				<td class="history_method"><span class="bold">{$return.state_name|escape:'htmlall':'UTF-8'}</span></td>
 				<td class="bold">{dateFormat date=$return.date_add full=0}</td>
 				<td class="history_invoice">

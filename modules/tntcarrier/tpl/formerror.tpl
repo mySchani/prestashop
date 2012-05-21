@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 8088 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -29,12 +29,12 @@
 			<!--{$var.error}--><br/>
 			<form action="{$var.currentIndex}&view{$var.table}&token={$var.token}" method="post" style="margin-top:10px;">
 			{if $var.weight}
-			{l s='The package weight must be between 0.1 and ' mod='tntcarrier'} {$weight} {l s='kg or call your TNT commercial' mod='tntcarrier'}<br/><br/>
+			{l s='The package weight must be between 0.1 and 30.0 kg or call your TNT commercial' mod='tntcarrier'}<br/><br/>
 			{l s='Weight' mod='tntcarrier'} : <input type="text" name="weightErrorOrder" /><br/><br/>
 			{/if}
 			{if $var.weightHidden}<input type="hidden" value="{$var.weightHidden}" name="weightErrorOrder" />{/if}
 			{if $var.date}
-			{l s='You must change the expedition date. PLease do not enter holidays date.' mod='tntcarrier'}<br/><br/>
+			{l s='You must change the expedition date' mod='tntcarrier'}<br/><br/>
 			{l s='Date' mod='tntcarrier'} : <input type="text" value="{$var.date}" name="dateErrorOrder" /><br/><br/>
 			{/if}
 			{if $var.dateHidden}<input type="hidden" value="{$var.dateHidden}" name="dateErrorOrder" />{/if}

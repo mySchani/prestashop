@@ -24,12 +24,11 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">
-// <![CDATA[
-		
-//]]>
-</script>
-
+{include file="$tpl_dir./errors.tpl"}
+{if !isset($smarty.get.ajax)}
+<div class="block-center" id="block-history">
+	<div id="block-order-detail">
+{/if}
 <form action="{if isset($opc) && $opc}{$link->getPageLink('order-opc', true)}{else}{$link->getPageLink('order', true)}{/if}" method="post" class="submit">
 	<div>
 		<input type="hidden" value="{$order->id}" name="id_order"/>
@@ -74,13 +73,13 @@
 <p>
 	<img src="{$img_dir}icon/pdf.gif" alt="" class="icon" />
 	{if $is_guest}
-		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order=$order->id&amp;secure_key=$order->secure_key")}" >{l s='Download your invoice as a .PDF file'}</a>
+		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order={$order->id}&amp;secure_key=$order->secure_key")}" >{l s='Download your invoice as a .PDF file'}</a>
 	{else}
-		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order=$order->id")}" >{l s='Download your invoice as a .PDF file'}</a>
+		<a href="{$link->getPageLink('pdf-invoice', true, NULL, "id_order={$order->id}")}" >{l s='Download your invoice as a .PDF file'}</a>
 	{/if}
 </p>
 {/if}
-{if $order->recyclable}
+{if $order->recyclable && isset($isRecyclable) && $isRecyclable}
 <p><img src="{$img_dir}icon/recyclable.gif" alt="" class="icon" />&nbsp;{l s='You have given permission to receive your order in recycled packaging.'}</p>
 {/if}
 {if $order->gift}
@@ -88,27 +87,27 @@
 	<p>{l s='Message:'} {$order->gift_message|nl2br}</p>
 {/if}
 <br />
-<ul class="address item">
+<ul class="address item" {if $order->isVirtual()}style="display:none;"{/if}>
 	<li class="address_title">{l s='Invoice'}</li>
 	{foreach from=$inv_adr_fields name=inv_loop item=field_item}
 		{if $field_item eq "company" && isset($address_invoice->company)}<li class="address_company">{$address_invoice->company|escape:'htmlall':'UTF-8'}</li>
 		{elseif $field_item eq "address2" && $address_invoice->address2}<li class="address_address2">{$address_invoice->address2|escape:'htmlall':'UTF-8'}</li>
 		{elseif $field_item eq "phone_mobile" && $address_invoice->phone_mobile}<li class="address_phone_mobile">{$address_invoice->phone_mobile|escape:'htmlall':'UTF-8'}</li>
 		{else}
-				{assign var=address_words value=" "|explode:$field_item} 
+				{assign var=address_words value=" "|explode:$field_item}
 				<li>{foreach from=$address_words item=word_item name="word_loop"}{if !$smarty.foreach.word_loop.first} {/if}<span class="address_{$word_item}">{$invoiceAddressFormatedValues[$word_item]|escape:'htmlall':'UTF-8'}</span>{/foreach}</li>
 		{/if}
-	
+
 	{/foreach}
 </ul>
-<ul class="address alternate_item">
+<ul class="address alternate_item {if $order->isVirtual()}full_width{/if}">
 	<li class="address_title">{l s='Delivery'}</li>
 	{foreach from=$dlv_adr_fields name=dlv_loop item=field_item}
 		{if $field_item eq "company" && isset($address_delivery->company)}<li class="address_company">{$address_delivery->company|escape:'htmlall':'UTF-8'}</li>
 		{elseif $field_item eq "address2" && $address_delivery->address2}<li class="address_address2">{$address_delivery->address2|escape:'htmlall':'UTF-8'}</li>
 		{elseif $field_item eq "phone_mobile" && $address_delivery->phone_mobile}<li class="address_phone_mobile">{$address_delivery->phone_mobile|escape:'htmlall':'UTF-8'}</li>
 		{else}
-				{assign var=address_words value=" "|explode:$field_item} 
+				{assign var=address_words value=" "|explode:$field_item}
 				<li>{foreach from=$address_words item=word_item name="word_loop"}{if !$smarty.foreach.word_loop.first} {/if}<span class="address_{$word_item}">{$deliveryAddressFormatedValues[$word_item]|escape:'htmlall':'UTF-8'}</span>{/foreach}</li>
 		{/if}
 	{/foreach}
@@ -170,9 +169,13 @@
 			{if !isset($product.deleted)}
 				{assign var='productId' value=$product.product_id}
 				{assign var='productAttributeId' value=$product.product_attribute_id}
-				{if isset($customizedDatas.$productId.$productAttributeId)}{assign var='productQuantity' value=$product.product_quantity-$product.customizationQuantityTotal}{else}{assign var='productQuantity' value=$product.product_quantity}{/if}
+				{if isset($product.customizedDatas)}
+					{assign var='productQuantity' value=$product.product_quantity-$product.customizationQuantityTotal}
+				{else}
+					{assign var='productQuantity' value=$product.product_quantity}
+				{/if}
 				<!-- Customized products -->
-				{if isset($customizedDatas.$productId.$productAttributeId)}
+				{if isset($product.customizedDatas)}
 					<tr class="item">
 						{if $return_allowed}<td class="order_cb"></td>{/if}
 						<td><label for="cb_{$product.id_order_detail|intval}">{if $product.product_reference}{$product.product_reference|escape:'htmlall':'UTF-8'}{else}--{/if}</label></td>
@@ -207,7 +210,7 @@
 							</label>
 						</td>
 					</tr>
-					{foreach from=$customizedDatas.$productId.$productAttributeId item='customization' key='customizationId'}
+					{foreach from=$product.customizedDatas item='customization' key='customizationId'}
 					<tr class="alternate_item">
 						{if $return_allowed}<td class="order_cb"><input type="checkbox" id="cb_{$product.id_order_detail|intval}" name="customization_ids[{$product.id_order_detail|intval}][]" value="{$customizationId|intval}" /></td>{/if}
 						<td colspan="2">
@@ -242,7 +245,7 @@
 						<td><label for="cb_{$product.id_order_detail|intval}">{if $product.product_reference}{$product.product_reference|escape:'htmlall':'UTF-8'}{else}--{/if}</label></td>
 						<td class="bold">
 							<label for="cb_{$product.id_order_detail|intval}">
-								{if $product.download_hash && $invoice}
+								{if $product.download_hash && $invoice && $product.display_filename != ''}
 									{if isset($is_guest) && $is_guest}
 									<a href="{$link->getPageLink('get-file', true, NULL, "key={$product.filename|escape:'htmlall':'UTF-8'}-{$product.download_hash|escape:'htmlall':'UTF-8'}&amp;id_order={$order->id}&secure_key={$order->secure_key}")}" title="{l s='download this product'}">
 									{else}
@@ -297,6 +300,34 @@
 		{/foreach}
 		</tbody>
 	</table>
+</div>
+<div class="table_block">
+{if $order->getShipping()|count > 0}
+	<table class="std">
+		<thead>
+			<tr>
+				<th class="first_item">{l s='Date'}</th>
+				<th class="item">{l s='Carrier'}</th>
+				<th class="item">{l s='Weight'}</th>
+				<th class="item">{l s='Shipping cost'}</th>
+				<th class="last_item">{l s='Tracking number'}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{foreach from=$order->getShipping() item=line}
+			<tr class="item">
+				<td>{$line.date_add}</td>
+				<td>{$line.state_name}</td>
+				<td>{$line.weight|string_format:"%.3f"} {Configuration::get('PS_WEIGHT_UNIT')}</td>
+				<td>{if $order->getTaxCalculationMethod() == $smarty.const.PS_TAX_INC}{displayPrice price=$line.shipping_cost_tax_incl currency=$currency->id}{else}{displayPrice price=$line.shipping_cost_tax_excl currency=$currency->id}{/if}</td>
+				<td>
+					<span id="shipping_number_show">{if $line.url && $line.tracking_number}<a href="{$line.url|replace:'@':$line.tracking_number}">{$line.tracking_number}</a>{else}{$line.tracking_number}{/if}</span>
+				</td>
+			</tr>
+			{/foreach}
+		</tbody>
+	</table>
+{/if}
 </div>
 <br />
 {if !$is_guest}
@@ -358,6 +389,15 @@
 	<form action="{$link->getPageLink('order-detail', true)}" method="post" class="std" id="sendOrderMessage">
 		<p class="bold">{l s='Add a message:'}</p>
 		<p>{l s='If you would like to add a comment about your order, please write it below.'}</p>
+		<p>
+		<label for="id_product">{l s='Product'}</label>
+			<select name="id_product" style="width:300px;">
+				<option value="0">{l s='-- Choose --'}</option>
+				{foreach from=$products item=product name=products}
+					<option value="{$product.product_id}">{$product.product_name}</option>
+				{/foreach}
+			</select>
+		</p>
 		<p class="textarea">
 			<textarea cols="67" rows="3" name="msgText"></textarea>
 		</p>
@@ -368,4 +408,8 @@
 	</form>
 {else}
 <p><img src="{$img_dir}icon/infos.gif" alt="" class="icon" />&nbsp;{l s='You can\'t make a merchandise return with a guest account'}</p>
+{/if}
+{if !isset($smarty.get.ajax)}
+	</div>
+</div>
 {/if}

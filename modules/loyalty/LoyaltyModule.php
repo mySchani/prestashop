@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class LoyaltyModule extends ObjectModel
@@ -33,24 +33,24 @@ class LoyaltyModule extends ObjectModel
 	public $id_loyalty_state;
 	public $id_customer;
 	public $id_order;
-	public $id_discount;
+	public $id_cart_rule;
 	public $points;
 	public $date_add;
 	public $date_upd;
 
 	protected $fieldsRequired = array('id_customer', 'points');
-	protected $fieldsValidate = array('id_loyalty_state' => 'isInt', 'id_customer' => 'isInt', 'id_discount' => 'isInt', 'id_order' => 'isInt', 'points' => 'isInt');
+	protected $fieldsValidate = array('id_loyalty_state' => 'isInt', 'id_customer' => 'isInt', 'id_cart_rule' => 'isInt', 'id_order' => 'isInt', 'points' => 'isInt');
 
 	protected $table = 'loyalty';
 	protected $identifier = 'id_loyalty';
 	
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_loyalty_state'] = (int)$this->id_loyalty_state;
 		$fields['id_customer'] = (int)$this->id_customer;
 		$fields['id_order'] = (int)$this->id_order;
-		$fields['id_discount'] = (int)$this->id_discount;
+		$fields['id_cart_rule'] = (int)$this->id_cart_rule;
 		$fields['points'] = (int)$this->points;
 		$fields['date_add'] = pSQL($this->date_add);
 		$fields['date_upd'] = pSQL($this->date_upd);
@@ -63,7 +63,7 @@ class LoyaltyModule extends ObjectModel
 		$this->historize();
 	}
 
-	static public function getByOrderId($id_order)
+	public static function getByOrderId($id_order)
 	{
 		if (!Validate::isUnsignedId($id_order))
 			return false;
@@ -76,14 +76,14 @@ class LoyaltyModule extends ObjectModel
 		return isset($result['id_loyalty']) ? $result['id_loyalty'] : false;
 	}
 
-	static public function getOrderNbPoints($order)
+	public static function getOrderNbPoints($order)
 	{
 		if (!Validate::isLoadedObject($order))
 			return false;
 		return self::getCartNbPoints(new Cart((int)$order->id_cart));
 	}
 
-	static public function getCartNbPoints($cart, $newProduct = NULL)
+	public static function getCartNbPoints($cart, $newProduct = NULL)
 	{
 		$total = 0;
 		if (Validate::isLoadedObject($cart))
@@ -104,39 +104,32 @@ class LoyaltyModule extends ObjectModel
 			{
 				if (!(int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND Product::isDiscounted((int)$product['id_product']))
 				{
-					global $smarty;
-					if (isset($smarty) AND is_object($newProduct) AND $product['id_product'] == $newProduct->id)
-						$smarty->assign('no_pts_discounted', 1);
+					if (isset(Context::getContext()->smarty) AND is_object($newProduct) AND $product['id_product'] == $newProduct->id)
+						Context::getContext()->smarty->assign('no_pts_discounted', 1);
 					continue;
 				}
 				$total += ($taxesEnabled == PS_TAX_EXC ? $product['price'] : $product['price_wt'])* (int)($product['cart_quantity']);
 			}
-			foreach ($cart->getDiscounts(false) AS $discount)
-				$total -= $discount['value_real'];
+			foreach ($cart->getCartRules(false) AS $cart_rule)
+				$total -= $cart_rule['value_real'];
 		}
 
 		return self::getNbPointsByPrice($total);
 	}
 
-	static public function getVoucherValue($nbPoints, $id_currency = NULL)
+	public static function getVoucherValue($nbPoints, $id_currency = NULL)
 	{
-		global $cookie;
-		
-		if (empty($id_currency))
-			$id_currency = (int)$cookie->id_currency;
-		
-		return (int)$nbPoints * (float)Tools::convertPrice(Configuration::get('PS_LOYALTY_POINT_VALUE'), new Currency((int)$id_currency));
+		$currency = $id_currency ? new Currency($id_currency) : Context::getContext()->currency->id;
+			
+		return (int)$nbPoints * (float)Tools::convertPrice(Configuration::get('PS_LOYALTY_POINT_VALUE'), $currency);
 	}
 
-	static public function getNbPointsByPrice($price)
+	public static function getNbPointsByPrice($price)
 	{
-		global $cookie;
-
-		if (Configuration::get('PS_CURRENCY_DEFAULT') != $cookie->id_currency)
+		if (Configuration::get('PS_CURRENCY_DEFAULT') != Context::getContext()->currency->id)
 		{
-			$currency = new Currency((int)($cookie->id_currency));
-			if ($currency->conversion_rate)
-				$price = $price / $currency->conversion_rate;
+			if (Context::getContext()->currency->conversion_rate)
+				$price = $price / Context::getContext()->currency->conversion_rate;
 		}
 
 		/* Prevent division by zero */
@@ -147,7 +140,7 @@ class LoyaltyModule extends ObjectModel
 		return (int)$points;
 	}
 
-	static public function getPointsByCustomer($id_customer)
+	public static function getPointsByCustomer($id_customer)
 	{
 		return 
 		Db::getInstance()->getValue('
@@ -163,7 +156,7 @@ class LoyaltyModule extends ObjectModel
 		AND f.id_loyalty_state = '.(int)LoyaltyStateModule::getCancelId().' AND points < 0');	
 	}
 
-	static public function getAllByIdCustomer($id_customer, $id_lang, $onlyValidate = false, $pagination = false, $nb = 10, $page = 1)
+	public static function getAllByIdCustomer($id_customer, $id_lang, $onlyValidate = false, $pagination = false, $nb = 10, $page = 1)
 	{
 		$query = '
 		SELECT f.id_order AS id, f.date_add AS date, (o.total_paid - o.total_shipping) total_without_shipping, f.points, f.id_loyalty, f.id_loyalty_state, fsl.name state
@@ -176,30 +169,30 @@ class LoyaltyModule extends ObjectModel
 		$query .= ' GROUP BY f.id_loyalty '.
 		($pagination ? 'LIMIT '.(((int)($page) - 1) * (int)($nb)).', '.(int)($nb) : '');
 
-		return Db::getInstance()->ExecuteS($query);
+		return Db::getInstance()->executeS($query);
 	}
 
-	static public function getDiscountByIdCustomer($id_customer, $last=false)
+	public static function getDiscountByIdCustomer($id_customer, $last=false)
 	{
 		$query = '
-		SELECT f.id_discount AS id_discount, f.date_upd AS date_add
+		SELECT f.id_cart_rule AS id_cart_rule, f.date_upd AS date_add
 		FROM `'._DB_PREFIX_.'loyalty` f
 		LEFT JOIN `'._DB_PREFIX_.'orders` o ON (f.`id_order` = o.`id_order`)
 		WHERE f.`id_customer` = '.(int)($id_customer).' 
-		AND f.`id_discount` > 0
+		AND f.`id_cart_rule` > 0
 		AND o.`valid` = 1';
 		if ($last === true)
 			$query.= ' ORDER BY f.id_loyalty DESC LIMIT 0,1';
-		$query.= ' GROUP BY f.id_discount';
+		$query.= ' GROUP BY f.id_cart_rule';
 
-		return Db::getInstance()->ExecuteS($query);
+		return Db::getInstance()->executeS($query);
 	}
 
-	static public function registerDiscount($discount)
+	public static function registerDiscount($cartRule)
 	{
-		if (!Validate::isLoadedObject($discount))
-			die(Tools::displayError('Incorrect object Discount.'));
-		$items = self::getAllByIdCustomer((int)$discount->id_customer, NULL, true);
+		if (!Validate::isLoadedObject($cartRule))
+			die(Tools::displayError('Incorrect object CartRule.'));
+		$items = self::getAllByIdCustomer((int)$cartRule->id_customer, NULL, true);
 		foreach ($items AS $item)
 		{
 			$f = new LoyaltyModule((int)$item['id_loyalty']);
@@ -210,18 +203,18 @@ class LoyaltyModule extends ObjectModel
 			if ($f->points + $negativePoints <= 0)
 				continue;
 			
-			$f->id_discount = (int)$discount->id;
+			$f->id_cart_rule = (int)$cartRule->id;
 			$f->id_loyalty_state = (int)LoyaltyStateModule::getConvertId();
 			$f->save();
 		}
 	}
 
-	static public function getOrdersByIdDiscount($id_discount)
+	public static function getOrdersByIdDiscount($id_cart_rule)
 	{
-		$items = Db::getInstance()->ExecuteS('
+		$items = Db::getInstance()->executeS('
 		SELECT f.id_order AS id_order, f.points AS points, f.date_upd AS date
 		FROM `'._DB_PREFIX_.'loyalty` f
-		WHERE f.id_discount = '.(int)($id_discount).' AND f.id_loyalty_state = '.(int)(LoyaltyStateModule::getConvertId()));
+		WHERE f.id_cart_rule = '.(int)$id_cart_rule.' AND f.id_loyalty_state = '.(int)LoyaltyStateModule::getConvertId());
 
 		if (!empty($items) AND is_array($items))
 		{
@@ -242,7 +235,7 @@ class LoyaltyModule extends ObjectModel
 	/* Register all transaction in a specific history table */
 	private function historize()
 	{
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		INSERT INTO `'._DB_PREFIX_.'loyalty_history` (`id_loyalty`, `id_loyalty_state`, `points`, `date_add`)
 		VALUES ('.(int)($this->id).', '.(int)($this->id_loyalty_state).', '.(int)($this->points).', NOW())');
 	}

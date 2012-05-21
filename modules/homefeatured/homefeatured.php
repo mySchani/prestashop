@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class HomeFeatured extends Module
@@ -42,7 +42,7 @@ class HomeFeatured extends Module
 		$this->need_instance = 0;
 
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Featured Products on the homepage');
 		$this->description = $this->l('Displays Featured Products in the middle of your homepage.');
 	}
@@ -75,14 +75,14 @@ class HomeFeatured extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<p>'.$this->l('In order to add products to your homepage, just add them to the "home" category.').'</p><br />
 				<label>'.$this->l('Number of products displayed').'</label>
 				<div class="margin-form">
-					<input type="text" size="5" name="nbr" value="'.Tools::getValue('nbr', (int)(Configuration::get('HOME_FEATURED_NBR'))).'" />
+					<input type="text" size="5" name="nbr" value="'.Tools::safeOutput(Tools::getValue('nbr', (int)(Configuration::get('HOME_FEATURED_NBR')))).'" />
 					<p class="clear">'.$this->l('The number of products displayed on homepage (default: 10).').'</p>
-					
+
 				</div>
 				<center><input type="submit" name="submitHomeFeatured" value="'.$this->l('Save').'" class="button" /></center>
 			</fieldset>
@@ -92,15 +92,15 @@ class HomeFeatured extends Module
 
 	function hookHome($params)
 	{
-		global $smarty;
-
-		$category = new Category(1, Configuration::get('PS_LANG_DEFAULT'));
+		$category = new Category(Context::getContext()->shop->getCategory(), Configuration::get('PS_LANG_DEFAULT'));
 		$nb = (int)(Configuration::get('HOME_FEATURED_NBR'));
-		$products = $category->getProducts((int)$params['cookie']->id_lang, 1, ($nb ? $nb : 10), NULL, NULL, false, true, false, 1, true, $this->shopID);
-		$smarty->assign(array(
-		'products' => $products,
-		'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
-		'homeSize' => Image::getSize('home')));
+		$products = $category->getProducts($params['cookie']->id_lang, 1, ($nb ? $nb : 10));
+
+		$this->templateAssign(array(
+			'products' => $products,
+			'add_prod_display' => Configuration::get('PS_ATTRIBUTE_CATEGORY_DISPLAY'),
+			'homeSize' => Image::getSize('home'),
+		));
 
 		return $this->display(__FILE__, 'homefeatured.tpl');
 	}

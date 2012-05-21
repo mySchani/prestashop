@@ -24,13 +24,13 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 
-if (!in_array('PrepaidServices', get_declared_classes())) include_once(_PS_MODULE_DIR_.'paysafecard/PrepaidServices.php');
+include_once(_PS_MODULE_DIR_.'paysafecard/PrepaidServices.php');
 
-
-class PaysafeCard extends PrepaidServices
+class PaysafeCard extends PSCPrepaidServices
 {
 	public $prefix = 'PS_PSC_';
 	protected $supported_languages = array('de', 'en', 'gr', 'el', 'es', 'it', 'fr', 'nl', 'pl', 'pt', 'si', 'sk', 'tr');
@@ -58,7 +58,7 @@ class PaysafeCard extends PrepaidServices
 	{
 		$this->name = 'paysafecard';
 		$this->tab = 'payments_gateways';
-		$this->version = 1.2;
+		$this->version = '1.4';
 		$this->module_dir = dirname(__FILE__);
         $this->certificat_dir = dirname(__FILE__).'/keyring/';
 		$this->need_instance = 0;
@@ -67,6 +67,13 @@ class PaysafeCard extends PrepaidServices
 
 		$this->displayName = $this->l('PaysafeCard');
 		$this->description = $this->l('Accepts payments by PaysafeCard.');
+
+		/* For 1.4.3 and less compatibility */
+		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT');
+		if (!Configuration::get('PS_OS_PAYMENT'))
+			foreach ($updateConfig as $u)
+				if (!Configuration::get($u) && defined('_'.$u.'_'))
+					Configuration::updateValue($u, constant('_'.$u.'_'));
 	}
 
 	public function getL($key)
@@ -116,5 +123,21 @@ class PaysafeCard extends PrepaidServices
 
 		return $error_msg[$error_code];
 	}
+	
+	/**
+  * Set the detail of a payment - Call before the validate order init
+  * correctly the pcc object
+  * See Authorize documentation to know the associated key => value
+  * @param array fields
+  */
+  public function setTransactionDetail($response)
+  {
+  	// If Exist we can store the details
+  	if (isset($this->pcc))
+  	{
+  		$this->pcc->transaction_id = (string)$response['transaction_id'];	
+	  }
+  }
+
 }
 

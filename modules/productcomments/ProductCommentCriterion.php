@@ -42,14 +42,14 @@ class ProductCommentCriterion extends ObjectModel
 	
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		return array('id_product_comment_criterion_type' => (int)$this->id_product_comment_criterion_type, 'active' => (int)$this->active);
 	}
 	
 	public function getTranslationsFieldsChild()
 	{
-		parent::validateFieldsLang();
-		return parent::getTranslationsFields(array('name'));
+		$this->validateFieldsLang();
+		return $this->getTranslationsFields(array('name'));
 	}
 	
 	public function delete()
@@ -57,15 +57,15 @@ class ProductCommentCriterion extends ObjectModel
 		if (!parent::delete())
 			return false;
 		if ($this->id_product_comment_criterion_type == 2)
-			if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
+			if (!Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
 														WHERE id_product_comment_criterion='.(int)$this->id))
 				return false;
 		elseif ($this->id_product_comment_criterion_type == 3)
-			if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
+			if (!Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
 														WHERE id_product_comment_criterion='.(int)$this->id))
 				return false;
 
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_grade`
+		return Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'product_comment_grade`
 														WHERE `id_product_comment_criterion` = '.(int)$this->id);
 	}
 	
@@ -77,10 +77,10 @@ class ProductCommentCriterion extends ObjectModel
 		if ($previousUpdate->id_product_comment_criterion_type != $this->id_product_comment_criterion_type)
 		{
 			if ($previousUpdate->id_product_comment_criterion_type == 2)
-				return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
+				return Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
 																WHERE id_product_comment_criterion='.(int)$previousUpdate->id);
 			elseif ($previousUpdate->id_product_comment_criterion_type == 3)
-				return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
+				return Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
 																WHERE id_product_comment_criterion='.(int)$previousUpdate->id);
 		}
 		return true;
@@ -95,7 +95,7 @@ class ProductCommentCriterion extends ObjectModel
 	{
 		if (!Validate::isUnsignedId($id_product))
 			die(Tools::displayError());
-		return (Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_product` (`id_product_comment_criterion`, `id_product`) 
+		return (Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_product` (`id_product_comment_criterion`, `id_product`) 
 														VALUES('.(int)$this->id.','.(int)$id_product.')'));
 	}
 	
@@ -108,7 +108,7 @@ class ProductCommentCriterion extends ObjectModel
 	{
 		if (!Validate::isUnsignedId($id_category))
 			die(Tools::displayError());
-		return (Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_category` (`id_product_comment_criterion`, `id_category`) 
+		return (Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_category` (`id_product_comment_criterion`, `id_category`) 
 														VALUES('.(int)$this->id.','.(int)$id_category.')'));
 	}
 	
@@ -125,7 +125,7 @@ class ProductCommentCriterion extends ObjectModel
 			$grade = 0;
 		else if ($grade > 10)
 			$grade = 10;
-		return (Db::getInstance()->Execute('
+		return (Db::getInstance()->execute('
 		INSERT INTO `'._DB_PREFIX_.'product_comment_grade`
 		(`id_product_comment`, `id_product_comment_criterion`, `grade`) VALUES(
 		'.(int)($id_product_comment).',
@@ -138,12 +138,12 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterion
 	 */
-	static public function getByProduct($id_product, $id_lang)
+	public static function getByProduct($id_product, $id_lang)
 	{
 		if (!Validate::isUnsignedId($id_product) ||
 			!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 		SELECT pcc.`id_product_comment_criterion`, pccl.`name`
 		FROM `'._DB_PREFIX_.'product_comment_criterion` pcc
 		LEFT JOIN `'._DB_PREFIX_.'product_comment_criterion_lang` pccl ON (pcc.id_product_comment_criterion = pccl.id_product_comment_criterion)
@@ -159,11 +159,11 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterions
 	 */
-	static public function getCriterions($id_lang, $type = false, $active = false)
+	public static function getCriterions($id_lang, $type = false, $active = false)
 	{
 		if (!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
-		return (Db::getInstance()->ExecuteS('
+		return (Db::getInstance()->executeS('
 		SELECT pcc.`id_product_comment_criterion`, pcc.id_product_comment_criterion_type, pccl.`name`, pcc.active
 		FROM `'._DB_PREFIX_.'product_comment_criterion` pcc
 		JOIN `'._DB_PREFIX_.'product_comment_criterion_lang` pccl ON (pcc.id_product_comment_criterion = pccl.id_product_comment_criterion)
@@ -173,7 +173,7 @@ class ProductCommentCriterion extends ObjectModel
 	
 	public function getProducts()
 	{
-		$res = Db::getInstance()->ExecuteS('
+		$res = Db::getInstance()->executeS('
 		SELECT pccp.id_product, pccp.id_product_comment_criterion
 		FROM `'._DB_PREFIX_.'product_comment_criterion_product` pccp
 		WHERE pccp.id_product_comment_criterion = '.(int)$this->id);
@@ -186,7 +186,7 @@ class ProductCommentCriterion extends ObjectModel
 	
 	public function getCategories()
 	{
-		$res = Db::getInstance()->ExecuteS('
+		$res = Db::getInstance()->executeS('
 		SELECT pccc.id_category, pccc.id_product_comment_criterion
 		FROM `'._DB_PREFIX_.'product_comment_criterion_category` pccc
 		WHERE pccc.id_product_comment_criterion = '.(int)$this->id);
@@ -199,15 +199,15 @@ class ProductCommentCriterion extends ObjectModel
 	
 	public function deleteCategories()
 	{
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_category` WHERE `id_product_comment_criterion` = '.(int)$this->id);
+		return Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_category` WHERE `id_product_comment_criterion` = '.(int)$this->id);
 	}
 	
 	public function deleteProducts()
 	{
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product` WHERE `id_product_comment_criterion` = '.(int)$this->id);
+		return Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product` WHERE `id_product_comment_criterion` = '.(int)$this->id);
 	}
 	
-	static public function getTypes()
+	public static function getTypes()
 	{
 		return array(1 => Tools::displayError('Valid for the entire catalog'), 2 => Tools::displayError('Restricted to some categories'), 3 => Tools::displayError('Restricted to some products'));
 	}

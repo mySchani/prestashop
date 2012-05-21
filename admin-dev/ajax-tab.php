@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,77 +19,25 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision: 9771 $
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
 define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
+require(dirname(__FILE__).'/../config/config.inc.php');
+require(dirname(__FILE__).'/functions.php');
 
-include(_PS_ADMIN_DIR_.'/../config/config.inc.php');
-include(_PS_ADMIN_DIR_.'/functions.php');
-
-
-include(_PS_ADMIN_DIR_.'/init.php');
-
-
-if (empty($tab) and !sizeof($_POST))
-{
-	$tab = 'AdminHome';
-	$_POST['tab'] = 'AdminHome';
-	$_POST['token'] = Tools::getAdminTokenLite($tab);
-}
-	if ($id_tab = checkingTab($tab))
-	{
-    	$isoUser = Language::getIsoById(intval($cookie->id_lang));
-
-
-		if (Validate::isLoadedObject($adminObj))
-		{
-			$adminObj->ajax = true;
-			// If mod_evasive exists, keep it quiet
-			if (!$adminObj->ignore_sleep && Tools::apacheModExists('evasive'))
-				sleep(1);
-			if ($adminObj->checkToken())
-			{
-				// the differences with index.php is here 
-
-				$adminObj->ajaxPreProcess();
-				$action = Tools::getValue('action');
-
-				// no need to use displayConf() here
-
-				if (!empty($action) AND method_exists($adminObj, 'ajaxProcess'.Tools::toCamelCase($action)) )
-					$adminObj->{'ajaxProcess'.Tools::toCamelCase($action)}();
-				else
-					$adminObj->ajaxProcess();
-
-				// @TODO We should use a displayAjaxError
-				$adminObj->displayErrors();
-				if (!empty($action) AND method_exists($adminObj, 'displayAjax'.Tools::toCamelCase($action)) )
-					$adminObj->{'displayAjax'.$action}();
-				else
-					$adminObj->displayAjax();
-
-			}
-			else
-			{
-				// If this is an XSS attempt, then we should only display a simple, secure page
-				ob_clean();
-
-				// ${1} in the replacement string of the regexp is required, because the token may begin with a number and mix up with it (e.g. $17)
-				$url = preg_replace('/([&?]token=)[^&]*(&.*)?$/', '${1}'.$adminObj->token.'$2', $_SERVER['REQUEST_URI']);
-				if (false === strpos($url, '?token=') AND false === strpos($url, '&token='))
-					$url .= '&token='.$adminObj->token;
-
-				// we can display the correct url
-				// die(Tools::jsonEncode(array(translate('Invalid security token'),$url)));
-				die(Tools::jsonEncode(translate('Invalid security token')));
-			}
-		}
-	}
-
-
-
+// For retrocompatibility with "tab" parameter
+if (!isset($_GET['controller']) && isset($_GET['tab']))
+	$_GET['controller'] = strtolower($_GET['tab']);
+if (!isset($_POST['controller']) && isset($_POST['tab']))
+	$_POST['controller'] = strtolower($_POST['tab']);
+if (!isset($_REQUEST['controller']) && isset($_REQUEST['tab']))
+	$_REQUEST['controller'] = strtolower($_REQUEST['tab']);
+// Retrocompatibility with 1.4
+$_REQUEST['ajaxMode'] = $_POST['ajaxMode'] = $_GET['ajaxMode'] = $_REQUEST['ajax'] = $_POST['ajax'] = $_GET['ajax'] = 1;
+	
+Dispatcher::getInstance()->setControllerDirectories(array(_PS_ADMIN_DIR_.'/tabs/', _PS_ADMIN_CONTROLLER_DIR_));
+Dispatcher::getInstance()->dispatch();

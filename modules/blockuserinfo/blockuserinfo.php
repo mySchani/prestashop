@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockUserInfo extends Module
@@ -39,7 +39,7 @@ class BlockUserInfo extends Module
 		$this->need_instance = 0;
 
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('User info block');
 		$this->description = $this->l('Adds a block that displays information about the customer.');
 	}
@@ -59,22 +59,22 @@ class BlockUserInfo extends Module
 	{
 		if (!$this->active)
 			return;
-		global $smarty, $cookie, $cart;
-		$smarty->assign(array(
-			'cart' => $cart,
-			'cart_qties' => $cart->nbProducts(),
-			'logged' => $cookie->isLogged(),
-			'customerName' => ($cookie->logged ? $cookie->customer_firstname.' '.$cookie->customer_lastname : false),
-			'firstName' => ($cookie->logged ? $cookie->customer_firstname : false),
-			'lastName' => ($cookie->logged ? $cookie->customer_lastname : false),
+
+		$this->templateAssign(array(
+			'cart' => $this->context->cart,
+			'cart_qties' => $this->context->cart->nbProducts(),
+			'logged' => $this->context->customer->isLogged(),
+			'customerName' => ($this->context->customer->logged ? $this->context->customer->firstname.' '.$this->context->customer->lastname : false),
+			'firstName' => ($this->context->customer->logged ? $this->context->customer->firstname : false),
+			'lastName' => ($this->context->customer->logged ? $this->context->customer->lastname : false),
 			'order_process' => Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order'
 		));
 		return $this->display(__FILE__, 'blockuserinfo.tpl');
 	}
-	
+
 	public function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blockuserinfo.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockuserinfo.css', 'all');
 	}
 }
 

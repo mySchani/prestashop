@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 7288 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -44,8 +44,6 @@ class CanadaPost extends CarrierModule
 	private $_weightUnitList = array('KG' => 'KGS', 'KGS' => 'KGS', 'LBS' => 'LBS', 'LB' => 'LBS');
 	private $_moduleName = 'canadapost';
 
-	protected static $request_cache = array();
-
 	/*
 	** Construct Method
 	**
@@ -55,17 +53,14 @@ class CanadaPost extends CarrierModule
 	{
 		$this->name = 'canadapost';
 		$this->tab = 'shipping_logistics';
-		$this->version = '0.8';
+		$this->version = '0.5';
 		$this->author = 'PrestaShop';
 		$this->limited_countries = array('ca');
 
 		parent::__construct ();
 
-		$this->displayName = $this->l('Canada Post Rates Calculator');
+		$this->displayName = $this->l('Canada Post Carrier');
 		$this->description = $this->l('Offer your customers, different delivery methods with Canada Post');
-
-		/** Backward compatibility */
-		require(dirname(__FILE__).'/backward_compatibility/backward.php');
 
 		if (self::isInstalled($this->name))
 		{
@@ -273,7 +268,7 @@ class CanadaPost extends CarrierModule
 
 	public function getContent()
 	{
-		$this->_html .= '<h2>' . $this->l('Canada Post Rates Calculator').'</h2>';
+		$this->_html .= '<h2>' . $this->l('Canada Post Carrier').'</h2>';
 		if (!empty($_POST) AND Tools::isSubmit('submitSave'))
 		{
 			$this->_postValidation();
@@ -305,10 +300,10 @@ class CanadaPost extends CarrierModule
 
 
 		if (!count($alert))
-			$this->_html .= '<img src="'._PS_IMG_.'admin/module_install.png" /><strong>'.$this->l('Canada Post module is configured and online!').'</strong>';
+			$this->_html .= '<img src="'._PS_IMG_.'admin/module_install.png" /><strong>'.$this->l('Canada Post Carrier is configured and online!').'</strong>';
 		else
 		{
-			$this->_html .= '<img src="'._PS_IMG_.'admin/warn2.png" /><strong>'.$this->l('Canada Post module is not configured yet, you must:').'</strong>';
+			$this->_html .= '<img src="'._PS_IMG_.'admin/warn2.png" /><strong>'.$this->l('Canada Post Carrier is not configured yet, you must:').'</strong>';
 			$this->_html .= '<br />'.(isset($alert['generalSettings']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 1) '.$this->l('Fill the "General Settings" form');
 			$this->_html .= '<br />'.(isset($alert['deliveryServices']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 2) '.$this->l('Select your available delivery service');
 			$this->_html .= '<br />'.(isset($alert['webserviceTest']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 3) '.$this->l('Webservice test connection').($this->_webserviceError ? ' : '.$this->_webserviceError : '');
@@ -469,7 +464,7 @@ class CanadaPost extends CarrierModule
 						<select name="cp_carrier_country" id="cp_carrier_country">
 							<option value="0">'.$this->l('Select a country ...').'</option>';
 							$idcountries = array();
-							foreach (Country::getCountries((int)$this->context->language->id) as $v)
+							foreach (Country::getCountries($this->context->language->id) as $v)
 							{
 								$html .= '<option value="'.$v['id_country'].'" '.($v['id_country'] == (int)(Tools::getValue('cp_carrier_country', Configuration::get('CP_CARRIER_COUNTRY'))) ? 'selected="selected"' : '').'>'.$v['name'].'</option>';
 								$idcountries[] = $v['id_country'];
@@ -517,13 +512,13 @@ class CanadaPost extends CarrierModule
 					<div class="margin-form">';
 						$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'cp_rate_service_code`');
 						foreach($rateServiceList as $rateService)
-							$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_cp_rate_service_code'].'" '.(($rateService['active'] == 1) ? 'checked="checked"' : '').' /> '.$rateService['service'].' <!--'.($this->webserviceTest($rateService['code']) ? '('.$this->l('Available').')' : '('.$this->l('Not available').')').'--><br />';
+							$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_cp_rate_service_code'].'" '.(($rateService['active'] == 1) ? 'checked="checked"' : '').' /> '.$rateService['service'].' '.($this->webserviceTest($rateService['code']) ? '('.$this->l('Available').')' : '('.$this->l('Not available').')').'<br />';
 					$html .= '
 					<p>' . $this->l('Choose the delivery service which will be available for customers.') . '</p>
 					</div>
 				</fieldset>
 				
-				<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Save configuration').'" /></div>
+				<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
 			</form>
 
 			<script>
@@ -634,7 +629,7 @@ class CanadaPost extends CarrierModule
 			$categories = Db::getInstance()->executeS('
 			SELECT c.id_category, cl.name, cl.link_rewrite
 			FROM '._DB_PREFIX_.'category c
-			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category '.(version_compare(_PS_VERSION_, '1.5.0') >= 0 ? $this->context->shop->addSqlRestrictionOnLang('cl') : '').')
+			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.$this->context->shop->addSqlRestrictionOnLang('cl').')
 			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)$this->context->language->id.'
 			ORDER BY c.level_depth ASC
 			LIMIT '.(int)($category['level_depth'] + 1));
@@ -784,7 +779,7 @@ class CanadaPost extends CarrierModule
 						$html .= '
 						<p>' . $this->l('Choose the delivery service which will be available for customers.') . '</p>
 						</div>
-						<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Save configuration').'" /></div>
+						<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
 					</form>';
 		}
 		else
@@ -795,7 +790,7 @@ class CanadaPost extends CarrierModule
 						<div class="margin-form">
 							<select name="id_category">
 								<option value="0">'.$this->l('Select a category ...').'</option>
-								'.$this->_getChildCategories(Category::getCategories((int)$this->context->language->id), 0).'
+								'.$this->_getChildCategories(Category::getCategories($this->context->language->id), 0).'
 							</select>
 						</div>
 						<label>'.$this->l('Additional charges').' : </label>
@@ -808,7 +803,7 @@ class CanadaPost extends CarrierModule
 						$html .= '
 						<p>' . $this->l('Choose the delivery service which will be available for customers.') . '</p>
 						</div>
-						<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Save configuration').'" /></div>
+						<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
 					</form>';
 		}
 
@@ -1007,7 +1002,7 @@ class CanadaPost extends CarrierModule
 						$html .= '
 						<p>' . $this->l('Choose the delivery service which will be available for customers.') . '</p>
 						</div>
-						<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Save configuration').'" /></div>
+						<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
 					</form>';
 		}
 		else
@@ -1020,7 +1015,7 @@ class CanadaPost extends CarrierModule
 								<option value="0">'.$this->l('Select a product ...').'</option>';
 						$productsList = Db::getInstance()->executeS('
 						SELECT pl.* FROM `'._DB_PREFIX_.'product` p
-						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.`id_lang` = '.(int)$this->context->language->id.' '.(version_compare(_PS_VERSION_, '1.5.0') >= 0 ? $this->context->shop->addSqlRestrictionOnLang('pl') : '').')
+						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.`id_lang` = '.(int)$this->context->language->id.$this->context->shop->addSqlRestrictionOnLang('pl').')
 						WHERE p.`active` = 1
 						ORDER BY pl.`name`');
 						foreach ($productsList as $product)
@@ -1038,7 +1033,7 @@ class CanadaPost extends CarrierModule
 						$html .= '
 						<p>' . $this->l('Choose the delivery service which will be available for customers.') . '</p>
 						</div>
-						<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Save configuration').'" /></div>
+						<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
 					</form>';
 		}
 
@@ -1398,9 +1393,10 @@ class CanadaPost extends CarrierModule
 		if (!Validate::isLoadedObject($address))
 		{
 			// If address is not loaded, we take data from shipping estimator module (if installed)
-			$address->id_country = $this->context->cookie->id_country;
-			$address->id_state = $this->context->cookie->id_state;
-			$address->postcode = $this->context->cookie->postcode;
+			global $cookie;
+			$address->id_country = $cookie->id_country;
+			$address->id_state = $cookie->id_state;
+			$address->postcode = $cookie->postcode;
 		}
 		$recipient_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)($address->id_country));
 		$recipient_state = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'state` WHERE `id_state` = '.(int)($address->id_state));
@@ -1569,11 +1565,6 @@ class CanadaPost extends CarrierModule
 		$errno = $errstr = $result = '';
 		$xml = $this->getXml($wsParams);
 
-		// Cache
-		unset($wsParams['service']);
-		if (isset(self::$request_cache[md5(var_export($wsParams, true))]))
-			return self::$request_cache[md5(var_export($wsParams, true))];
-
 		if (is_callable('curl_exec'))
 		{
 			// Curl Request
@@ -1592,7 +1583,7 @@ class CanadaPost extends CarrierModule
 		{
 			// FsockOpen Request
 			$timeout = 5;
-			$fp = fsockopen("sellonline.canadapost.ca:30000", "80", $errno, $errstr, $timeout); 
+			$fp = fsockopen("http://sellonline.canadapost.ca:30000", "80", $errno, $errstr, $timeout); 
 			if ($fp)
 			{
 				$request = "POST HTTP/1.1\r\n";
@@ -1630,10 +1621,6 @@ class CanadaPost extends CarrierModule
 		$data = strstr($result, '<?');
 		$resultTab = simplexml_load_string($data);
 
-		// Save Cache
-		self::$request_cache[md5(var_export($wsParams, true))] = $resultTab;
-
-		// Return result
 		return $resultTab;
 	}
 

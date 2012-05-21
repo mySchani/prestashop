@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 8088 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -26,12 +26,10 @@
 <br/>
 <fieldset style="width:400px">
 			<legend><img src="../img/admin/delivery.gif" />{l s='Shipping information'}</legend>
-			{if isset($weight)}
-			{l s='Each package must be at' mod='tntcarrier'} {$weight} {l s='Kg' mod='tntcarrier'}.<br/><br/>
-			{/if}
+			Chaque colis doit au plus faire 20 Kg.<br/>
 			{$var.error}
 			{if $var.shipping_numbers && $var.sticker}
-			<span style='font-weight:bold'>{l s='ShippingNumber' mod='tntcarrier'} : </span>
+			{$var.lang_shippingNumber} : 
 			<div style="text-align:right">
 			{foreach from=$var.shipping_numbers item=v}
 			{if $v.shipping_number}
@@ -39,15 +37,7 @@
 			{/if}
 			{/foreach}
 			</div>
-			<span style='font-weight:bold'>{l s='Sticker' mod='tntcarrier'} : </span><a style="color:blue" href="{$var.sticker}">{l s="PDF File"}</a><br/>
-			<span style='font-weight:bold'>{l s='Expedition' mod='tntcarrier'} : </span>{$var.date}<br/><br/>
-			<span style='font-weight:bold'>{l s='Shipping address' mod='tntcarrier'} :</span><br/>
-			{$var.place}<br/><br/>
-			<!--<span style='font-weight:bold'>{l s='Customer address' mod='tntcarrier'} :</span><br/>
-			{$var.customer}<br/><br/>-->
-			{if $var.relay != ''}
-			<span style='font-weight:bold'>{l s='Relay Package address' mod='tntcarrier'} :</span><br/>
-			{$var.relay}
-			{/if}
+			{$var.lang_sticker} : <a style="color:blue" href="{$var.sticker}">{l s='PDF File'}</a><br/>
+			{$var.lang_expedition} : {$var.date}<br/>{$var.place}
 			{/if}
 </fieldset>

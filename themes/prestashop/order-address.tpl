@@ -24,10 +24,49 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
+{if $opc}
+	{assign var="back_order_page" value="order-opc.php"}
+{else}
+	{assign var="back_order_page" value="order.php"}
+{/if}
+
+{*
+** Retro compatibility for PrestaShop version < 1.4.2.5 with a recent theme
+** Syntax smarty for v2
+*}
+
+{* Will be deleted for 1.5 version and more *}
+{if !isset($formatedAddressFieldsValuesList)}
+	{$ignoreList.0 = "id_address"}
+	{$ignoreList.1 = "id_country"}
+	{$ignoreList.2 = "id_state"}
+	{$ignoreList.3 = "id_customer"}
+	{$ignoreList.4 = "id_manufacturer"}
+	{$ignoreList.5 = "id_supplier"}
+	{$ignoreList.6 = "date_add"}
+	{$ignoreList.7 = "date_upd"}
+	{$ignoreList.8 = "active"}
+	{$ignoreList.9 = "deleted"}
+
+	{* PrestaShop 1.4.0.17 compatibility *}
+	{if isset($addresses)}
+		{foreach from=$addresses key=k item=address}
+			{counter start=0 skip=1 assign=address_key_number}
+			{$id_address = $address.id_address}
+			{foreach from=$address key=address_key item=address_content}
+				{if !in_array($address_key, $ignoreList)}
+					{$formatedAddressFieldsValuesList.$id_address.ordered_fields.$address_key_number = $address_key}
+					{$formatedAddressFieldsValuesList.$id_address.formated_fields_values.$address_key = $address_content}
+					{counter}
+				{/if}
+			{/foreach}
+		{/foreach}
+	{/if}
+{/if}
+
 <script type="text/javascript">
 // <![CDATA[
 	{if !$opc}
-	var baseDir = '{$base_dir_ssl}';
 	var orderProcess = 'order';
 	var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
 	var currencyRate = '{$currencyRate|floatval}';
@@ -58,8 +97,8 @@
 	function getAddressesTitles()
 	{ldelim}
 		return {ldelim}
-						'invoice': "{l s='Your billing address'}"
-						, 'delivery': "{l s='Your delivery address'}"
+						'invoice': "{l s='Your billing address'}",
+						'delivery': "{l s='Your delivery address'}"
 			{rdelim};
 
 	{rdelim}
@@ -73,11 +112,11 @@
 
 		ordered_fields_name = ordered_fields_name.concat(formatedAddressFieldsValuesList[id_address]['ordered_fields']);
 		ordered_fields_name = ordered_fields_name.concat(['update']);
-		
+
 		dest_comp.html('');
 
 		li_content['title'] = adr_titles_vals[address_type];
-		li_content['update'] = '<a href="{$link->getPageLink('address', true, NULL, "id_address")}'+id_address+'&amp;back=order?step=1{if $back}&mod={$back}{/if}" title="{l s='Update'}">{l s='Update'}</a>';
+		li_content['update'] = '<a href="{$link->getPageLink('address', true, NULL, "id_address")}'+id_address+'&amp;back={$back_order_page}?step=1{if $back}&mod={$back}{/if}" title="{l s='Update'}">{l s='Update'}</a>';
 
 		appendAddressList(dest_comp, li_content, ordered_fields_name);
 	{rdelim}
@@ -87,11 +126,15 @@
 		for (var item in fields_name)
 		{ldelim}
 			var name = fields_name[item];
+			var value = getFieldValue(name, values);
+			if (value != "")
+			{ldelim}
 			var new_li = document.createElement('li');
 			new_li.className = 'address_'+ name;
 			new_li.innerHTML = getFieldValue(name, values);
 			dest_comp.append(new_li);
 		{rdelim}
+	{rdelim}
 	{rdelim}
 
 	function getFieldValue(field_name, values)
@@ -120,8 +163,29 @@
 {assign var='current_step' value='address'}
 {include file="$tpl_dir./order-steps.tpl"}
 {include file="$tpl_dir./errors.tpl"}
-<form action="{$link->getPageLink('order', true)}" method="post">
+
+<div class="address-form-multishipping">
+	<a href="{$link->getPageLink('order', true, NULL, 'step=1&multi-shipping=1')}" title="{l s='Multi-shipping'}" class="button exclusive">
+		{l s='Multi-shipping'}
+	</a>
+</div>
+<form action="{$link->getPageLink($back_order_page, true)}" method="post">
 {else}
+<div class="address-form-multishipping">
+	<a href="#" id="multishipping_mode" title="{l s='Multi-shipping'}" class="button exclusive" onclick="multishippingMode(this); return false;">
+		{l s='Multi-shipping'}
+	</a>
+	<a href="{$link->getPageLink('order-opc', true, NULL, 'ajax=1&multi-shipping=1&method=multishipping')}" id="link_multishipping_form" title="{l s='Choose the delivery addresses'}" class="button exclusive" style="display:none">
+		{l s='Choose the delivery addresses'}
+	</a>
+	<script type="text/javascript">
+		{if $is_multi_address_delivery}
+		var multishipping_mode = true;
+		{else}
+		var multishipping_mode = false;
+		{/if}
+	</script>
+</div>
 <div id="opc_account" class="opc-main-block">
 	<div id="opc_account-overlay" class="opc-overlay" style="display: none;"></div>
 {/if}
@@ -133,16 +197,16 @@
 			{foreach from=$addresses key=k item=address}
 				<option value="{$address.id_address|intval}" {if $address.id_address == $cart->id_address_delivery}selected="selected"{/if}>{$address.alias|escape:'htmlall':'UTF-8'}</option>
 			{/foreach}
-			
+
 			</select>
 		</p>
-		<p class="checkbox">
+		<p class="checkbox" {if $cart->isVirtualCart()}style="display:none;"{/if}>
 			<input type="checkbox" name="same" id="addressesAreEquals" value="1" onclick="updateAddressesDisplay();{if $opc}updateAddressSelection();{/if}" {if $cart->id_address_invoice == $cart->id_address_delivery || $addresses|@count == 1}checked="checked"{/if} />
 			<label for="addressesAreEquals">{l s='Use the same address for billing.'}</label>
 		</p>
-		
+
 		<p id="address_invoice_form" class="select" {if $cart->id_address_invoice == $cart->id_address_delivery}style="display: none;"{/if}>
-		
+
 		{if $addresses|@count > 1}
 			<label for="id_address_invoice" class="strong">{l s='Choose a billing address:'}</label>
 			<select name="id_address_invoice" id="id_address_invoice" class="address_select" onchange="updateAddressesDisplay();{if $opc}updateAddressSelection();{/if}">
@@ -151,25 +215,17 @@
 			{/section}
 			</select>
 			{else}
-				{if $back}
-					<a style="margin-left: 221px;" href="{$link->getPageLink('address', true, NULL, "back=order&amp;step=1&amp;select_address=1&mod=$back")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
-				{else}
-					<a style="margin-left: 221px;" href="{$link->getPageLink('address', true, NULL, "back=order&amp;step=1&amp;select_address=1")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
-				{/if}
+				<a style="margin-left: 221px;" href="{$link->getPageLink('address', true, NULL, "back={$back_order_page}?step=1&select_address=1{if $back}&mod={$back}{/if}")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
 			{/if}
 		</p>
 		<div class="clear"></div>
-		<ul class="address item" id="address_delivery">
+		<ul class="address item" id="address_delivery" {if $cart->isVirtualCart()}style="display:none;"{/if}>
 		</ul>
-		<ul class="address alternate_item" id="address_invoice">
+		<ul class="address alternate_item {if $cart->isVirtualCart()}full_width{/if}" id="address_invoice">
 		</ul>
 		<br class="clear" />
 		<p class="address_add submit">
-		{if $back}
-			<a href="{$link->getPageLink('address', true, NULL, "back=order&amp;step=1&amp;mod={$back}")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
-		{else}
-			<a href="{$link->getPageLink('address', true, NULL, "back=order&amp;step=1")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
-		{/if}
+			<a href="{$link->getPageLink('address', true, NULL, "back={$back_order_page}?step=1{if $back}&mod={$back}{/if}")}" title="{l s='Add'}" class="button_large">{l s='Add a new address'}</a>
 		</p>
 		{if !$opc}
 		<div id="ordermsg">
@@ -182,11 +238,7 @@
 	<p class="cart_navigation submit">
 		<input type="hidden" class="hidden" name="step" value="2" />
 		<input type="hidden" name="back" value="{$back}" />
-		{if $back}
-			<a href="{$link->getPageLink('order', true, NULL, "step=0&amp;back={$back}")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
-		{else}
-			<a href="{$link->getPageLink('order', true, NULL, "step=0")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
-		{/if}
+		<a href="{$link->getPageLink($back_order_page, true, NULL, "step=0{if $back}&back={$back}{/if}")}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
 		<input type="submit" name="processAddress" value="{l s='Next'} &raquo;" class="exclusive" />
 	</p>
 </form>

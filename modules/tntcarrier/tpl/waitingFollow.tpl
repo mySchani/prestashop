@@ -1,5 +1,4 @@
 <script type="text/javascript">
-{literal}
 	$(document).ready(function() {
 		var children = $('#followPackage').children();
 		$('#waitingDiv').html("Chargement du suivi colis <img src='./img/loadingAnimation.gif' alt='wait'/>");
@@ -17,7 +16,6 @@
 			);
 		}
 	});
-{/literal}
 </script>
 <div id="followPackage" style="clear:both">
 	{foreach from=$numbers item=v}

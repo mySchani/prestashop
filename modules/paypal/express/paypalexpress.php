@@ -31,13 +31,11 @@ class PaypalExpress extends Paypal
 
 	public function getAuthorisation()
 	{
-		global $cookie;
-
 		// Getting cart informations
-		$cart = new Cart((int)($cookie->id_cart));
+		$cart = $this->context->cart;
 		if (!Validate::isLoadedObject($cart))
 			$this->_logs[] = $this->l('Not a valid cart');
-		$currency = new Currency((int)($cart->id_currency));
+		$currency = new Currency($cart->id_currency);
 		if (!Validate::isLoadedObject($currency))
 			$this->_logs[] = $this->l('Not a valid currency');
 
@@ -45,8 +43,8 @@ class PaypalExpress extends Paypal
 			return false;
 
 		// Making request
-		$returnURL = Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/paypal/express/submit.php';
-		$cancelURL = Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'order.php';
+		$returnURL = PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/paypal/express/submit.php';
+		$cancelURL = PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'order.php';
 		$paymentAmount = (float)$cart->getOrderTotal();
 		$currencyCodeType = strval($currency->iso_code);
 		$paymentType = Configuration::get('PAYPAL_CAPTURE') == 1 ? 'Authorization' : 'Sale';
@@ -85,10 +83,8 @@ class PaypalExpress extends Paypal
 
 	public function getCustomerInfos()
 	{
-		global $cookie;
-
 		// Making request
-		$request = '&TOKEN='.urlencode(strval($cookie->paypal_token));
+		$request = '&TOKEN='.urlencode(strval($this->context->cookie->paypal_token));
 
 		// Calling PayPal API
 		include(_PS_MODULE_DIR_.'paypal/api/paypallib.php');

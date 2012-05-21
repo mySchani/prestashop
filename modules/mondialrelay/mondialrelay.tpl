@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -24,72 +24,52 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">var _PS_MR_MODULE_DIR_ = "{$new_base_dir}";</script>
-<script type="text/javascript" src="{$new_base_dir}kit_mondialrelay/js/include_MR.js"></script>
-<script type="text/javascript" src="{$new_base_dir}kit_mondialrelay/js/ressources_MR.js"></script>
+{$jQueryOverload}
+
+<link href="{$new_base_dir}/style.css" rel="stylesheet" type="text/css" media="all" />
 <script type="text/javascript">
-	var one_page_checkout = {$one_page_checkout};
-	var server_error = "{l s='Problem getting addresses from MondialRelay Webservice : Mondial Relay servers\' may be down' mod='mondialrelay'}";
-	var address_error = "{l s='There is no Relay Point close to your address, please change your address or use another shipping' mod='mondialrelay'}";
+	// Global JS Value
+	var _PS_MR_MODULE_DIR_ = "{$new_base_dir}";
+	var mrtoken = "{$MRToken}";
+	var PS_MROPC = {$one_page_checkout};
+	var PS_MRTranslationList = new Array();
+	var PS_MRCarrierMethodList =  new Array();
+	var PS_MRSelectedRelayPoint = {literal}{{/literal}'carrier_id': 0, 'relayPointNum': 0{literal}}{/literal};
+	var PS_MRPreSelectedRelay = '{$preSelectedRelay}';
+
+	PS_MRTranslationList['Select'] = "{l s='Select' mod='mondialrelay'}";
+	PS_MRTranslationList['Selected'] = "{l s='Selected' mod='mondialrelay'}";
+	PS_MRTranslationList['errorSelection'] = "{l s='Please choose a relay point' mod='mondialrelay'}";
+	PS_MRTranslationList['openingRelay'] = "{l s='Opening hours' mod='mondialrelay'}";
+	PS_MRTranslationList['moreDetails'] = "{l s='More details' mod='mondialrelay'}";
 </script>
 
-{foreach from=$carriersextra item=carrier name=myLoop}
+<script type="text/javascript" src="{$new_base_dir}mondialrelay.js"></script>
+<script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
+<script type="text/javascript" src="{$new_base_dir}js/gmap.js"></script>
 
-	<script type="text/javascript">{literal}
-	$(document).ready(function() 
-	{
-		$('input[name$=id_carrier]').click(function() {
-			{/literal}affiche_mydiv_mr({$carrier.id_carrier|intval}, 'relativ_base_dir={$base_dir}&Pays={$input_pays}&Ville={$input_ville}&CP={$input_cp}&Taille=&Poids={$input_poids}&Action={$carrier.liv|escape:'htmlall':'UTF-8'}&num={$carrier.id_carrier|intval}');{literal}
-		});
-	});
-	{/literal}</script>
-	
-	<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{/if} {if ($nbcarriers+$smarty.foreach.myLoop.index) % 2}alternate_item{else}item{/if}">
+<script type="text/javascript">
 
-					<td class="carrier_action radio">
-						<input type="radio" name="id_carrier" value="{$carrier.id_carrier|intval}" id="id_carrier_mr{$carrier.id_carrier|intval}" onchange="affiche_mydiv_mr({$carrier.id_carrier|intval}, 
-   'relativ_base_dir={$base_dir}&Pays={$input_pays}&Ville={$input_ville}&CP={$input_cp}&Taille=&Poids={$input_poids}&Action={$carrier.liv|escape:'htmlall':'UTF-8'}&num={$carrier.id_carrier|intval}'
-						);" {if ($carrier.id_carrier == $checked)} checked="checked" {/if} {if $one_page_checkout}onclick="updateCarrierSelectionAndGift();" {/if} />
-					</td>
-					<td class="carrier_name">
-						<label for="id_carrier_mr{$carrier.id_carrier|intval}">
-						{if $carrier.img}<img src="{$carrier.img|escape:'htmlall':'UTF-8'}" alt="{$carrier.name|escape:'htmlall':'UTF-8'}">{else}{$carrier.name|escape:'htmlall':'UTF-8'}{/if}
-							
-						</label>
-					</td>
-					<td class="carrier_infos">{$carrier.delay|escape:'htmlall':'UTF-8'}</td>
-					<td class="carrier_price">
-						{if $carrier.price}
-							<span class="price">
-								{if $priceDisplay == 1}{convertPrice price=$carrier.price_tax_exc}{else}{convertPrice price=$carrier.price}{/if}
-							</span>
-							{if $priceDisplay == 1} {l s='(tax excl.)' mod='mondialrelay'}{else} {l s='(tax incl.)' mod='mondialrelay'}{/if}
-						{else}
-							{l s='Free!' mod='mondialrelay'}
-						{/if}
-					</td>
-			</tr>		
-	{if $carrier.liv !='LDR' && $carrier.liv != 'LD1' && $carrier.liv != 'LDS'}
-				<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{/if} {if ($nbcarriers+$smarty.foreach.myLoop.index) % 2}alternate_item{else}item{/if}">
-					<td colspan="4" align="center">
-						<div style="display:none;" id="form_mondialrelay_{$carrier.id_carrier|intval}"></div>
-						{if ($google_api_key)}
-						<iframe style="display:none;" id="all_mondialrelay_map_{$carrier.id_carrier|intval}" width="517px" height="317px" frameborder="0" scrolling="no" src="{$base_dir}modules/mondialrelay/googlemap.php?relativ_base_dir={$base_dir}&Pays={$input_pays}&Ville={$input_ville}&CP={$input_cp}&Taille=&Poids={$input_poids}&Action={$carrier.liv|escape:'htmlall':'UTF-8'}&num={$carrier.id_carrier|intval}&address={$address_map}"></iframe>
-						{/if}
-						<img src="{$new_base_dir}images/loader.gif" style="display:none;" id="loading_mr"/>
-						<div style="display:none;" id="mondialrelay_{$carrier.id_carrier|intval}"></div>		 
-					</td>
-				</tr>
-	{/if}
-	<script type="text/javascript" >
-		if ($("#id_carrier{$carrier.id_carrier|intval}").attr('checked') == true)
-			$("#id_carrier_mr{$carrier.id_carrier|intval}").attr('checked', "checked")
-		$("#id_carrier{$carrier.id_carrier|intval}").parent().parent().remove();
-		include_mondialrelay({$carrier.id_carrier|intval});
-		
-		if ($("#id_carrier_mr{$carrier.id_carrier|intval}").attr('checked') == true)
-		affiche_mydiv_mr({$carrier.id_carrier|intval}, 'relativ_base_dir={$base_dir}&Pays={$input_pays}&Ville={$input_ville}&CP={$input_cp}&Taille=&Poids={$input_poids}&Action={$carrier.liv|escape:'htmlall':'UTF-8'}&num={$carrier.id_carrier|intval}');
+	$(document).ready(function()
+	{literal}{{/literal}
+		// Bind id_carrierX to an ajax call
+		{foreach from=$carriersextra item=carrier name=myLoop}
+			$('#id_carrier' + {$carrier.id_carrier}).click(function()
+			{literal}{{/literal}
+				PS_MRCarrierSelectedProcess($(this), {$carrier.id_carrier}, '{$carrier.mr_ModeLiv}');
+			{literal}}{/literal});
+			PS_MRCarrierMethodList[{$carrier.id_carrier}] = {$carrier.id_mr_method};
+			if ($('#id_carrier' + {$carrier.id_carrier}).attr('checked'))
+			{literal}{{/literal}
+				PS_MRCarrierSelectedProcess($('#id_carrier' + {$carrier.id_carrier}), {$carrier.id_carrier}, '{$carrier.mr_ModeLiv}');
+			{literal}}{/literal}
+		{/foreach}
+		// Handle input click of the other input to hide the previous relay point list displayed
+		$('input[name=id_carrier]').click(function()
+		{literal}{{/literal}
+			// Hide MR input if one of them is not selected
+			if (PS_MRCarrierMethodList[$(this).val()] == undefined)
+				PS_MRHideLastRelayPointList();
+		{literal}}{/literal})
+	{literal}}{/literal});
 	</script>
-{/foreach}
-
-

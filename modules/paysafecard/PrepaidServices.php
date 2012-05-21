@@ -29,7 +29,7 @@ $module_name = 'paysafecard';
 include(_PS_MODULE_DIR_.$module_name.'/Disposition.php');
 include(_PS_MODULE_DIR_.$module_name.'/PrepaidServicesAPI.php');
 
-abstract class PrepaidServices extends PaymentModule
+abstract class PSCPrepaidServices extends PaymentModule
 {
 	protected $max_amount = 1000;
 	protected $max_amount_currency = 'EUR';
@@ -66,7 +66,7 @@ abstract class PrepaidServices extends PaymentModule
 		$ps_ct_business_type = Configuration::get($this->prefix.'BUSINESS_TYPE') ? Configuration::get($this->prefix.'BUSINESS_TYPE') : 'I';
 		$ps_ct_environment = Configuration::get($this->prefix.'ENVIRONMENT') ? Configuration::get($this->prefix.'ENVIRONMENT') : 'T';
 
-		return parent::install() AND Disposition::createTable() AND $this->_createOrderState() AND
+		return parent::install() AND PSCDisposition::createTable() AND $this->_createOrderState() AND
 				$this->registerHook('payment') AND $this->registerHook('paymentReturn') AND $this->registerHook('adminOrder')
 				AND	Configuration::updateValue($this->prefix.'IMMEDIAT_PAYMENT', $ps_ct_immediat_payment)
 				AND Configuration::updateValue($this->prefix.'SALT', $ps_ct_salt)
@@ -149,7 +149,7 @@ abstract class PrepaidServices extends PaymentModule
 	private function _getAllowedCurrencies()
 	{
 		if (empty($this->allowed_currencies))
-			$this->allowed_currencies = DB::getInstance()->ExecuteS(
+			$this->allowed_currencies = DB::getInstance()->executeS(
 				'SELECT c.id_currency, c.iso_code, c.name, c.sign
 				FROM '._DB_PREFIX_.'currency c
 				WHERE c.deleted = 0
@@ -166,10 +166,8 @@ abstract class PrepaidServices extends PaymentModule
 
 	public function createDisposition($cart)
 	{
-		global $cookie;
-
 		$currency = new Currency((int)($cart->id_currency));
-		$language = $this->_getSupportedLanguageIsoById((int)($cookie->id_lang));
+		$language = $this->_getSupportedLanguageIsoById($this->context->language->id);
 		$mid = Configuration::get($this->prefix.'MERCHANT_ID_'.$currency->iso_code);
 		$mtid = $cart->id.'-'.time();
 		$amount = number_format((float)($cart->getOrderTotal(true, Cart::BOTH)), 2, '.','');
@@ -182,12 +180,12 @@ abstract class PrepaidServices extends PaymentModule
 		$ok_url = Tools::getShopDomainSsl(true, true)._MODULE_DIR_.$this->name.'/payment.php?hash='.$hash;
 		$nok_url = Tools::getShopDomainSsl(true, true).'index.php?controller=order&step=3';
 
-		list($return_code, $error_code, $message) = PrepaidServicesAPI::createDisposition($this->getAPIConfiguration($currency_iso), $mid, $mtid, $amount, $currency_iso, $ok_url, $nok_url, $business_type, $reporting_criteria);
+		list($return_code, $error_code, $message) = PSCPrepaidServicesAPI::createDisposition($this->getAPIConfiguration($currency_iso), $mid, $mtid, $amount, $currency_iso, $ok_url, $nok_url, $business_type, $reporting_criteria);
 
 		if ($return_code == 0)
 		{
-			Disposition::deleteByCartId((int)($cart->id)); // Avoid duplicate disposition (canceled orders in CT for example)
-			Disposition::create((int)($cart->id), $mtid, $amount, $currency_iso);
+			PSCDisposition::deleteByCartId((int)($cart->id)); // Avoid duplicate disposition (canceled orders in CT for example)
+			PSCDisposition::create((int)($cart->id), $mtid, $amount, $currency_iso);
 			$message = $this->getPaymentUrlBase().'?currency='.$currency->iso_code.'&mid='.$mid.'&mtid='.$mtid.'&amount='.$amount.'&language='.$language;
 		}
 
@@ -196,31 +194,31 @@ abstract class PrepaidServices extends PaymentModule
 
 	public function getDispositionState($id_cart)
 	{
-		$disposition = Disposition::getByCartId((int)($id_cart));
+		$disposition = PSCDisposition::getByCartId((int)($id_cart));
 
 		if (!array_key_exists('id_disposition', $disposition))
 			die(Tools::displayError());
 
-		return PrepaidServicesAPI::getSerialNumbers($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'], $disposition['currency']);
+		return PSCPrepaidServicesAPI::getSerialNumbers($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'], $disposition['currency']);
 	}
 
 	public function executeDebit($id_cart, $amount = NULL, $close_flag = 1)
 	{
-		$disposition = Disposition::getByCartId((int)($id_cart));
+		$disposition = PSCDisposition::getByCartId((int)($id_cart));
 		if (!array_key_exists('id_disposition', $disposition))
 			die(Tools::displayError());
 
 		if (!isset($amount) || $amount === '')
 			$amount = $disposition['amount'];
 
-		$result = PrepaidServicesAPI::executeDebit($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'],  number_format($amount, 2, '.', ''), $disposition['currency'], $close_flag);
+		$result = PSCPrepaidServicesAPI::executeDebit($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'],  number_format($amount, 2, '.', ''), $disposition['currency'], $close_flag);
 
 		if ($result[0] == 0)
 		{
 			if ($amount == $disposition['amount'] || $close_flag)
-				Disposition::delete((int)($disposition['id_disposition']));
+				PSCDisposition::delete((int)($disposition['id_disposition']));
 			else
-				Disposition::updateAmount((int)($disposition['id_disposition']), (float)($amount));
+				PSCDisposition::updateAmount((int)($disposition['id_disposition']), (float)($amount));
 		}
 
 		return $result;
@@ -298,6 +296,14 @@ abstract class PrepaidServices extends PaymentModule
 
 		foreach ($this->_getAllowedCurrencies() AS $currency)
 		{
+			$mid = Configuration::get($this->prefix.'MERCHANT_ID_'.$currency['iso_code']);
+			$certificate = '';
+			$passwordExist = '';
+			if (file_exists($this->certificat_dir.$mid.'.pem'))
+				$certificate = '<div style="color:#00b511; text-align:center;">'.$this->l('A certificate has been found for this configuration').' : '.$mid.'.pem'.'</div><br />';
+			if (Configuration::get($this->prefix.'KEYRING_PW_'.$currency['iso_code']))
+				$passwordExist = '<div style="color:#00b511; text-align:center;">'.$this->l('A password has already been saved');
+				
 			$currencies_configuration .= '
 			<tr>
 				<td class="currency_label">'.$this->getL('configuration_in').' '.$currency['name'].' '.$currency['sign'].'</td>
@@ -311,16 +317,18 @@ abstract class PrepaidServices extends PaymentModule
 					<div class="margin-form">
 						<input type="file" name="ct_keyring_certificate_'.$currency['iso_code'].'" />
 					</div>
+					'.$certificate.'
 					<label>'.$this->getL('keyring_pw').'</label>
 					<div class="margin-form">
 						<input type="password" name="ct_keyring_pw_'.$currency['iso_code'].'" value=""/>
 					</div>
+					'.$passwordExist.'
 				</td>
 			</tr>';
 		}
 		$currencies_configuration .= '</table>';
 
-		return '<form enctype="multipart/form-data" action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		return '<form enctype="multipart/form-data" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 					<fieldset>
 					<legend><img src="../img/admin/cog.gif" alt="" />'.$this->getL('configuration').'</legend>
 					<label>'.$this->getL('environment').'</label>
@@ -353,14 +361,12 @@ abstract class PrepaidServices extends PaymentModule
 
 	private function _displayInfos()
 	{
-	    global $cookie;
-
 		return '<fieldset id="infos_cashticket">
 				<legend><img src="'._MODULE_DIR_.$this->name.'/img/payment-small.png" alt="" />'.$this->displayName.'</legend>
 					<center><img src="'._MODULE_DIR_.$this->name.'/img/payment.png" alt=""  class="logo" /></center>
 					'.$this->getL('introduction').'
 					<br /><br />
-					<a style="color: blue; text-decoration: underline" href="'.$this->_getRegisterLink((int)$cookie->id_lang).'">'.$this->getL('register').'</a>
+					<a style="color: blue; text-decoration: underline" href="'.$this->_getRegisterLink($this->context->language->id).'">'.$this->getL('register').'</a>
 				</fieldset>
 				<div class="clear" /><br />';
 	}
@@ -453,7 +459,7 @@ abstract class PrepaidServices extends PaymentModule
 			else
 				$order->total_paid_real += $amount;
 
-			$os = _PS_OS_PAYMENT_;
+			$os = Configuration::get('PS_OS_PAYMENT');
 			if ($order->total_paid != $order->total_paid_real)
 				$os = Configuration::get($this->prefix.'ORDER_STATE_PART_ID');
 
@@ -513,6 +519,8 @@ abstract class PrepaidServices extends PaymentModule
 			$mid = trim(Tools::getValue('ct_merchant_id_'.$currency['iso_code']));
 
 			Configuration::updateValue($this->prefix.'MERCHANT_ID_'.$currency['iso_code'], $mid);
+			$pass = Tools::getValue('ct_keyring_pw_'.$currency['iso_code']);
+			if (!empty($pass))
 			Configuration::updateValue($this->prefix.'KEYRING_PW_'.$currency['iso_code'], Tools::getValue('ct_keyring_pw_'.$currency['iso_code']));
 
 			if (isset($_FILES['ct_keyring_certificate_'.$currency['iso_code']]))
@@ -534,8 +542,6 @@ abstract class PrepaidServices extends PaymentModule
 
 	public function hookPayment($params)
 	{
-		global $smarty;
-
 		// check currency
 		$currency = new Currency((int)($params['cart']->id_currency));
 
@@ -555,29 +561,26 @@ abstract class PrepaidServices extends PaymentModule
 		if ($amount > $this->max_amount)
 			return false;
 
-		$smarty->assign(array('pic_url' => _MODULE_DIR_.'/'.$this->name.'/img/payment-logo.png',
+		$this->context->smarty->assign(array('pic_url' => _MODULE_DIR_.'/'.$this->name.'/img/payment-logo.png',
 							 'payment_name' => $this->displayName,
 							 'module_name' => $this->name));
 
-		return $this->display(__FILE__, 'payment.tpl');
+		return $this->display(_MODULE_DIR_.'/'.$this->name.'/', 'payment.tpl');
 	}
 
 
 	public function hookPaymentReturn($params)
 	{
-		global $smarty, $cookie;
-
 		if ($params['objOrder']->module != $this->name)
 			return;
 
-		$smarty->assign('payment_name', $this->displayName);
-		return $this->display(__FILE__, $this->name.'-confirmation.tpl');
+		$this->context->smarty->assign('payment_name', $this->displayName);
+		return $this->display(_MODULE_DIR_.'/'.$this->name.'/', $this->name.'-confirmation.tpl');
 	}
 
 
 	public function hookAdminOrder($params)
 	{
-		global $smarty, $cookie;
 		$error = 0;
 		$order = new Order((int)($params['id_order']));
 
@@ -587,18 +590,18 @@ abstract class PrepaidServices extends PaymentModule
 		if ($order->module != $this->name)
 			return false;
 
-		$disposition = Disposition::getByCartId((int)($order->id_cart));
+		$disposition = PSCDisposition::getByCartId((int)($order->id_cart));
 		if (!$disposition) // No disposition = Order paid
 			return false;
 
 		// check disposition state
-		$res = PrepaidServicesAPI::getSerialNumbers($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'], $disposition['currency']);
+		$res = PSCPrepaidServicesAPI::getSerialNumbers($this->getAPIConfiguration($disposition['currency']), Configuration::get($this->prefix.'MERCHANT_ID_'.$disposition['currency']), $disposition['mtid'], $disposition['currency']);
 		$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
 
 		// if the disposition is not "active"
-		if ($res[5] != PrepaidServicesAPI::DISPOSITION_DISPOSED && $res[5] != PrepaidServicesAPI::DISPOSITION_DEBITED)
+		if ($res[5] != PSCPrepaidServicesAPI::DISPOSITION_DISPOSED && $res[5] != PSCPrepaidServicesAPI::DISPOSITION_DEBITED)
 		{
-			$smarty->assign(array('disposition_state' => $res[5], 'payment_name' => $order->payment));
+			$this->context->smarty->assign(array('disposition_state' => $res[5], 'payment_name' => $order->payment));
 			return $this->display($this->module_dir.'/'.$this->name, 'disposition-error.tpl');
 		}
 
@@ -627,7 +630,7 @@ abstract class PrepaidServices extends PaymentModule
 		if (Tools::getIsset('pp_error'))
 			$error_msg = $this->_getErrorMsgFromErrorCode(Tools::getValue('pp_error'));
 
-		$smarty->assign(array('action' => Tools::safeOutput($_SERVER['PHP_SELF']).'?'.$_SERVER['QUERY_STRING'],
+		$this->context->smarty->assign(array('action' => Tools::safeOutput($_SERVER['PHP_SELF']).'?'.$_SERVER['QUERY_STRING'],
 							   'payment_name' => $order->payment,
 							   'error' => $error_msg,
 							   'currency' => $currency->getSign('right'),

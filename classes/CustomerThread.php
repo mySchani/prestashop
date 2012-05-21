@@ -50,7 +50,7 @@ class CustomerThreadCore extends ObjectModel
 
 	public	function getFields()
 	{
-	 	parent::validateFields();
+	 	$this->validateFields();
 		$fields['id_lang'] = (int)($this->id_lang);
 		$fields['id_shop'] = (int)$this->id_shop;
 		$fields['id_contact'] = (int)($this->id_contact);
@@ -69,16 +69,23 @@ class CustomerThreadCore extends ObjectModel
 	{
 		if (!Validate::isUnsignedId($this->id))
 			return false;
-		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'customer_message` WHERE `id_customer_thread` = '.(int)($this->id));
+		Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'customer_message` WHERE `id_customer_thread` = '.(int)($this->id));
 		return (parent::delete());
 	}
 	
 	public static function getCustomerMessages($id_customer)
 	{
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 		SELECT * FROM '._DB_PREFIX_.'customer_thread ct
 		LEFT JOIN '._DB_PREFIX_.'customer_message cm ON ct.id_customer_thread = cm.id_customer_thread
 		WHERE id_customer = '.(int)($id_customer));
-	}	
+	}
+	
+	public static function getIdCustomerThreadByEmailAndIdOrder($email, $id_order)
+	{
+		return Db::getInstance()->getValue('
+		SELECT cm.id_customer_thread FROM '._DB_PREFIX_.'customer_thread cm
+		WHERE cm.email = \''.pSQL($email).'\' AND cm.id_shop = '.(int)Context::getContext()->shop->getId(true).' AND cm.id_order = '.(int)$id_order.'');
+	}
 }
 

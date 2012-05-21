@@ -1,12 +1,13 @@
 <?php
-	include('../classes/Tools.php');
+
+	require_once('../classes/Tools.php');
 	if (!isset($_GET['language']))
 		$_GET['language'] = 0;
 	function getPreinstallXmlLang($object, $field)
 	{
-		if (ToolsCore::property_exists($object, $field.'_'.((int)($_GET['language'])+1)))
+		if (property_exists($object, $field.'_'.((int)($_GET['language'])+1)))
 			return str_replace(array('!|', '|!'), array('<', '>'), trim($object->{$field.'_'.((int)($_GET['language'])+1)}));
-		if (ToolsCore::property_exists($object, $field.'_1'))
+		if (property_exists($object, $field.'_1'))
 			return str_replace(array('!|', '|!'), array('<', '>'), trim($object->{$field.'_1'}));
 		return '';
 	}
@@ -16,8 +17,8 @@
 		$p = addslashes(strtolower($_GET['partner']));
 		$c = addslashes(strtolower($_GET['country_iso_code']));
 
-		$context = stream_context_create(array('http' => array('method'=>"GET", 'timeout' => 5)));
-		$content = @file_get_contents('http://www.prestashop.com/partner/preactivation/fields.php?version=1.0&partner='.$p.'&country_iso_code='.$c, false, $context);
+		$stream_context = @stream_context_create(array('http' => array('method'=>"GET", 'timeout' => 5)));
+		$content = @file_get_contents('http://www.prestashop.com/partner/preactivation/fields.php?version=1.0&partner='.$p.'&country_iso_code='.$c, false, $stream_context);
 
 		if ($content && $content[0] == '<')
 		{
@@ -25,10 +26,12 @@
 			if ($result)
 			{
 				$varList = "";
-				echo '<br clear="left" /><hr /><br clear="left" />';
-				foreach ($result->field as $field)
+				if (count($result->field) > 0)
 				{
-					echo '<div><label class="aligned">'.getPreinstallXmlLang($field, 'label').' :</label>';
+				echo '<br clear="left" /><hr /><br clear="left" />';
+				foreach ($result->field AS $field)
+				{
+					echo '<div><label class="aligned" style="float:left;width:200px;padding-left:10px;">'.getPreinstallXmlLang($field, 'label').' :</label>';
 					if ($field->type == 'text' || $field->type == 'password')
 						echo '<input type="'.$field->type.'" class="text required" id="'.$p.'_'.$c.'_form_'.$field->key.'" name="'.$p.'_'.$c.'_form_'.$field->key.'" '.(isset($field->size) ? 'size="'.$field->size.'"' : '').' value="'.(isset($_GET[trim($field->key)]) ? $_GET[trim($field->key)] : $field->default).'" />';
 					elseif ($field->type == 'radio')
@@ -66,6 +69,7 @@
 					else
 						$varList .= "'&".$field->key."='+ encodeURIComponent($('#".$p."_".$c."_form_".$field->key."').val())+\n";
 				}
+				}
 				echo '
 				<script>'."
 					$('#btNext').click(function() {
@@ -96,10 +100,9 @@
 
 	}
 
-
 	if ($_GET['request'] == 'send')
 	{
-		$context = stream_context_create(array('http' => array('method'=>"GET", 'timeout' => 5)));
+		$stream_context = @stream_context_create(array('http' => array('method'=>"GET", 'timeout' => 5)));
 		$url = 'http://www.prestashop.com/partner/preactivation/actions.php?version=1.0&partner='.addslashes($_GET['partner']);
 
 		// Protect fields
@@ -111,7 +114,7 @@
 		foreach ($_GET as $key => $val)
 			$url .= '&'.$key.'='.urlencode($val);
 		$url .= '&security='.md5($_GET['email']._COOKIE_IV_);
-		$content = @file_get_contents($url, false, $context);
+		$content = @file_get_contents($url, false, $stream_context);
 		if ($content)
 			echo $content;
 		else

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -47,18 +47,18 @@ else
 
 class Tools extends ToolsCore
 {
-
 	/**
 	* Redirect user to another page after 5 sec
 	*
 	* @param string $url Desired URL
 	* @param string $baseUri Base URI (optional)
 	*/
-	public static function redirect($url, $baseUri = __PS_BASE_URI__)
+	public static function redirect($url, $baseUri = __PS_BASE_URI__, Link $link = null)
 	{
+		if (!$link)
+			$link = Context::getContext()->link;
 		if (strpos($url, 'http://') === FALSE && strpos($url, 'https://') === FALSE)
 		{
-			global $link;
 			if (strpos($url, $baseUri) !== FALSE && strpos($url, $baseUri) == 0)
 				$url = substr($url, strlen($baseUri));
 			$explode = explode('?', $url);
@@ -72,8 +72,8 @@ class Tools extends ToolsCore
     	header('Refresh: 5; url='.$_SERVER['HTTP_REFERER']);
 		else
 			header('Refresh: 5; url='.$baseUri.$url);
+		echo '<h1>Redirection automatique dans 5 secondes</h1><a href='.$url.'>'.$url.'</a>';
 		exit;
-
 	}
 
 
@@ -86,11 +86,10 @@ class Tools extends ToolsCore
 	{
 		if (!preg_match('@^https?://@i', $url))
 		{
-			global $link;
 			if (strpos($url, __PS_BASE_URI__) !== FALSE && strpos($url, __PS_BASE_URI__) == 0)
 				$url = substr($url, strlen(__PS_BASE_URI__));
 			$explode = explode('?', $url);
-			$url = $link->getPageLink($explode[0]);
+			$url = Context::getContext()->link->getPageLink($explode[0]);
 			if (isset($explode[1]))
 				$url .= '?'.$explode[1];
 		}
@@ -133,7 +132,7 @@ class Tools extends ToolsCore
 	}
 
 	/**
-	* ALIAS OF dieObject() - Display an error with detailed object 
+	* ALIAS OF dieObject() - Display an error with detailed object
 	* (display in firefox console if Firephp is enabled)
 	*
 	* @param object $object Object to display
@@ -160,7 +159,7 @@ class Tools extends ToolsCore
 	{
 		if(PS_USE_FIREPHP)
 			FB::info($object);
-		else 
+		else
 			return parent::p($object);
 		return $object;
 	}
@@ -169,21 +168,20 @@ class Tools extends ToolsCore
 	* Display a warning message indicating that the method is deprecated
 	* (display in firefox console if Firephp is enabled)
 	*/
-	public static function displayAsDeprecated()
+	public static function displayAsDeprecated($message = null)
 	{
-
 		if (_PS_DISPLAY_COMPATIBILITY_WARNING_)
 		{
-		$backtrace = debug_backtrace();
-		$callee = next($backtrace);
-		if(PS_USE_FIREPHP)
-			FB::warn('Function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['line'].'</strong><br />', 'Deprecated method');
-		else
-			trigger_error('Function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['line'].'</strong><br />', E_USER_WARNING);
+			$backtrace = debug_backtrace();
+			$callee = next($backtrace);
+			if (PS_USE_FIREPHP)
+				FB::warn('Function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['line'].'</strong><br />', 'Deprecated method');
+			else
+				trigger_error('Function <strong>'.$callee['function'].'()</strong> is deprecated in <strong>'.$callee['file'].'</strong> on line <strong>'.$callee['line'].'</strong><br />', E_USER_WARNING);
 
-		$message = Tools::displayError('The function').' '.$callee['function'].' ('.Tools::displayError('Line').' '.$callee['line'].') '.Tools::displayError('is deprecated and will be removed in the next major version.');
-		Logger::addLog($message, 3, $callee['class']);
-	}
+			$message = Tools::displayError('The function').' '.$callee['function'].' ('.Tools::displayError('Line').' '.$callee['line'].') '.Tools::displayError('is deprecated and will be removed in the next major version.');
+			Logger::addLog($message, 3, $callee['class']);
+		}
 	}
 
 	/**
@@ -209,22 +207,22 @@ class Tools extends ToolsCore
 
 	/**
 	 * use of FirePHP::error() if allowed
-	 * 
-	 * @param mixed $obj 
-	 * @param string $label 
+	 *
+	 * @param mixed $obj
+	 * @param string $label
 	 * @return void
 	 */
 	public static function error($obj, $label = '')
 	{
 		if(PS_USE_FIREPHP)
-			FB::error($object, $label);
+			FB::error($obj, $label);
 	}
 
 	/**
 	 * use of FirePHP::warn() if allowed
-	 * 
-	 * @param mixed $obj 
-	 * @param string $label 
+	 *
+	 * @param mixed $obj
+	 * @param string $label
 	 * @return void
 	 */
 	public static function warn($obj, $label = '')
@@ -235,9 +233,9 @@ class Tools extends ToolsCore
 
 	/**
 	 * use of FirePHP::info() if allowed
-	 * 
-	 * @param mixed $obj 
-	 * @param string $label 
+	 *
+	 * @param mixed $obj
+	 * @param string $label
 	 * @return void
 	 */
 	public static function info($obj, $label = '')
@@ -248,9 +246,9 @@ class Tools extends ToolsCore
 
 	/**
 	 * use of FirePHP::log() if allowed
-	 * 
-	 * @param mixed $obj 
-	 * @param string $label 
+	 *
+	 * @param mixed $obj
+	 * @param string $label
 	 * @return void
 	 */
 	public static function log($obj, $label = '')
@@ -259,10 +257,10 @@ class Tools extends ToolsCore
 			FB::log($obj,$label);
 	}
 	/**
-	* display debug_backtrace() 
+	* display debug_backtrace()
 	* (display in firefox console if Firephp is enabled)
-	* 
-	* @param mixed $obj 
+	*
+	* @param mixed $obj
 	* @return void
 	*/
 	public static function trace($obj = NULL, $label = '')

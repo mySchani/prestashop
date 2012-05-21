@@ -26,17 +26,30 @@
 
 var storeUsedGroups = {};
 
-function fillCombinaison(wholesale_price, price_impact, weight_impact, unit_impact, reference, supplier_reference, ean, quantity, image, old_attr, id_product_attribute, default_attribute, eco_tax, location, upc, minimal_quantity)
+function fillCombinaison(wholesale_price, price_impact, weight_impact, unit_impact, reference, 
+ean, quantity, image, old_attr, id_product_attribute, default_attribute, eco_tax, upc, minimal_quantity, available_date,
+virtual_product_name_attribute, virtual_product_filename_attribute, virtual_product_nb_downloable, virtual_product_expiration_date_attribute, 
+virtual_product_nb_days, is_shareable)
 {
+	var link = '';
 	init_elems();
+	$("#virtual_good_attributes").show();
 	$('#stock_mvt_attribute').show();
 	$('#initial_stock_attribute').hide();
 	$('#attribute_quantity').html(quantity);
 	$('#attribute_quantity').show();
 	$('#attr_qty_stock').show();
-	getE('minimal_quantity').value = minimal_quantity;
+
+	$('#attribute_minimal_quantity').val(minimal_quantity);
+
 	getE('attribute_reference').value = reference;
-	getE('attribute_supplier_reference').value = supplier_reference;
+	
+	getE('virtual_product_name_attribute').value = virtual_product_name_attribute;
+	getE('virtual_product_nb_downloable_attribute').value = virtual_product_nb_downloable;
+	getE('virtual_product_expiration_date_attribute').value = virtual_product_nb_downloable;
+	getE('virtual_product_expiration_date_attribute').value = virtual_product_expiration_date_attribute;
+	getE('virtual_product_nb_days_attribute').value = virtual_product_nb_days;
+	
 	getE('attribute_ean13').value = ean;
 	getE('attribute_upc').value = upc;
 	getE('submitProductAttribute').value = modifyattributegroup;
@@ -46,7 +59,7 @@ function fillCombinaison(wholesale_price, price_impact, weight_impact, unit_impa
 	getE('attribute_unity').value = Math.abs(unit_impact);
 	if ($('#attribute_ecotax').length != 0)
 		getE('attribute_ecotax').value = eco_tax;
-	getE('attribute_location').value = location;
+
 	if (default_attribute == 1)
 		getE('attribute_default').checked = true;
 	else
@@ -98,6 +111,18 @@ function fillCombinaison(wholesale_price, price_impact, weight_impact, unit_impa
 		getE('attribute_unit_impact').selectedIndex = 1;
 	}
 
+	if (is_shareable > 0)
+		$("#virtual_product_is_shareable_attribute").attr("checked", "checked");
+	
+	if (id_product_attribute != '' && virtual_product_filename_attribute != '')
+		$("#gethtmlink").show();
+	link = $("#make_downloadable_product_attribute").attr('href');		
+	$("#make_downloadable_product_attribute").attr('href', link+"&id_product_attribute="+id_product_attribute);
+
+	$("#virtual_product_filename_attribute").val(virtual_product_filename_attribute);
+	$("#add_new_combination").show();
+	
+	
 	/* Reset all combination images */
 	combinationImages = $('#id_image_attr').find("input[id^=id_image_attr_]");
 	combinationImages.each(function() {
@@ -217,13 +242,13 @@ function init_elems()
 	try
 	{
 		if (impact.options[impact.selectedIndex].value == 0)
-			getE('span_impact').style.display = 'none';
+			$('#span_impact').hide();
 		if (impact2.options[impact.selectedIndex].value == 0)
 			getE('span_weight_impact').style.display = 'none';
 	}
 	catch (e)
 	{
-		getE('span_impact').style.display = 'none';
+		$('#span_impact').hide();
 		getE('span_weight_impact').style.display = 'none';
 	}
 }

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 8783 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -57,7 +57,7 @@ class MRRelayDetail implements IMondialRelayWSMethod
 	private $_relayPointNumList = array(); 
 	private $_id_address_delivery = 0;
 	private $_webServiceKey = '';
-	private $_mondialrelay = NULL;
+	private $_mondialRelay = NULL;
 	private $_markCode = '';
 	
 	private $_resultList = array(
@@ -68,27 +68,26 @@ class MRRelayDetail implements IMondialRelayWSMethod
 	
 	public function __construct($params)	
 	{
-		$this->_mondialrelay = new MondialRelay();
-
 		$this->_relayPointNumList = $params['relayPointNumList'];
 		$this->_id_address_delivery = (int)($params['id_address_delivery']);
-		$this->_webServiceKey = $this->_mondialRelay->account_shop['MR_KEY_WEBSERVICE'];
-		$this->_markCode = $this->_mondialRelay->account_shop['MR_CODE_MARQUE'];
+		$this->_webServiceKey = Configuration::get('MR_KEY_WEBSERVICE');
+		$this->_markCode = Configuration::get('MR_CODE_MARQUE');
 	}
 	
 	public function __destruct()
 	{
-		 unset($this->_mondialrelay);
+		 unset($this->_mondialRelay);
 	}
 	
 	public function init()
-	{
+	{	
+		$this->_mondialRelay = new MondialRelay();
 		$address = new Address($this->_id_address_delivery);
 		
 		if (!$address)
 			throw new Exception($this->_mondialrelay->l('Customer address can\'t be found'));
 		
-		$this->_fields['list']['Enseigne']['value'] = $this->_mondialRelay->account_shop['MR_ENSEIGNE_WEBSERVICE'];
+		$this->_fields['list']['Enseigne']['value'] = Configuration::get('MR_ENSEIGNE_WEBSERVICE');
 		$this->_fields['list']['Pays']['value'] = Country::getIsoById($address->id_country);
 		
 		foreach ($this->_relayPointNumList as $num)
@@ -119,7 +118,7 @@ class MRRelayDetail implements IMondialRelayWSMethod
 				{
 					// Mac server make an empty string instead of a cleaned string
 					// TODO : test on windows and linux server
-					$cleanedString = MRTools::removeAccents($valueDetailed['value']);
+					$cleanedString = MRTools::replaceAccentedCharacters($valueDetailed['value']);
 					$valueDetailed['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($valueDetailed['value']);
 					
 					// Call a pointer function if exist to do different test
@@ -136,7 +135,7 @@ class MRRelayDetail implements IMondialRelayWSMethod
 					else if ((!strlen($valueDetailed['value']) && $valueDetailed['required']) || strlen($valueDetailed['value']))
 					{
 						if (empty($valueDetailed['value']))
-							$error = $this->_mondialrelay->l('This key').' ['.$paramName.'] '.$this->_mondialrelay->l('is empty and need to be filled');
+							$error = $this->_mondialRelay->l('This key').' ['.$paramName.'] '.$this->_mondialRelay->l('is empty and need to be filled');
 						else
 							$error = 'This key ['.$paramName.'] hasn\'t a valid value format : '.$valueDetailed['value']; 
 						$this->_resultList['error'][$rootCase['list']['Num']['value']] = $error;
@@ -169,25 +168,25 @@ class MRRelayDetail implements IMondialRelayWSMethod
 		$errors = array();
 
 		if ($client->fault)
-			$errors[$errorTotal++] = $this->_mondialrelay->l('It seems the request isn\'t valid:').
+			$errors[$errorTotal++] = $this->_mondialRelay->l('It seems the request isn\'t valid:').
 				$result;
 		$result = $result['WSI2_DetailPointRelaisResult'];
 		if (($errorNumber = $result['STAT']) != 0)
 		{
-			$errors[] = $this->_mondialrelay->l('There is an error number : ').$errorNumber;
-			$errors[] = $this->_mondialrelay->l('Details : ').
-				$this->_mondialrelay->getErrorCodeDetail($errorNumber);
+			$errors[] = $this->_mondialRelay->l('There is an error number : ').$errorNumber;
+			$errors[] = $this->_mondialRelay->l('Details : ').
+				$this->_mondialRelay->getErrorCodeDetail($errorNumber);
 		}
 		else
 		{
 			$HDayList = array(
-				'Horaires_Lundi' => $this->_mondialrelay->l('Monday'),
-				'Horaires_Mardi' => $this->_mondialrelay->l('Tuesday'),
-				'Horaires_Mercredi' => $this->_mondialrelay->l('Wednesday'),
-				'Horaires_Jeudi' => $this->_mondialrelay->l('Thursday'),
-				'Horaires_Vendredi' => $this->_mondialrelay->l('Friday'),
-				'Horaires_Samedi' => $this->_mondialrelay->l('Saturday'),
-				'Horaires_Dimanche' => $this->_mondialrelay->l('Sunday'));
+				'Horaires_Lundi' => $this->_mondialRelay->l('Monday'),
+				'Horaires_Mardi' => $this->_mondialRelay->l('Tuesday'),
+				'Horaires_Mercredi' => $this->_mondialRelay->l('Wednesday'),
+				'Horaires_Jeudi' => $this->_mondialRelay->l('Thursday'),
+				'Horaires_Vendredi' => $this->_mondialRelay->l('Friday'),
+				'Horaires_Samedi' => $this->_mondialRelay->l('Saturday'),
+				'Horaires_Dimanche' => $this->_mondialRelay->l('Sunday'));
 		
 			$orderedDate = array();
 			// Format hour properly
@@ -232,7 +231,7 @@ class MRRelayDetail implements IMondialRelayWSMethod
 			unset($client);
 		}
 		else
-			throw new Exception($this->_mondialrelay->l('The Mondial Relay webservice isn\'t currently reliable'));
+			throw new Exception($this->_mondialRelay->l('The Mondial Relay webservice isn\'t currently reliable'));
 	}
 	
 	/*
@@ -242,20 +241,19 @@ class MRRelayDetail implements IMondialRelayWSMethod
 	{
 		if (!($address = new Address($id_address_delivery)))
 			return array();
-
-		$mondialrelay = new MondialRelay();
 		
-		$list = array();
+		$permaList = array();
 		$iso = strtoupper(Country::getIsoById($address->id_country));
-		$ens = $mondialrelay->account_shop['MR_ENSEIGNE_WEBSERVICE'].$mondialrelay->account_shop['MR_CODE_MARQUE'];
-		$url = 'http://www.mondialrelay.com/public/permanent/details_relais.aspx?ens='.$ens;
-		foreach($relayList as $relayNum)
+		$ens = strtoupper(Configuration::get('MR_ENSEIGNE_WEBSERVICE').Configuration::get('MR_CODE_MARQUE'));
+		$url = 'http://www.mondialrelay.com/public/permanent/details_relais.aspx?ens='.
+			Configuration::get('MR_ENSEIGNE_WEBSERVICE').Configuration::get('MR_CODE_MARQUE');
+		foreach($relayList as $num => $relayNum)
 		{
-			$crc = strtoupper(MD5('<'.strtoupper($ens).'>'.$relayNum.$iso.'<'.$mondialrelay->account_shop['MR_KEY_WEBSERVICE'].'>'));
-			$list[$relayNum] = $url.'&num='.$relayNum.'&pays='.$iso.'&crc='.$crc;
+			$crc = strtoupper(MD5('<'.$ens.'>'.$relayNum.$iso.'<'.Configuration::get('MR_KEY_WEBSERVICE').'>'));
+			$permaList[$relayNum] = $url.'&num='.$relayNum.'&pays='.$iso.'&crc='.$crc;
 		}
-		unset($address, $mondialrelay);
-		return $list;
+		unset($address);
+		return $permaList;
 	}
 	
 	/*

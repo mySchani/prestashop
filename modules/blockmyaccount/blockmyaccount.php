@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockMyAccount extends Module
@@ -58,14 +58,13 @@ class BlockMyAccount extends Module
 
 	public function hookLeftColumn($params)
 	{
-		global $smarty;
-		
-		if (!$params['cookie']->isLogged())
+		if (!$this->context->customer->isLogged())
 			return false;
-		$smarty->assign(array(
-			'voucherAllowed' => (int)(Configuration::get('PS_VOUCHERS')),
-			'returnAllowed' => (int)(Configuration::get('PS_ORDER_RETURN')),
-			'HOOK_BLOCK_MY_ACCOUNT' => Module::hookExec('myAccountBlock')
+
+		$this->templateAssign(array(
+			'voucherAllowed' => (int)Configuration::get('PS_VOUCHERS'),
+			'returnAllowed' => (int)Configuration::get('PS_ORDER_RETURN'),
+			'HOOK_BLOCK_MY_ACCOUNT' => Hook::exec('myAccountBlock'),
 		));
 		return $this->display(__FILE__, $this->name.'.tpl');
 	}
@@ -77,16 +76,16 @@ class BlockMyAccount extends Module
 
 	private function addMyAccountBlockHook()
 	{
-		return Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'hook` (`name`, `title`, `description`, `position`) VALUES (\'myAccountBlock\', \'My account block\', \'Display extra informations inside the "my account" block\', 1)');
+		return Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'hook` (`name`, `title`, `description`, `position`) VALUES (\'myAccountBlock\', \'My account block\', \'Display extra informations inside the "my account" block\', 1)');
 	}
 
 	private function removeMyAccountBlockHook()
 	{
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'hook` WHERE `name` = \'myAccountBlock\'');
+		return Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'hook` WHERE `name` = \'myAccountBlock\'');
 	}
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blockmyaccount.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockmyaccount.css', 'all');
 	}
 }
 

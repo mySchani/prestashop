@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -24,12 +24,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">
-//<![CDATA[
-	var baseDir = '{$base_dir_ssl}';
-//]]>
-</script>
-
 {capture name=path}<a href="{$link->getPageLink('my-account', true)}">{l s='My account'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Your personal information'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
@@ -49,10 +43,10 @@
 		<fieldset>
 			<p class="radio">
 				<span>{l s='Title'}</span>
-				<input type="radio" id="id_gender1" name="id_gender" value="1" {if $smarty.post.id_gender == 1 OR !$smarty.post.id_gender}checked="checked"{/if} />
-				<label for="id_gender1">{l s='Mr.'}</label>
-				<input type="radio" id="id_gender2" name="id_gender" value="2" {if $smarty.post.id_gender == 2}checked="checked"{/if} />
-				<label for="id_gender2">{l s='Ms.'}</label>
+				{foreach from=$genders key=k item=gender}
+					<input type="radio" name="id_gender" id="id_gender{$gender->id}" value="{$gender->id}" {if isset($smarty.post.id_gender) && $smarty.post.id_gender == $gender->id}checked="checked"{/if} />
+					<label for="id_gender{$gender->id}" class="top">{$gender->name}</label>
+				{/foreach}
 			</p>
 			<p class="required text">
 				<label for="firstname">{l s='First name'}</label>

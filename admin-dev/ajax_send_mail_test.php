@@ -24,7 +24,7 @@
 *  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-
+define('_PS_ADMIN_DIR_', getcwd());
 include_once(dirname(__FILE__).'/../config/config.inc.php');
 
 /* Getting cookie or logout */
@@ -43,5 +43,5 @@ $smtpPort = $_GET['smtpPort'];
 $smtpEncryption = $_GET['smtpEnc'];
 
 $result = Mail::sendMailTest(Tools::htmlentitiesUTF8($smtpChecked), Tools::htmlentitiesUTF8($smtpServer), Tools::htmlentitiesUTF8($content), Tools::htmlentitiesUTF8($subject), Tools::htmlentitiesUTF8($type), Tools::htmlentitiesUTF8($to), Tools::htmlentitiesUTF8($from), Tools::htmlentitiesUTF8($smtpLogin), Tools::htmlentitiesUTF8($smtpPassword), Tools::htmlentitiesUTF8($smtpPort), Tools::htmlentitiesUTF8($smtpEncryption));
-die($result ? 'ok' : 'fail');
+die($result === true ? 'ok' : $result);
 

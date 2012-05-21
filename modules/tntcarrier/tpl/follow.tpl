@@ -1,5 +1,5 @@
 {*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -18,7 +18,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 8088 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -30,36 +30,36 @@
 <table class="std" style="text-align:left">
 	<thead>
 	<tr>
-		<th class="first_item" colspan="2">{l s='Package Information' mod='tntcarrier'}</th>
+		<th class="first_item" colspan="2">{l s='Package Information'}</th>
 		<th class="last_item" colspan="2"></th>
 	</tr>
 	<tr class="item">
-		<td class="bold">{l s='Shipping number' mod='tntcarrier'}</td>
+		<td class="bold">{l s='Shipping number'}</td>
 		<td>{$f.number}</td>
-		<td class="bold">{l s='Shipping status' mod='tntcarrier'}</td>
+		<td class="bold">{l s='Shipping status'}</td>
 		<td>{$f.status}</td>
 	</tr>
 	<tr class="item">
-		<td class="bold">{l s='Reference' mod='tntcarrier'}</td>
+		<td class="bold">{l s='Reference'}</td>
 		<td>{$f.reference}</td>
-		<td class="bold">{l s='Service' mod='tntcarrier'}</td>
+		<td class="bold">{l s='Service'}</td>
 		<td>{$f.service}</td>
 	<tr>
 	<tr class="item">
-		<td class="bold">{l s='Weight' mod='tntcarrier'}</td>
+		<td class="bold">{l s='Weight'}</td>
 		<td>{$f.weight}</td>
 		<td></td>
 		<td></td>
 	</tr>
 	<tr class="item" style="border-top:1px solid black">
-		<td class="bold">{l s='Event' mod='tntcarrier'}</th>
-		<td class="bold">{l s='Date' mod='tntcarrier'}</th>
-		<td class="bold">{l s='Hours' mod='tntcarrier'}</th>
-		<td class="bold">{l s='Name Center' mod='tntcarrier'}</th>
+		<td class="bold">{l s='Event'}</th>
+		<td class="bold">{l s='Date'}</th>
+		<td class="bold">{l s='Hours'}</th>
+		<td class="bold">{l s='Name Center'}</th>
 	</tr>
 	{if $f.request}
 	<tr class="item">
-		<td>{l s='Package on request' mod='tntcarrier'}</td>
+		<td>{l s='Package on request'}</td>
 		<td>{$f.requestDate|date_format:$config.date}</td>
 		<td>{$f.requestDate|date_format:$config.time}</td>
 		<td></td>
@@ -67,7 +67,7 @@
 	{/if}
 	{if $f.process}
 	<tr class="item">
-		<td>{l s='Package on its way' mod='tntcarrier'}</td>
+		<td>{l s='Package on its way'}</td>
 		<td>{$f.process_date|date_format:$config.date}</td>
 		<td>{$f.process_date|date_format:$config.time}</td>
 		<td>{$f.process_center}</td>
@@ -75,7 +75,7 @@
 	{/if}
 	{if $f.delivery_departure}
 	<tr class="item">
-		<td>{l s='Deposit departure' mod='tntcarrier'}</td>
+		<td>{l s='Deposit departure'}</td>
 		<td>{$f.delivery_departure_date|date_format:$config.date}</td>
 		<td>{$f.delivery_departure_date|date_format:$config.time}</td>
 		<td>{$f.delivery_departure_center}</td>
@@ -83,7 +83,7 @@
 	{/if}
 	{if $f.delivery}
 	<tr class="item">
-		<td>{l s='driver presentation' mod='tntcarrier'}</td>
+		<td>{l s='driver presentation'}</td>
 		<td>{$f.delivery_date|date_format:$config.date}</td>
 		<td>{$f.delivery_date|date_format:$config.time}</td>
 		<td></td>

@@ -79,7 +79,7 @@ class StoreCore extends ObjectModel
 	public 		$active = true;
 	
  	protected 	$fieldsRequired = array('id_country', 'name', 'address1', 'city', 'active');
- 	protected 	$fieldsSize = array('name' => 128, 'address1' => 128, 'address2' => 128, 'postcode' => 12, 'city' => 64, 'latitude' => 10, 'longitude' => 10, 'hours' => 254, 'phone' => 16, 'fax' => 16, 'email' => 128, 'note' => 65000);
+ 	protected 	$fieldsSize = array('name' => 128, 'address1' => 128, 'address2' => 128, 'postcode' => 12, 'city' => 64, 'latitude' => 12, 'longitude' => 12, 'hours' => 254, 'phone' => 16, 'fax' => 16, 'email' => 128, 'note' => 65000);
  	protected 	$fieldsValidate = array('id_country' => 'isUnsignedId', 'id_state' => 'isNullOrUnsignedId', 'name' => 'isGenericName', 'address1' => 'isAddress', 'address2' => 'isAddress',
 	'city' => 'isCityName', 'latitude' => 'isCoordinate', 'longitude' => 'isCoordinate', 'hours' => 'isSerializedArray', 'phone' => 'isPhoneNumber', 'fax' => 'isPhoneNumber',
 	'note' => 'isCleanHtml', 'email' => 'isEmail', 'active' => 'isBool');
@@ -97,17 +97,17 @@ class StoreCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		
-		$fields['id_country'] = (int)($this->id_country);
-		$fields['id_state'] = (int)($this->id_state);
+		$fields['id_country'] = (int)$this->id_country;
+		$fields['id_state'] = (int)$this->id_state;
 		$fields['name'] = pSQL($this->name);
 		$fields['address1'] = pSQL($this->address1);
 		$fields['address2'] = pSQL($this->address2);
 		$fields['postcode'] = pSQL($this->postcode);
 		$fields['city'] = pSQL($this->city);
-		$fields['latitude'] = (float)($this->latitude);
-		$fields['longitude'] = (float)($this->longitude);
+		$fields['latitude'] = (float)$this->latitude;
+		$fields['longitude'] = (float)$this->longitude;
 		$fields['hours'] = pSQL($this->hours);
 		$fields['phone'] = pSQL($this->phone);
 		$fields['fax'] = pSQL($this->fax);
@@ -115,9 +115,16 @@ class StoreCore extends ObjectModel
 		$fields['email'] = pSQL($this->email);
 		$fields['date_add'] = pSQL($this->date_add);
 		$fields['date_upd'] = pSQL($this->date_upd);
-		$fields['active'] = (int)($this->active);
+		$fields['active'] = (int)$this->active;
 		
 		return $fields;
+	}
+	
+	public function __construct($id_store = NULL, $id_lang = NULL)
+	{
+		parent::__construct($id_store, $id_lang);
+		$this->id_image = ($this->id AND file_exists(_PS_STORE_IMG_DIR_.(int)$this->id.'.jpg')) ? (int)$this->id : false;
+		$this->image_dir = _PS_STORE_IMG_DIR_;
 	}
 	
 	public function getWsHours()

@@ -44,7 +44,7 @@ abstract class Module
 
 	/** @var string author of the module */
 	public $author;
-	
+
 	/** @var int need_instance */
 	public $need_instance = 1;
 
@@ -84,11 +84,11 @@ abstract class Module
 	 */
 	protected static $modulesCache;
 	protected static $_hookModulesCache;
-	
+
 	protected static $_INSTANCE = array();
-	
+
 	protected static $_generateConfigXmlMode = false;
-	
+
 	protected static $l_cache = array();
 
 	/**
@@ -105,7 +105,7 @@ abstract class Module
 			if (self::$modulesCache == NULL AND !is_array(self::$modulesCache))
 			{
 				self::$modulesCache = array();
-				$result = Db::getInstance()->ExecuteS('SELECT * FROM `'.pSQL(_DB_PREFIX_.$this->table).'`');
+				$result = Db::getInstance()->executeS('SELECT * FROM `'.pSQL(_DB_PREFIX_.$this->table).'`');
 				foreach ($result as $row)
 					self::$modulesCache[$row['name']] = $row;
 			}
@@ -150,32 +150,32 @@ abstract class Module
 	{
 		if (!Validate::isUnsignedId($this->id))
 			return false;
-		$result = Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->executeS('
 		SELECT `id_hook`
 		FROM `'._DB_PREFIX_.'hook_module` hm
 		WHERE `id_module` = '.(int)($this->id));
 		foreach	($result AS $row)
 		{
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			DELETE FROM `'._DB_PREFIX_.'hook_module`
 			WHERE `id_module` = '.(int)($this->id).'
 			AND `id_hook` = '.(int)($row['id_hook']));
 			$this->cleanPositions($row['id_hook']);
 		}
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 			DELETE FROM `'._DB_PREFIX_.'module`
 			WHERE `id_module` = '.(int)($this->id));
 	}
 
 	/**
-	 * This function enable module $name. If an $name is an array, 
+	 * This function enable module $name. If an $name is an array,
 	 * this will enable all of them
-	 * 
-	 * @param array|string $name 
+	 *
+	 * @param array|string $name
 	 * @return true if succeed
 	 * @since 1.4.1
 	 */
-	public static function enableByName($name) 
+	public static function enableByName($name)
 	{
 		if (!is_array($name))
 			$name = array($name);
@@ -183,7 +183,7 @@ abstract class Module
 		foreach ($name as $k=>$v)
 			$name[$k] = '"'.pSQL($v).'"';
 
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'module`
 		SET `active`= 1
 		WHERE `name` IN ('.implode(',',$name).')');
@@ -193,21 +193,21 @@ abstract class Module
 	 */
 	public function enable()
 	{
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'module`
 		SET `active`= 1
 		WHERE `name` = \''.pSQL($this->name).'\'');
 	}
-	
+
 	/**
-	 * This function disable module $name. If an $name is an array, 
+	 * This function disable module $name. If an $name is an array,
 	 * this will disable all of them
-	 * 
-	 * @param array|string $name 
+	 *
+	 * @param array|string $name
 	 * @return true if succeed
 	 * @since 1.4.1
 	 */
-	public static function disableByName($name) 
+	public static function disableByName($name)
 	{
 		if (!is_array($name))
 			$name = array($name);
@@ -215,16 +215,16 @@ abstract class Module
 		foreach ($name as $k=>$v)
 			$name[$k] = '"'.pSQL($v).'"';
 
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'module`
 		SET `active`= 0
 		WHERE `name` IN ('.implode(',',$name).')');
 	}
-	
+
 	/**
 	 * Called when module is set to deactive
 	 */
-	public function disable() 
+	public function disable()
 	{
 		return Module::disableByName($this->name);
 	}
@@ -268,7 +268,7 @@ abstract class Module
 			return false;
 
 		// Register module in hook
-		$return = Db::getInstance()->Execute('
+		$return = Db::getInstance()->execute('
 		INSERT INTO `'._DB_PREFIX_.'hook_module` (`id_module`, `id_hook`, `position`)
 		VALUES ('.(int)($this->id).', '.(int)($result['id_hook']).', '.(int)($result2['position'] + 1).')');
 
@@ -313,7 +313,7 @@ abstract class Module
 	  */
 	public function unregisterHook($hook_id)
 	{
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		DELETE
 		FROM `'._DB_PREFIX_.'hook_module`
 		WHERE `id_module` = '.(int)($this->id).'
@@ -328,7 +328,7 @@ abstract class Module
 	  */
 	public function unregisterExceptions($hook_id)
 	{
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		DELETE
 		FROM `'._DB_PREFIX_.'hook_module_exceptions`
 		WHERE `id_module` = '.(int)($this->id).'
@@ -348,7 +348,7 @@ abstract class Module
 		{
 			if (!empty($except))
 			{
-				$result = Db::getInstance()->Execute('
+				$result = Db::getInstance()->execute('
 				INSERT INTO `'._DB_PREFIX_.'hook_module_exceptions` (`id_module`, `id_hook`, `file_name`)
 				VALUES ('.(int)($this->id).', '.(int)($id_hook).', \''.pSQL(strval($except)).'\')');
 				if (!$result)
@@ -361,7 +361,7 @@ abstract class Module
 	public function editExceptions($id_hook, $excepts)
 	{
 		// Cleaning...
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 				DELETE FROM `'._DB_PREFIX_.'hook_module_exceptions`
 				WHERE `id_module` = '.(int)($this->id).' AND `id_hook` ='.(int)($id_hook));
 		return $this->registerExceptions($id_hook, $excepts);
@@ -369,11 +369,11 @@ abstract class Module
 
 
 	/**
-	 * This function is used to determine the module name 
+	 * This function is used to determine the module name
 	 * of an AdminTab which belongs to a module, in order to keep translation
 	 * related to a module in its directory (instead of $_LANGADM)
-	 * 
-	 * @param mixed $currentClass the 
+	 *
+	 * @param mixed $currentClass the
 	 * @return boolean|string if the class belongs to a module, will return the module name. Otherwise, return false.
 	 */
 	public static function getModuleNameFromClass($currentClass)
@@ -396,7 +396,7 @@ abstract class Module
 				if (Tools::file_exists_cache($file) AND include_once($file))
 					$_MODULES = !empty($_MODULES) ? array_merge($_MODULES, $_MODULE) : $_MODULE;
 			}
-			else 
+			else
 				self::$classInModule[$currentClass] = false;
 		}
 		// return name of the module, or false
@@ -434,7 +434,7 @@ abstract class Module
 		if(!isset($preloadedModuleNameFromId)) {
 			$preloadedModuleNameFromId = array();
 		}
-		
+
 		if(is_array($ids))
 		{
 			foreach($ids as $id)
@@ -458,12 +458,12 @@ abstract class Module
 			else
 				$preloadedModuleNameFromId[$ids] = false;
 		}
-		
+
 
 		if(is_array($ids)) {
 			return $preloadedModuleNameFromId;
 		} else {
-			if(!isset($preloadedModuleNameFromId[$ids])) 
+			if(!isset($preloadedModuleNameFromId[$ids]))
 				return false;
 			return $preloadedModuleNameFromId[$ids];
 		}
@@ -619,7 +619,7 @@ abstract class Module
 					$arrNativeModules[] = '"'.pSQL($module['name']).'"';
 			}
 
-		return $db->ExecuteS('
+		return $db->executeS('
 			SELECT *
 			FROM `'._DB_PREFIX_.'module` m
 			WHERE name NOT IN ('.implode(',',$arrNativeModules).') ');
@@ -633,7 +633,7 @@ abstract class Module
 		*/
 	public static function getModulesInstalled($position = 0)
 	{
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'module` m
 		'.($position ? '
@@ -666,7 +666,7 @@ abstract class Module
 		if (!isset(self::$_hookModulesCache))
 		{
 			$db = Db::getInstance(_PS_USE_SQL_SLAVE_);
-			$result = $db->ExecuteS('
+			$result = $db->executeS('
 			SELECT h.`name` as hook, m.`id_module`, h.`id_hook`, m.`name` as module, h.`live_edit`
 			FROM `'._DB_PREFIX_.'module` m
 			LEFT JOIN `'._DB_PREFIX_.'hook_module` hm ON hm.`id_module` = m.`id_module`
@@ -674,7 +674,7 @@ abstract class Module
 			AND m.`active` = 1
 			ORDER BY hm.`position`', false);
 			self::$_hookModulesCache = array();
-	
+
 			if ($result)
 				while ($row = $db->nextRow())
 				{
@@ -711,7 +711,7 @@ abstract class Module
 				{
 					$live_edit = true;
 					$output .= '<script type="text/javascript"> modules_list.push(\''.$moduleInstance->name.'\');</script>
-								<div id="hook_'.$array['id_hook'].'_module_'.$moduleInstance->id.'_moduleName_'.$moduleInstance->name.'" 
+								<div id="hook_'.$array['id_hook'].'_module_'.$moduleInstance->id.'_moduleName_'.$moduleInstance->name.'"
 								class="dndModule" style="border: 1px dotted red;'.(!strlen($display) ? 'height:50px;' : '').'">
 								<span><img src="'.$moduleInstance->_path.'/logo.gif">'
 							 	.$moduleInstance->displayName.'<span style="float:right">
@@ -737,7 +737,7 @@ abstract class Module
 		$billing = new Address((int)($cart->id_address_invoice));
 		$output = '';
 
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT DISTINCT h.`id_hook`, m.`name`, hm.`position`
 		FROM `'._DB_PREFIX_.'module_country` mc
 		LEFT JOIN `'._DB_PREFIX_.'module` m ON m.`id_module` = mc.`id_module`
@@ -760,7 +760,7 @@ abstract class Module
 	/**
 	 * find translation from $_MODULES and put it in self::$l_cache if not already exist
 	 * and return it.
-	 * 
+	 *
 	 * @param string $name name of the module
 	 * @param string $string term to find
 	 * @param string $source additional param for building translation key
@@ -769,9 +769,9 @@ abstract class Module
 	public static function findTranslation($name, $string, $source)
 	{
 		global $_MODULES;
-		
+
 		$cache_key = $name . '|' . $string . '|' . $source;
-		
+
 		if (!isset(self::$l_cache[$cache_key]))
 		{
 			if (!is_array($_MODULES))
@@ -780,7 +780,7 @@ abstract class Module
 			$_MODULES = array_change_key_case($_MODULES);
 			$currentKey = '<{'.strtolower($name).'}'.strtolower(_THEME_NAME_).'>'.strtolower($source).'_'.md5($string);
 			$defaultKey = '<{'.strtolower($name).'}prestashop>'.strtolower($source).'_'.md5($string);
-			
+
 			if (isset($_MODULES[$currentKey]))
 				$ret = stripslashes($_MODULES[$currentKey]);
 			elseif (isset($_MODULES[Tools::strtolower($currentKey)]))
@@ -791,16 +791,16 @@ abstract class Module
 				$ret = stripslashes($_MODULES[Tools::strtolower($defaultKey)]);
 			else
 				$ret = stripslashes($string);
-			
+
 			self::$l_cache[$cache_key] = str_replace('"', '&quot;', $ret);
-		} 
+		}
 		return self::$l_cache[$cache_key];
 	}
 	/**
 	 * Get translation for a given module text
 	 *
 	 * Note: $specific parameter is mandatory for library files.
-	 * Otherwise, translation key will not match for Module library 
+	 * Otherwise, translation key will not match for Module library
 	 * when module is loaded with eval() Module::getModulesOnDisk()
 	 *
 	 * @param string $string String to translate
@@ -811,14 +811,14 @@ abstract class Module
 	{
 		if (self::$_generateConfigXmlMode)
 			return $string;
-		
+
 		global $_MODULES, $_MODULE, $cookie;
 
 		$id_lang = (!isset($cookie) OR !is_object($cookie)) ? (int)(Configuration::get('PS_LANG_DEFAULT')) : (int)($cookie->id_lang);
 		$file = _PS_MODULE_DIR_.$this->name.'/'.Language::getIsoById($id_lang).'.php';
 		if (Tools::file_exists_cache($file) AND include_once($file))
 			$_MODULES = !empty($_MODULES) ? array_merge($_MODULES, $_MODULE) : $_MODULE;
-		
+
 		$source = $specific ? $specific : $this->name;
 		$string = str_replace('\'', '\\\'', $string);
 		$ret = $this->findTranslation($this->name, $string, $source);
@@ -834,7 +834,7 @@ abstract class Module
 	 */
 	public function updatePosition($id_hook, $way, $position = NULL)
 	{
-		if (!$res = Db::getInstance()->ExecuteS('
+		if (!$res = Db::getInstance()->executeS('
 		SELECT hm.`id_module`, hm.`position`, hm.`id_hook`
 		FROM `'._DB_PREFIX_.'hook_module` hm
 		WHERE hm.`id_hook` = '.(int)($id_hook).'
@@ -854,13 +854,13 @@ abstract class Module
 		if (isset($position) and !empty($position))
 			$to['position'] = (int)($position);
 
-		return (Db::getInstance()->Execute('
+		return (Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'hook_module`
 		SET `position`= position '.($way ? '-1' : '+1').'
 		WHERE position between '.(int)(min(array($from['position'], $to['position']))) .' AND '.(int)(max(array($from['position'], $to['position']))).'
 		AND `id_hook`='.(int)($from['id_hook']))
 		AND
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'hook_module`
 		SET `position`='.(int)($to['position']).'
 		WHERE `'.pSQL($this->identifier).'` = '.(int)($from[$this->identifier]).' AND `id_hook`='.(int)($to['id_hook']))
@@ -874,14 +874,14 @@ abstract class Module
 	 */
 	public function cleanPositions($id_hook)
 	{
-		$result = Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->executeS('
 		SELECT `id_module`
 		FROM `'._DB_PREFIX_.'hook_module`
 		WHERE `id_hook` = '.(int)($id_hook).'
 		ORDER BY `position`');
 		$sizeof = sizeof($result);
 		for ($i = 0; $i < $sizeof; ++$i)
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'hook_module`
 			SET `position` = '.(int)($i + 1).'
 			WHERE `id_hook` = '.(int)($id_hook).'
@@ -897,7 +897,7 @@ abstract class Module
 	 */
 	public function getPosition($id_hook)
 	{
-		if(isset(Hook::$preloadModulesFromHooks)) 
+		if(isset(Hook::$preloadModulesFromHooks))
 			if(isset(Hook::$preloadModulesFromHooks[$id_hook]))
 				if(isset(Hook::$preloadModulesFromHooks[$id_hook]['module_position'][$this->id]))
 					return Hook::$preloadModulesFromHooks[$id_hook]['module_position'][$this->id];
@@ -942,7 +942,7 @@ abstract class Module
 		if (self::$exceptionsCache == NULL AND !is_array(self::$exceptionsCache))
 		{
 			self::$exceptionsCache = array();
-			$result = Db::getInstance()->ExecuteS('
+			$result = Db::getInstance()->executeS('
 			SELECT CONCAT(id_hook, \'-\', id_module) as `key`, `file_name` as value
 			FROM `'._DB_PREFIX_.'hook_module_exceptions`');
 			foreach ($result as $row)
@@ -959,7 +959,7 @@ abstract class Module
 
 	public static function isInstalled($moduleName)
 	{
-		Db::getInstance()->ExecuteS('SELECT `id_module` FROM `'._DB_PREFIX_.'module` WHERE `name` = \''.pSQL($moduleName).'\'');
+		Db::getInstance()->executeS('SELECT `id_module` FROM `'._DB_PREFIX_.'module` WHERE `name` = \''.pSQL($moduleName).'\'');
 		return (bool)Db::getInstance()->NumRows();
 	}
 
@@ -998,11 +998,6 @@ abstract class Module
 	{
 		global $smarty;
 
-		if (Configuration::get('PS_FORCE_SMARTY_2')) /* Keep a backward compatibility for Smarty v2 */
-		{
-			$previousTemplate = $smarty->currentTemplate;
-			$smarty->currentTemplate = substr(basename($template), 0, -4);
-		}
 		$smarty->assign('module_dir', __PS_BASE_URI__.'modules/'.basename($file, '.php').'/');
 		if (($overloaded = self::_isTemplateOverloadedStatic(basename($file, '.php'), $template)) === NULL)
 			$result = Tools::displayError('No template found for module').' '.basename($file,'.php');
@@ -1011,8 +1006,6 @@ abstract class Module
 			$smarty->assign('module_template_dir', ($overloaded ? _THEME_DIR_ : __PS_BASE_URI__).'modules/'.basename($file, '.php').'/');
 			$result = $smarty->fetch(($overloaded ? _PS_THEME_DIR_.'modules/'.basename($file, '.php') : _PS_MODULE_DIR_.basename($file, '.php')).'/'.$template, $cacheId, $compileId);
 		}
-		if (Configuration::get('PS_FORCE_SMARTY_2')) /* Keep a backward compatibility for Smarty v2 */
-			$smarty->currentTemplate = $previousTemplate;
 		return $result;
 	}
 
@@ -1025,26 +1018,16 @@ abstract class Module
 	{
 		global $smarty;
 
-		/* Use Smarty 3 API calls */
-		if (!Configuration::get('PS_FORCE_SMARTY_2')) /* PHP version > 5.1.2 */
-			return $smarty->isCached($this->_getApplicableTemplateDir($template).$template, $cacheId, $compileId);
-		/* or keep a backward compatibility if PHP version < 5.1.2 */
-		else
-			return $smarty->is_cached($this->_getApplicableTemplateDir($template).$template, $cacheId, $compileId);
+		return $smarty->isCached($this->_getApplicableTemplateDir($template).$template, $cacheId, $compileId);
 	}
 
 	protected function _clearCache($template, $cacheId = NULL, $compileId = NULL)
 	{
 		global $smarty;
 
-		/* Use Smarty 3 API calls */
-		if (!Configuration::get('PS_FORCE_SMARTY_2')) /* PHP version > 5.1.2 */
-			return $smarty->clearCache($template ? $this->_getApplicableTemplateDir($template).$template : NULL, $cacheId, $compileId);
-		/* or keep a backward compatibility if PHP version < 5.1.2 */
-		else
-			return $smarty->clear_cache($template ? $this->_getApplicableTemplateDir($template).$template : NULL, $cacheId, $compileId);
+		return $smarty->clearCache($template ? $this->_getApplicableTemplateDir($template).$template : NULL, $cacheId, $compileId);
 	}
-	
+
 	protected function _generateConfigXml()
 	{
 		$xml = '<?xml version="1.0" encoding="UTF-8" ?>
@@ -1061,7 +1044,7 @@ abstract class Module
 		if (is_writable(_PS_MODULE_DIR_.$this->name.'/'))
 			file_put_contents(_PS_MODULE_DIR_.$this->name.'/config.xml', utf8_encode($xml));
 	}
-	
+
 	/**
 	 * @param string $hook_name
 	 * @return bool if module can be transplanted on hook

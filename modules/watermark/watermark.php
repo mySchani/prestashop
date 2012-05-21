@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Watermark extends Module
@@ -39,7 +39,6 @@ class Watermark extends Module
 	private $transparency;
 	private $imageTypes = array();
 	private	$watermarkTypes;
-	private $maxImageSize = 100000;
 
 	public function __construct()
 	{
@@ -132,7 +131,7 @@ class Watermark extends Module
 		if (isset($_FILES['PS_WATERMARK']) AND !empty($_FILES['PS_WATERMARK']['tmp_name']))
 		{
 			/* Check watermark validity */
-			if ($error = checkImage($_FILES['PS_WATERMARK'], $this->maxImageSize))
+			if ($error = checkImage($_FILES['PS_WATERMARK']))
 				$this->_errors[] = $error;
 			/* Copy new watermark */
 			elseif(!copy($_FILES['PS_WATERMARK']['tmp_name'], dirname(__FILE__).'/watermark.gif'))
@@ -150,7 +149,7 @@ class Watermark extends Module
 	{
 	    $imageTypes = ImageType::getImagesTypes('products');
 		$this->_html .=
-		'<form action="'.$_SERVER['REQUEST_URI'].'" method="post" enctype="multipart/form-data">
+		'<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" enctype="multipart/form-data">
 			<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" />'.$this->l('Watermark details').'</legend>
 				<p>'.$this->l('Once you have set up the module, regenerate the images using the "Images" tool in Preferences. However, the watermark will be added automatically to new images.').'</p>
 				<table border="0" width="500" cellpadding="0" cellspacing="0" id="form">
@@ -226,7 +225,6 @@ class Watermark extends Module
 	//we assume here only jpg files
 	public function hookwatermark($params)
 	{
-		global $smarty;
 		$image = new Image($params['id_image']);
 		$image->id_product = $params['id_product'];
 		$file = _PS_PROD_IMG_DIR_.$image->getExistingImgPath().'-watermark.jpg';

@@ -1,72 +1,179 @@
 SET NAMES 'utf8';
 
+INSERT INTO `PREFIX_hook_alias` (`id_hook_alias`, `name`, `alias`) VALUES
+(1, 'displayPayment', 'payment'),
+(2, 'actionValidateOrder', 'newOrder'),
+(3, 'actionPaymentConfirmation', 'paymentConfirm'),
+(4, 'displayPaymentReturn', 'paymentReturn'),
+(5, 'actionUpdateQuantity', 'updateQuantity'),
+(6, 'displayRightColumn', 'rightColumn'),
+(7, 'displayLeftColumn', 'leftColumn'),
+(8, 'displayHome', 'home'),
+(9, 'displayHeader', 'header'),
+(10, 'actionCartSave', 'cart'),
+(11, 'actionAuthentication', 'authentication'),
+(12, 'actionProductAdd', 'addproduct'),
+(13, 'actionProductUpdate', 'updateproduct'),
+(14, 'displayTop', 'top'),
+(15, 'displayRightColumnProduct', 'extraRight'),
+(16, 'actionProductDelete', 'deleteproduct'),
+(17, 'displayFooterProduct', 'productfooter'),
+(18, 'displayInvoice', 'invoice'),
+(19, 'actionOrderStatusUpdate', 'updateOrderStatus'),
+(20, 'displayAdminOrder', 'adminOrder'),
+(21, 'displayFooter', 'footer'),
+(22, 'displayPDFInvoice', 'PDFInvoice'),
+(23, 'displayAdminCustomers', 'adminCustomers'),
+(24, 'displayOrderConfirmation', 'orderConfirmation'),
+(25, 'actionCustomerAccountAdd', 'createAccount'),
+(26, 'displayCustomerAccount', 'customerAccount'),
+(27, 'actionOrderSlipAdd', 'orderSlip'),
+(28, 'displayProductTab', 'productTab'),
+(29, 'displayProductTabContent', 'productTabContent'),
+(30, 'displayShoppingCartFooter', 'shoppingCart'),
+(31, 'displayCustomerAccountForm', 'createAccountForm'),
+(32, 'displayAdminStatsModules', 'AdminStatsModules'),
+(33, 'displayAdminStatsGraphEngine', 'GraphEngine'),
+(34, 'actionOrderReturn', 'orderReturn'),
+(35, 'displayProductButtons', 'productActions'),
+(36, 'displayBackOfficeHome', 'backOfficeHome'),
+(37, 'displayAdminStatsGridEngine', 'GridEngine'),
+(38, 'actionWatermark', 'watermark'),
+(39, 'actionProductCancel', 'cancelProduct'),
+(40, 'displayLeftColumnProduct', 'extraLeft'),
+(41, 'actionProductOutOfStock', 'productOutOfStock'),
+(42, 'actionProductAttributeUpdate', 'updateProductAttribute'),
+(43, 'displayCarrierList', 'extraCarrier'),
+(44, 'displayShoppingCart', 'shoppingCartExtra'),
+(45, 'actionSearch', 'search'),
+(46, 'displayBeforePayment', 'backBeforePayment'),
+(47, 'actionCarrierUpdate', 'updateCarrier'),
+(48, 'actionOrderStatusPostUpdate', 'postUpdateOrderStatus'),
+(49, 'displayCustomerAccountFormTop', 'createAccountTop'),
+(50, 'displayBackOfficeHeader', 'backOfficeHeader'),
+(51, 'displayBackOfficeTop', 'backOfficeTop'),
+(52, 'displayBackOfficeFooter', 'backOfficeFooter'),
+(53, 'actionProductAttributeDelete', 'deleteProductAttribute'),
+(54, 'actionCarrierProcess', 'processCarrier'),
+(55, 'actionOrderDetail', 'orderDetail'),
+(56, 'displayBeforeCarrier', 'beforeCarrier'),
+(57, 'displayOrderDetail', 'orderDetailDisplayed'),
+(58, 'actionPaymentCCAdd', 'paymentCCAdded'),
+(59, 'displayProductComparison', 'extraProductComparison'),
+(60, 'actionCategoryAdd', 'categoryAddition'),
+(61, 'actionCategoryUpdate', 'categoryUpdate'),
+(62, 'actionCategoryDelete', 'categoryDeletion'),
+(63, 'actionBeforeAuthentication', 'beforeAuthentication'),
+(64, 'displayPaymentTop', 'paymentTop'),
+(65, 'actionHtaccessCreate', 'afterCreateHtaccess'),
+(66, 'actionAdminMetaSave', 'afterSaveAdminMeta'),
+(67, 'displayAttributeGroupForm', 'attributeGroupForm'),
+(68, 'actionAttributeGroupSave', 'afterSaveAttributeGroup'),
+(69, 'actionAttributeGroupDelete', 'afterDeleteAttributeGroup'),
+(70, 'displayFeatureForm', 'featureForm'),
+(71, 'actionFeatureSave', 'afterSaveFeature'),
+(72, 'actionFeatureDelete', 'afterDeleteFeature'),
+(73, 'actionProductSave', 'afterSaveProduct'),
+(74, 'actionProductListOverride', 'productListAssign'),
+(75, 'displayAttributeGroupPostProcess', 'postProcessAttributeGroup'),
+(76, 'displayFeaturePostProcess', 'postProcessFeature'),
+(77, 'displayFeatureValueForm', 'featureValueForm'),
+(78, 'displayFeatureValuePostProcess', 'postProcessFeatureValue'),
+(79, 'actionFeatureValueDelete', 'afterDeleteFeatureValue'),
+(80, 'actionFeatureValueSave', 'afterSaveFeatureValue'),
+(81, 'displayAttributeForm', 'attributeForm'),
+(82, 'actionAttributePostProcess', 'postProcessAttribute'),
+(83, 'actionAttributeDelete', 'afterDeleteAttribute'),
+(84, 'actionAttributeSave', 'afterSaveAttribute'),
+(85, 'actionTaxManager', 'taxManager');
+
+
 INSERT INTO `PREFIX_hook` (`id_hook`, `name`, `title`, `description`, `position`, `live_edit`) VALUES
-(1, 'payment', 'Payment', NULL, 1, 1),
-(2, 'newOrder', 'New orders', NULL, 0, 0),
-(3, 'paymentConfirm', 'Payment confirmation', NULL, 0, 0),
-(4, 'paymentReturn', 'Payment return', NULL, 0, 0),
-(5, 'updateQuantity', 'Quantity update', 'Quantity is updated only when the customer effectively <b>place</b> his order.', 0, 0),
-(6, 'rightColumn', 'Right column blocks', NULL, 1, 1),
-(7, 'leftColumn', 'Left column blocks', NULL, 1, 1),
-(8, 'home', 'Homepage content', NULL, 1, 1),
-(9, 'header', 'Header of pages', 'A hook which allow you to do things in the header of each pages', 1, 0),
-(10, 'cart', 'Cart creation and update', NULL, 0, 0),
-(11, 'authentication', 'Successful customer authentication', NULL, 0, 0),
-(12, 'addproduct', 'Product creation', NULL, 0, 0),
-(13, 'updateproduct', 'Product Update', NULL, 0, 0),
-(14, 'top', 'Top of pages', 'A hook which allow you to do things a the top of each pages.', 1, 0),
-(15, 'extraRight', 'Extra actions on the product page (right column).', NULL, 0, 0),
-(16, 'deleteproduct', 'Product deletion', 'This hook is called when a product is deleted', 0, 0),
-(17, 'productfooter', 'Product footer', 'Add new blocks under the product description', 1, 1),
-(18, 'invoice', 'Invoice', 'Add blocks to invoice (order)', 1, 0),
-(19, 'updateOrderStatus', 'Order''s status update event', 'Launch modules when the order''s status of an order change.', 0, 0),
-(20, 'adminOrder', 'Display in Back-Office, tab AdminOrder', 'Launch modules when the tab AdminOrder is displayed on back-office.', 0, 0),
-(21, 'footer', 'Footer', 'Add block in footer', 1, 0),
-(22, 'PDFInvoice', 'PDF Invoice', 'Allow the display of extra informations into the PDF invoice', 0, 0),
-(23, 'adminCustomers', 'Display in Back-Office, tab AdminCustomers', 'Launch modules when the tab AdminCustomers is displayed on back-office.', 0, 0),
-(24, 'orderConfirmation', 'Order confirmation page', 'Called on order confirmation page', 0, 0),
-(25, 'createAccount', 'Successful customer create account', 'Called when new customer create account successfuled', 0, 0),
-(26, 'customerAccount', 'Customer account page display in front office', 'Display on page account of the customer', 1, 0),
-(27, 'orderSlip', 'Called when a order slip is created', 'Called when a quantity of one product change in an order.', 0, 0),
-(28, 'productTab', 'Tabs on product page', 'Called on order product page tabs', 0, 0),
-(29, 'productTabContent', 'Content of tabs on product page', 'Called on order product page tabs', 0, 0),
-(30, 'shoppingCart', 'Shopping cart footer', 'Display some specific informations on the shopping cart page', 0, 0),
-(31, 'createAccountForm', 'Customer account creation form', 'Display some information on the form to create a customer account', 1, 0),
-(32, 'AdminStatsModules','Stats - Modules', NULL, 1, 0),
-(33, 'GraphEngine','Graph Engines', NULL, 0, 0),
-(34, 'orderReturn','Product returned', NULL, 0, 0),
-(35, 'productActions', 'Product actions', 'Put new action buttons on product page', 1, 0),
-(36, 'backOfficeHome', 'Administration panel homepage', NULL, 1, 0),
-(37, 'GridEngine','Grid Engines', NULL, 0, 0),
-(38, 'watermark','Watermark', NULL, 0, 0),
-(39, 'cancelProduct', 'Product cancelled', 'This hook is called when you cancel a product in an order', 0, 0),
-(40, 'extraLeft', 'Extra actions on the product page (left column).', NULL, 0, 0),
-(41, 'productOutOfStock', 'Product out of stock', 'Make action while product is out of stock', 1, 0),
-(42, 'updateProductAttribute', 'Product attribute update', NULL, 0, 0),
-(43, 'extraCarrier', 'Extra carrier (module mode)', NULL, 0, 0),
-(44, 'shoppingCartExtra', 'Shopping cart extra button', 'Display some specific informations', 1, 0),
-(45, 'search', 'Search', NULL, 0, 0),
-(46, 'backBeforePayment', 'Redirect in order process', 'Redirect user to the module instead of displaying payment modules', 0, 0),
-(47, 'updateCarrier', 'Carrier Update', 'This hook is called when a carrier is updated', 0, 0),
-(48, 'postUpdateOrderStatus', 'Post update of order status', NULL, 0, 0),
-(49, 'createAccountTop', 'Block above the form for create an account', NULL, 1, 0),
-(50, 'backOfficeHeader', 'Administration panel header', NULL , 0, 0),
-(51, 'backOfficeTop', 'Administration panel hover the tabs', NULL , 1, 0),
-(52, 'backOfficeFooter', 'Administration panel footer', NULL , 1, 0),
-(53, 'deleteProductAttribute', 'Product Attribute Deletion', NULL, 0, 0),
-(54, 'processCarrier', 'Carrier Process', NULL, 0, 0),
-(55, 'orderDetail', 'Order Detail', 'To set the follow-up in smarty when order detail is called', 0, 0),
-(56, 'beforeCarrier', 'Before carrier list', 'This hook is display before the carrier list on Front office', 1, 0),
-(57, 'orderDetailDisplayed', 'Order detail displayed', 'Displayed on order detail on front office', 1, 0),
-(58, 'paymentCCAdded', 'Payment CC added', 'Payment CC added', 0, 0),
-(59, 'extraProductComparison', 'Extra Product Comparison', 'Extra Product Comparison', 0, 0),
-(60, 'categoryAddition', 'Category creation', '', 0, 0),
-(61, 'categoryUpdate', 'Category modification', '', 0, 0),
-(62, 'categoryDeletion', 'Category removal', '', 0, 0),
-(63, 'beforeAuthentication', 'Before Authentication', 'Before authentication', 0, 0),
-(64, 'paymentTop', 'Top of payment page', 'Top of payment page', 0, 0),
-(65, 'afterCreateHtaccess', 'After htaccess creation', 'After htaccess creation', 0, 0),
-(66, 'afterSaveAdminMeta', 'After save configuration in AdminMeta', 'After save configuration in AdminMeta', 0, 0);
+(1, 'displayPayment', 'Payment', NULL, 1, 1),
+(2, 'actionValidateOrder', 'New orders', NULL, 0, 0),
+(3, 'actionPaymentConfirmation', 'Payment confirmation', NULL, 0, 0),
+(4, 'displayPaymentReturn', 'Payment return', NULL, 0, 0),
+(5, 'actionUpdateQuantity', 'Quantity update', 'Quantity is updated only when the customer effectively <b>place</b> his order.', 0, 0),
+(6, 'displayRightColumn', 'Right column blocks', NULL, 1, 1),
+(7, 'displayLeftColumn', 'Left column blocks', NULL, 1, 1),
+(8, 'displayHome', 'Homepage content', NULL, 1, 1),
+(9, 'displayHeader', 'Header of pages', 'A hook which allow you to do things in the header of each pages', 1, 0),
+(10, 'actionCartSave', 'Cart creation and update', NULL, 0, 0),
+(11, 'actionAuthentication', 'Successful customer authentication', NULL, 0, 0),
+(12, 'actionProductAdd', 'Product creation', NULL, 0, 0),
+(13, 'actionProductUpdate', 'Product Update', NULL, 0, 0),
+(14, 'displayTop', 'Top of pages', 'A hook which allow you to do things a the top of each pages.', 1, 0),
+(15, 'displayRightColumnProduct', 'Extra actions on the product page (right column).', NULL, 0, 0),
+(16, 'actionProductDelete', 'Product deletion', 'This hook is called when a product is deleted', 0, 0),
+(17, 'displayFooterProduct', 'Product footer', 'Add new blocks under the product description', 1, 1),
+(18, 'displayInvoice', 'Invoice', 'Add blocks to invoice (order)', 1, 0),
+(19, 'actionOrderStatusUpdate', 'Order''s status update event', 'Launch modules when the order''s status of an order change.', 0, 0),
+(20, 'displayAdminOrder', 'Display in Back-Office, tab AdminOrder', 'Launch modules when the tab AdminOrder is displayed on back-office.', 0, 0),
+(21, 'displayFooter', 'Footer', 'Add block in footer', 1, 0),
+(22, 'displayPDFInvoice', 'PDF Invoice', 'Allow the display of extra informations into the PDF invoice', 0, 0),
+(23, 'displayAdminCustomers', 'Display in Back-Office, tab AdminCustomers', 'Launch modules when the tab AdminCustomers is displayed on back-office.', 0, 0),
+(24, 'displayOrderConfirmation', 'Order confirmation page', 'Called on order confirmation page', 0, 0),
+(25, 'actionCustomerAccountAdd', 'Successful customer create account', 'Called when new customer create account successfuled', 0, 0),
+(26, 'displayCustomerAccount', 'Customer account page display in front office', 'Display on page account of the customer', 1, 0),
+(27, 'actionOrderSlipAdd', 'Called when a order slip is created', 'Called when a quantity of one product change in an order.', 0, 0),
+(28, 'displayProductTab', 'Tabs on product page', 'Called on order product page tabs', 0, 0),
+(29, 'displayProductTabContent', 'Content of tabs on product page', 'Called on order product page tabs', 0, 0),
+(30, 'displayShoppingCartFooter', 'Shopping cart footer', 'Display some specific informations on the shopping cart page', 0, 0),
+(31, 'displayCustomerAccountForm', 'Customer account creation form', 'Display some information on the form to create a customer account', 1, 0),
+(32, 'displayAdminStatsModules','Stats - Modules', NULL, 1, 0),
+(33, 'displayAdminStatsGraphEngine','Graph Engines', NULL, 0, 0),
+(34, 'actionOrderReturn','Product returned', NULL, 0, 0),
+(35, 'displayProductButtons', 'Product actions', 'Put new action buttons on product page', 1, 0),
+(36, 'displayBackOfficeHome', 'Administration panel homepage', NULL, 1, 0),
+(37, 'displayAdminStatsGridEngine','Grid Engines', NULL, 0, 0),
+(38, 'actionWatermark','Watermark', NULL, 0, 0),
+(39, 'actionProductCancel', 'Product cancelled', 'This hook is called when you cancel a product in an order', 0, 0),
+(40, 'displayLeftColumnProduct', 'Extra actions on the product page (left column).', NULL, 0, 0),
+(41, 'actionProductOutOfStock', 'Product out of stock', 'Make action while product is out of stock', 1, 0),
+(42, 'actionProductAttributeUpdate', 'Product attribute update', NULL, 0, 0),
+(43, 'displayCarrierList', 'Extra carrier (module mode)', NULL, 0, 0),
+(44, 'displayShoppingCart', 'Shopping cart extra button', 'Display some specific informations', 1, 0),
+(45, 'actionSearch', 'Search', NULL, 0, 0),
+(46, 'displayBeforePayment', 'Redirect in order process', 'Redirect user to the module instead of displaying payment modules', 0, 0),
+(47, 'actionCarrierUpdate', 'Carrier Update', 'This hook is called when a carrier is updated', 0, 0),
+(48, 'actionOrderStatusPostUpdate', 'Post update of order status', NULL, 0, 0),
+(49, 'displayCustomerAccountFormTop', 'Block above the form for create an account', NULL, 1, 0),
+(50, 'displayBackOfficeHeader', 'Administration panel header', NULL , 0, 0),
+(51, 'displayBackOfficeTop', 'Administration panel hover the tabs', NULL , 1, 0),
+(52, 'displayBackOfficeFooter', 'Administration panel footer', NULL , 1, 0),
+(53, 'actionProductAttributeDelete', 'Product Attribute Deletion', NULL, 0, 0),
+(54, 'actionCarrierProcess', 'Carrier Process', NULL, 0, 0),
+(55, 'actionOrderDetail', 'Order Detail', 'To set the follow-up in smarty when order detail is called', 0, 0),
+(56, 'displayBeforeCarrier', 'Before carrier list', 'This hook is display before the carrier list on Front office', 1, 0),
+(57, 'displayOrderDetail', 'Order detail displayed', 'Displayed on order detail on front office', 1, 0),
+(58, 'actionPaymentCCAdd', 'Payment CC added', 'Payment CC added', 0, 0),
+(59, 'displayProductComparison', 'Extra Product Comparison', 'Extra Product Comparison', 0, 0),
+(60, 'actionCategoryAdd', 'Category creation', '', 0, 0),
+(61, 'actionCategoryUpdate', 'Category modification', '', 0, 0),
+(62, 'actionCategoryDelete', 'Category removal', '', 0, 0),
+(63, 'actionBeforeAuthentication', 'Before Authentication', 'Before authentication', 0, 0),
+(64, 'displayPaymentTop', 'Top of payment page', 'Top of payment page', 0, 0),
+(65, 'actionHtaccessCreate', 'After htaccess creation', 'After htaccess creation', 0, 0),
+(66, 'actionAdminMetaSave', 'After save configuration in AdminMeta', 'After save configuration in AdminMeta', 0, 0),
+(67, 'displayAttributeGroupForm', 'Add fileds to the form "attribute group"', 'Add fileds to the form "attribute group"', 0, 0),
+(68, 'actionAttributeGroupSave', 'On saving attribute group', 'On saving attribute group', 0, 0),
+(69, 'actionAttributeGroupDelete', 'On deleting attribute group', 'On deleting attribute group', 0, 0),
+(70, 'displayFeatureForm', 'Add fields to the form "feature"', 'Add fields to the form "feature"', 0, 0),
+(71, 'actionFeatureSave', 'On saving attribute feature', 'On saving attribute feature', 0, 0),
+(72, 'actionFeatureDelete', 'On deleting attribute feature', 'On deleting attribute feature', 0, 0),
+(73, 'actionProductSave', 'On saving products', 'On saving products', 0, 0),
+(74, 'actionProductListOverride', 'Assign product list to a category', 'Assign product list to a category', 0, 0),
+(75, 'displayAttributeGroupPostProcess', 'On post-process in admin attribute group', 'On post-process in admin attribute group', 0, 0),
+(76, 'displayFeaturePostProcess', 'On post-process in admin feature', 'On post-process in admin feature', 0, 0),
+(77, 'displayFeatureValueForm', 'Add fileds to the form "feature value"', 'Add fileds to the form "feature value"', 0, 0),
+(78, 'displayFeatureValuePostProcess', 'On post-process in admin feature value', 'On post-process in admin feature value', 0, 0),
+(79, 'actionFeatureValueDelete', 'On deleting attribute feature value', 'On deleting attribute feature value', 0, 0),
+(90, 'actionFeatureValueSave', 'On saving attribute feature value', 'On saving attribute feature value', 0, 0),
+(91, 'displayAttributeForm', 'Add fileds to the form "feature value"', 'Add fileds to the form "feature value"', 0, 0),
+(92, 'actionAttributePostProcess', 'On post-process in admin feature value', 'On post-process in admin feature value', 0, 0),
+(93, 'actionAttributeDelete', 'On deleting attribute feature value', 'On deleting attribute feature value', 0, 0),
+(94, 'actionAttributeSave', 'On saving attribute feature value', 'On saving attribute feature value', 0, 0),
+(95, 'actionTaxManager', 'Tax Manager Factory', '' , 0, 0);
 
 INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES
 (1, 'PS_LANG_DEFAULT', '1', NOW(), NOW()),
@@ -148,7 +255,7 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (77, 'PS_BLOCK_SPECIALS_DISPLAY', 0, NOW(), NOW()),
 (78, 'PS_STOCK_MVT_REASON_DEFAULT', 3, NOW(), NOW()),
 (79, 'PS_COMPARATOR_MAX_ITEM', 3, NOW(), NOW()),
-(80, 'PS_ORDER_PROCESS_TYPE', 0, NOW(), NOW()),
+(80, 'PS_ORDER_PROCESS_TYPE', 1, NOW(), NOW()),
 (81, 'PS_SPECIFIC_PRICE_PRIORITIES', 'id_shop;id_currency;id_country;id_group', NOW(), NOW()),
 (82, 'PS_TAX_DISPLAY', 0, NOW(), NOW()),
 (83, 'PS_SMARTY_FORCE_COMPILE', 1, NOW(), NOW()),
@@ -171,8 +278,7 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (100, 'PS_ATTACHMENT_MAXIMUM_SIZE', '2', NOW(), NOW()),
 (101, 'PS_SMARTY_CACHE', '1', NOW(), NOW()),
 (102, 'PS_DIMENSION_UNIT', 'cm', NOW(), NOW()),
-(103, 'PS_FORCE_SMARTY_2', '0', NOW(), NOW()),
-(104, 'PS_GUEST_CHECKOUT_ENABLED', '0', NOW(), NOW()),
+(104, 'PS_GUEST_CHECKOUT_ENABLED', '1', NOW(), NOW()),
 (105, 'PS_DISPLAY_SUPPLIERS', '1', NOW(), NOW()),
 (106, 'PS_CATALOG_MODE', '0', NOW(), NOW()),
 (107, 'PS_GEOLOCATION_WHITELIST', '209.185.108;209.185.253;209.85.238;209.85.238.11;209.85.238.4;216.239.33.96;216.239.33.97;216.239.33.98;216.239.33.99;216.239.37.98;216.239.37.99;216.239.39.98;216.239.39.99;216.239.41.96;216.239.41.97;216.239.41.98;216.239.41.99;216.239.45.4;216.239.46;216.239.51.96;216.239.51.97;216.239.51.98;216.239.51.99;216.239.53.98;216.239.53.99;216.239.57.96;216.239.57.97;216.239.57.98;216.239.57.99;216.239.59.98;216.239.59.99;216.33.229.163;64.233.173.193;64.233.173.194;64.233.173.195;64.233.173.196;64.233.173.197;64.233.173.198;64.233.173.199;64.233.173.200;64.233.173.201;64.233.173.202;64.233.173.203;64.233.173.204;64.233.173.205;64.233.173.206;64.233.173.207;64.233.173.208;64.233.173.209;64.233.173.210;64.233.173.211;64.233.173.212;64.233.173.213;64.233.173.214;64.233.173.215;64.233.173.216;64.233.173.217;64.233.173.218;64.233.173.219;64.233.173.220;64.233.173.221;64.233.173.222;64.233.173.223;64.233.173.224;64.233.173.225;64.233.173.226;64.233.173.227;64.233.173.228;64.233.173.229;64.233.173.230;64.233.173.231;64.233.173.232;64.233.173.233;64.233.173.234;64.233.173.235;64.233.173.236;64.233.173.237;64.233.173.238;64.233.173.239;64.233.173.240;64.233.173.241;64.233.173.242;64.233.173.243;64.233.173.244;64.233.173.245;64.233.173.246;64.233.173.247;64.233.173.248;64.233.173.249;64.233.173.250;64.233.173.251;64.233.173.252;64.233.173.253;64.233.173.254;64.233.173.255;64.68.80;64.68.81;64.68.82;64.68.83;64.68.84;64.68.85;64.68.86;64.68.87;64.68.88;64.68.89;64.68.90.1;64.68.90.10;64.68.90.11;64.68.90.12;64.68.90.129;64.68.90.13;64.68.90.130;64.68.90.131;64.68.90.132;64.68.90.133;64.68.90.134;64.68.90.135;64.68.90.136;64.68.90.137;64.68.90.138;64.68.90.139;64.68.90.14;64.68.90.140;64.68.90.141;64.68.90.142;64.68.90.143;64.68.90.144;64.68.90.145;64.68.90.146;64.68.90.147;64.68.90.148;64.68.90.149;64.68.90.15;64.68.90.150;64.68.90.151;64.68.90.152;64.68.90.153;64.68.90.154;64.68.90.155;64.68.90.156;64.68.90.157;64.68.90.158;64.68.90.159;64.68.90.16;64.68.90.160;64.68.90.161;64.68.90.162;64.68.90.163;64.68.90.164;64.68.90.165;64.68.90.166;64.68.90.167;64.68.90.168;64.68.90.169;64.68.90.17;64.68.90.170;64.68.90.171;64.68.90.172;64.68.90.173;64.68.90.174;64.68.90.175;64.68.90.176;64.68.90.177;64.68.90.178;64.68.90.179;64.68.90.18;64.68.90.180;64.68.90.181;64.68.90.182;64.68.90.183;64.68.90.184;64.68.90.185;64.68.90.186;64.68.90.187;64.68.90.188;64.68.90.189;64.68.90.19;64.68.90.190;64.68.90.191;64.68.90.192;64.68.90.193;64.68.90.194;64.68.90.195;64.68.90.196;64.68.90.197;64.68.90.198;64.68.90.199;64.68.90.2;64.68.90.20;64.68.90.200;64.68.90.201;64.68.90.202;64.68.90.203;64.68.90.204;64.68.90.205;64.68.90.206;64.68.90.207;64.68.90.208;64.68.90.21;64.68.90.22;64.68.90.23;64.68.90.24;64.68.90.25;64.68.90.26;64.68.90.27;64.68.90.28;64.68.90.29;64.68.90.3;64.68.90.30;64.68.90.31;64.68.90.32;64.68.90.33;64.68.90.34;64.68.90.35;64.68.90.36;64.68.90.37;64.68.90.38;64.68.90.39;64.68.90.4;64.68.90.40;64.68.90.41;64.68.90.42;64.68.90.43;64.68.90.44;64.68.90.45;64.68.90.46;64.68.90.47;64.68.90.48;64.68.90.49;64.68.90.5;64.68.90.50;64.68.90.51;64.68.90.52;64.68.90.53;64.68.90.54;64.68.90.55;64.68.90.56;64.68.90.57;64.68.90.58;64.68.90.59;64.68.90.6;64.68.90.60;64.68.90.61;64.68.90.62;64.68.90.63;64.68.90.64;64.68.90.65;64.68.90.66;64.68.90.67;64.68.90.68;64.68.90.69;64.68.90.7;64.68.90.70;64.68.90.71;64.68.90.72;64.68.90.73;64.68.90.74;64.68.90.75;64.68.90.76;64.68.90.77;64.68.90.78;64.68.90.79;64.68.90.8;64.68.90.80;64.68.90.9;64.68.91;64.68.92;66.249.64;66.249.65;66.249.66;66.249.67;66.249.68;66.249.69;66.249.70;66.249.71;66.249.72;66.249.73;66.249.78;66.249.79;72.14.199;8.6.48', NOW(), NOW()),
@@ -180,12 +286,58 @@ INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_a
 (109, 'PS_COOKIE_CHECKIP', '1', NOW(), NOW()),
 (110, 'PS_STORES_CENTER_LAT', '25.948969', NOW(), NOW()),
 (111, 'PS_STORES_CENTER_LONG', '-80.226439', NOW(), NOW()),
-(112, 'PS_HOMEPAGE_PHP_SELF', 'index.php', NOW(), NOW()),
 (113, 'PS_USE_ECOTAX', '0', NOW(), NOW()),
 (114, 'PS_CANONICAL_REDIRECT', '1', NOW(), NOW()),
 (115, 'PS_IMG_UPDATE_TIME', UNIX_TIMESTAMP(), NOW(), NOW()),
 (116, 'PS_BACKUP_DROP_TABLE', 1, NOW(), NOW()),
-(117, 'PS_LEGACY_IMAGES', '1', NOW(), NOW());
+(117, 'PS_OS_CHEQUE', '1', NOW(), NOW()),
+(118, 'PS_OS_PAYMENT', '2', NOW(), NOW()),
+(119, 'PS_OS_PREPARATION', '3', NOW(), NOW()),
+(120, 'PS_OS_SHIPPING', '4', NOW(), NOW()),
+(121, 'PS_OS_DELIVERED', '5', NOW(), NOW()),
+(122, 'PS_OS_CANCELED', '6', NOW(), NOW()),
+(123, 'PS_OS_REFUND', '7', NOW(), NOW()),
+(124, 'PS_OS_ERROR', '8', NOW(), NOW()),
+(125, 'PS_OS_OUTOFSTOCK', '9', NOW(), NOW()),
+(126, 'PS_OS_BANKWIRE', '10', NOW(), NOW()),
+(127, 'PS_OS_PAYPAL', '11', NOW(), NOW()),
+(128, 'PS_OS_WS_PAYMENT', '12', NOW(), NOW()),
+(129, 'PS_LEGACY_IMAGES', '1', NOW(), NOW()),
+(130, 'PS_IMAGE_QUALITY', 'jpg', NOW(), NOW()),
+(131, 'PS_PNG_QUALITY', '7', NOW(), NOW()),
+(132, 'PS_JPEG_QUALITY', '90', NOW(), NOW()),
+(133, 'PS_COOKIE_LIFETIME_FO', '480', NOW(), NOW()),
+(134, 'PS_COOKIE_LIFETIME_BO', '480', NOW(), NOW()),
+(135, 'PS_RESTRICT_DELIVERED_COUNTRIES', '0', NOW(), NOW()),
+(136, 'PS_SHOW_NEW_ORDERS', '1', NOW(), NOW()),
+(137, 'PS_SHOW_NEW_CUSTOMERS', '1', NOW(), NOW()),
+(138, 'PS_SHOW_NEW_MESSAGES', '1', NOW(), NOW()),
+(139, 'PS_FEATURE_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(140, 'PS_COMBINATION_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(141, 'PS_SPECIFIC_PRICE_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(142, 'PS_SCENE_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(143, 'PS_VIRTUAL_PROD_FEATURE_ACTIVE', '0', NOW(), NOW()),
+(144, 'PS_CUSTOMIZATION_FEATURE_ACTIVE', '0', NOW(), NOW()),
+(145, 'PS_CART_RULE_FEATURE_ACTIVE', '0', NOW(), NOW()),
+(146, 'PS_GROUP_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(147, 'PS_PACK_FEATURE_ACTIVE', '0', NOW(), NOW()),
+(148, 'PS_ALIAS_FEATURE_ACTIVE', '1', NOW(), NOW()),
+(149, 'PS_CARRIER_DEFAULT', '1', NOW(), NOW()),
+(150, 'PS_TAX_ADDRESS_TYPE', 'id_address_delivery', NOW(), NOW()),
+(151, 'PS_SHOP_DEFAULT', '1', NOW(), NOW()),
+(152, 'PS_CARRIER_DEFAULT_SORT', '0', NOW(), NOW()),
+(153, 'PS_STOCK_MVT_INC_REASON_DEFAULT', '1', NOW(), NOW()),
+(154, 'PS_STOCK_MVT_DEC_REASON_DEFAULT', '2', NOW(), NOW()),
+(155, 'PS_ADVANCED_STOCK_MANAGEMENT', '1', NOW(), NOW()),
+(156, 'PS_ADMINREFRESH_NOTIFICATION', '1', NOW(), NOW()),
+(157, 'PS_STOCK_MVT_TRANSFER_TO', '7', NOW(), NOW()),
+(158, 'PS_STOCK_MVT_TRANSFER_FROM', '6', NOW(), NOW()),
+(159, 'PS_CARRIER_DEFAULT_ORDER', '0', NOW(), NOW()),
+(160, 'PS_STOCK_MVT_SUPPLY_ORDER', '8', NOW(), NOW()),
+(161, 'PS_STOCK_CUSTOMER_ORDER_REASON', '3', NOW(), NOW()),
+(162, 'PS_UNIDENTIFIED_GROUP', '1', NOW(), NOW()),
+(163, 'PS_GUEST_GROUP', '2', NOW(), NOW()),
+(164, 'PS_CUSTOMER_GROUP', '3', NOW(), NOW());
 
 INSERT INTO `PREFIX_configuration_lang` (`id_configuration`, `id_lang`, `value`, `date_upd`) VALUES
 (36, 1, 'IN', NOW()),(36, 2, 'FA', NOW()),(36, 3, 'CU', NOW()),(36, 4, 'FA', NOW()),(36, 5, 'FA', NOW()),
@@ -198,8 +350,12 @@ INSERT INTO `PREFIX_configuration_lang` (`id_configuration`, `id_lang`, `value`,
 (74, 4, 'Lieber Kunde,\r\n\r\nMit freundlichen Grüßen,\r\nIhr Kundenservice', NOW()),
 (74, 5, 'Gentile Cliente,\r\n\r\nCordiali saluti,\r\nServizio Clienti', NOW());
 
-INSERT INTO `PREFIX_lang` (`id_lang`, `name`, `active`, `iso_code`, `language_code`) VALUES
-(1, 'English (English)', 1, 'en', 'en-us'),(2, 'Français (French)', 1, 'fr', 'fr'),(3, 'Español (Spanish)', 1, 'es', 'es'),(4, 'Deutsch (German)', 1, 'de', 'de'),(5, 'Italiano (Italian)', 1, 'it', 'it');
+INSERT INTO `PREFIX_lang` (`id_lang`, `name`, `active`, `iso_code`, `language_code`, `date_format_lite`, `date_format_full`) VALUES
+(1, 'English (English)', 1, 'en', 'en-us', 'm/j/Y', 'm/j/Y H:i:s'),
+(2, 'Français (French)', 1, 'fr', 'fr', 'd/m/Y', 'd/m/Y H:i:s'),
+(3, 'Español (Spanish)', 1, 'es', 'es', 'd/m/Y', 'd/m/Y H:i:s'),
+(4, 'Deutsch (German)', 1, 'de', 'de', 'd.m.Y', 'd.m.Y H:i:s'),
+(5, 'Italiano (Italian)', 1, 'it', 'it', 'd/m/Y', 'd/m/Y H:i:s');
 
 INSERT INTO `PREFIX_lang_shop` (`id_lang`, `id_shop`) VALUES (1,1), (2,1), (3,1), (4,1), (5,1);
 
@@ -207,9 +363,9 @@ INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft
 INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `description`, `link_rewrite`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
 (1, 1, 'Home', '', 'home', NULL, NULL, NULL),(1, 2, 'Accueil', '', 'home', NULL, NULL, NULL),(1, 3, 'Inicio', '', 'home', NULL, NULL, NULL),(1, 4, 'Start', '', 'home', NULL, NULL, NULL),(1, 5, 'Home page', '', 'home', NULL, NULL, NULL);
 
-INSERT INTO `PREFIX_order_state` (`id_order_state`, `invoice`, `send_email`, `color`, `unremovable`, `logable`, `delivery`) VALUES
-(1, 0, 1, 'lightblue', 1, 0, 0),(2, 1, 1, '#DDEEFF', 1, 1, 0),(3, 1, 1, '#FFDD99', 1, 1, 1),(4, 1, 1, '#EEDDFF', 1, 1, 1),(5, 1, 0, '#DDFFAA', 1, 1, 1),
-(6, 0, 1, '#DADADA', 1, 0, 0),(7, 1, 1, '#FFFFBB', 1, 0, 0),(8, 0, 1, '#FFDFDF', 1, 0, 0),(9, 1, 1, '#FFD3D3', 1, 0, 0),(10, 0, 1, 'lightblue', 1, 0, 0),(11, 0, 0, 'lightblue', 1, 0, 0),(12, 0, 0, 'lightblue', 1, 0, 0);
+INSERT INTO `PREFIX_order_state` (`id_order_state`, `invoice`, `send_email`, `color`, `unremovable`, `logable`, `delivery`, `shipped`) VALUES
+(1, 0, 1, 'RoyalBlue', 1, 0, 0, 0),(2, 1, 1, 'LimeGreen', 1, 1, 0, 0),(3, 1, 1, 'DarkOrange', 1, 1, 1, 0),(4, 1, 1, 'BlueViolet', 1, 1, 1, 1),(5, 1, 0, '#108510', 1, 1, 1, 1),
+(6, 0, 1, 'Crimson', 1, 0, 0, 0),(7, 1, 1, '#ec2e15', 1, 0, 0, 0),(8, 0, 1, '#8f0621', 1, 0, 0, 0),(9, 1, 1, 'HotPink', 1, 0, 0, 0),(10, 0, 1, 'RoyalBlue', 1, 0, 0, 0),(11, 0, 0, 'RoyalBlue', 1, 0, 0, 0),(12, 1, 0, 'LimeGreen', 1, 1, 0, 0);
 
 INSERT INTO `PREFIX_order_state_lang` (`id_order_state`, `id_lang`, `name`, `template`) VALUES
 (1, 1, 'Awaiting cheque payment', 'cheque'),
@@ -282,9 +438,9 @@ INSERT INTO `PREFIX_zone_group_shop` (`id_zone`, `id_group_shop`) (SELECT `id_zo
 INSERT INTO `PREFIX_country` (`id_country`, `id_zone`, `iso_code`, `call_prefix`, `active`, `contains_states`, `need_identification_number`, `need_zip_code`, `zip_code_format`, `display_tax_label`) VALUES
 (1, 1, 'DE', 49, 1, 0, 0, 1, 'NNNNN', 1),(2, 1, 'AT', 43, 1, 0, 0, 1, 'NNNN', 1),(3, 1, 'BE', 32, 1, 0, 0, 1, 'NNNN', 1),(4, 2, 'CA', 1, 1, 1, 0, 1, 'LNL NLN', 0),(5, 3, 'CN', 86, 1, 0, 0, 1, 'NNNNNN', 1),
 (6, 1, 'ES', 34, 1, 0, 1, 1, 'NNNNN', 1),(7, 1, 'FI', 358, 1, 0, 0, 1, 'NNNNN', 1),(8, 1, 'FR', 33, 1, 0, 0, 1, 'NNNNN', 1),(9, 1, 'GR', 30, 1, 0, 0, 1, 'NNNNN', 1),(10, 1, 'IT', 39, 1, 1, 0, 1, 'NNNNN', 1),
-(11, 3, 'JP', 81, 1, 0, 0, 1, 'NNN-NNNN', 1),(12, 1, 'LU', 352, 1, 0, 0, 1, 'NNNN', 1),(13, 1, 'NL', 31, 1, 0, 0, 1, 'NNNN LL', 1),(14, 1, 'PL', 48, 1, 0, 0, 1, 'NN-NNN', 1),
+(11, 3, 'JP', 81, 1, 1, 0, 1, 'NNN-NNNN', 1),(12, 1, 'LU', 352, 1, 0, 0, 1, 'NNNN', 1),(13, 1, 'NL', 31, 1, 0, 0, 1, 'NNNN LL', 1),(14, 1, 'PL', 48, 1, 0, 0, 1, 'NN-NNN', 1),
 (15, 1, 'PT', 351, 1, 0, 0, 1, 'NNNN NNN', 1),(16, 1, 'CZ', 420, 1, 0, 0, 1, 'NNN NN', 1),(17, 1, 'GB', 44, 1, 0, 0, 1, '', 1),(18, 1, 'SE', 46, 1, 0, 0, 1, 'NNN NN', 1),
-(19, 7, 'CH', 41, 1, 0, 0, 1, 'NNNN', 1),(20, 1, 'DK', 45, 1, 0, 0, 1, 'NNNN', 1),(21, 2, 'US', 1, 1, 1, 0, 1, 'NNNNN', 1),(22, 3, 'HK', 852, 1, 0, 0, 0, '', 1),(23, 1, 'NO', 47, 1, 0, 0, 1, 'NNNN', 1),
+(19, 7, 'CH', 41, 1, 0, 0, 1, 'NNNN', 1),(20, 1, 'DK', 45, 1, 0, 0, 1, 'NNNN', 1),(21, 2, 'US', 1, 1, 1, 0, 1, 'NNNNN', 0),(22, 3, 'HK', 852, 1, 0, 0, 0, '', 1),(23, 1, 'NO', 47, 1, 0, 0, 1, 'NNNN', 1),
 (24, 5, 'AU', 61, 1, 0, 0, 1, 'NNNN', 1),(25, 3, 'SG', 65, 1, 0, 0, 1, 'NNNNNN', 1),(26, 1, 'IE', 353, 1, 0, 0, 1, '', 1),(27, 5, 'NZ', 64, 1, 0, 0, 1, 'NNNN', 1),(28, 3, 'KR', 82, 1, 0, 0, 1, 'NNN-NNN', 1),
 (29, 3, 'IL', 972, 1, 0, 0, 1, 'NNNNN', 1),(30, 4, 'ZA', 27, 1, 0, 0, 1, 'NNNN', 1),(31, 4, 'NG', 234, 1, 0, 0, 1, '', 1),(32, 4, 'CI', 225, 1, 0, 0, 1, '', 1),(33, 4, 'TG', 228, 1, 0, 0, 1, '', 1),
 (34, 6, 'BO', 591, 1, 0, 0, 1, '', 1),(35, 4, 'MU', 230, 1, 0, 0, 1, '', 1),(36, 1, 'RO', 40, 1, 0, 0, 1, 'NNNNNN', 1),(37, 1, 'SK', 421, 1, 0, 0, 1, 'NNN NN', 1),(38, 4, 'DZ', 213, 1, 0, 0, 1, 'NNNNN', 1),
@@ -302,9 +458,9 @@ INSERT INTO `PREFIX_country` (`id_country`, `id_zone`, `iso_code`, `call_prefix`
 (94, 4, 'GH', 233, 1, 0, 0, 1, '', 1),(95, 8, 'GD', 0, 1, 0, 0, 1, '', 1),(96, 7, 'GL', 299, 1, 0, 0, 1, '', 1),(97, 7, 'GI', 350, 1, 0, 0, 1, '', 1),(98, 8, 'GP', 590, 1, 0, 0, 1, '', 1),
 (99, 8, 'GU', 0, 1, 0, 0, 1, '', 1),(100, 8, 'GT', 502, 1, 0, 0, 1, '', 1),(101, 7, 'GG', 0, 1, 0, 0, 1, 'LLN NLL', 1),(102, 4, 'GN', 224, 1, 0, 0, 1, '', 1),(103, 4, 'GW', 245, 1, 0, 0, 1, '', 1),
 (104, 6, 'GY', 592, 1, 0, 0, 1, '', 1),(105, 8, 'HT', 509, 1, 0, 0, 1, '', 1),(106, 5, 'HM', 0, 1, 0, 0, 1, '', 1),(107, 7, 'VA', 379, 1, 0, 0, 1, 'NNNNN', 1),(108, 8, 'HN', 504, 1, 0, 0, 1, '', 1),
-(109, 7, 'IS', 354, 1, 0, 0, 1, 'NNN', 1),(110, 3, 'IN', 91, 1, 0, 0, 1, 'NNN NNN', 1),(111, 3, 'ID', 62, 1, 0, 0, 1, 'NNNNN', 1),(112, 3, 'IR', 98, 1, 0, 0, 1, 'NNNNN-NNNNN', 1),
+(109, 7, 'IS', 354, 1, 0, 0, 1, 'NNN', 1),(110, 3, 'IN', 91, 1, 0, 0, 1, 'NNN NNN', 1),(111, 3, 'ID', 62, 1, 1, 0, 1, 'NNNNN', 1),(112, 3, 'IR', 98, 1, 0, 0, 1, 'NNNNN-NNNNN', 1),
 (113, 3, 'IQ', 964, 1, 0, 0, 1, 'NNNNN', 1),(114, 7, 'IM', 0, 1, 0, 0, 1, 'CN NLL', 1),(115, 8, 'JM', 0, 1, 0, 0, 1, '', 1),(116, 7, 'JE', 0, 1, 0, 0, 1, 'CN NLL', 1),(117, 3, 'JO', 962, 1, 0, 0, 1, '', 1),
-(118, 3, 'KZ', 7, 1, 0, 0, 1, 'NNNNNN', 1),(119, 4, 'KE', 254, 1, 0, 0, 1, '', 1),(120, 7, 'KI', 686, 1, 0, 0, 1, '', 1),(121, 3, 'KP', 850, 1, 0, 0, 1, '', 1),(122, 3, 'KW', 965, 1, 0, 0, 1, '', 1),
+(118, 3, 'KZ', 7, 1, 0, 0, 1, 'NNNNNN', 1),(119, 4, 'KE', 254, 1, 0, 0, 1, '', 1),(120, 5, 'KI', 686, 1, 0, 0, 1, '', 1),(121, 3, 'KP', 850, 1, 0, 0, 1, '', 1),(122, 3, 'KW', 965, 1, 0, 0, 1, '', 1),
 (123, 3, 'KG', 996, 1, 0, 0, 1, '', 1),(124, 3, 'LA', 856, 1, 0, 0, 1, '', 1),(125, 1, 'LV', 371, 1, 0, 0, 1, 'C-NNNN', 1),(126, 3, 'LB', 961, 1, 0, 0, 1, '', 1),(127, 4, 'LS', 266, 1, 0, 0, 1, '', 1),
 (128, 4, 'LR', 231, 1, 0, 0, 1, '', 1),(129, 4, 'LY', 218, 1, 0, 0, 1, '', 1),(130, 1, 'LI', 423, 1, 0, 0, 1, 'NNNN', 1),(131, 1, 'LT', 370, 1, 0, 0, 1, 'NNNNN', 1),(132, 3, 'MO', 853, 1, 0, 0, 0, '', 1),
 (133, 7, 'MK', 389, 1, 0, 0, 1, '', 1),(134, 4, 'MG', 261, 1, 0, 0, 1, '', 1),(135, 4, 'MW', 265, 1, 0, 0, 1, '', 1),(136, 3, 'MY', 60, 1, 0, 0, 1, 'NNNNN', 1),(137, 3, 'MV', 960, 1, 0, 0, 1, '', 1),
@@ -421,7 +577,7 @@ INSERT INTO `PREFIX_country_lang` (`id_country`, `id_lang`, `name`) VALUES
 (210, 1, 'Tunisia'),(210, 2, 'Tunisie'),(210, 3, 'Túnez'),(211, 1, 'Turkey'),(211, 2, 'Turquie'),(211, 3, 'Turquía'),(212, 1, 'Turkmenistan'),(212, 2, 'Turkménistan'),
 (212, 3, 'Turkmenistán'),(213, 1, 'Turks and Caicos Islands'),(213, 2, 'Turks et Caiques, Îles'),(213, 3, 'Islas Turcas y Caicos'),(214, 1, 'Tuvalu'),(214, 2, 'Tuvalu'),(214, 3, 'Tuvalu'),
 (215, 1, 'Uganda'),(215, 2, 'Ouganda'),(215, 3, 'Uganda'),(216, 1, 'Ukraine'),(216, 2, 'Ukraine'),(216, 3, 'Ucrania'),(217, 1, 'United Arab Emirates'),
-(217, 2, 'Émirats Arabes Unis'),(217, 3, 'Emiratos Árabes Unidos'),(218, 1, 'Uruguay'),(218, 2, 'Uruguay'),(218, 3, 'Uruguay'),(219, 1, 'Uzbekistan'),(219, 2, 'Ouzbékistan'),
+(217, 2, 'Émirats Arabes Unis'),(217, 3, 'Emiratos ÿrabes Unidos'),(218, 1, 'Uruguay'),(218, 2, 'Uruguay'),(218, 3, 'Uruguay'),(219, 1, 'Uzbekistan'),(219, 2, 'Ouzbékistan'),
 (219, 3, 'Uzbekistán'),(220, 1, 'Vanuatu'),(220, 2, 'Vanuatu'),(220, 3, 'Vanuatu'),(221, 1, 'Venezuela'),(221, 2, 'Venezuela'),(221, 3, 'Venezuela'),
 (222, 1, 'Vietnam'),(222, 2, 'Vietnam'),(222, 3, 'Vietnam'),(223, 1, 'Virgin Islands (British)'),(223, 2, 'Îles Vierges Britanniques'),(223, 3, 'Islas Vírgenes (Británicas)'),(224, 1, 'Virgin Islands (U.S.)'),
 (224, 2, 'Îles Vierges des États-Unis'),(224, 3, 'Islas Vírgenes (EE.UU.)'),(225, 1, 'Wallis and Futuna'),(225, 2, 'Wallis et Futuna'),(225, 3, 'Wallis y Futuna'),(226, 1, 'Western Sahara'),(226, 2, 'Sahara Occidental'),
@@ -579,7 +735,7 @@ INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `tax_be
 (10, 1, 'Grosseto', 'GR', 0, 1),
 (10, 1, 'Imperia', 'IM', 0, 1),
 (10, 1, 'Isernia', 'IS', 0, 1),
-(10, 1, 'L''Aquila', 'AQ', 0, 1),
+(10, 1, 'L\'Aquila', 'AQ', 0, 1),
 (10, 1, 'La Spezia', 'SP', 0, 1),
 (10, 1, 'Latina', 'LT', 0, 1),
 (10, 1, 'Lecce', 'LE', 0, 1),
@@ -647,10 +803,94 @@ INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `tax_be
 (10, 1, 'Vicenza', 'VI', 0, 1),
 (10, 1, 'Viterbo', 'VT', 0, 1);
 
+INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `active`) VALUES
+(111, 3, 'Aceh', 'AC', 1),
+(111, 3, 'Bali', 'BA', 1),
+(111, 3, 'Bangka', 'BB', 1),
+(111, 3, 'Banten', 'BT', 1),
+(111, 3, 'Bengkulu', 'BE', 1),
+(111, 3, 'Central Java', 'JT', 1),
+(111, 3, 'Central Kalimantan', 'KT', 1),
+(111, 3, 'Central Sulawesi', 'ST', 1),
+(111, 3, 'Coat of arms of East Java', 'JI', 1),
+(111, 3, 'East kalimantan', 'KI', 1),
+(111, 3, 'East Nusa Tenggara', 'NT', 1),
+(111, 3, 'Lambang propinsi', 'GO', 1),
+(111, 3, 'Jakarta', 'JK', 1),
+(111, 3, 'Jambi', 'JA', 1),
+(111, 3, 'Lampung', 'LA', 1),
+(111, 3, 'Maluku', 'MA', 1),
+(111, 3, 'North Maluku', 'MU', 1),
+(111, 3, 'North Sulawesi', 'SA', 1),
+(111, 3, 'North Sumatra', 'SU', 1),
+(111, 3, 'Papua', 'PA', 1),
+(111, 3, 'Riau', 'RI', 1),
+(111, 3, 'Lambang Riau', 'KR', 1),
+(111, 3, 'Southeast Sulawesi', 'SG', 1),
+(111, 3, 'South Kalimantan', 'KS', 1),
+(111, 3, 'South Sulawesi', 'SN', 1),
+(111, 3, 'South Sumatra', 'SS', 1),
+(111, 3, 'West Java', 'JB', 1),
+(111, 3, 'West Kalimantan', 'KB', 1),
+(111, 3, 'West Nusa Tenggara', 'NB', 1),
+(111, 3, 'Lambang Provinsi Papua Barat', 'PB', 1),
+(111, 3, 'West Sulawesi', 'SR', 1),
+(111, 3, 'West Sumatra', 'SB', 1),
+(111, 3, 'Yogyakarta', 'YO', 1);
+
+INSERT INTO `PREFIX_state` (`id_country`, `id_zone`, `name`, `iso_code`, `active`) VALUES
+(11, 3, "Aichi", "23", 1),
+(11, 3, "Akita", "05", 1),
+(11, 3, "Aomori", "02", 1),
+(11, 3, "Chiba", "12", 1),
+(11, 3, "Ehime", "38", 1),
+(11, 3, "Fukui", "18", 1),
+(11, 3, "Fukuoka", "40", 1),
+(11, 3, "Fukushima", "07", 1),
+(11, 3, "Gifu", "21", 1),
+(11, 3, "Gunma", "10", 1),
+(11, 3, "Hiroshima", "34", 1),
+(11, 3, "Hokkaido", "01", 1),
+(11, 3, "Hyogo", "28", 1),
+(11, 3, "Ibaraki", "08", 1),
+(11, 3, "Ishikawa", "17", 1),
+(11, 3, "Iwate", "03", 1),
+(11, 3, "Kagawa", "37", 1),
+(11, 3, "Kagoshima", "46", 1),
+(11, 3, "Kanagawa", "14", 1),
+(11, 3, "Kochi", "39", 1),
+(11, 3, "Kumamoto", "43", 1),
+(11, 3, "Kyoto", "26", 1),
+(11, 3, "Mie", "24", 1),
+(11, 3, "Miyagi", "04", 1),
+(11, 3, "Miyazaki", "45", 1),
+(11, 3, "Nagano", "20", 1),
+(11, 3, "Nagasaki", "42", 1),
+(11, 3, "Nara", "29", 1),
+(11, 3, "Niigata", "15", 1),
+(11, 3, "Oita", "44", 1),
+(11, 3, "Okayama", "33", 1),
+(11, 3, "Okinawa", "47", 1),
+(11, 3, "Osaka", "27", 1),
+(11, 3, "Saga", "41", 1),
+(11, 3, "Saitama", "11", 1),
+(11, 3, "Shiga", "25", 1),
+(11, 3, "Shimane", "32", 1),
+(11, 3, "Shizuoka", "22", 1),
+(11, 3, "Tochigi", "09", 1),
+(11, 3, "Tokushima", "36", 1),
+(11, 3, "Tokyo", "13", 1),
+(11, 3, "Tottori", "31", 1),
+(11, 3, "Toyama", "16", 1),
+(11, 3, "Wakayama", "30", 1),
+(11, 3, "Yamagata", "06", 1),
+(11, 3, "Yamaguchi", "35", 1),
+(11, 3, "Yamanashi", "19", 1);
+
 INSERT INTO `PREFIX_currency` (`name`, `iso_code`, `iso_code_num`, `sign`, `blank`, `conversion_rate`, `format`, `deleted`, `active`) VALUES
 ('Euro', 'EUR', '978', '€', 1, 1, 2, 0, 1), ('Dollar', 'USD', '840', '$', 0, 1.32, 1, 0, 1), ('Pound', 'GBP', '826', '£', 0, 0.8, 1, 0, 1);
 /*('Yen', 'JPY', '392', '¥', 0, 113.14, 2, 0, 0),
-('Lev', 'BGN', '975', 'лв', 1, 1.96, 2, 0, 0), ('Couronne', 'CZK', '203', 'Kč', 1, 24.58, 2, 0, 0), ('Couronne', 'DKK', '208', 'kr', 1, 7.45, 2, 0, 0),
+('Lev', 'BGN', '975', 'лв', 1, 1.96, 2, 0, 0), ('Couronne', 'CZK', '203', 'KĿ', 1, 24.58, 2, 0, 0), ('Couronne', 'DKK', '208', 'kr', 1, 7.45, 2, 0, 0),
 ('Couronne', 'EEK', '233', 'kr', 1, 15.65, 2, 0, 0), ('Forint', 'HUF', '348', 'Ft', 1, 279.65, 2, 0, 0), ('Litas', 'LTL', '440', 'Lt', 1, 3.45, 2, 0, 0),
 ('Lats letton', 'LVL', '428', 'Ls', 1, 0.71, 2, 0, 0), ('Zloty', 'PLN', '985', 'zł', 1, 3.94, 2, 0, 0), ('Leu', 'RON', '946', 'lei', 1, 4.26, 2, 0, 0),
 ('Couronne', 'SEK', '752', 'kr', 1, 9.13, 2, 0, 0), ('Franc Suisse', 'CHF', '756', 'CHF', 1, 1.32, 2, 0, 0), ('Couronne', 'NOK', '578', 'kr', 1, 7.90, 2, 0, 0),
@@ -686,66 +926,100 @@ INSERT INTO `PREFIX_contact_lang` (`id_contact`, `id_lang`, `name`, `description
 (2, 4, 'Kundenservice', 'Bei Fragen oder Reklamationen zu einer Bestellung'),
 (2, 5, 'Servizio clienti', 'Per qualsiasi domanda o reclamo riguardo ad un ordine');
 
-INSERT INTO `PREFIX_discount_type` (`id_discount_type`) VALUES (1),(2),(3);
-INSERT INTO `PREFIX_discount_type_lang` (`id_discount_type`, `id_lang`, `name`) VALUES
-(1, 1, 'Discount on order (%)'),(2, 1, 'Discount on order (amount)'),(3, 1, 'Free shipping'),
-(1, 2, 'Réduction sur la commande (%)'),(2, 2, 'Réduction sur la commande (montant)'),(3, 2, 'Frais de port gratuits'),
-(1, 3, 'Descuento orden (%)'),(2, 3, 'Descuento (el orden de cantidad)'),(3, 3, 'Gastos de envío gratis'),
-(1, 4, 'Preisnachlass auf die Bestellung (%)'),(2, 4, 'Preisnachlass auf die Bestellung (Betrag)'),(3, 4, 'Versandkosten gratis'),
-(1, 5, 'Sconto sull’ordine (%)'),(2, 5, 'Sconto sull’ordine (importo)'),(3, 5, 'Spese di porto gratuite');
-
 INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (1);
-INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1, 'Administrator'),(1, 2, 'Administrateur'),(1, 3, 'Administrador'),(1, 4, 'Administrator'),(1, 5, 'Administrator');
+INSERT INTO `PREFIX_profile_lang` (`id_profile`, `id_lang`, `name`) VALUES (1, 1, 'SuperAdmin'),(1, 2, 'SuperAdmin'),(1, 3, 'SuperAdmin'),(1, 4, 'SuperAdmin'),(1, 5, 'SuperAdmin');
 
 INSERT INTO `PREFIX_tab` (`id_tab`, `class_name`, `id_parent`, `position`) VALUES (1, 'AdminCatalog', 0, 1),(2, 'AdminCustomers', 0, 2),(3, 'AdminOrders', 0, 3),
 (4, 'AdminPayment', 0, 4),(5, 'AdminShipping', 0, 5),(6, 'AdminStats', 0, 6),(7, 'AdminModules', 0, 7),(29, 'AdminEmployees', 0, 8),(8, 'AdminPreferences', 0, 9),
-(9, 'AdminTools', 0, 10),(82, 'AdminStores', 9, 11),(60, 'AdminTracking', 1, 1),(10, 'AdminManufacturers', 1, 2),(34, 'AdminSuppliers', 1, 3),(11, 'AdminAttributesGroups', 1, 4),
-(36, 'AdminFeatures', 1, 5),(58, 'AdminScenes', 1, 6),(66, 'AdminTags', 1, 7),(68, 'AdminAttachments', 1, 7),(12, 'AdminAddresses', 2, 1),(63, 'AdminGroups', 2, 2),
+(9, 'AdminTools', 0, 10),(82, 'AdminStores', 9, 11),(60, 'AdminTracking', 1, 3),(10, 'AdminManufacturers', 1, 4),(34, 'AdminSuppliers', 1, 5),(11, 'AdminAttributesGroups', 1, 6),
+(36, 'AdminFeatures', 1, 7),(58, 'AdminScenes', 1, 8),(66, 'AdminTags', 1, 9),(68, 'AdminAttachments', 1, 10),(12, 'AdminAddresses', 2, 1),(63, 'AdminGroups', 2, 2),
 (65, 'AdminCarts', 2, 3),(42, 'AdminInvoices', 3, 1),(55, 'AdminDeliverySlip', 3, 2),(47, 'AdminReturn', 3, 3),(49, 'AdminSlip', 3, 4),(59, 'AdminMessages', 3, 5),
-(13, 'AdminStatuses', 3, 6),(54, 'AdminOrderMessage', 3, 7),(14, 'AdminDiscounts', 4, 4),(15, 'AdminCurrencies', 4, 1),(16, 'AdminTaxes', 4, 2),
+(13, 'AdminStatuses', 3, 6),(54, 'AdminOrderMessage', 3, 7),(14, 'AdminCartRules', 4, 4),(15, 'AdminCurrencies', 4, 1),(16, 'AdminTaxes', 4, 2),
 (17, 'AdminCarriers', 5, 1),(46, 'AdminStates', 5, 2),(18, 'AdminCountries', 5, 3),(19, 'AdminZones', 5, 5),(20, 'AdminRangePrice', 5, 6),
 (21, 'AdminRangeWeight', 5, 7),(51, 'AdminStatsConf', 6, 1),(61, 'AdminSearchEngines', 6, 2),(62, 'AdminReferrers', 6, 3),
 (22, 'AdminModulesPositions', 7, 4),(30, 'AdminProfiles', 29, 1),(31, 'AdminAccess', 29, 2),(28, 'AdminContacts', 29, 3),(39, 'AdminContact', 8, 1),
-(38, 'AdminAppearance', 8, 2),(56, 'AdminMeta', 8, 3),(27, 'AdminPPreferences', 8, 4),(24, 'AdminEmails', 8, 5),(26, 'AdminImages', 8, 6),(23, 'AdminDb', 8, 7),
-(48, 'AdminPDF', 3, 8),(44, 'AdminLocalization', 8, 9),(67, 'AdminSearchConf', 8, 10),(32, 'AdminLanguages', 9, 1),(33, 'AdminTranslations', 9, 2),
+(38, 'AdminThemes', 8, 2),(56, 'AdminMeta', 8, 3),(27, 'AdminPPreferences', 8, 4),(24, 'AdminEmails', 8, 5),(26, 'AdminImages', 8, 6),(23, 'AdminDb', 8, 7),
+(48, 'AdminPdf', 3, 8),(44, 'AdminLocalization', 8, 9),(67, 'AdminSearchConf', 8, 10),(32, 'AdminLanguages', 9, 1),(33, 'AdminTranslations', 9, 2),
 (35, 'AdminTabs', 29, 3),(37, 'AdminQuickAccesses', 9, 4),(40, 'AdminAliases', 8, 5),(41, 'AdminImport', 9, 6),(52, 'AdminSubDomains', 9, 7),
-(53, 'AdminBackup', 9, 8),(57, 'AdminCMSContent', 9, 9),(64, 'AdminGenerator', 9, 10),(43, 'AdminSearch', -1, 0),(69, 'AdminInformation', 9, 11),
-(70, 'AdminPerformance', 8, 11),(71, 'AdminCustomerThreads', 29, 4),(72, 'AdminWebservice', 9, 12),(73, 'AdminStockMvt', 1, 9),
+(53, 'AdminBackup', 9, 8),(57, 'AdminCmsContent', 9, 9),(64, 'AdminGenerator', 9, 10),(43, 'AdminSearch', -1, 0),(69, 'AdminInformation', 9, 5),
+(70, 'AdminPerformance', 8, 11),(71, 'AdminCustomerThreads', 29, 4),(72, 'AdminWebservice', 9, 12),(73, 'AdminStockMvt', 95, 3),
 (80, 'AdminAddonsCatalog', 7, 1),(81, 'AdminAddonsMyAccount', 7, 2),(83, 'AdminThemes', 7, 3),(84, 'AdminGeolocation', 8, 12),
-(85, 'AdminTaxRulesGroup', 4, 3),(86, 'AdminLogs', 9, 13), (87, 'AdminCounty', 5, 4),(88,'AdminHome',-1,0),(89,'AdminShop', 0, 11), (90,'AdminGroupShop', 89, 1),
-(91, 'AdminShopUrl', 89, 2);
+(85, 'AdminTaxRulesGroup', 4, 3),(86, 'AdminLogs', 9, 13), (87,'AdminHome',-1,0),
+(88,'AdminShop', 0, 11), (89,'AdminGroupShop', 88, 1),(90, 'AdminShopUrl', 88, 2),(91, 'AdminGenders', 2, 4),(92, 'AdminRequestSql', 9, 14),
+(93, 'AdminProducts', 1, 1),
+(94, 'AdminCategories', 1, 2),
+(95, 'AdminStock', 0, 15),
+(96, 'AdminWarehouses', 95, 1),
+(97, 'AdminStockManagement', 95, 2),
+(98, 'AdminStockInstantState', 95, 4),
+(99, 'AdminStockCover', 95, 5),
+(100, 'AdminSupplyOrders', 95, 6),
+(101, 'AdminAttributeGenerator', -1, 0),
+(102, 'AdminAccounting', 0, 16),
+(103, 'AdminAccountingManagement', 102, 1),
+(104, 'AdminAccountingExport', 102, 2),
+(105, 'AdminCmsCategories', -1, 0),
+(106, 'AdminCms', -1, 0), (107, 'AdminLogin', -1 , 0);
 
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) (SELECT 1, id_tab, 1, 1, 1, 1 FROM PREFIX_tab);
+INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) (SELECT 1, id_tab, 1, 1, 1, 1 FROM `PREFIX_tab`);
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (1, 1, 'Catalog'),(1, 2, 'Customers'),(1, 3, 'Orders'),(1, 4, 'Payment'),
 (1, 5, 'Shipping'),(1, 6, 'Stats'),(1, 7, 'Modules'),(1, 8, 'Preferences'),(1, 9, 'Tools'),(1, 10, 'Manufacturers'),(1, 11, 'Attributes and Groups'),
-(1, 12, 'Addresses'),(1, 13, 'Statuses'),(1, 14, 'Vouchers'),(1, 15, 'Currencies'),(1, 16, 'Taxes'),(1, 17, 'Carriers'),(1, 18, 'Countries'),
-(1, 19, 'Zones'),(1, 20, 'Price Ranges'),(1, 21, 'Weight Ranges'),(1, 22, 'Positions'),(1, 23, 'Database'),(1, 24, 'E-mail'),(1, 26, 'Image'),
+(1, 12, 'Addresses'),(1, 13, 'Statuses'),(1, 14, 'Cart Rules'),(1, 15, 'Currencies'),(1, 16, 'Taxes'),(1, 17, 'Carriers'),(1, 18, 'Countries'),
+(1, 19, 'Zones'),(1, 20, 'Price Ranges'),(1, 21, 'Weight Ranges'),(1, 22, 'Positions'),(1, 23, 'Database'),(1, 24, 'E-mail'),(1, 26, 'Images'),
 (1, 27, 'Products'),(1, 28, 'Contacts'),(1, 29, 'Employees'),(1, 30, 'Profiles'),(1, 31, 'Permissions'),(1, 32, 'Languages'),(1, 33, 'Translations'),
-(1, 34, 'Suppliers'),(1, 35, 'Tabs'),(1, 36, 'Features'),(1, 37, 'Quick Access'),(1, 38, 'Appearance'),(1, 39, 'Contact Information'),(1, 40, 'Aliases'),
-(1, 41, 'Import'),(1, 42, 'Invoices'),(1, 43, 'Search'),(1, 44, 'Localization'),(1, 46, 'States'),(1, 47, 'Merchandise Returns'),(1, 48, 'PDF'),
-(1, 49, 'Credit Slips'),(1, 51, 'Settings'),(1, 52, 'Subdomains'),(1, 53, 'DB backup'),(1, 54, 'Order Messages'),
-(1, 55, 'Delivery Slips'),(1, 56, 'SEO & URLs'),(1, 57, 'CMS'),(1, 58, 'Image Mapping'),(1, 59, 'Customer Messages'),(1, 60, 'Tracking'),
+(1, 34, 'Suppliers'),(1, 35, 'Tabs'),(1, 36, 'Features'),(1, 37, 'Quick Access'),(1, 38, 'Themes'),(1, 39, 'Contact Information'),(1, 40, 'Keyword Typos'),
+(1, 41, 'CSV Import'),(1, 42, 'Invoices'),(1, 43, 'Search'),(1, 44, 'Localization'),(1, 46, 'States'),(1, 47, 'Merchandise Returns'),(1, 48, 'PDF'),
+(1, 49, 'Credit Slips'),(1, 51, 'Settings'),(1, 52, 'Subdomains'),(1, 53, 'DB Backup'),(1, 54, 'Order Messages'),
+(1, 55, 'Delivery Slips'),(1, 56, 'SEO & URLs'),(1, 57, 'CMS'),(1, 58, 'Image Mapping'),(1, 59, 'Customer Messages'),(1, 60, 'Monitoring'),
 (1, 61, 'Search Engines'),(1, 62, 'Referrers'),(1, 63, 'Groups'),(1, 64, 'Generators'),(1, 65, 'Shopping Carts'),(1, 66, 'Tags'),(1, 67, 'Search'),
-(1, 68, 'Attachments'),(1, 69, 'Configuration Information'),(1, 70, 'Performance'),(1, 71, 'Customer Service'),(1, 72, 'Webservice'),(1, 73, 'Stock Movements'),
-(1, 80, 'Modules & Themes Catalog'),(1, 81, 'My Account'),(1, 82, 'Stores'),(1, 83, 'Themes'),(1, 84, 'Geolocation'),(1, 85, 'Tax Rules'),(1, 86, 'Log'),
-(1, 87, 'Counties'),(1, 88, 'Home'), (1, 89, 'Shops'), (1, 90, 'Group Shops'), (1, 91, 'Shop Urls');
+(1, 68, 'Attachments'),(1, 69, 'Configuration Information'),(1, 70, 'Performance'),(1, 71, 'Customer Service'),(1, 72, 'Webservice'),(1, 73, 'Stock Movement'),
+(1, 80, 'Modules & Themes Catalog'),(1, 81, 'My Account'),(1, 82, 'Stores'),(1, 83, 'Themes'),(1, 84, 'Geolocation'),(1, 85, 'Tax Rules'),(1, 86, 'Logs'),
+(1, 87, 'Home'), (1, 88, 'Shops'), (1, 89, 'Group Shops'), (1, 90, 'Shop Urls'),(1, 91, 'Genders'),(1, 92, 'SQL Manager'),
+(1, 93, 'Products'),
+(1, 94, 'Categories'),
+(1, 95, 'Stock'),
+(1, 96, 'Warehouses'),
+(1, 97, 'Stock Management'),
+(1, 98, 'Stock instant state'),
+(1, 99, 'Stock cover'),
+(1, 100, 'Supply orders'),
+(1, 101, 'Combinations generator'),
+(1, 102, 'Accounting'),
+(1, 103, 'Account Number Management'),
+(1, 104, 'Export'),
+(1, 105, 'CMS categories'),
+(1, 106, 'CMS pages');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (2, 1, 'Catalogue'),(2, 2, 'Clients'),(2, 3, 'Commandes'),(2, 4, 'Paiement'),(2, 5, 'Transport'),
-(2, 6, 'Stats'),(2, 7, 'Modules'),(2, 8, 'Préférences'),(2, 9, 'Outils'),(2, 10, 'Fabricants'),(2, 11, 'Attributs et groupes'),(2, 12, 'Adresses'),(2, 13, 'Statuts'),
-(2, 14, 'Bons de réduction'),(2, 15, 'Devises'),(2, 16, 'Taxes'),(2, 17, 'Transporteurs'),(2, 18, 'Pays'),(2, 19, 'Zones'),(2, 20, 'Tranches de prix'),
+(2, 6, 'Stats'),(2, 7, 'Modules'),(2, 8, 'Préférences'),(2, 9, 'Outils'),(2, 10, 'Marques'),(2, 11, 'Attributs et groupes'),(2, 12, 'Adresses'),(2, 13, 'Statuts'),
+(2, 14, 'Règles paniers'),(2, 15, 'Devises'),(2, 16, 'Taxes'),(2, 17, 'Transporteurs'),(2, 18, 'Pays'),(2, 19, 'Zones'),(2, 20, 'Tranches de prix'),
 (2, 21, 'Tranches de poids'),(2, 22, 'Positions'),(2, 23, 'Base de données'),(2, 24, 'Emails'),(2, 26, 'Images'),(2, 27, 'Produits'),(2, 28, 'Contacts'),
 (2, 29, 'Employés'),(2, 30, 'Profils'),(2, 31, 'Permissions'),(2, 32, 'Langues'),(2, 33, 'Traductions'),(2, 34, 'Fournisseurs'),(2, 35, 'Onglets'),
-(2, 36, 'Caractéristiques'),(2, 37, 'Accès rapide'),(2, 38, 'Apparence'),(2, 39, 'Coordonnées'),(2, 40, 'Alias'),(2, 41, 'Import'),(2, 42, 'Factures'),
+(2, 36, 'Caractéristiques'),(2, 37, 'Accès rapide'),(2, 38, 'Thèmes'),(2, 39, 'Coordonnées'),(2, 40, 'Alias'),(2, 41, 'Import'),(2, 42, 'Factures'),
 (2, 43, 'Recherche'),(2, 44, 'Localisation'),(2, 46, 'Etats'),(2, 47, 'Retours produits'),(2, 48, 'PDF'),(2, 49, 'Avoirs'),
 (2, 51, 'Configuration'),(2, 52, 'Sous domaines'),(2, 53, 'Sauvegarde BDD'),(2, 54, 'Messages prédéfinis'),(2, 55, 'Bons de livraison'),
 (2, 56, 'SEO & URLs'),(2, 57, 'CMS'),(2, 58, 'Scènes'),(2, 59, 'Messages clients'),(2, 60, 'Suivi'),(2, 61, 'Moteurs de recherche'),
 (2, 62, 'Sites affluents'),(2, 63, 'Groupes'),(2, 64, 'Générateurs'),(2, 65, 'Paniers'),(2, 66, 'Tags'),(2, 67, 'Recherche'),
 (2, 68, 'Documents joints'),(2, 69, 'Informations'),(2, 70, 'Performances'),(2, 71, 'SAV'),(2, 72, 'Service web'),(2, 73, 'Mouvements de Stock'),
 (2, 80, 'Catalogue de modules et thèmes'),(2, 81, 'Mon compte'),(2, 82, 'Magasins'),(2, 83, 'Thèmes'),(2, 84, 'Géolocalisation'),(2, 85, 'Règles de taxes'),(2, 86, 'Log'),
-(2, 87, 'Comtés'),(2,88,'Accueil'), (2, 89, 'Boutiques'), (2, 90, 'Groupes de boutique'), (2, 91, 'URLs de boutique');
+(2, 87,'Accueil'), (2, 88, 'Boutiques'), (2, 89, 'Groupes de boutique'), (2, 90, 'URLs de boutique'),(2, 91, 'Genres'),(2, 92, 'SQL Manager'),
+(2, 93, 'Produits'),
+(2, 94, 'Catégories'),
+(2, 95, 'Stock'),
+(2, 96, 'Entrepôts'),
+(2, 97, 'Gestion du stock'),
+(2, 98, 'Etat instantané du stock'),
+(2, 99, 'Couverture du stock'),
+(2, 100, 'Commandes fournisseurs'),
+(2, 101, 'Générateur de combinaisons'),
+(2, 102, 'Comptabilité'),
+(2, 103, 'Gestion des numéros de comptes'),
+(2, 104, 'Export'),
+(2, 105, 'Catégories CMS'),
+(2, 106, 'Pages CMS');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (3, 1, 'Catálogo'),(3, 2, 'Clientes'),(3, 3, 'Pedidos'),(3, 4, 'Pago'),(3, 5, 'Transporte'),
@@ -753,28 +1027,56 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (3, 13, 'Estados'),(3, 14, 'Vales de descuento'),(3, 15, 'Divisas'),(3, 16, 'Impuestos'),(3, 17, 'Transportistas'),(3, 18, 'Países'),(3, 19, 'Zonas'),
 (3, 20, 'Franja de precios'),(3, 21, 'Franja de pesos'),(3, 22, 'Posiciones'),(3, 23, 'Base de datos'),(3, 24, 'Emails'),(3, 26, 'Imágenes'),
 (3, 27, 'Productos'),(3, 28, 'Contactos'),(3, 29, 'Empleados'),(3, 30, 'Perfiles'),(3, 31, 'Permisos'),(3, 32, 'Idiomas'),(3, 33, 'Traducciones'),
-(3, 34, 'Proovedores'),(3, 35, 'Pestañas'),(3, 36, 'Características'),(3, 37, 'Acceso rápido'),(3, 38, 'Aspecto'),(3, 39, 'Datos'),(3, 40, 'Alias'),
+(3, 34, 'Proveedores'),(3, 35, 'Pestañas'),(3, 36, 'Características'),(3, 37, 'Acceso rápido'),(3, 38, 'Temas'),(3, 39, 'Datos'),(3, 40, 'Alias'),
 (3, 41, 'Importar'),(3, 42, 'Facturas'),(3, 43, 'Búsqueda'),(3, 44, 'Ubicación'),(3, 46, 'Estados'),(3, 47, 'Devolución productos'),(3, 48, 'PDF'),
 (3, 49, 'Vales'),(3, 51, 'Configuración'),(3, 52, 'Subcampos'),(3, 53, 'Copia de seguridad'),(3, 54, 'Mensajes de Orden'),
 (3, 55, 'Albaranes de entrega'),(3, 56, 'SEO & URLs'),(3, 57, 'CMS'),(3, 58, 'Mapeo de la imagen'),(3, 59, 'Mensajes del cliente'),(3, 60, 'Rastreo'),
 (3, 61, 'Motores de búsqueda'),(3, 62, 'Referido'),(3, 63, 'Grupos'),(3, 64, 'Generadores'),(3, 65, 'Carritos'),(3, 66, 'Etiquetas'),(3, 67, 'Búsqueda'),(3, 68, 'Adjuntos'),
-(3, 69, 'Informations'),(3, 70, 'Rendimiento'),(3, 72, 'Web service'),(3, 71, 'Servicio al cliente'),(3, 73, 'Movimiento de Stock'), (3, 82, 'Tiendas'),(3, 83, 'Temas'),(3, 84, 'Geolocalización'),(3, 85, 'Reglas de Impuestos'),(3, 86, 'Log'),
-(3, 87, 'Condados'),(3,88,'Home'), (3, 89, 'Shops'), (3, 90, 'Group Shops'), (3, 91, 'Shop Urls');
+(3, 69, 'Informaciones'),(3, 70, 'Rendimiento'),(3, 72, 'Web service'),(3, 71, 'Servicio al cliente'),(3, 73, 'Movimiento de Stock'), (3, 82, 'Tiendas'),(3, 83, 'Temas'),(3, 84, 'Geolocalización'),(3, 85, 'Reglas de Impuestos'),(3, 86, 'Log'),
+(3, 87,'Home'), (3, 88, 'Shops'), (3, 89, 'Group Shops'), (3, 90, 'Shop Urls'),(3, 91, 'Genders'),(3, 92, 'SQL Manager'),
+(3, 93, 'Products'),
+(3, 94, 'Categories'),
+(3, 95, 'Stock'),
+(3, 96, 'Warehouses'),
+(3, 97, 'Stock Management'),
+(3, 98, 'Stock instant state'),
+(3, 99, 'Stock cover'),
+(3, 100, 'Supply orders'),
+(3, 101, 'Combinations generator'),
+(3, 102, 'Accounting'),
+(3, 103, 'Account Number Management'),
+(3, 104, 'Export'),
+(3, 105, 'CMS categories'),
+(3, 106, 'CMS pages');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (4, 1, 'Katalog'),(4, 2, 'Kunden'),(4, 3, 'Bestellungen'),(4, 4, 'Zahlung'),
 (4, 5, 'Versandkosten'),(4, 6, 'Statistik'),(4, 7, 'Module'),(4, 8, 'Voreinstellungen'),(4, 9, 'Tools'),(4, 10, 'Hersteller'),(4, 11, 'Attribute und Gruppen'),
-(4, 12, 'Adressen'),(4, 13, 'Status'),(4, 14, 'Gutscheine'),(4, 15, 'Währungen'),(4, 16, 'Steuern'),(4, 17, 'Lieferanten'),(4, 18, 'Länder'),
-(4, 19, 'Zonen'),(4, 20, 'Preislagen'),(4, 21, 'Gewichtsklassen'),(4, 22, 'Positionen'),(4, 23, 'Datenbank'),(4, 24, 'E-Mail'),(4, 26, 'Bild'),
+(4, 12, 'Adressen'),(4, 13, 'Status'),(4, 14, 'Gutscheine'),(4, 15, 'Währungen'),(4, 16, 'Steuern'),(4, 17, 'Versanddienst'),(4, 18, 'Länder'),
+(4, 19, 'Zonen'),(4, 20, 'Preisspanne'),(4, 21, 'Gewichtsklassen'),(4, 22, 'Positionen'),(4, 23, 'Datenbank'),(4, 24, 'E-Mail'),(4, 26, 'Bild'),
 (4, 27, 'Produkte'),(4, 28, 'Kontakte'),(4, 29, 'Mitarbeiter'),(4, 30, 'Profile'),(4, 31, 'Berechtigungen'),(4, 32, 'Sprachen'),(4, 33, 'Übersetzungen'),
-(4, 34, 'Zulieferer'),(4, 35, 'Tabs'),(4, 36, 'Funktionen'),(4, 37, 'Schnellzugriff'),(4, 38, 'Aussehen'),(4, 39, 'Kontaktinformation'),(4, 40, 'Alias'),
+(4, 34, 'Zulieferer'),(4, 35, 'Tabs'),(4, 36, 'Funktionen'),(4, 37, 'Schnellzugriff'),(4, 38, 'Themen'),(4, 39, 'Kontaktinformation'),(4, 40, 'Alias'),
 (4, 41, 'Import'),(4, 42, 'Rechnungen'),(4, 43, 'Suche'),(4, 44, 'Lokalisierung'),(4, 46, 'Staaten'),(4, 47, 'Warenrücksendungen'),(4, 48, 'PDF'),
 (4, 49, 'Gutscheine'),(4, 51, 'Einstellungen'),(4, 52, 'Subdomains'),(4, 53, 'DB-Backup'),(4, 54, 'Bestellnachrichten'),
 (4, 55, 'Lieferscheine'),(4, 56, 'SEO & URLs'),(4, 57, 'CMS'),(4, 58, 'Image Mapping'),(4, 59, 'Kundennachrichten'),(4, 60, 'Tracking'),
 (4, 61, 'Suchmaschinen'),(4, 62, 'Referrer'),(4, 63, 'Gruppen'),(4, 64, 'Generatoren'),(4, 65, 'Warenkörbe'),(4, 66, 'Tags'),(4, 67, 'Suche'),
 (4, 68, 'Anhänge'),(4, 69, 'Konfigurationsinformationen'),(4, 70, 'Leistung'),(4, 71, 'Kundenservice'),(4, 72, 'Webservice'),(4, 73, 'Lagerbewegungen'),
 (4, 80, 'Module und Themenkatalog'),(4, 81, 'Mein Konto'),(4, 82, 'Shops'),(4, 83, 'Themen'),(4, 84, 'Geotargeting'),(4, 85, 'Steuerregeln'),(4, 86, 'Log'),
-(4,87,'Counties'),(4,88,'Home'), (4, 89, 'Shops'), (4, 90, 'Group Shops'), (4, 91, 'Shop Urls');
+(4, 87,'Home'), (4, 88, 'Shops'), (4, 89, 'Group Shops'), (4, 90, 'Shop Urls'),(4, 91, 'Genders'),(4, 92, 'SQL Manager'),
+(4, 93, 'Products'),
+(4, 94, 'Categories'),
+(4, 95, 'Stock'),
+(4, 96, 'Warehouses'),
+(4, 97, 'Stock Management'),
+(4, 98, 'Stock instant state'),
+(4, 99, 'Stock cover'),
+(4, 100, 'Supplier orders'),
+(4, 101, 'Combinations generator'),
+(4, 102, 'Accounting'),
+(4, 103, 'Account Number Management'),
+(4, 104, 'Export'),
+(4, 105, 'CMS categories'),
+(4, 106, 'CMS pages');
 
 INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (5, 1, 'Catalogo'),(5, 2, 'Clienti'),(5, 3, 'Ordini'),(5, 4, 'Pagamento'),
@@ -782,25 +1084,40 @@ INSERT INTO `PREFIX_tab_lang` (`id_lang`, `id_tab`, `name`) VALUES
 (5, 12, 'Indirizzi'),(5, 13, 'Status'),(5, 14, 'Voucher'),(5, 15, 'Valute'),(5, 16, 'Tasse'),(5, 17, 'Corrieri'),(5, 18, 'Nazioni'),
 (5, 19, 'Zone'),(5, 20, 'Fasce di prezzo'),(5, 21, 'Fasce di peso'),(5, 22, 'Posizioni'),(5, 23, 'Database'),(5, 24, 'E-mail'),(5, 26, 'Immagine'),
 (5, 27, 'Prodotti'),(5, 28, 'Contatti'),(5, 29, 'Impiegati'),(5, 30, 'Profili'),(5, 31, 'Permessi'),(5, 32, 'Lingue'),(5, 33, 'Traduzioni'),
-(5, 34, 'Fornitori'),(5, 35, 'Tab'),(5, 36, 'Caratteristiche'),(5, 37, 'Accesso rapido'),(5, 38, 'Aspetto'),(5, 39, 'Informazioni di contatto'),(5, 40, 'Alias'),
+(5, 34, 'Fornitori'),(5, 35, 'Tab'),(5, 36, 'Caratteristiche'),(5, 37, 'Accesso rapido'),(5, 38, 'Temi'),(5, 39, 'Informazioni di contatto'),(5, 40, 'Alias'),
 (5, 41, 'Importa'),(5, 42, 'Fatture'),(5, 43, 'Cerca'),(5, 44, 'Localizzazione'),(5, 46, 'Stati'),(5, 47, 'Resi merci'),(5, 48, 'PDF'),
 (5, 49, 'Note di credito'),(5, 51, 'Impostazioni'),(5, 52, 'Sottodomini'),(5, 53, 'DB backup'),(5, 54, 'Messaggi ordine'),
 (5, 55, 'Note di consegna'),(5, 56, 'SEO & URLs'),(5, 57, 'CMS'),(5, 58, 'Mappatura immagine'),(5, 59, 'Messaggi cliente'),(5, 60, 'Rintracciare'),
 (5, 61, 'Motori di ricerca'),(5, 62, 'Referenti'),(5, 63, 'Gruppi'),(5, 64, 'Generatori'),(5, 65, 'Carrelli shopping'),(5, 66, 'Tag'),(5, 67, 'Cerca'),
 (5, 68, 'Allegati'),(5, 69, 'Informazioni di configurazione'),(5, 70, 'Performance'),(5, 71, 'Servizio clienti'),(5, 72, 'Webservice'),(5, 73, 'Movimenti magazzino'),
 (5, 80, 'Moduli & Temi catalogo'),(5, 81, 'Il mio Account'),(5, 82, 'Negozi'),(5, 83, 'Temi'),(5, 84, 'Geolocalizzazione'),(5, 85, 'Regimi fiscali'),(5, 86, 'Log'),
-(5,87,'Counties'),(5,88,'Home'), (5, 89, 'Shops'), (5, 90, 'Group Shops'), (5, 91, 'Shop Urls');
+(5, 87,'Home'), (5, 88, 'Shops'), (5, 89, 'Group Shops'), (5, 90, 'Shop Urls'),(5, 91, 'Genders'),(5, 92, 'SQL Manager'),
+(5, 93, 'Products'),
+(5, 94, 'Categories'),
+(5, 95, 'Stock'),
+(5, 96, 'Warehouses'),
+(5, 97, 'Stock Management'),
+(5, 98, 'Stock instant state'),
+(5, 99, 'Stock cover'),
+(5, 100, 'Supplier orders'),
+(5, 101, 'Combinations generator'),
+(5, 102, 'Accounting'),
+(5, 103, 'Account Number Management'),
+(5, 104, 'Export'),
+(5, 105, 'CMS categories'),
+(5, 106, 'CMS pages');
 
 INSERT IGNORE INTO `PREFIX_tab_lang` (`id_tab`, `id_lang`, `name`)
-    (SELECT `id_tab`, id_lang, (SELECT tl.`name`
-        FROM `PREFIX_tab_lang` tl
-        WHERE tl.`id_lang` = (SELECT c.`value`
-            FROM `PREFIX_configuration` c
-            WHERE c.`name` = 'PS_LANG_DEFAULT' LIMIT 1) AND tl.`id_tab`=`PREFIX_tab`.`id_tab`)
-    FROM `PREFIX_lang` CROSS JOIN `PREFIX_tab`);
+	(SELECT `id_tab`, id_lang, (SELECT tl.`name`
+		FROM `PREFIX_tab_lang` tl
+		WHERE tl.`id_lang` = (SELECT c.`value`
+			FROM `PREFIX_configuration` c
+			WHERE c.`name` = 'PS_LANG_DEFAULT' LIMIT 1) AND tl.`id_tab`=`PREFIX_tab`.`id_tab`)
+	FROM `PREFIX_lang` CROSS JOIN `PREFIX_tab`);
 
 INSERT INTO `PREFIX_quick_access` (`id_quick_access`, `link`, `new_window`) VALUES
-(1, 'index.php', 0),(2, '../', 1),(3, 'index.php?tab=AdminCatalog&addcategory', 0),(4, 'index.php?tab=AdminCatalog&addproduct', 0),(5, 'index.php?tab=AdminDiscounts&adddiscount', 0);
+(1, 'index.php', 0),(2, '../', 1),(3, 'index.php?controller=AdminCategories&addcategory', 0),
+(4, 'index.php?controller=AdminProducts&addproduct', 0),(5, 'index.php?controller=AdminCartRules&addcart_rule', 0);
 
 INSERT INTO `PREFIX_quick_access_lang` (`id_quick_access`, `id_lang`, `name`) VALUES
 (1, 1, 'Home'),(1, 2, 'Accueil'),(1, 3, 'Inicio'),(1, 4, 'Start'),(1, 5, 'Home page'),
@@ -809,7 +1126,7 @@ INSERT INTO `PREFIX_quick_access_lang` (`id_quick_access`, `id_lang`, `name`) VA
 (4, 1, 'New product'),(4, 2, 'Nouveau produit'),(4, 3, 'Nuevo producto'),(4, 4, 'Neues Produkt'),(4, 5, 'Nuovo prodotto'),
 (5, 1, 'New voucher'),(5, 2, 'Nouveau bon de réduction'),(5, 3, 'Nuevo cupón'),(5, 4, 'Neuer Ermäßigungsgutschein'),(5, 5, 'Nuovo buono sconto');
 
-INSERT INTO `PREFIX_order_return_state` (`id_order_return_state`, `color`) VALUES (1, '#ADD8E6'),(2, '#EEDDFF'),(3, '#DDFFAA'),(4, '#FFD3D3'),(5, '#FFFFBB');
+INSERT INTO `PREFIX_order_return_state` (`id_order_return_state`, `color`) VALUES (1, 'RoyalBlue'),(2, 'BlueViolet'),(3, 'LimeGreen'),(4, 'Crimson'),(5, '#108510');
 
 INSERT INTO `PREFIX_order_return_state_lang` (`id_order_return_state`, `id_lang`, `name`) VALUES
 (1, 1, 'Waiting for confirmation'),(2, 1, 'Waiting for package'),(3, 1, 'Package received'),(4, 1, 'Return denied'),(5, 1, 'Return completed'),
@@ -952,7 +1269,7 @@ INSERT INTO `PREFIX_meta_lang` (`id_meta`, `id_shop`, `id_lang`, `title`, `descr
 (4, 1, 5, '', 'Negozio powered by PrestaShop', 'negozio, prestashop', ''),
 (5, 1, 5, 'Produttori', 'Elenco produttori', 'produttore', 'produttori'),
 (6, 1, 5, 'Nuovi prodotti', 'I nostri nuovi prodotti', 'nuovi, prodotti', 'nuovi-prodotti'),
-(7, 1, 5, 'Hai dimenticato la password', 'Inserisci l\'indirizzo e-mail usato per registrarti per poter ottenere una e-mail with con la tua nuova password', 'dimenticato, password, e-mail, nuovo, reset', 'password-recupero'),
+(7, 1, 5, 'Hai dimenticato la password', 'Inserisci l''indirizzo e-mail usato per registrarti per poter ottenere una e-mail with con la tua nuova password', 'dimenticato, password, e-mail, nuovo, reset', 'password-recupero'),
 (8, 1, 5, 'Riduzioni prezzi', 'I nostri prodotti speciali', 'speciali, riduzione prezzi', 'riduzione-prezzi'),
 (9, 1, 5, 'Mappa del sito', 'Ti sei perso? Trova quello che stai cercando', 'sitemap', 'sitemap'),
 (10, 1, 5, 'Fornitori', 'Elenco fornitori', 'fornitori', 'fornitore'),
@@ -1012,9 +1329,9 @@ INSERT INTO `PREFIX_cms_lang` (`id_cms`, `id_lang`, `meta_title`, `meta_descript
 (3, 4, 'Allgemeine Nutzungsbedingungen', 'Unsere allgemeinen Nutzungsbedingungen', 'Voraussetzungen, Bedingungen, nutzen, verkaufen', '<h2>Your terms and conditions of use</h2><h3>Rule 1</h3><p>Here is the rule 1 content</p>\r\n<h3>Rule 2</h3><p>Here is the rule 2 content</p>\r\n<h3>Rule 3</h3><p>Here is the rule 3 content</p>', 'allgemeine-nutzungsbedingungen'),
 (4, 4, 'Über uns', 'Learn more about us', 'über uns, Informationen', '<h2>About us</h2>\r\n<h3>Our company</h3><p>Our company</p>\r\n<h3>Our team</h3><p>Our team</p>\r\n<h3>Informations</h3><p>Informations</p>', 'uber-uns'),
 (5, 4, 'Sichere Zahlung', 'Unsere Sicherheits-Zahlungsmethoden', 'Sichere Zahlung, SSL, Visa, MasterCard, PayPal', '<h2>Secure payment</h2>\r\n<h3>Our secure payment</h3><p>With SSL</p>\r\n<h3>Using Visa/Mastercard/Paypal</h3><p>About this services</p>', 'sichere-zahlung'),
-(1, 5, 'Consegna', 'I nostri termini e condizioni di consegna', 'condizioni, consegna, tempo, spedizione, pacco', '<h2>Spedizioni e resi</h2><h3>Spedizione del tuo pacco</h3><p>I pacchi sono solitamente spediti entro 2 giorni dopo il ricevimento del pagamento e inviati tramite UPS con controllo e consegna senza firma. Se preferisci una consegna con UPS Extra con richiesta di firma, sarà applicato un costo aggiuntivo, pertanto contattaci prima di scegliere questo mezzo. Qualunque tipo di spedizione tu scelga, ti garantiremo un link per controllare online il percorso del tuo pacco.</p><p>Le spese di spedizione comprendono le spese di imballaggio e affrancatura. Le spese di imballaggio sono fisse, mentre quelle di trasporto variano in base al peso totale della spedizione. Ti consigliamo di raggruppare i tuoi articoli in un unico ordine. Non possiamo raggruppare due ordini distinti eseguiti separatamente, e ad ognuno di esso saranno applicate le spese di spedizione. Il tuo pacco sarà inviato sotto la tua responsabilità, ma un\'attenzione particolare è riservata agli oggetti fragili.<br /><br />Le scatole hanno dimensioni ragionevoli e i tuoi articoli sono ben protetti.</p>', 'consegna'),
+(1, 5, 'Consegna', 'I nostri termini e condizioni di consegna', 'condizioni, consegna, tempo, spedizione, pacco', '<h2>Spedizioni e resi</h2><h3>Spedizione del tuo pacco</h3><p>I pacchi sono solitamente spediti entro 2 giorni dopo il ricevimento del pagamento e inviati tramite UPS con controllo e consegna senza firma. Se preferisci una consegna con UPS Extra con richiesta di firma, sarà applicato un costo aggiuntivo, pertanto contattaci prima di scegliere questo mezzo. Qualunque tipo di spedizione tu scelga, ti garantiremo un link per controllare online il percorso del tuo pacco.</p><p>Le spese di spedizione comprendono le spese di imballaggio e affrancatura. Le spese di imballaggio sono fisse, mentre quelle di trasporto variano in base al peso totale della spedizione. Ti consigliamo di raggruppare i tuoi articoli in un unico ordine. Non possiamo raggruppare due ordini distinti eseguiti separatamente, e ad ognuno di esso saranno applicate le spese di spedizione. Il tuo pacco sarà inviato sotto la tua responsabilità, ma un''attenzione particolare è riservata agli oggetti fragili.<br /><br />Le scatole hanno dimensioni ragionevoli e i tuoi articoli sono ben protetti.</p>', 'consegna'),
 (2, 5, 'Nota Legale', 'Nota legale', 'nota, legale, crediti', '<h2>Legale</h2><h3>Crediti</h3><p>Creazione e produzione:</p><p>Questo sito web è stato realizzato usando un software open-source<a href="http://www.prestashop.com">PrestaShop</a>&trade;.</p>', 'nota-legale'),
-(3, 5, 'Termini e condizioni d\'uso', 'I nostri termini e condizioni d\'uso', 'condizioni, termini, uso, vendi', '<h2>I tuoi termini e condizioni d\'uso</h2><h3>Regola 1</h3><p>Ecco il contenuto della regola 1</p>\r\n<h3>Regola 2</h3><p>Ecco il contenuto della regola 2</p>\r\n<h3>Regola 3</h3><p>Ecco il contenuto della regola 3</p>', 'termini-e-condizioni-di-uso'),
+(3, 5, 'Termini e condizioni d''uso', 'I nostri termini e condizioni d''uso', 'condizioni, termini, uso, vendi', '<h2>I tuoi termini e condizioni d''uso</h2><h3>Regola 1</h3><p>Ecco il contenuto della regola 1</p>\r\n<h3>Regola 2</h3><p>Ecco il contenuto della regola 2</p>\r\n<h3>Regola 3</h3><p>Ecco il contenuto della regola 3</p>', 'termini-e-condizioni-di-uso'),
 (4, 5, 'Chi siamo', 'Per sapere chi siamo', 'chi siamo, informazioni', '<h2>Chi siamo</h2>\r\n<h3>La nostra azienda</h3><p>La nostra azienda</p>\r\n<h3>Il nostro team</h3><p>Il nostro team</p>\r\n<h3>Informazioni</h3><p>Informazioni</p>', 'chi-siamo'),
 (5, 5, 'Pagamento sicuro', 'Il nostro mezzo di pagamento sicuro', 'pagamento sicuro, ssl, visa, mastercard, paypal', '<h2>Pagamento sicuro</h2>\r\n<h3>Il nostro pagamento sicuro</h3><p>Con SSL</p>\r\n<h3>Usando Visa/Mastercard/Paypal</h3><p>Cosa sono questi servizi</p>', 'pagamento-sicuro');
 
@@ -1028,17 +1345,15 @@ INSERT INTO `PREFIX_cms_category_lang` (`id_cms_category`, `id_lang`, `name`, `d
 INSERT INTO `PREFIX_cms_category` (`id_cms_category`, `id_parent`, `level_depth`, `active`, `date_add`, `date_upd`) VALUES(1, 0, 0, 1, NOW(), NOW());
 
 /* Carrier */
-INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`) VALUES (1, 0, 0, 1, 0, 0);
+INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_reference`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`, `position`) VALUES (1, 1, 0, 0, 1, 0, 0, 0);
 
-INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (1, 1);
+INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) (SELECT 1, `id_group` FROM `PREFIX_group`);
 
 INSERT INTO `PREFIX_carrier_lang` (`id_carrier`, `id_lang`, `delay`) VALUES (1, 1, 'Pick up in-store'),(1, 2, 'Retrait au magasin'),(1, 3, 'Recogida en la tienda'),(1, 4, 'Abholung im Geschäft'),(1, 5, 'Ritiro in magazzino');
 
 INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (1, 1);
 
 INSERT INTO `PREFIX_carrier_shop` (`id_carrier`, `id_shop`) VALUES (1,1);
-
-INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES	('PS_CARRIER_DEFAULT', '1', NOW(), NOW());
 
 /* Timezone */
 INSERT INTO `PREFIX_timezone` (`name`) VALUES ('Africa/Abidjan'),('Africa/Accra'),('Africa/Addis_Ababa'),('Africa/Algiers'),
@@ -1120,16 +1435,26 @@ INSERT INTO `PREFIX_timezone` (`name`) VALUES ('Africa/Abidjan'),('Africa/Accra'
 ('US/East-Indiana'),('US/Eastern'),('US/Hawaii'),('US/Indiana-Starke'),('US/Michigan'),('US/Mountain'),('US/Pacific'),('US/Pacific-New'),('US/Samoa'),
 ('UTC'),('W-SU'),('WET'),('Zulu');
 
-INSERT INTO `PREFIX_group` (`id_group`, `reduction`, `date_add`, `date_upd`) VALUES	(1, 0, NOW(), NOW());
+INSERT INTO `PREFIX_group` (`id_group`, `reduction`, `date_add`, `date_upd`) VALUES	(1, 0, NOW(), NOW()), (2, 0, NOW(), NOW()), (3, 0, NOW(), NOW());
 
-INSERT INTO `PREFIX_group_lang` (`id_group`, `id_lang`, `name`) VALUES	(1, 1, 'Default'),(1, 2, 'Défaut'),(1, 3, 'Predeterminado'),(1, 4, 'Default'),(1, 5, 'Default');
+INSERT INTO `PREFIX_group_lang` (`id_group`, `id_lang`, `name`) VALUES	
+(1, 1, 'Unidentified'),(1, 2, 'Non identifié'),(1, 3, 'Unidentified'),(1, 4, 'Unidentified'),(1, 5, 'Unidentified'),
+(2, 1, 'Guest'),(2, 2, 'Invité'),(2, 3, 'Guest'),(2, 4, 'Guest'),(2, 5, 'Guest'),
+(3, 1, 'Default'),(3, 2, 'Défaut'),(3, 3, 'Predeterminado'),(3, 4, 'Default'),(3, 5, 'Default');
 INSERT INTO `PREFIX_group_group_shop` (`id_group`, `id_group_shop`) (SELECT `id_group`, 1 FROM `PREFIX_group`);
 
-INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) VALUES (1, 1);
-INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES ('PS_TAX_ADDRESS_TYPE', 'id_address_delivery', NOW(), NOW());
+INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) (SELECT 1, `id_group` FROM `PREFIX_group`);
 
 INSERT INTO `PREFIX_stock_mvt_reason` (`id_stock_mvt_reason`, `sign`, `date_add`, `date_upd`) VALUES
-(1, 1, NOW(), NOW()), (2, -1, NOW(), NOW()), (3, -1, NOW(), NOW()), (4, -1, NOW(), NOW()), (5, 1, NOW(), NOW());
+(1, 1, NOW(), NOW()), 
+(2, -1, NOW(), NOW()), 
+(3, -1, NOW(), NOW()), 
+(4, -1, NOW(), NOW()), 
+(5, 1, NOW(), NOW()), 
+(6, -1, NOW(), NOW()), 
+(7, 1, NOW(), NOW()), 
+(8, 1, NOW(), NOW());
+
 INSERT INTO `PREFIX_stock_mvt_reason_lang` (`id_stock_mvt_reason`, `id_lang`, `name`) VALUES
 (1, 1, 'Increase'),
 (1, 2, 'Augmenter'),
@@ -1141,35 +1466,134 @@ INSERT INTO `PREFIX_stock_mvt_reason_lang` (`id_stock_mvt_reason`, `id_lang`, `n
 (2, 3, 'Disminuir'),
 (2, 4, 'Reduzieren'),
 (2, 5, 'Decrease'),
-(3, 1, 'Order'),
-(3, 2, 'Commande'),
+(3, 1, 'Customer Order'),
+(3, 2, 'Commande client'),
 (3, 3, 'Pedido'),
 (3, 4, 'Bestellung'),
 (3, 5, 'Ordine'),
-(4, 1, 'Missing Stock Movement'),
-(4, 2, 'Mouvement de stock manquant'),
-(4, 3, 'Movimiento de stock que falta'),
-(4, 4, 'Lagerbewegung nicht stattgefunden'),
-(4, 5, 'Movimento di merce mancante'),
-(5, 1, 'Restocking'),
-(5, 2, 'Réassort'),
-(5, 3, 'Reaprovisionar'),
-(5, 4, 'Auffüllung'),
-(5, 5, 'Riassortimento');
+(4, 1, 'Regulation following an inventory of stock'),
+(4, 2, 'Régularisation du stock suite à un inventaire'),
+(4, 3, 'Regulation following an inventory of stock'),
+(4, 4, 'Regulation following an inventory of stock'),
+(4, 5, 'Regulation following an inventory of stock'),
+(5, 1, 'Regulation following an inventory of stock'),
+(5, 2, 'Régularisation du stock suite à un inventaire'),
+(5, 3, 'Regulation following an inventory of stock'),
+(5, 4, 'Regulation following an inventory of stock'),
+(5, 5, 'Regulation following an inventory of stock'),
+(6, 1, 'Transfer to another warehouse'),
+(6, 2, 'Transfert vers un autre entrepôt'),
+(6, 3, 'Transfer to another warehouse'),
+(6, 4, 'Transfer to another warehouse'),
+(6, 5, 'Transfer to another warehouse'),
+(7, 1, 'Transfer from another warehouse'),
+(7, 2, 'Transfert depuis un autre entrepôt'),
+(7, 3, 'Transfer from another warehouse'),
+(7, 4, 'Transfer from another warehouse'),
+(7, 5, 'Transfer from another warehouse'),
+(8, 1, 'Supply Order'),
+(8, 2, 'Commande fournisseur'),
+(8, 3, 'Supply Order'),
+(8, 4, 'Supply Order'),
+(8, 5, 'Supply Order');
+
+INSERT INTO `PREFIX_warehouse` (`id_warehouse`, `id_currency`, `id_address`, `id_employee`, `reference`, `name`, `management_type`) VALUES
+(1, 1, 0, 1, 'default_warehouse', 'default warehouse', 'WA');
+
+INSERT INTO `PREFIX_warehouse_shop` (`id_warehouse`, `id_shop`) VALUES
+(1, 1);
 
 INSERT INTO `PREFIX_address_format` (`id_country`, `format`)
 (SELECT `id_country` as id_country, 'firstname lastname\ncompany\nvat_number\naddress1\naddress2\npostcode city\nCountry:name\nphone' as format FROM `PREFIX_country`);
 
-UPDATE `PREFIX_address_format` set `format`='company
-firstname lastname
+UPDATE `PREFIX_address_format` set `format`='firstname lastname
+company
 address1 address2
-city State:name postcode 
+city, State:name postcode
 Country:name
 phone' where `id_country`=21;
 
-INSERT INTO `PREFIX_group_shop` (`id_group_shop`, `name`, `active`, `deleted`) VALUES (1, 'Default', 1, 0);
+INSERT INTO `PREFIX_group_shop` (`id_group_shop`, `name`, `active`, `deleted`, `share_stock`, `share_customer`, `share_order`) VALUES (1, 'Default', 1, 0, 0, 0, 0);
 INSERT INTO `PREFIX_shop` (`id_shop`, `id_group_shop`, `name`, `id_category`, `id_theme`, `active`, `deleted`) VALUES (1, 1, 'Default', 1, 1, 1, 0);
-INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES (NULL, 'PS_SHOP_DEFAULT', '1', NOW(), NOW());
-INSERT INTO `PREFIX_configuration` (`id_configuration`, `name`, `value`, `date_add`, `date_upd`) VALUES (NULL, 'PS_GROUP_SHOP_DEFAULT', '1', NOW(), NOW());
 
 INSERT INTO `PREFIX_theme` (`id_theme`, `name`) VALUES (1, 'prestashop');
+
+UPDATE `PREFIX_address_format` set `format`= 'firstname lastname
+company
+vat_number
+address1
+address2
+postcode city
+State:name
+Country:name
+phone' where `id_country`=10;
+
+INSERT INTO `PREFIX_gender` (`id_gender`, `type`) VALUES
+(1, 0),
+(2, 1),
+(3, 1);
+
+INSERT INTO `PREFIX_gender_lang` (`id_gender`, `id_lang`, `name`) VALUES
+(1, 1, 'Mr.'),
+(1, 2, 'M.'),
+(1, 3, 'Sr.'),
+(1, 4, 'Herr'),
+(1, 5, 'Sig.'),
+(2, 1, 'Ms.'),
+(2, 2, 'Mme'),
+(2, 3, 'Sra.'),
+(2, 4, 'Frau'),
+(2, 5, 'Sig.ra'),
+(3, 1, 'Miss'),
+(3, 2, 'Melle'),
+(3, 3, 'Miss'),
+(3, 4, 'Miss'),
+(3, 5, 'Miss');
+
+UPDATE `PREFIX_address_format` set `format` = 'firstname lastname
+company
+address1
+address2
+city State:name postcode
+Country:name
+phone' WHERE `PREFIX_address_format`.`id_country` = 4;
+
+INSERT INTO `PREFIX_supply_order_state` (`id_supply_order_state`, `delivery_note`, `editable`, `receipt_state`, `pending_receipt`, `enclosed`, `color`) VALUES
+(1, 0, 1, 0, 0, 0, '#faab00'),
+(2, 1, 0, 0, 0, 0, '#273cff'),
+(3, 0, 0, 0, 1, 0, '#ff37f5'),
+(4, 0, 0, 1, 1, 0, '#ff3e33'),
+(5, 0, 0, 1, 0, 1, '#00d60c'),
+(6, 0, 0, 0, 0, 1, '#666666');
+
+INSERT INTO `PREFIX_supply_order_state_lang` (`id_supply_order_state`, `id_lang`, `name`) VALUES
+(1, 1, 'creation in progress'),
+(1, 2, 'Création en cours'),
+(1, 3, 'Création in progress'),
+(1, 4, 'Création in progress'),
+(1, 5, 'Création in progress'),
+(2, 1, 'Order validated'),
+(2, 2, 'Commande validée'),
+(2, 3, 'Order validated'),
+(2, 4, 'Order validated'),
+(2, 5, 'Order validated'),
+(3, 1, 'Pending receipt'),
+(3, 2, 'Attente de réception'),
+(3, 3, 'Pending receipt'),
+(3, 4, 'Pending receipt'),
+(3, 5, 'Pending receipt'),
+(4, 1, 'Order received in part'),
+(4, 2, 'Commande réceptionnée partiellement'),
+(4, 3, 'Order received in part'),
+(4, 4, 'Order received in part'),
+(4, 5, 'Order received in part'),
+(5, 1, 'Order received completely'),
+(5, 2, 'Commande réceptionnée totalement'),
+(5, 3, 'Order received completely'),
+(5, 4, 'Order received completely'),
+(5, 5, 'Order received completely'),
+(6, 1, 'order fenced'),
+(6, 2, 'Commande cloturée'),
+(6, 3, 'order fenced'),
+(6, 4, 'order fenced'),
+(6, 5, 'order fenced');

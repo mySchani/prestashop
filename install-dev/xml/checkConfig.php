@@ -26,7 +26,8 @@
 */
 header("Cache-Control: no-cache, must-revalidate"); // HTTP/1.1
 header("Expires: Sat, 26 Jul 1997 05:00:00 GMT"); // Date dans le passé
-include_once(INSTALL_PATH.'/classes/ConfigurationTest.php');
+if (!class_exists('ConfigurationTest',false))
+	require_once(INSTALL_PATH.'/../classes/ConfigurationTest.php');
 
 // Functions list to test with 'test_system'
 $funcs = array('fopen', 'fclose', 'fread', 'fwrite', 'rename', 'file_exists', 'unlink', 'rmdir', 'mkdir', 'getcwd', 'chdir', 'chmod');
@@ -38,21 +39,18 @@ $tests = array(
 	'system' => $funcs,
 	'gd' => false,
 	'mysql_support' => false,
-	'config_dir' => INSTALL_PATH.'/../config/',
-	'tools_dir' => INSTALL_PATH.'/../tools/smarty/compile/',
-	'cache_dir' => INSTALL_PATH.'/../tools/smarty/cache/',
-	'tools_v2_dir' => INSTALL_PATH.'/../tools/smarty_v2/compile/',
-	'cache_v2_dir' => INSTALL_PATH.'/../tools/smarty_v2/cache/',
-	'sitemap' => INSTALL_PATH.'/../sitemap.xml',
-	'log_dir' => INSTALL_PATH.'/../log/',
-	'img_dir' => INSTALL_PATH.'/../img/',
-	'mails_dir' => INSTALL_PATH.'/../mails/',
-	'module_dir' => INSTALL_PATH.'/../modules/',
-	'theme_lang_dir' => INSTALL_PATH.'/../themes/prestashop/lang/',
-	'theme_cache_dir' => INSTALL_PATH.'/../themes/prestashop/cache/',
-	'translations_dir' => INSTALL_PATH.'/../translations/',
-	'customizable_products_dir' => INSTALL_PATH.'/../upload/',
-	'virtual_products_dir' => INSTALL_PATH.'/../download/',
+	'config_dir' => 'config',
+	'cache_dir' => 'cache',
+	'sitemap' => 'sitemap.xml',
+	'log_dir' => 'log',
+	'img_dir' => 'img',
+	'mails_dir' => 'mails/',
+	'module_dir' => 'modules/',
+	'theme_lang_dir' => 'themes/prestashop/lang',
+	'theme_cache_dir' => 'themes/prestashop/cache',
+	'translations_dir' => 'translations',
+	'customizable_products_dir' => 'upload',
+	'virtual_products_dir' => 'download',
 );
 $tests_op = array(
 	'fopen' => false,
@@ -60,6 +58,7 @@ $tests_op = array(
 	'gz' => false,
 	'mcrypt' => false,
 	'magicquotes' => false,
+	'dom' => false,
 );
 
 // Execute tests

@@ -8,34 +8,19 @@ class TntWebService
 	private $authvars;
 	private $header;
 	private $file;
-
-	public	function __construct($id_shop = null)
+	
+	public	function __construct()
 	{
-		if (_PS_VERSION_ >= 1.5)
-		{
-			$this->_login = Configuration::get('TNT_CARRIER_LOGIN', null, null, $id_shop);
-			$this->_password = Configuration::get('TNT_CARRIER_PASSWORD', null, null, $id_shop);
-			$this->_account = Configuration::get('TNT_CARRIER_NUMBER_ACCOUNT', null, null, $id_shop);
-		}
-		else
-		{
-			$this->_login = Configuration::get('TNT_CARRIER_LOGIN');
-			$this->_password = Configuration::get('TNT_CARRIER_PASSWORD');
-			$this->_account = Configuration::get('TNT_CARRIER_NUMBER_ACCOUNT');
-		}
-
+		$this->_login = Configuration::get('TNT_CARRIER_LOGIN');
+		$this->_password = Configuration::get('TNT_CARRIER_PASSWORD');
+		$this->_account = Configuration::get('TNT_CARRIER_NUMBER_ACCOUNT');
+		
 		$this->_authheader = $this->genAuth();
 		$this->_authvars = new SoapVar($this->_authheader, XSD_ANYXML);
 		$this->_header = new SoapHeader("http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd", "Security", $this->_authvars);
 		$this->_file = "http://www.tnt.fr/service/?wsdl";
 	}
-
-	public function getSoapClient()
-	{
-		$soapclient = new SoapClient($this->_file, array('trace'=> 1));
-		return $soapclient;
-	}
-
+	
 	public function genAuth()
 	{
 		 return sprintf('
@@ -46,110 +31,66 @@ class TntWebService
 				</wsse:UsernameToken>
 				</wsse:Security>', htmlspecialchars($this->_login), htmlspecialchars($this->_password));
 	}
-
-	public function getCity($postal)
+	
+	public function faisabilite($dateExpedition, $codePostalDepart, $communeDepart, $codePostalArrivee, $communeArrivee, $typeDestinataire) 
 	{
-		$soapclient = $this->getSoapClient();
+		$soapclient = new SoapClient($this->_file, array('trace'=>1));
 		$soapclient->__setSOAPHeaders(array($this->_header));
-
-		$cities = $soapclient->citiesGuide(array('zipCode' => $postal));
-		return ($cities);
-	}
-
-	public function verifCity($postal, $city)
-	{
-		$soapclient = $this->getSoapClient();
-		$soapclient->__setSOAPHeaders(array($this->_header));
-		$cities = $soapclient->citiesGuide(array('zipCode' => $postal));
-
-		if (!isset($cities->City))
-			return false;
-		if (is_array($cities->City))
-		{
-			foreach ($cities->City as $v)
-			{
-				if (Tools::strtoupper($v->name) == Tools::strtoupper($city))
-					return true;
-			}
-		}
-		else
-		{
-			if (Tools::strtoupper($city) == Tools::strtoupper($cities->City->name))
-				return true;
-		}
-		return false;
-	}
-
-	public function getFaisability($dest, $postcode, $city,	$date_exp)
-	{
-		$service = array();
-		try
-		{
-			foreach ($dest as $key => $val)
-			{
-				$service[] = $this->faisabilite($date_exp, Configuration::get('TNT_CARRIER_SHIPPING_ZIPCODE'), Configuration::get('TNT_CARRIER_SHIPPING_CITY'),
-										 $postcode, $city, $val);
-			}
-		}
-		catch (SoapFault $e)
-		{
-			if (strrpos($e->faultstring, "shippingDate") != false)
-				$service = $this->getFaisability($dest, $postcode, $city, date("Y-m-d", strtotime($date_exp.' + 1 day')));
-			else if (strrpos($e->faultstring, "(zip code / city)") === 0)
-				return $e->faultstring;
-			else
-				return null;
-		}
-		return $service;
-	}
-
-	public function faisabilite($dateExpedition, $codePostalDepart, $communeDepart, $codePostalArrivee, $communeArrivee, $typeDestinataire)
-	{
-		$soapclient = $this->getSoapClient();
-		$soapclient->__setSOAPHeaders(array($this->_header));
-
+		
 		$sender = array("zipCode" => $codePostalDepart, "city" => $communeDepart);
 		$receiver = array("zipCode" => $codePostalArrivee, "city" => $communeArrivee, "type" => $typeDestinataire);
 		$parameters = array("accountNumber" => $this->_account, "shippingDate" => $dateExpedition, "sender" => $sender, "receiver" => $receiver);
 		$services = $soapclient->feasibility(array('parameters' => $parameters));
 		return ($services);
 	}
-
+	
+	public function putCityInNormeTnt($city)
+	{
+		$city = iconv("utf-8", 'ASCII//TRANSLIT', $city);
+		$city = mb_strtoupper($city, 'utf-8');
+		$table = array('`' => '','\''=> '', '^' => '','À'=>'A', 'Á'=>'A', 'Â'=>'A', 'Ã'=>'A', 'Ä'=>'A', 'Å'=>'A', 'Æ'=>'A', 'Ç'=>'C', 'È'=>'E', 'É'=>'E',
+        'Ê'=>'E', 'Ë'=>'E', 'Ì'=>'I', 'Í'=>'I', 'Î'=>'I', 'Ï'=>'I', 'Ñ'=>'N', 'Ò'=>'O', 'Ó'=>'O', 'Ô'=>'O',
+        'Õ'=>'O', 'Ö'=>'O', 'Ø'=>'O', 'Ù'=>'U', 'Ú'=>'U', 'Û'=>'U', 'Ü'=>'U', 'Ý'=>'Y', 'Þ'=>'B');
+		$city = strtr($city, $table);
+		$old = array("SAINT", "-");
+		$new = array("ST", " ");
+		return (str_replace($old, $new, $city));
+	}
+	
 	public function getPackage($info)
 	{
-		$soapclient = $this->getSoapClient();
+		$soapclient = new SoapClient($this->_file, array('trace'=>1));
 		$soapclient->__setSOAPHeaders(array($this->_header));
-		$tntcarrier = new TntCarrier();
-
+		
 		$sender = array(
-			'type' => "ENTERPRISE",//(Configuration::get('TNT_CARRIER_SHIPPING_COLLECT') ? "ENTERPRISE" : "DEPOT"), //ENTREPRISE OR DEPOT
-			'typeId' => "",//(Configuration::get('TNT_CARRIER_SHIPPING_COLLECT') ? "" : Configuration::get('TNT_CARRIER_SHIPPING_PEX')) , // code PEX if DEPOT is ON
+			'type' => (Configuration::get('TNT_CARRIER_SHIPPING_COLLECT') ? "ENTERPRISE" : "DEPOT"), //ENTREPRISE OR DEPOT
+			'typeId' => (Configuration::get('TNT_CARRIER_SHIPPING_COLLECT') ? "" : Configuration::get('TNT_CARRIER_SHIPPING_PEX')) , // code PEX if DEPOT is ON
 			'name' => Configuration::get('TNT_CARRIER_SHIPPING_COMPANY'), // raison social
 			'address1' => Configuration::get('TNT_CARRIER_SHIPPING_ADDRESS1'),
 			'address2' => Configuration::get('TNT_CARRIER_SHIPPING_ADDRESS2'),
 			'zipCode' => Configuration::get('TNT_CARRIER_SHIPPING_ZIPCODE'),
-			'city' => $tntcarrier->putCityInNormeTnt(Configuration::get('TNT_CARRIER_SHIPPING_CITY')),
+			'city' => $this->putCityInNormeTnt(Configuration::get('TNT_CARRIER_SHIPPING_CITY')),
 			'contactLastName' => Configuration::get('TNT_CARRIER_SHIPPING_LASTNAME'),
 			'contactFirstName' => Configuration::get('TNT_CARRIER_SHIPPING_FIRSTNAME'),
 			'emailAddress' => Configuration::get('TNT_CARRIER_SHIPPING_EMAIL'),
 			'phoneNumber' => Configuration::get('TNT_CARRIER_SHIPPING_PHONE'),
 			'faxNumber' => '' //may be later
 		);
-
+		
 		if ($info[4] == null)
 			$receiver = array(
-				'type' => ($info[0]['company'] != '' && (strlen($info[3]['option']) == 1 || substr($info[3]['option'], 1, 1) == 'S') ? "ENTERPRISE" : 'INDIVIDUAL'), // ENTREPRISE DEPOT DROPOFFPOINT INDIVIDUAL
+				'type' => ($info[0]['company'] != '' ? "ENTERPRISE" : 'INDIVIDUAL'), // ENTREPRISE DEPOT DROPOFFPOINT INDIVIDUAL
 				'typeId' => '', // IF DEPOT => code PEX else if DROPOFFPOINT => XETT
 				'name' => ($info[0]['company'] != '' ? $info[0]['company'] : ''),
-				'address1' => (strlen($info[0]['address1']) > 32 ? substr($info[0]['address1'], 0, 32) : $info[0]['address1']),
-				'address2' => (strlen($info[0]['address2']) > 32 ? substr($info[0]['address2'], 0, 32) : $info[0]['address2']),
+				'address1' => $info[0]['address1'],
+				'address2' => $info[0]['address2'],
 				'zipCode' => $info[0]['postcode'],
-				'city' => $tntcarrier->putCityInNormeTnt((strlen($info[0]['city']) > 27 ? substr($info[0]['city'], 0, 27) : $info[0]['city'])),
+				'city' => $this->putCityInNormeTnt($info[0]['city']),
 				'instructions' => '',
-				'contactLastName' => (strlen($info[0]['lastname']) > 32 ? substr($info[0]['lastname'], 0, 32) : $info[0]['lastname']),
-				'contactFirstName' => (strlen($info[0]['firstname']) > 32 ? substr($info[0]['firstname'], 0, 32) : $info[0]['firstname']),
+				'contactLastName' => $info[0]['lastname'],
+				'contactFirstName' => $info[0]['firstname'],
 				'emailAddress' => $info[0]['email'],
-				'phoneNumber' => (isset($info[0]['phone_mobile']) && $info[0]['phone_mobile'] != '' ? $info[0]['phone_mobile'] : $info[0]['phone']),
+				'phoneNumber' => $info[0]['phone'],
 				'accessCode' => '',
 				'floorNumber' => '',
 				'buildingId' => '',
@@ -159,36 +100,36 @@ class TntWebService
 			$receiver = array(
 				'type' => 'DROPOFFPOINT', // ENTREPRISE DEPOT DROPOFFPOINT INDIVIDUAL
 				'typeId' => $info[4]['code'], // IF DEPOT => code PEX else if DROPOFFPOINT => XETT
-				//'name' => $info[4]['name'],
-				/*'address1' => $info[4]['address'],
-				'address2' => '',*/
+				'name' => $info[4]['name'],
+				'address1' => $info[4]['address'],
+				'address2' => '',
 				'zipCode' => $info[4]['zipcode'],
-				'city' => $tntcarrier->putCityInNormeTnt((strlen($info[4]['city']) > 27 ? substr($info[4]['city'], 0, 27) : $info[4]['city'])),
+				'city' => $info[4]['city'],
 				'instructions' => '',
-				'contactLastName' => (strlen($info[0]['lastname']) > 32 ? substr($info[0]['lastname'], 0, 32) : $info[0]['lastname']),
-				'contactFirstName' => (strlen($info[0]['firstname']) > 32 ? substr($info[0]['firstname'], 0, 32) : $info[0]['firstname']),
+				'contactLastName' => $info[0]['lastname'],
+				'contactFirstName' => $info[0]['firstname'],
 				'emailAddress' => $info[0]['email'],
-				'phoneNumber' => (isset($info[0]['phone_mobile']) && $info[0]['phone_mobile'] != '' ? $info[0]['phone_mobile'] : $info[0]['phone']),
+				'phoneNumber' => $info[0]['phone'],
 				'accessCode' => '',
 				'floorNumber' => '',
 				'buildingId' => '',
 				'sendNotification' => ''
 			);
-
+		
 		foreach ($info[1]['weight'] as $k => $v)
 		{
 			$parcelRequest[$k] = array(
 				'sequenceNumber' => $k + 1, // package number, there's only one at this moment
 				'customerReference' => $info[0]['id_customer'], // customer ref
-				'weight' => $v,
+				'weight' => $v, 
 				'insuranceAmount' => '',
 				'priorityGuarantee' => '',
 				'comment' => ''
 			);
 		}
-
+		
 		$parcelsRequest = array('parcelRequest' => $parcelRequest);
-
+		
 		$pickUpRequest = array(
 			'media' => "EMAIL",
 			'faxNumber' => "",
@@ -201,7 +142,7 @@ class TntWebService
 			'closingTime' => Configuration::get('TNT_CARRIER_SHIPPING_CLOSING'),
 			'instructions' => ""
 		);
-
+		
 		if (Configuration::get('TNT_CARRIER_SHIPPING_COLLECT') == 1)
 		{
 			$paremeters = array(
@@ -213,7 +154,7 @@ class TntWebService
 			'serviceCode' => $info[3]['option'],
 			'quantity' => count($info[1]['weight']), //number of package; count($parcelsRequest)
 			'parcelsRequest' => $parcelsRequest,
-			'saturdayDelivery' => ($info[5]['saturday'] ? '1' : '0'),
+			'saturdayDelivery' => '0',//Configuration::get('TNT_CARRIER_SHIPPING_DELIVERY'),
 			//'paybackInfo' => $paybackInfo,
 			'labelFormat' => (!Configuration::get('TNT_CARRIER_PRINT_STICKER') ? "STDA4" : Configuration::get('TNT_CARRIER_PRINT_STICKER'))
 			);
@@ -228,7 +169,7 @@ class TntWebService
 			'serviceCode' => $info[3]['option'],
 			'quantity' => count($info[1]['weight']), //number of package; count($parcelsRequest)
 			'parcelsRequest' => $parcelsRequest,
-			'saturdayDelivery' => ($info[5]['saturday'] ? '1' : '0'),
+			'saturdayDelivery' => '0',//Configuration::get('TNT_CARRIER_SHIPPING_DELIVERY'),
 			//'paybackInfo' => $paybackInfo,
 			'labelFormat' => (!Configuration::get('TNT_CARRIER_PRINT_STICKER') ? "STDA4" : Configuration::get('TNT_CARRIER_PRINT_STICKER'))
 			);
@@ -236,28 +177,28 @@ class TntWebService
 		$package = $soapclient->expeditionCreation(array('parameters' => $paremeters));
 		return $package;
 	}
-
-	public function followPackage($transport)
+	
+	public function followPackage($transport) 
 	{
-		$soapclient = $this->getSoapClient();
+		$soapclient = new SoapClient($this->_file, array('trace'=>1));
 		$soapclient->__setSOAPHeaders(array($this->_header));
-
+		
 		$reponse = $soapclient->trackingByConsignment(array('parcelNumber' => $transport));
-
+	
 		if (isset($reponse->Parcel) && $reponse->Parcel)
 		{
 			$colis = $reponse->Parcel;
 			$expediteur = $colis->sender;
 			$destinataire = $colis->receiver;
 			$evenements = $colis->events;
-
+		
 			$requestDate = new DateTime($evenements->requestDate);
 			$processDate = new DateTime($evenements->processDate);
 			$arrivalDate = new DateTime($evenements->arrivalDate);
 			$deliveryDepartureDate = new DateTime($evenements->deliveryDepartureDate);
 			$deliveryDate = new DateTime($evenements->deliveryDate);
 		}
-
+		
 		$packageParam = array(
 			'number' => (isset($colis->consignmentNumber) ? $colis->consignmentNumber : ''),
 			'status' => (isset($colis->shortStatus) ? $colis->shortStatus : ''),
@@ -290,7 +231,7 @@ class TntWebService
 			'delivery_date' => (isset($deliveryDate) ? $deliveryDate : ''),
 			'long_status' => (isset($colis->longStatus) ? $colis->longStatus : ''),
 			'linkPicture' => (isset($colis->primaryPODUrl) ? $colis->primaryPODUrl : '')
-			);
+			);			
 		return $packageParam;
 	}
 }

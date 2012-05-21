@@ -25,31 +25,31 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class StatsRegistrations extends ModuleGraph
 {
-    private $_html = '';
-    private $_query = '';
+	private $_html = '';
+	private $_query = '';
 
-    function __construct()
-    {
-        $this->name = 'statsregistrations';
-        $this->tab = 'analytics_stats';
-        $this->version = 1.0;
+	function __construct()
+	{
+		$this->name = 'statsregistrations';
+		$this->tab = 'analytics_stats';
+		$this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 			
 		parent::__construct();
 		
-        $this->displayName = $this->l('Customer accounts');
-        $this->description = $this->l('Display the progress of customer registration.');
-    }
+		$this->displayName = $this->l('Customer accounts');
+		$this->description = $this->l('Display the progress of customer registration.');
+	}
 
-    /**
-     * Called during module installation
-     */
+	/**
+	 * Called during module installation
+	 */
 	public function install()
 	{
 		return (parent::install() AND $this->registerHook('AdminStatsModules'));
@@ -63,7 +63,7 @@ class StatsRegistrations extends ModuleGraph
 		$sql = 'SELECT COUNT(`id_customer`) as total
 				FROM `'._DB_PREFIX_.'customer`
 				WHERE `date_add` BETWEEN '.ModuleGraph::getDateBetween().'
-				'.$this->sqlShopRestriction(true);
+				'.$this->sqlShopRestriction(Shop::SHARE_ORDER);
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 		return isset($result['total']) ? $result['total'] : 0;
 	}
@@ -79,7 +79,7 @@ class StatsRegistrations extends ModuleGraph
 				LEFT JOIN `'._DB_PREFIX_.'connections_page` cp ON p.id_page = cp.id_page
 				LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_connections = cp.id_connections
 				LEFT JOIN `'._DB_PREFIX_.'guest` g ON c.id_guest = g.id_guest
-				WHERE pt.name = "authentication.php"
+				WHERE pt.name = "authentication"
 					'.$this->sqlShopRestriction(false, 'c').'
 					AND (g.id_customer IS NULL OR g.id_customer = 0)
 					AND c.`date_add` BETWEEN '.ModuleGraph::getDateBetween();
@@ -94,7 +94,7 @@ class StatsRegistrations extends ModuleGraph
 				LEFT JOIN `'._DB_PREFIX_.'guest` g ON o.id_customer = g.id_customer
 				LEFT JOIN `'._DB_PREFIX_.'connections` c ON c.id_guest = g.id_guest
 				WHERE o.`date_add` BETWEEN '.ModuleGraph::getDateBetween().'
-					'.$this->sqlShopRestriction(false, 'o').'
+					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND ABS(TIMEDIFF(o.date_add, c.date_add)+0) < 120000';
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
@@ -109,16 +109,16 @@ class StatsRegistrations extends ModuleGraph
 		if (Tools::getValue('export'))
 			$this->csvExport(array('layers' => 0, 'type' => 'line'));
 		$this->_html = '
-		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
+		<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<p>
 				'.$this->l('Visitors who have stopped at the registering step:').' '.(int)($totalBlocked).($totalRegistrations ? ' ('.number_format(100*$totalBlocked/($totalRegistrations+$totalBlocked), 2).'%)' : '').'<br />
 				'.$this->l('Visitors who have placed an order directly after registration:').' '.(int)($totalBuyers).($totalRegistrations ? ' ('.number_format(100*$totalBuyers/($totalRegistrations), 2).'%)' : '').'
 			</p>
 			<p>'.$this->l('Total customer accounts:').' '.$totalRegistrations.'</p>
-			<center>'.$this->engine(array('type' => 'line')).'</center>
-			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+			<div>'.$this->engine(array('type' => 'line')).'</div>
+			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset><br />
-		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
+		<fieldset><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
 			<h2>'.$this->l('Number of customer accounts created').'</h2>
 			<p>'.$this->l('The total number of accounts created is not in itself important information. However, it is beneficial to analyze the number created over time. This will indicate whether or not things are on the right track.').'</p>
 			<br /><h3>'.$this->l('How to act on the registrations\' evolution?').'</h3>
@@ -142,22 +142,22 @@ class StatsRegistrations extends ModuleGraph
 			SELECT `date_add`
 			FROM `'._DB_PREFIX_.'customer`
 			WHERE 1
-				'.$this->sqlShopRestriction(true).'
-				`date_add` BETWEEN';
+				'.$this->sqlShopRestriction(Shop::SHARE_CUSTOMER).'
+				AND `date_add` BETWEEN';
 		$this->_titles['main'] = $this->l('Number of customer accounts created');
 		$this->setDateGraph($layers, true);
 	}
 	
 	protected function setAllTimeValues($layers)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate());
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate());
 		foreach ($result AS $row)
-		    $this->_values[(int)(substr($row['date_add'], 0, 4))]++;
+			$this->_values[(int)(substr($row['date_add'], 0, 4))]++;
 	}
 	
 	protected function setYearValues($layers)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate());
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate());
 		foreach ($result AS $row)
 		{
 			$mounth = (int)substr($row['date_add'], 5, 2);
@@ -169,16 +169,16 @@ class StatsRegistrations extends ModuleGraph
 	
 	protected function setMonthValues($layers)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate());
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate());
 		foreach ($result AS $row)
 			$this->_values[(int)(substr($row['date_add'], 8, 2))]++;
 	}
 
 	protected function setDayValues($layers)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate());
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate());
 		foreach ($result AS $row)
-		    $this->_values[(int)(substr($row['date_add'], 11, 2))]++;
+			$this->_values[(int)(substr($row['date_add'], 11, 2))]++;
 	}
 }
 

@@ -84,35 +84,3 @@ function changeValueTntRC(code, name, address1, address2, zipcode, city)
 	document.getElementById("tntRCSelectedCodePostal").value = zipcode;
 	document.getElementById("tntRCSelectedCommune").value = city;
 }
-
-function	displayCity(id_shop)
-{
-	var postal = $("#tnt_carrier_shipping_postal_code").val();
-	if (postal.length == 5)
-	{
-		$("#resultCity").html("");
-		$.get(
-			"../modules/tntcarrier/tntGetCity.php?code="+postal+"&id_shop="+id_shop,
-			function(response, status, xhr) 
-				{
-					if (status == "error") 
-						$("#resultCity").html("Erreur. R&eacute;essayer plus tard.");
-					else if (response == "account")
-						$("#resultCity").html("Veuillez-vous identifier dans l'onglet Param&egrave;tres de compte");
-					else
-					{
-						$("#tnt_carrier_shipping_city").removeAttr('disabled');
-						$("#tnt_carrier_shipping_city").html(response);
-					}
-						
-				}
-			);
-	}
-	else
-		$("#resultCity").html("Le code postal doit etre de 5 chiffres");
-}
-
-function enableSelect()
-{
-	$("#tnt_carrier_shipping_city").removeAttr('disabled');
-}

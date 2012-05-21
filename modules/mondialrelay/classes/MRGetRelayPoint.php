@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop 
 *
 * NOTICE OF LICENSE
 *
@@ -19,7 +19,7 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
+*  @copyright  2007-2011 PrestaShop SA
 *  @version  Release: $Revision: 7086 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
@@ -62,7 +62,7 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
 			'Poids'					=> array(
 						'required'				=> false,
 						'value'						=> '',
-						'regexValidation' => '#^[0-9]{3,7}$#'),
+						'regexValidation' => '#^[0-9]{1,6}$#'),
 			'Action'				=> array(
 						'required'				=> false,
 						'value'						=> '',
@@ -86,12 +86,11 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
 	private $_webserviceURL = 'http://www.mondialrelay.fr/webservice/Web_Services.asmx?WSDL';
 	
 	public function __construct($params)	
-	{
-		$this->_mondialRelay = new MondialRelay();
+	{	
 		$this->_id_address_delivery = (int)($params['id_address_delivery']);
 		$this->_id_carrier = (int)($params['id_carrier']);
 		$this->_weight = (float)($params['weight']);	
-		$this->_webServiceKey = $this->_mondialRelay->account_shop['MR_KEY_WEBSERVICE'];
+		$this->_webServiceKey = Configuration::get('MR_KEY_WEBSERVICE');
 	}
 	
 	public function __destruct()
@@ -100,18 +99,18 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
 	}
 	
 	public function init()
-	{
+	{	
+		$this->_mondialRelay = new MondialRelay();
 		$address = new Address($this->_id_address_delivery);
-		$weight = $this->_mondialRelay->account_shop['MR_WEIGHT_COEFFICIENT'] * $this->_weight;
 		
 		if (!$address)
 			throw new Exception($this->_mondialrelay->l('Customer address can\'t be found'));
 		
-		$this->_fields['list']['Enseigne']['value'] = $this->_mondialRelay->account_shop['MR_ENSEIGNE_WEBSERVICE'];
-		$this->_fields['list']['Poids']['value'] = ($weight < 100) ? 100 : $weight;
-		$this->_fields['list']['Pays']['value'] = trim(Country::getIsoById($address->id_country));
-		$this->_fields['list']['Ville']['value'] = trim($address->city);
-		$this->_fields['list']['CP']['value'] = trim($address->postcode);
+		$this->_fields['list']['Enseigne']['value'] = Configuration::get('MR_ENSEIGNE_WEBSERVICE');
+		$this->_fields['list']['Poids']['value'] = Configuration::get('MR_WEIGHT_COEF') * $this->_weight;
+		$this->_fields['list']['Pays']['value'] = Country::getIsoById($address->id_country);
+		$this->_fields['list']['Ville']['value'] = $address->city;
+		$this->_fields['list']['CP']['value'] = $address->postcode;
 		$this->_fields['list']['CP']['params']['id_country'] = $address->id_country;
 		
 		$this->_generateMD5SecurityKey();
@@ -129,7 +128,7 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
 			{
 				// Mac server make an empty string instead of a cleaned string
 				// TODO : test on windows and linux server
-				$cleanedString = MRTools::removeAccents($valueDetailed['value']);
+				$cleanedString = MRTools::replaceAccentedCharacters($valueDetailed['value']);
 				$valueDetailed['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($valueDetailed['value']);
 
 				$valueDetailed['value'] = strtoupper($valueDetailed['value']);
@@ -152,7 +151,7 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
 				}
 			}
 			$concatenationValue .= $this->_webServiceKey;
-			$this->_fields['list']['Security']['value'] = strtoupper(md5($concatenationValue));	
+			$this->_fields['list']['Security']['value'	] = strtoupper(md5($concatenationValue));	
 	}
 
 	/*
@@ -239,7 +238,7 @@ class MRGetRelayPoint implements IMondialRelayWSMethod
  				}
  				if ($totalEmptyFields == count($relayPoint))
  					unset($result[$num]);
- 			}
+ 				}
  			if (!count($result))
  				$errors[] = $this->_mondialRelay->l('MondialRelay can\'t find any relay point near your address. Maybe your address isn\'t properly filled ?');
  			else

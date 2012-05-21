@@ -52,7 +52,7 @@ class TrustedShopsRating extends AbsTrustedShops
 									   'fr' => '&et_cid=53&et_lid=3362');
 	public function __construct()
 	{
-		$this->tab_name = $this->l('Customer Rating');
+		$this->tab_name = $this->l('Trusted Shops customer rating');
 		
 		// @todo : That gonna be change - Be worry it's false, countries have not the same ISO code as Languages, waiting Truste Shop's answer
 		$this->limited_countries = $this->available_languages;
@@ -107,7 +107,7 @@ class TrustedShopsRating extends AbsTrustedShops
 	}
 
 	
-	static public function getHttpHost($http = false, $entities = false)
+	public static function getHttpHost($http = false, $entities = false)
 	{
 		if (method_exists('Tools', 'getHttpHost'))
 			return call_user_func(array('Tools', 'getHttpHost'), array($http, $entities));
@@ -311,7 +311,7 @@ class TrustedShopsRating extends AbsTrustedShops
 						</script>';
 		
 		$content = $javascript .
-				  '<form action="'.$this->_makeFormAction($_SERVER['REQUEST_URI'], $this->id_tab).'" method="post">
+				  '<form action="'.$this->_makeFormAction(strip_tags($_SERVER['REQUEST_URI']), $this->id_tab).'" method="post">
 					<fieldset>
 						<legend><img src="../img/admin/cog.gif" alt="" />'.$this->l('Basic Settings').'</legend>
 						<p>'.$this->l('Please fill your Trusted Shops ID (one different ID per language):').'</p>
@@ -358,12 +358,18 @@ class TrustedShopsRating extends AbsTrustedShops
 	
 	public function displayInformationsPage()
 	{
-		global $cookie;
-		
+		$link = '';
+		if (strtolower(Context::getContext()->language->iso_code) == 'de')
+			$link = '<p><b><a style="text-decoration: underline; font-weight: bold; color: #0000CC;" target="_blank" href="https://www.trustedshops.de/shopbetreiber/kundenbewertung_anmeldung.html?shopsw=PRESTA&partnerPackage=PrestaShop&ratingProduct=RATING_PRO&et_cid=14en&et_lid=29069" target="_blank">Jetzt bei Trusted Shops anmelden!</a></b></p><br />';
+		if (strtolower(Context::getContext()->language->iso_code) == 'en')
+			$link = '<p><b><a style="text-decoration: underline; font-weight: bold; color: #0000CC;" target="_blank" href="http://www.trustedshops.com/merchants/membership.html?shopsw=PRESTA&partnerPackage=PrestaShop&et_cid=53&et_lid=3361" target="_blank">Apply now!</a></b></p><br />';
+		if (strtolower(Context::getContext()->language->iso_code) == 'fr')
+			$link = '<p><b><a style="text-decoration: underline; font-weight: bold; color: #0000CC;" target="_blank" href="http://www.trustedshops.fr/marchands/tarifs.html?shopsw=PRESTA&partnerPackage=PrestaShop&et_cid=53&et_lid=3362" target="_blank">Enregistrement Trusted Shops</a></b></p><br />';
+
 		return '<fieldset>
 					<legend><img src="'.__PS_BASE_URI__.'modules/'.self::$module_name.'/logo.gif" alt="" />'.$this->l('Learn More').'</legend>
 		
-					<img src="'._MODULE_DIR_.self::$module_name.'/img/ts_rating_'.$this->_getAllowedIsobyId($cookie->id_lang).'.jpg" />
+					<img src="'._MODULE_DIR_.self::$module_name.'/img/ts_rating_'.$this->_getAllowedIsobyId(Context::getContext()->language->id).'.jpg" />
 			
 					<h3>'.$this->l('Trusted Shops Customer Rating').'</h3>
 					<p>'.$this->l('For online buyers, positive and verifiable customer ratings are an important indication of an online shop\'s trustworthiness. The required software is already included in Prestashop, so you can start collecting customer ratings in your online shop too. Integration is easy with just a few clicks.').'</p>
@@ -377,38 +383,34 @@ class TrustedShopsRating extends AbsTrustedShops
 					<h4>'.$this->l('Increase reach via Facebook, Twitter and Google').'</h4>
 					<p>'.$this->l('Your customers spread reviews and rating on Facebook and Twitter directly to friends and followers. Ratings are automatically listed in the Google-Index and are displayed in Google Shopping.').'</p>
 					<br />
-					<a style="text-decoration: underline; font-weight: bold; color: #0000CC;" target="_blank" href="'.$this->getApplyUrl().'">'.$this->l('Register for Trusted Shops Customer Rating').'</a>
+					'.$link.'
 				</fieldset>
 				<br />';
 	}
 	
 	public function getApplyUrl()
 	{
-		global $cookie;
-
-		$lang = $this->_getAllowedIsobyId($cookie->id_lang);
+		$lang = $this->_getAllowedIsobyId(Context::getContext()->language->id);
 		
 		return $this->apply_url_base[$lang].'?partnerPackage='.self::PARTNER_PACKAGE.'&shopsw='.self::SHOP_SW.'&website='.
-		urlencode(_PS_BASE_URL_.__PS_BASE_URI__).'&firstName='.urlencode($cookie->firstname).'&lastName='.
-		urlencode($cookie->lastname).'&email='.urlencode(Configuration::get('PS_TAB0_SHOP_EMAIL')).'&language='.strtoupper(Language::getIsoById((int)($cookie->id_lang))).
+		urlencode(_PS_BASE_URL_.__PS_BASE_URI__).'&firstName='.urlencode(Context::getContext()->customer->firstname).'&lastName='.
+		urlencode(Context::getContext()->customer->lastname).'&email='.urlencode(Configuration::get('PS_TAB0_SHOP_EMAIL')).'&language='.strtoupper(Context::getContext()->language->iso_code).
 		'&ratingProduct=RATING_PRO'.$this->apply_url_tracker[$lang];
 	}
 	
 	public function getRatingUrl($id_order = '')
 	{
-		global $cookie;
-		
 		$buyer_email = '';
 		
-		if ($cookie->isLogged()) 
+		if (Context::getContext()->customer->isLogged()) 
 		{
-			if (empty($id_order) && !empty($cookie->id_customer))
-				$id_order = $this->_getLastOrderId($cookie->id_customer);
+			if (empty($id_order) && !empty(Context::getContext()->customer->id))
+				$id_order = $this->_getLastOrderId(Context::getContext()->customer->id);
 		
-			$buyer_email = $cookie->email;
+			$buyer_email = Context::getContext()->customer->email;
 		}
 				
-		return $this->getRatingUrlWithBuyerEmail((int)($cookie->id_lang), $id_order, $buyer_email);
+		return $this->getRatingUrlWithBuyerEmail(Context::getContext()->language->id, $id_order, $buyer_email);
 	}
 	
 	public function getRatingUrlWithBuyerEmail($id_lang, $id_order = '', $buyer_email = '')
@@ -442,6 +444,18 @@ class TrustedShopsRating extends AbsTrustedShops
 		if (Configuration::get('TS_TAB0_DISPLAY_RATING_FRONT_END'))
 			self::$smarty->assign(array('rating_url' => $this->getRatingUrl(), 'language' => Language::getIsoById((int)($params['cookie']->id_lang))));
 		
+		$displayWidget = false;
+		foreach (TSBuyerProtection::$CERTIFICATE as $lang => $certificate)
+		{
+			$certificate = (array)$certificate;
+			if (isset($certificate['tsID']) && $certificate['tsID'] !== '' && $certificate['user'] != '')
+				$displayWidget = true;
+			if (isset($certificate['tsID']) && $certificate['tsID'] !== '' && $certificate['typeEnum'] === 'CLASSIC')
+				$displayWidget = true;
+		}
+		if ($displayWidget == false)
+			return '';
+		
 		return $this->display(self::$module_name, 'widget.tpl');
 	}
 	
@@ -452,9 +466,7 @@ class TrustedShopsRating extends AbsTrustedShops
 	
 	public function getWidgetFilename()
 	{
-		global $cookie;
-
-		return self::$module_name.'/cache/'.Configuration::get('TS_TAB0_ID_'.(int)($cookie->id_lang)).'.gif';
+		return self::$module_name.'/cache/'.Configuration::get('TS_TAB0_ID_'.(int)Context::getContext()->language->id).'.gif';
 	}
 
 	public function hookOrderConfirmation($params)
@@ -464,7 +476,7 @@ class TrustedShopsRating extends AbsTrustedShops
 		if (!$this->_isTsIdActive((int)($params['cookie']->id_lang)))
 			return false;
 		
-		self::$smarty->assign(array('rating_url' => $this->getRatingUrl((int)($params['objOrder']->id)), 'language' => Language::getIsoById((int)($params['cookie']->id_lang))));
+		self::$smarty->assign(array('rating_url' => $this->getRatingUrl((int)($params['objOrder']->id)), 'language' => $this->context->language->iso_code));
 		
 		return $this->display(self::$module_name, 'order-confirmation.tpl');
 	}

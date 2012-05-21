@@ -31,7 +31,7 @@ include_once('mondialrelay.php');
 if (Tools::getValue('secure_key') != Configuration::get('MONDIAL_RELAY_SECURE_KEY'))
 	exit;
 
-$expeditions = Db::getInstance()->ExecuteS('
+$expeditions = Db::getInstance()->executeS('
 SELECT ms.`exp_number`, ms.`id_cart`, o.`id_order`
 FROM `'._DB_PREFIX_.'mr_selected` ms
 LEFT JOIN `'._DB_PREFIX_.'orders` o ON (o.`id_cart` = ms.`id_cart`) 
@@ -45,7 +45,7 @@ $params = array(
 'Langue' => 'FR'
 );
 
-require_once('kit_mondialrelay/tools/nusoap/lib/nusoap.php');
+require_once(dirname(__FILE__).'/lib/nusoap/lib/nusoap.php');
 $client_mr = new nusoap_client("http://www.mondialrelay.fr/webservice/Web_Services.asmx?WSDL", true);
 $client_mr->soap_defencoding = 'UTF-8';
 $client_mr->decode_utf8 = false;
@@ -54,7 +54,7 @@ foreach ($expeditions as $expedition)
 {
 	if ($expedition['id_order'] == NULL)
 		continue;
-	if (OrderHistory::getLastOrderState((int)($expedition['id_order']))->id == _PS_OS_DELIVERED_)
+	if (OrderHistory::getLastOrderState((int)($expedition['id_order']))->id == Configuration::get('PS_OS_DELIVERED'))
 		continue;
 	$params['Expedition'] = $expedition['exp_number'];
 	$params['Security'] = strtoupper(md5($params['Enseigne'].$params['Expedition'].'FR'.Configuration::get('MR_KEY_WEBSERVICE')));
@@ -70,7 +70,7 @@ foreach ($expeditions as $expedition)
 	{
 		$history = new OrderHistory();
 		$history->id_order = (int)($expedition['id_order']);
-		$history->changeIdOrderState((int)(_PS_OS_DELIVERED_), (int)($expedition['id_order']));
+		$history->changeIdOrderState((int)(Configuration::get('PS_OS_DELIVERED')), (int)($expedition['id_order']));
 		$history->addWithemail();
 	}
 }

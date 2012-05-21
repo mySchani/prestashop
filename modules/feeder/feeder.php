@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Feeder extends Module
@@ -58,8 +58,6 @@ class Feeder extends Module
 	
 	function hookHeader($params)
 	{
-		global $smarty, $cookie;
-		
 		$id_category = (int)(Tools::getValue('id_category'));
 		if (!$id_category)
 		{
@@ -79,7 +77,7 @@ class Feeder extends Module
 		$category = new Category($id_category);
 		$orderBy = Tools::getProductsOrder('by', Tools::getValue('orderby'));
 		$orderWay = Tools::getProductsOrder('way', Tools::getValue('orderway'));
-		$smarty->assign(array(
+		$this->context->smarty->assign(array(
 			'feedUrl' => Tools::getShopDomain(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/rss.php?id_category='.$id_category.'&amp;orderby='.$orderBy.'&amp;orderway='.$orderWay,
 		));
 		return $this->display(__FILE__, 'feederHeader.tpl');

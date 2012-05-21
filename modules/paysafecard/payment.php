@@ -42,18 +42,18 @@ if (Tools::getValue('hash') != md5(Configuration::get($module->prefix.'SALT') + 
 	die(Tools::displayError());	
 
 $result = $module->getDispositionState((int)($cart->id));
-$state = _PS_OS_ERROR_;
+$state = Configuration::get('PS_OS_ERROR');
 
-$disposition = Disposition::getByCartId((int)($cart->id));
+$disposition = PSCDisposition::getByCartId((int)($cart->id));
 
 $message = 'Transaction ID #'.$disposition['mtid'].': '.$disposition['amount'].$disposition['currency'].'<br />'. date('Y-m-d').' ';
 if ($result[0] == 0)
 {
 	list ($rc, $errorcode, $error_message, $amount, $used_currency, $state) = $result;
 
-	if ($state == PrepaidServicesAPI::DISPOSITION_DISPOSED || $state == PrepaidServicesAPI::DISPOSITION_DEBITED)
+	if ($state == PSCPrepaidServicesAPI::DISPOSITION_DISPOSED || $state == PSCPrepaidServicesAPI::DISPOSITION_DEBITED)
 	{
-		$state = _PS_OS_PAYMENT_;
+		$state = Configuration::get('PS_OS_PAYMENT');
 		$message .= $module->getL('disposition_created');
 	} else {
 		$message .= $module->getL('disposition_invalid').' '.$state;
@@ -62,7 +62,7 @@ if ($result[0] == 0)
 	$message .= 'payment_error'.' '.$result[2];
 }
 
-if ($state != _PS_OS_ERROR_)
+if ($state != Configuration::get('PS_OS_ERROR'))
 {
 	$state = (int)(Configuration::get($module->prefix.'ORDER_STATE_ID'));
 
@@ -74,19 +74,23 @@ if ($state != _PS_OS_ERROR_)
 		if ($result[0] != 0)
 		{
 			$message .= $module->getL('payment_error').' '.$result[2];
-			$state = _PS_OS_ERROR_;
+			$state = Configuration::get('PS_OS_ERROR');
 		}
 		else 
 		{
 			$message .= $module->getL('payment_accepted');
-			$state = _PS_OS_PAYMENT_;
+			$state = Configuration::get('PS_OS_PAYMENT');
 		}
 	} 
 }
 
-$module->validateOrder((int)($cart->id), $state, (float)($cart->getOrderTotal(true, Cart::BOTH)), $module->displayName, $message, NULL, (int)($currency->id), false, $cart->secure_key);
+$module->setTransactionDetail(array(
+	'transaction_id', $disposition['mtid']));
 
-if ($state == _PS_OS_ERROR_) 
+$module->validateOrder((int)($cart->id), $state, (float)($cart->getOrderTotal(true, Cart::BOTH)), 
+	$module->displayName, $message, NULL, (int)($currency->id), false, $cart->secure_key);
+
+if ($state == Configuration::get('PS_OS_ERROR')) 
 {
 	include(dirname(__FILE__).'/../../header.php');
 	echo $message;

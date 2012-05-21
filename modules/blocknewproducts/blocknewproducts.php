@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockNewProducts extends Module
@@ -73,7 +73,7 @@ class BlockNewProducts extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 		<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Products displayed').'</label>
 					<div class="margin-form">
@@ -96,24 +96,26 @@ class BlockNewProducts extends Module
 
 	public function hookRightColumn($params)
 	{
-		global $smarty;
-	
 		$newProducts = Product::getNewProducts((int)($params['cookie']->id_lang), 0, (int)(Configuration::get('NEW_PRODUCTS_NBR')));
 		if (!$newProducts AND !Configuration::get('PS_BLOCK_NEWPRODUCTS_DISPLAY'))
 			return;
-		$smarty->assign(array('new_products' => $newProducts, 'mediumSize' => Image::getSize('medium')));
+
+		$this->templateAssign(array(
+			'new_products' => $newProducts,
+			'mediumSize' => Image::getSize('medium'),
+		));
 
 		return $this->display(__FILE__, 'blocknewproducts.tpl');
 	}
-	
+
 	public function hookLeftColumn($params)
 	{
 		return $this->hookRightColumn($params);
 	}
-		
+
 	public function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blocknewproducts.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blocknewproducts.css', 'all');
 	}
 
 }

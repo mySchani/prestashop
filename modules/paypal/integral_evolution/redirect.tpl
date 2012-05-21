@@ -26,7 +26,7 @@
 
 <html>
 	<head>
-		<script type="text/javascript" src="{$url}js/jquery/jquery-1.4.4.min.js"></script>
+		<script type="text/javascript" src="{$url}js/jquery/{$jquery}"></script>
 	</head>
 	<body>
 		<p>{$redirect_text}<br /><a href="javascript:history.go(-1);">{$cancel_text}</a></p>
@@ -76,6 +76,7 @@
 			<input type="hidden" name="paymentaction" value="{$paymentaction}" />
 			{if $header != NULL}
 			<input type="hidden" name="cpp_header_image" value="{$header}" />
+			<input type="hidden" name="logoImage" value="{$header}" />
 			{/if}
 			<input type="hidden" name="template" value="{$template}" />
 			<input type="hidden" name="rm" value="2" />

@@ -27,53 +27,65 @@
 
 class CountryCore extends ObjectModel
 {
-	public 		$id;
+	public $id;
 
 	/** @var integer Zone id which country belongs */
-	public 		$id_zone;
+	public $id_zone;
 
 	/** @var integer Currency id which country belongs */
-	public 		$id_currency;
+	public $id_currency;
 
 	/** @var string 2 letters iso code */
-	public 		$iso_code;
+	public $iso_code;
 
 	/** @var integer international call prefix */
-	public 		$call_prefix;
+	public $call_prefix;
 
 	/** @var string Name */
-	public 		$name;
+	public $name;
 
 	/** @var boolean Contain states */
-	public		$contains_states;
+	public $contains_states;
 
 	/** @var boolean Need identification number dni/nif/nie */
-	public		$need_identification_number;
+	public $need_identification_number;
 
 	/** @var boolean Need Zip Code */
-	public		$need_zip_code;
+	public $need_zip_code;
 
 	/** @var string Zip Code Format */
-	public		$zip_code_format;
+	public $zip_code_format;
 
 	/** @var boolean Display or not the tax incl./tax excl. mention in the front office */
 	public $display_tax_label = true;
 
 	/** @var boolean Status for delivery */
-	public		$active = true;
+	public $active = true;
 
 	protected static $_idZones = array();
 
-	protected 	$tables = array ('country', 'country_lang');
+	protected $tables = array ('country', 'country_lang');
 
- 	protected 	$fieldsRequired = array('id_zone', 'id_currency', 'iso_code', 'contains_states', 'need_identification_number', 'display_tax_label');
- 	protected 	$fieldsSize = array('iso_code' => 3);
- 	protected 	$fieldsValidate = array('id_zone' => 'isUnsignedId', 'id_currency' => 'isUnsignedId', 'call_prefix' => 'isInt', 'iso_code' => 'isLanguageIsoCode', 'active' => 'isBool', 'contains_states' => 'isBool', 'need_identification_number' => 'isBool', 'need_zip_code' => 'isBool', 'zip_code_format' => 'isZipCodeFormat', 'display_tax_label' => 'isBool');
- 	protected 	$fieldsRequiredLang = array('name');
- 	protected 	$fieldsSizeLang = array('name' => 64);
- 	protected 	$fieldsValidateLang = array('name' => 'isGenericName');
+ 	protected $fieldsRequired = array('id_zone', 'iso_code', 'contains_states', 'need_identification_number', 'display_tax_label');
+ 	protected $fieldsSize = array('iso_code' => 3);
+ 	protected $fieldsValidate = array(
+ 		'id_zone' => 'isUnsignedId',
+ 		'id_currency' => 'isUnsignedId',
+ 		'call_prefix' => 'isInt',
+ 		'iso_code' => 'isLanguageIsoCode',
+ 		'active' => 'isBool',
+ 		'contains_states' => 'isBool',
+ 		'need_identification_number' => 'isBool',
+ 		'need_zip_code' => 'isBool',
+ 		'zip_code_format' => 'isZipCodeFormat',
+ 		'display_tax_label' => 'isBool'
+ 	);
 
-	protected	$webserviceParameters = array(
+ 	protected $fieldsRequiredLang = array('name');
+ 	protected $fieldsSizeLang = array('name' => 64);
+ 	protected $fieldsValidateLang = array('name' => 'isGenericName');
+
+	protected $webserviceParameters = array(
 		'objectsNodeName' => 'countries',
 		'fields' => array(
 			'id_zone' => array('sqlId' => 'id_zone', 'xlink_resource'=> 'zones'),
@@ -81,20 +93,20 @@ class CountryCore extends ObjectModel
 		),
 	);
 
-	protected 	$table = 'country';
-	protected 	$identifier = 'id_country';
+	protected $table = 'country';
+	protected $identifier = 'id_country';
 
 	public function getFields()
 	{
-		parent::validateFields();
-		$fields['id_zone'] = (int)($this->id_zone);
-		$fields['id_currency'] = (int)($this->id_currency);
+		$this->validateFields();
+		$fields['id_zone'] = (int)$this->id_zone;
+		$fields['id_currency'] = (int)$this->id_currency;
 		$fields['iso_code'] = pSQL(strtoupper($this->iso_code));
-		$fields['call_prefix'] = (int)($this->call_prefix);
-		$fields['active'] = (int)($this->active);
-		$fields['contains_states'] = (int)($this->contains_states);
-		$fields['need_identification_number'] = (int)($this->need_identification_number);
-		$fields['need_zip_code'] = (int)($this->need_zip_code);
+		$fields['call_prefix'] = (int)$this->call_prefix;
+		$fields['active'] = (int)$this->active;
+		$fields['contains_states'] = (int)$this->contains_states;
+		$fields['need_identification_number'] = (int)$this->need_identification_number;
+		$fields['need_zip_code'] = (int)$this->need_zip_code;
 		$fields['zip_code_format'] = $this->zip_code_format;
 		$fields['display_tax_label'] = $this->display_tax_label;
 		return $fields;
@@ -107,8 +119,15 @@ class CountryCore extends ObjectModel
 	  */
 	public function getTranslationsFieldsChild()
 	{
-		parent::validateFieldsLang();
-		return parent::getTranslationsFields(array('name'));
+		$this->validateFieldsLang();
+		return $this->getTranslationsFields(array('name'));
+	}
+
+	public function delete()
+	{
+		if (!parent::delete())
+			return false;
+		return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'cart_rule_country WHERE id_country = '.(int)$this->id);
 	}
 
 	/**
@@ -118,31 +137,33 @@ class CountryCore extends ObjectModel
 	  * @param boolean $active return only active coutries
 	  * @return array Countries and corresponding zones
 	  */
-	static public function getCountries($id_lang, $active = false, $containStates = NULL, $id_shop = false)
+	public static function getCountries($id_lang, $active = false, $contain_states = null, Shop $shop = null)
 	{
 	 	if (!Validate::isBool($active))
 	 		die(Tools::displayError());
 
-		$states = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		if (!$shop)
+			$shop = Context::getContext()->shop;
+
+		$states = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT s.*
 		FROM `'._DB_PREFIX_.'state` s
 		ORDER BY s.`name` ASC');
 
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT cl.*,c.*, cl.`name` AS country, z.`name` AS zone
-		FROM `'._DB_PREFIX_.'country` c
-		'.($id_shop ? 'LEFT JOIN '._DB_PREFIX_.'country_shop cs ON (cs.id_country = c.id_country)' : '').'
-		LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country` AND cl.`id_lang` = '.(int)($id_lang).')
-		LEFT JOIN `'._DB_PREFIX_.'zone` z ON z.`id_zone` = c.`id_zone`
-		WHERE 1
-		'.($active ? ' AND c.active = 1' : '')
-		.($id_shop ? ' AND cs.id_shop='.(int)$id_shop : '')
-		.(!is_null($containStates) ? 'AND c.`contains_states` = '.(int)($containStates) : '').'
-		ORDER BY cl.name ASC');
+		$sql = 'SELECT cl.*,c.*, cl.`name` AS country, z.`name` AS zone
+				FROM `'._DB_PREFIX_.'country` c
+				'.$shop->addSqlAssociation('country', 'c', false).'
+				LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country` AND cl.`id_lang` = '.(int)$id_lang.')
+				LEFT JOIN `'._DB_PREFIX_.'zone` z ON z.`id_zone` = c.`id_zone`
+				WHERE 1'
+					.($active ? ' AND c.active = 1' : '')
+					.(!is_null($contain_states) ? ' AND c.`contains_states` = '.(int)$contain_states : '').'
+		ORDER BY cl.name ASC';
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 		$countries = array();
-		foreach ($result AS &$country)
+		foreach ($result as &$country)
 			$countries[$country['id_country']] = $country;
-		foreach ($states AS &$state)
+		foreach ($states as &$state)
 			if (isset($countries[$state['id_country']])) /* Does not keep the state if its country has been disabled and not selected */
 				$countries[$state['id_country']]['states'][] = $state;
 
@@ -155,7 +176,7 @@ class CountryCore extends ObjectModel
 	  * @param string $iso_code Country iso code
 	  * @return integer Country ID
 	  */
-	static public function getByIso($iso_code)
+	public static function getByIso($iso_code)
 	{
 		if (!Validate::isLanguageIsoCode($iso_code))
 			die(Tools::displayError());
@@ -167,7 +188,7 @@ class CountryCore extends ObjectModel
 		return $result['id_country'];
 	}
 
-	static public function getIdZone($id_country)
+	public static function getIdZone($id_country)
 	{
 		if (!Validate::isUnsignedId($id_country))
 			die(Tools::displayError());
@@ -178,7 +199,7 @@ class CountryCore extends ObjectModel
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `id_zone`
 		FROM `'._DB_PREFIX_.'country`
-		WHERE `id_country` = '.(int)($id_country));
+		WHERE `id_country` = '.(int)$id_country);
 
 		self::$_idZones[$id_country] = $result['id_zone'];
 		return $result['id_zone'];
@@ -191,13 +212,14 @@ class CountryCore extends ObjectModel
 	* @param integer $id_country Country ID
 	* @return string Country name
 	*/
-	static public function getNameById($id_lang, $id_country)
+	public static function getNameById($id_lang, $id_country)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `name`
-		FROM `'._DB_PREFIX_.'country_lang`
-		WHERE `id_lang` = '.(int)($id_lang).'
-		AND `id_country` = '.(int)($id_country));
+			SELECT `name`
+			FROM `'._DB_PREFIX_.'country_lang`
+			WHERE `id_lang` = '.(int)$id_lang.'
+			AND `id_country` = '.(int)$id_country
+		);
 
 		return $result['name'];
 	}
@@ -208,12 +230,13 @@ class CountryCore extends ObjectModel
 	* @param integer $id_country Country ID
 	* @return string Country iso
 	*/
-	static public function getIsoById($id_country)
+	public static function getIsoById($id_country)
 	{
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `iso_code`
-		FROM `'._DB_PREFIX_.'country`
-		WHERE `id_country` = '.(int)($id_country));
+			SELECT `iso_code`
+			FROM `'._DB_PREFIX_.'country`
+			WHERE `id_country` = '.(int)$id_country
+		);
 
 		return $result['iso_code'];
 	}
@@ -225,89 +248,70 @@ class CountryCore extends ObjectModel
 	* @param string $country Country Name
 	* @return intval Country id
 	*/
-	static public function getIdByName($id_lang = NULL, $country)
+	public static function getIdByName($id_lang = null, $country)
 	{
 		$sql = '
 		SELECT `id_country`
 		FROM `'._DB_PREFIX_.'country_lang`
 		WHERE `name` LIKE \''.pSQL($country).'\'';
 		if ($id_lang)
-			$sql .= ' AND `id_lang` = '.(int)($id_lang);
+			$sql .= ' AND `id_lang` = '.(int)$id_lang;
 
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow($sql);
 
-		return ((int)($result['id_country']));
+		return (int)$result['id_country'];
 	}
 
-
-	/**
-	 * @param $id_country
-	 * @deprecated
-	 */
-	static public function getNeedIdentifcationNumber($id_country)
+	public static function getNeedZipCode($id_country)
 	{
-		Tools::displayAsDeprecated();
-		return self::isNeedDniByCountryId($id_country);
-	}
-
-	static public function getNeedZipCode($id_country)
-	{
-		if (!(int)($id_country))
+		if (!(int)$id_country)
 			return false;
 
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
 		SELECT `need_zip_code`
 		FROM `'._DB_PREFIX_.'country`
-		WHERE `id_country` = '.(int)($id_country));
+		WHERE `id_country` = '.(int)$id_country);
 	}
 
-	static public function getZipCodeFormat($id_country)
+	public static function getZipCodeFormat($id_country)
 	{
-		if (!(int)($id_country))
+		if (!(int)$id_country)
 			return false;
 
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
 		SELECT `zip_code_format`
 		FROM `'._DB_PREFIX_.'country`
-		WHERE `id_country` = '.(int)($id_country));
-	}
-
-	public static function displayCallPrefix($prefix)
-	{
-		return ((int)($prefix) ? '+'.$prefix : '-');
+		WHERE `id_country` = '.(int)$id_country);
 	}
 
 	/**
 	 * Returns the default country Id
 	 *
+	 * @deprecated as of 1.5 use $context->country->id instead
 	 * @return integer default country id
 	 */
 	public static function getDefaultCountryId()
 	{
-		global $cookie;
-
-		if (Configuration::get('PS_GEOLOCATION_ENABLED') AND Validate::isLanguageIsoCode($cookie->iso_code_country))
-			$id_country = (int)Country::getByIso($cookie->iso_code_country);
-		else
-			$id_country = (int)Configuration::get('PS_COUNTRY_DEFAULT');
-
-		return $id_country;
+		Tools::displayAsDeprecated();
+		return Context::getContext()->country->id;
 	}
 
-
-    public static function getCountriesByZoneId($id_zone, $id_lang, $id_shop = false)
+    public static function getCountriesByZoneId($id_zone, $id_lang, Shop $shop = null)
     {
-        if (empty($id_zone) OR empty($id_lang))
+        if (empty($id_zone) || empty($id_lang))
             die(Tools::displayError());
-        return Db::getInstance()->ExecuteS('
-        SELECT DISTINCT c.*, cl.*
-        FROM `'._DB_PREFIX_.'country` c
-        '.($id_shop ? ' LEFT JOIN '._DB_PREFIX_.'country_shop cs ON (cs.id_country = c.id_country)' : '').'
-        LEFT JOIN `'._DB_PREFIX_.'state` s ON (s.`id_country` = c.`id_country`)
-        LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country`)
-        WHERE (c.`id_zone` = '.(int)$id_zone.' OR s.`id_zone` = '.(int)$id_zone.')
-        '.($id_shop ? ' AND cs.id_shop='.(int)$id_shop : '').'
-        AND `id_lang` = '.(int)$id_lang);
+
+        if (!$shop)
+        	$shop = Context::getContext()->shop;
+
+		$sql = ' SELECT DISTINCT c.*, cl.*
+        		FROM `'._DB_PREFIX_.'country` c
+				'.$shop->addSqlAssociation('country', 'c', false).'
+				LEFT JOIN `'._DB_PREFIX_.'state` s ON (s.`id_country` = c.`id_country`)
+		        LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON (c.`id_country` = cl.`id_country`)
+        		WHERE (c.`id_zone` = '.(int)$id_zone.' OR s.`id_zone` = '.(int)$id_zone.')
+        			AND `id_lang` = '.(int)$id_lang;
+        return Db::getInstance()->executeS($sql);
     }
 
 	public function isNeedDni()
@@ -315,7 +319,7 @@ class CountryCore extends ObjectModel
 		return (bool)self::isNeedDniByCountryId($this->id);
 	}
 
-	static public function isNeedDniByCountryId($id_country)
+	public static function isNeedDniByCountryId($id_country)
 	{
 		return (bool)Db::getInstance()->getValue('
 			SELECT `need_identification_number`
@@ -323,7 +327,7 @@ class CountryCore extends ObjectModel
 			WHERE `id_country` = '.(int)$id_country);
 	}
 
-	static public function containsStates($id_country)
+	public static function containsStates($id_country)
 	{
 		return (bool)Db::getInstance()->getValue('
 			SELECT `contains_states`

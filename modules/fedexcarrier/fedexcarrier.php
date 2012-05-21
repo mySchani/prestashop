@@ -24,7 +24,8 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class FedexCarrier extends CarrierModule
@@ -38,6 +39,7 @@ class FedexCarrier extends CarrierModule
 	private $_fieldsList = array();
 	private $_pickupTypeList = array();
 	private $_packagingTypeList = array();
+	private $_calculModeList = array();
 	private $_serviceTypeList = array();
 	private $_dimensionUnit = '';
 	private $_weightUnit = '';
@@ -45,11 +47,16 @@ class FedexCarrier extends CarrierModule
 	private $_weightUnitList = array('KG' => 'KGS', 'KGS' => 'KGS', 'LBS' => 'LBS', 'LB' => 'LBS');
 	private $_moduleName = 'fedexcarrier';
 
+	/*
+	** Construct Method
+	**
+	*/
+
 	public function __construct()
 	{
 		$this->name = 'fedexcarrier';
 		$this->tab = 'shipping_logistics';
-		$this->version = '1.0';
+		$this->version = '1.2.5';
 		$this->author = 'PrestaShop';
 		$this->limited_countries = array('us');
 
@@ -72,6 +79,10 @@ class FedexCarrier extends CarrierModule
 			foreach ($this->_fieldsList as $keyConfiguration => $name)
 				if (!Configuration::get($keyConfiguration) && !empty($name))
 					$warning[] = '\''.$name.'\' ';
+
+			// Check calcul mode
+			if (!Configuration::get('FEDEX_CARRIER_CALCUL_MODE'))
+				Configuration::updateValue('FEDEX_CARRIER_CALCUL_MODE', 'onepackage');
 
 			// Checking Unit
 			$this->_dimensionUnit = $this->_dimensionUnitList[strtoupper(Configuration::get('PS_DIMENSION_UNIT'))];
@@ -97,12 +108,15 @@ class FedexCarrier extends CarrierModule
 			'FEDEX_CARRIER_API_KEY' => $this->l('Fedex API Key'),
 			'FEDEX_CARRIER_PICKUP_TYPE' => $this->l('Fedex default pickup type'),
 			'FEDEX_CARRIER_PACKAGING_TYPE' => $this->l('Fedex default packaging type'),
+			'FEDEX_CARRIER_PACKAGING_WEIGHT' => $this->l('Packaging weight'),
+			'FEDEX_CARRIER_HANDLING_FEE' => $this->l('Handling fee'),
 			'FEDEX_CARRIER_ADDRESS1' => '',
 			'FEDEX_CARRIER_ADDRESS2' => '',
 			'FEDEX_CARRIER_POSTAL_CODE' => '',
 			'FEDEX_CARRIER_CITY' => '',
 			'FEDEX_CARRIER_STATE' => '',
 			'FEDEX_CARRIER_COUNTRY' => '',
+			'FEDEX_CARRIER_CALCUL_MODE' => '',
 		);
 
 		// Loading pickup type list			
@@ -148,6 +162,12 @@ class FedexCarrier extends CarrierModule
 			'SMART_POST' => $this->l('Smart post'),
 			'STANDARD_OVERNIGHT' => $this->l('Standard overnight')
 		);
+
+		// Loading calcul mode list
+		$this->_calculModeList = array(
+			'onepackage' => $this->l('All items in one package'),
+			'split' => $this->l('Split one item per package')
+		);
 	}
 
 
@@ -162,7 +182,7 @@ class FedexCarrier extends CarrierModule
 		// Install SQL
 		include(dirname(__FILE__).'/sql-install.php');
 		foreach ($sql as $s)
-			if (!Db::getInstance()->Execute($s))
+			if (!Db::getInstance()->execute($s))
 				return false;
 
 		// Install Carriers
@@ -188,7 +208,7 @@ class FedexCarrier extends CarrierModule
 		// Uninstall SQL
 		include(dirname(__FILE__).'/sql-uninstall.php');
 		foreach ($sql as $s)
-			if (!Db::getInstance()->Execute($s))
+			if (!Db::getInstance()->execute($s))
 				return false;
 
 		// Uninstall Module
@@ -204,7 +224,7 @@ class FedexCarrier extends CarrierModule
 		Db::getInstance()->autoExecute(_DB_PREFIX_.'fedex_rate_service_code', array('active' => 0), 'UPDATE');
 
 		// Get all services availables
-		$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+		$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 		foreach ($rateServiceList as $rateService)
 			if (!$rateService['id_carrier'])
 			{
@@ -329,6 +349,10 @@ class FedexCarrier extends CarrierModule
 			$alert['webserviceTest'] = 1;
 		if (!extension_loaded('soap'))
 			$alert['soap'] = 1;
+		if (!ini_get('allow_url_fopen'))
+			$alert['url_fopen'] = 1;
+		if (!extension_loaded('openssl'))
+			$alert['openssl'] = 1;
 
 
 		if (!count($alert))
@@ -340,6 +364,8 @@ class FedexCarrier extends CarrierModule
 			$this->_html .= '<br />'.(isset($alert['deliveryServices']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 2) '.$this->l('Select your available delivery service');
 			$this->_html .= '<br />'.(isset($alert['webserviceTest']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 3) '.$this->l('Webservice test connection').($this->_webserviceError ? ' : '.$this->_webserviceError : '');
 			$this->_html .= '<br />'.(isset($alert['soap']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 4) '.$this->l('Soap is enabled');
+			$this->_html .= '<br />'.(isset($alert['url_fopen']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 5) '.$this->l('Url fopen is enabled');
+			$this->_html .= '<br />'.(isset($alert['openssl']) ? '<img src="'._PS_IMG_.'admin/warn2.png" />' : '<img src="'._PS_IMG_.'admin/module_install.png" />').' 6) '.$this->l('OpenSSL is enabled');
 		}
 
 
@@ -412,16 +438,16 @@ class FedexCarrier extends CarrierModule
 		if (isset($_GET['id_tab']))
 			$html .= '<script>
 				  $(".menuTabButton.selected").removeClass("selected");
-				  $("#menuTab'.Tools::getValue('id_tab').'").addClass("selected");
+				  $("#menuTab'.Tools::safeOutput(Tools::getValue('id_tab')).'").addClass("selected");
 				  $(".tabItem.selected").removeClass("selected");
-				  $("#menuTab'.Tools::getValue('id_tab').'Sheet").addClass("selected");
+				  $("#menuTab'.Tools::safeOutput(Tools::getValue('id_tab')).'Sheet").addClass("selected");
 			</script>';
 		return $html;
 	}
 
 	private function _displayFormGeneral()
 	{
-		global $cookie;
+		$configCurrency = new Currency((int)Configuration::get('PS_CURRENCY_DEFAULT'));
 
 		$html = '<script>
 			$(document).ready(function() {
@@ -448,20 +474,31 @@ class FedexCarrier extends CarrierModule
 			</style>
 
 
-			<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=1&section=general" method="post" class="form" id="configForm">
+			<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=1&section=general" method="post" class="form" id="configForm">
 
 				<fieldset style="border: 0px;">
 					<h4>'.$this->l('General configuration').' :</h4>
 					<label>'.$this->l('Your Fedex account').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_account" value="'.Tools::getValue('fedex_carrier_account', Configuration::get('FEDEX_CARRIER_ACCOUNT')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_account" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_account', Configuration::get('FEDEX_CARRIER_ACCOUNT'))).'" /></div>
 					<label>'.$this->l('Your Fedex meter number').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_meter" value="'.Tools::getValue('fedex_carrier_meter', Configuration::get('FEDEX_CARRIER_METER')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_meter" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_meter', Configuration::get('FEDEX_CARRIER_METER'))).'" /></div>
 					<label>'.$this->l('Your Fedex password').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_password" value="'.Tools::getValue('fedex_carrier_password', Configuration::get('FEDEX_CARRIER_PASSWORD')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_password" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_password', Configuration::get('FEDEX_CARRIER_PASSWORD'))).'" /></div>
 					<label>'.$this->l('Your Fedex API Key').' : </label>
 					<div class="margin-form">
-						<input type="text" size="20" name="fedex_carrier_api_key" value="'.Tools::getValue('fedex_carrier_api_key', Configuration::get('FEDEX_CARRIER_API_KEY')).'" />
+						<input type="text" size="20" name="fedex_carrier_api_key" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_api_key', Configuration::get('FEDEX_CARRIER_API_KEY'))).'" />
 						<p><a href="http://www.fedex.com/webtools/" target="_blank">' . $this->l('Please click here to get your Fedex API Key.') . '</a></p>
+					</div>
+					<br /><br />
+					<label>'.$this->l('Packaging Weight').' : </label>
+					<div class="margin-form">
+						<input type="text" size="5" name="fedex_carrier_packaging_weight" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_packaging_weight', Configuration::get('FEDEX_CARRIER_PACKAGING_WEIGHT'))).'" />
+						'.Tools::safeOutput(Tools::getValue('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT'))).'
+					</div>
+					<label>'.$this->l('Handling Fee').' : </label>
+					<div class="margin-form">
+						<input type="text" size="5" name="fedex_carrier_handling_fee" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_handling_fee', Configuration::get('FEDEX_CARRIER_HANDLING_FEE'))).'" />
+						'.$configCurrency->sign.'
 					</div>
 				</fieldset>
 
@@ -469,12 +506,12 @@ class FedexCarrier extends CarrierModule
 					<h4>'.$this->l('Localization configuration').' :</h4>
 					<label>'.$this->l('Weight unit').' : </label>
 					<div class="margin-form">
-						<input type="text" size="20" name="ps_weight_unit" value="'.Tools::getValue('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT')).'" />
+						<input type="text" size="20" name="ps_weight_unit" value="'.Tools::safeOutput(Tools::getValue('ps_weight_unit', Configuration::get('PS_WEIGHT_UNIT'))).'" />
 						<p>'.$this->l('The weight unit of your shop (eg. kg or lbs)').'</p>
 					</div>
 					<label>'.$this->l('Dimension unit').' : </label>
 					<div class="margin-form">
-						<input type="text" size="20" name="ps_dimension_unit" value="'.Tools::getValue('ps_dimension_unit', Configuration::get('PS_DIMENSION_UNIT')).'" />
+						<input type="text" size="20" name="ps_dimension_unit" value="'.Tools::safeOutput(Tools::getValue('ps_dimension_unit', Configuration::get('PS_DIMENSION_UNIT'))).'" />
 						<p>'.$this->l('The dimension unit of your shop (eg. cm or in)').'</p>
 					</div>
 				</fieldset>
@@ -482,19 +519,19 @@ class FedexCarrier extends CarrierModule
 				<fieldset style="border: 0px;">
 					<h4>'.$this->l('Address configuration').' :</h4>
 					<label>'.$this->l('Your address line 1').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_address1" value="'.Tools::getValue('fedex_carrier_address1', Configuration::get('FEDEX_CARRIER_ADDRESS1')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_address1" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_address1', Configuration::get('FEDEX_CARRIER_ADDRESS1'))).'" /></div>
 					<label>'.$this->l('Your address line 2').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_address2" value="'.Tools::getValue('fedex_carrier_address2', Configuration::get('FEDEX_CARRIER_ADDRESS2')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_address2" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_address2', Configuration::get('FEDEX_CARRIER_ADDRESS2'))).'" /></div>
 					<label>'.$this->l('Zip / Postal Code').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_postal_code" value="'.Tools::getValue('fedex_carrier_postal_code', Configuration::get('FEDEX_CARRIER_POSTAL_CODE')).'" /></div><br />
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_postal_code" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_postal_code', Configuration::get('FEDEX_CARRIER_POSTAL_CODE'))).'" /></div><br />
 					<label>'.$this->l('Your City').' : </label>
-					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_city" value="'.Tools::getValue('fedex_carrier_city', Configuration::get('FEDEX_CARRIER_CITY')).'" /></div>
+					<div class="margin-form"><input type="text" size="20" name="fedex_carrier_city" value="'.Tools::safeOutput(Tools::getValue('fedex_carrier_city', Configuration::get('FEDEX_CARRIER_CITY'))).'" /></div>
 					<label>'.$this->l('Country').' : </label>
 					<div class="margin-form">
 						<select name="fedex_carrier_country" id="fedex_carrier_country">
 							<option value="0">'.$this->l('Select a country ...').'</option>';
 							$idcountries = array();
-							foreach (Country::getCountries($cookie->id_lang) as $v)
+							foreach (Country::getCountries($this->context->language->id) as $v)
 							{
 								$html .= '<option value="'.$v['id_country'].'" '.($v['id_country'] == (int)(Tools::getValue('fedex_carrier_country', Configuration::get('FEDEX_CARRIER_COUNTRY'))) ? 'selected="selected"' : '').'>'.$v['name'].'</option>';
 								$idcountries[] = $v['id_country'];
@@ -505,7 +542,7 @@ class FedexCarrier extends CarrierModule
 					<label>'.$this->l('State').' : </label>
 					<div class="margin-form">';
 						$id_country_current = 0;
-						$statesList = Db::getInstance()->ExecuteS('
+						$statesList = Db::getInstance()->executeS('
 						SELECT `id_state`, `id_country`, `name`
 						FROM `'._DB_PREFIX_.'state` WHERE `active` = 1
 						ORDER BY `id_country`, `name` ASC');
@@ -544,9 +581,18 @@ class FedexCarrier extends CarrierModule
 								$html .= '<option value="'.$kpackaging.'" '.($kpackaging == pSQL(Configuration::get('FEDEX_CARRIER_PACKAGING_TYPE')) ? 'selected="selected"' : '').'>'.$vkpackaging.'</option>';
 					$html .= '</select>
 					</div>
+					<label>'.$this->l('Calcul mode').' : </label>
+						<div class="margin-form">
+							<select name="fedex_carrier_calcul_mode">';
+								$idcalculmode = array();
+								foreach($this->_calculModeList as $kcalculmode => $vcalculmode)
+									$html .= '<option value="'.$kcalculmode.'" '.($kcalculmode == (Tools::getValue('fedex_carrier_calcul_mode', Configuration::get('FEDEX_CARRIER_CALCUL_MODE'))) ? 'selected="selected"' : '').'>'.$vcalculmode.'</option>';
+					$html .= '</select>
+					<p>' . $this->l('Using the calcul mode "All items in one package" will automatically use default packaging size, packaging type and delivery services. Specifics configurations for categories or product won\'t be use.') . '</p>
+					</div>
 					<label>'.$this->l('Delivery Service').' : </label>
 					<div class="margin-form">';
-						$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+						$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 						foreach($rateServiceList as $rateService)
 							$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_fedex_rate_service_code'].'" '.(($rateService['active'] == 1) ? 'checked="checked"' : '').' /> '.$rateService['service'].' '.($this->webserviceTest($rateService['code']) ? '('.$this->l('Available').')' : '('.$this->l('Not available').')').'<br />';
 					$html .= '
@@ -554,7 +600,7 @@ class FedexCarrier extends CarrierModule
 					</div>
 				</fieldset>
 				
-				<div class="margin-form"><input class="button" name="submitSave" type="submit"></div>
+				<div class="margin-form"><input class="button" name="submitSave" type="submit" value="'.$this->l('Configure').'"></div>
 			</form>
 
 			<script>
@@ -623,12 +669,15 @@ class FedexCarrier extends CarrierModule
 			Configuration::updateValue('FEDEX_CARRIER_API_KEY', Tools::getValue('fedex_carrier_api_key'));
 			Configuration::updateValue('FEDEX_CARRIER_PICKUP_TYPE', Tools::getValue('fedex_carrier_pickup_type'));
 			Configuration::updateValue('FEDEX_CARRIER_PACKAGING_TYPE', Tools::getValue('fedex_carrier_packaging_type'));
+			Configuration::updateValue('FEDEX_CARRIER_PACKAGING_WEIGHT', Tools::getValue('fedex_carrier_packaging_weight'));
+			Configuration::updateValue('FEDEX_CARRIER_HANDLING_FEE', Tools::getValue('fedex_carrier_handling_fee'));
 			Configuration::updateValue('FEDEX_CARRIER_ADDRESS1', Tools::getValue('fedex_carrier_address1'));
 			Configuration::updateValue('FEDEX_CARRIER_ADDRESS2', Tools::getValue('fedex_carrier_address2'));
 			Configuration::updateValue('FEDEX_CARRIER_POSTAL_CODE', Tools::getValue('fedex_carrier_postal_code'));
 			Configuration::updateValue('FEDEX_CARRIER_CITY', Tools::getValue('fedex_carrier_city'));
 			Configuration::updateValue('FEDEX_CARRIER_STATE', Tools::getValue('fedex_carrier_state'));
 			Configuration::updateValue('FEDEX_CARRIER_COUNTRY', Tools::getValue('fedex_carrier_country'));
+			Configuration::updateValue('FEDEX_CARRIER_CALCUL_MODE', Tools::getValue('fedex_carrier_calcul_mode'));
 			Configuration::updateValue('PS_WEIGHT_UNIT', $this->_weightUnitList[strtoupper(Tools::getValue('ps_weight_unit'))]);
 			Configuration::updateValue('PS_DIMENSION_UNIT', $this->_dimensionUnitList[strtoupper(Tools::getValue('ps_dimension_unit'))]);
 			if (isset($this->_weightUnitList[strtoupper(Tools::getValue('ps_weight_unit'))]))
@@ -647,12 +696,15 @@ class FedexCarrier extends CarrierModule
 			Configuration::updateValue('FEDEX_CARRIER_METER', Tools::getValue('fedex_carrier_meter')) AND
 			Configuration::updateValue('FEDEX_CARRIER_PASSWORD', Tools::getValue('fedex_carrier_password')) AND
 			Configuration::updateValue('FEDEX_CARRIER_API_KEY', Tools::getValue('fedex_carrier_api_key')) AND
+			Configuration::updateValue('FEDEX_CARRIER_PACKAGING_WEIGHT', Tools::getValue('fedex_carrier_packaging_weight')) AND
+			Configuration::updateValue('FEDEX_CARRIER_HANDLING_FEE', Tools::getValue('fedex_carrier_handling_fee')) AND
 			Configuration::updateValue('FEDEX_CARRIER_PICKUP_TYPE', Tools::getValue('fedex_carrier_pickup_type')) AND
 			Configuration::updateValue('FEDEX_CARRIER_PACKAGING_TYPE', Tools::getValue('fedex_carrier_packaging_type')) AND
 			Configuration::updateValue('FEDEX_CARRIER_POSTAL_CODE', Tools::getValue('fedex_carrier_postal_code')) AND
 			Configuration::updateValue('FEDEX_CARRIER_CITY', Tools::getValue('fedex_carrier_city')) AND
 			Configuration::updateValue('FEDEX_CARRIER_STATE', Tools::getValue('fedex_carrier_state')) AND
 			Configuration::updateValue('FEDEX_CARRIER_COUNTRY', Tools::getValue('fedex_carrier_country')) AND
+			Configuration::updateValue('FEDEX_CARRIER_CALCUL_MODE', Tools::getValue('fedex_carrier_calcul_mode')) AND
 			Configuration::updateValue('PS_WEIGHT_UNIT', $this->_weightUnitList[strtoupper(Tools::getValue('ps_weight_unit'))]) AND
 			Configuration::updateValue('PS_DIMENSION_UNIT', $this->_dimensionUnitList[strtoupper(Tools::getValue('ps_dimension_unit'))]))
 			$this->_html .= $this->displayConfirmation($this->l('Settings updated'));
@@ -669,8 +721,6 @@ class FedexCarrier extends CarrierModule
 
 	private function _getPathInTab($id_category)
 	{
-		global $cookie;
-
 		$category = Db::getInstance()->getRow('
 		SELECT id_category, level_depth, nleft, nright
 		FROM '._DB_PREFIX_.'category
@@ -678,11 +728,11 @@ class FedexCarrier extends CarrierModule
 
 		if (isset($category['id_category']))
 		{
-			$categories = Db::getInstance()->ExecuteS('
+			$categories = Db::getInstance()->executeS('
 			SELECT c.id_category, cl.name, cl.link_rewrite
 			FROM '._DB_PREFIX_.'category c
-			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category)
-			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)($cookie->id_lang).'
+			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.$this->context->shop->addSqlRestrictionOnLang('cl').')
+			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)$this->context->language->id.'
 			ORDER BY c.level_depth ASC
 			LIMIT '.(int)($category['level_depth'] + 1));
 
@@ -727,8 +777,6 @@ class FedexCarrier extends CarrierModule
 	
 	private function _displayFormCategory()
 	{
-		global $cookie;
-
 		// Check if the module is configured
 		if (!$this->_webserviceTestResult)
 			return '<p><b>'.$this->l('You have to configure "General Settings" tab before using this tab.').'</b></p><br />';
@@ -750,7 +798,7 @@ class FedexCarrier extends CarrierModule
 			<tbody>';
 
 		// Loading config list
-		$configCategoryList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_category` > 0');
+		$configCategoryList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_category` > 0');
 		if (!$configCategoryList)
 			$html .= '<tr><td colspan="6">'.$this->l('There is no specific FEDEX configuration for categories at this point.').'</td></tr>';
 		foreach ($configCategoryList as $k => $c)
@@ -769,7 +817,7 @@ class FedexCarrier extends CarrierModule
 
 			// Loading services attached to this config
 			$services = '';
-			$servicesTab = Db::getInstance()->ExecuteS('
+			$servicesTab = Db::getInstance()->executeS('
 			SELECT ursc.`service`
 			FROM `'._DB_PREFIX_.'fedex_rate_config_service` urcs
 			LEFT JOIN `'._DB_PREFIX_.'fedex_rate_service_code` ursc ON (ursc.`id_fedex_rate_service_code` = urcs.`id_fedex_rate_service_code`)
@@ -790,10 +838,10 @@ class FedexCarrier extends CarrierModule
 					<td>'.$c['additional_charges'].' '.$configCurrency->sign.'</td>
 					<td>'.$services.'</td>
 					<td>
-						<a href="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=2&section=category&action=edit&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'" style="float: left;">
+						<a href="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=2&section=category&action=edit&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'" style="float: left;">
 							<img src="'._PS_IMG_.'admin/edit.gif" />
 						</a>
-						<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=2&section=category&action=delete&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'&id_category='.(int)($c['id_category']).'" method="post" class="form" style="float: left;">
+						<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=2&section=category&action=delete&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'&id_category='.(int)($c['id_category']).'" method="post" class="form" style="float: left;">
 							<input name="submitSave" type="image" src="'._PS_IMG_.'admin/delete.gif" OnClick="return confirm(\''.$this->l('Are you sure you want to delete this specific FEDEX configuration for this category ?').'\');" />
 						</form>
 					</td>
@@ -819,8 +867,8 @@ class FedexCarrier extends CarrierModule
 				$path .= $p;
 			}
 
-			$html .= '<p align="center"><b>'.$this->l('Update a rule').' (<a href="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=2&section=category&action=add">'.$this->l('Add a rule').' ?</a>)</b></p>
-					<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=2&section=category&action=edit&id_fedex_rate_config='.(int)(Tools::getValue('id_fedex_rate_config')).'" method="post" class="form">
+			$html .= '<p align="center"><b>'.$this->l('Update a rule').' (<a href="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=2&section=category&action=add">'.$this->l('Add a rule').' ?</a>)</b></p>
+					<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=2&section=category&action=edit&id_fedex_rate_config='.(int)(Tools::getValue('id_fedex_rate_config')).'" method="post" class="form">
 						<label>'.$this->l('Category').' :</label>
 						<div class="margin-form" style="padding: 0.2em 0.5em 0 0; font-size: 12px;">'.$path.' <input type="hidden" name="id_category" value="'.(int)($configSelected['id_category']).'" /></div><br clear="left" />
 						<label>'.$this->l('Pickup Type').' : </label>
@@ -840,10 +888,10 @@ class FedexCarrier extends CarrierModule
 						$html .= '</select>
 						</div>
 						<label>'.$this->l('Additional charges').' : </label>
-						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::getValue('additional_charges', $configSelected['additional_charges']).'" /></div><br />
+						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::safeOutput(Tools::getValue('additional_charges', $configSelected['additional_charges'])).'" /></div><br />
 						<label>'.$this->l('Delivery Service').' : </label>
 							<div class="margin-form">';
-								$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+								$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 								foreach($rateServiceList as $rateService)
 								{
 									$configServiceSelected = Db::getInstance()->getValue('SELECT `id_fedex_rate_service_code` FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)(Tools::getValue('id_fedex_rate_config')).' AND `id_fedex_rate_service_code` = '.(int)($rateService['id_fedex_rate_service_code']));
@@ -858,12 +906,12 @@ class FedexCarrier extends CarrierModule
 		else
 		{
 			$html .= '<p align="center"><b>'.$this->l('Add a rule').'</b></p>
-					<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=2&section=category&action=add" method="post" class="form">
+					<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=2&section=category&action=add" method="post" class="form">
 						<label>'.$this->l('Category').' : </label>
 						<div class="margin-form">
 							<select name="id_category">
 								<option value="0">'.$this->l('Select a category ...').'</option>
-								'.$this->_getChildCategories(Category::getCategories($cookie->id_lang), 0).'
+								'.$this->_getChildCategories(Category::getCategories($this->context->language->id), 0).'
 							</select>
 						</div>
 						<label>'.$this->l('Pickup Type').' : </label>
@@ -883,10 +931,10 @@ class FedexCarrier extends CarrierModule
 						$html .= '</select>
 						</div>
 						<label>'.$this->l('Additional charges').' : </label>
-						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::getValue('additional_charges').'" /></div><br />
+						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::safeOutput(Tools::getValue('additional_charges')).'" /></div><br />
 						<label>'.$this->l('Delivery Service').' : </label>
 							<div class="margin-form">';
-								$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+								$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 								foreach($rateServiceList as $rateService)
 									$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_fedex_rate_service_code'].'" '.(($this->_isPostCheck($rateService['id_fedex_rate_service_code']) == 1) ? 'checked="checked"' : '').' /> '.$rateService['service'].'<br />';
 						$html .= '
@@ -968,7 +1016,7 @@ class FedexCarrier extends CarrierModule
 				'date_upd' => pSQL($date)
 			);
 			$result = Db::getInstance()->autoExecute(_DB_PREFIX_.'fedex_rate_config', $updTab, 'UPDATE', '`id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
-			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
 			foreach ($services as $s)
 			{
 				$addTab = array('id_fedex_rate_service_code' => pSQL($s), 'id_fedex_rate_config' => (int)Tools::getValue('id_fedex_rate_config'), 'date_add' => pSQL($date), 'date_upd' => pSQL($date));
@@ -985,8 +1033,8 @@ class FedexCarrier extends CarrierModule
 		// Delete Script
 		if (Tools::getValue('action') == 'delete' && Tools::getValue('id_fedex_rate_config'))
 		{
-			$result1 = Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
-			$result2 = Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			$result1 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			$result2 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
 
 			// Display Results
 			if ($result1)
@@ -1005,8 +1053,6 @@ class FedexCarrier extends CarrierModule
 
 	private function _displayFormProduct()
 	{
-		global $cookie;
-
 		// Check if the module is configured
 		if (!$this->_webserviceTestResult)
 			return '<p><b>'.$this->l('You have to configure "General Settings" tab before using this tab.').'</b></p><br />';
@@ -1028,20 +1074,20 @@ class FedexCarrier extends CarrierModule
 			<tbody>';
 
 		// Loading config list
-		$configProductList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_product` > 0');
+		$configProductList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_product` > 0');
 		if (!$configProductList)
 			$html .= '<tr><td colspan="6">'.$this->l('There is no specific FEDEX configuration for products at this point.').'</td></tr>';
 		foreach ($configProductList as $k => $c)
 		{
 			// Loading Product
-			$product = new Product((int)$c['id_product'], false, (int)$cookie->id_lang);
+			$product = new Product((int)$c['id_product'], false, (int)$this->context->language->id);
 
 			// Loading config currency
 			$configCurrency = new Currency($c['id_currency']);
 
 			// Loading services attached to this config
 			$services = '';
-			$servicesTab = Db::getInstance()->ExecuteS('
+			$servicesTab = Db::getInstance()->executeS('
 			SELECT ursc.`service`
 			FROM `'._DB_PREFIX_.'fedex_rate_config_service` urcs
 			LEFT JOIN `'._DB_PREFIX_.'fedex_rate_service_code` ursc ON (ursc.`id_fedex_rate_service_code` = urcs.`id_fedex_rate_service_code`)
@@ -1062,10 +1108,10 @@ class FedexCarrier extends CarrierModule
 					<td>'.$c['additional_charges'].' '.$configCurrency->sign.'</td>
 					<td>'.$services.'</td>
 					<td>
-						<a href="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=3&section=product&action=edit&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'" style="float: left;">
+						<a href="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=3&section=product&action=edit&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'" style="float: left;">
 							<img src="'._PS_IMG_.'admin/edit.gif" />
 						</a>
-						<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=3&section=product&action=delete&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'&id_product='.(int)($c['id_product']).'" method="post" class="form" style="float: left;">
+						<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=3&section=product&action=delete&id_fedex_rate_config='.(int)($c['id_fedex_rate_config']).'&id_product='.(int)($c['id_product']).'" method="post" class="form" style="float: left;">
 							<input name="submitSave" type="image" src="'._PS_IMG_.'admin/delete.gif" OnClick="return confirm(\''.$this->l('Are you sure you want to delete this specific FEDEX configuration for this product ?').'\');" />
 						</form>
 					</td>
@@ -1081,10 +1127,10 @@ class FedexCarrier extends CarrierModule
 		{
 			// Loading config
 			$configSelected = Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_fedex_rate_config` = '.(int)(Tools::getValue('id_fedex_rate_config')));
-			$product = new Product((int)$configSelected['id_product'], false, (int)$cookie->id_lang);
+			$product = new Product((int)$configSelected['id_product'], false, (int)$this->context->language->id);
 
-			$html .= '<p align="center"><b>'.$this->l('Update a rule').' (<a href="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=3&section=product&action=add">'.$this->l('Add a rule').' ?</a>)</b></p>
-					<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=3&section=product&action=edit&id_fedex_rate_config='.(int)(Tools::getValue('id_fedex_rate_config')).'" method="post" class="form">
+			$html .= '<p align="center"><b>'.$this->l('Update a rule').' (<a href="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=3&section=product&action=add">'.$this->l('Add a rule').' ?</a>)</b></p>
+					<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=3&section=product&action=edit&id_fedex_rate_config='.(int)(Tools::getValue('id_fedex_rate_config')).'" method="post" class="form">
 						<label>'.$this->l('Product').' :</label>
 						<div class="margin-form" style="padding: 0.2em 0.5em 0 0; font-size: 12px;">'.$product->name.' <input type="hidden" name="id_product" value="'.(int)($configSelected['id_product']).'" /></div><br clear="left" />
 						<label>'.$this->l('Pickup Type').' : </label>
@@ -1104,13 +1150,14 @@ class FedexCarrier extends CarrierModule
 						$html .= '</select>
 						</div>
 						<label>'.$this->l('Additional charges').' : </label>
-						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::getValue('additional_charges', $configSelected['additional_charges']).'" /></div><br />
+						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::safeOutput(Tools::getValue('additional_charges', $configSelected['additional_charges'])).'" /></div><br />
 						<label>'.$this->l('Delivery Service').' : </label>
 							<div class="margin-form">';
-								$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+								$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 								foreach($rateServiceList as $rateService)
 								{
-									$configServiceSelected = Db::getInstance()->getValue('SELECT `id_fedex_rate_service_code` FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)(Tools::getValue('id_fedex_rate_config')).' AND `id_fedex_rate_service_code` = '.(int)($rateService['id_fedex_rate_service_code']));
+									$configServiceSelected = Db::getInstance()->getValue('SELECT `id_fedex_rate_service_code` FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)(
+									Tools::getValue('id_fedex_rate_config')).' AND `id_fedex_rate_service_code` = '.(int)($rateService['id_fedex_rate_service_code']));
 									$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_fedex_rate_service_code'].'" '.(($this->_isPostCheck($rateService['id_fedex_rate_service_code']) == 1 || $configServiceSelected > 0) ? 'checked="checked"' : '').' /> '.$rateService['service'].'<br />';
 								}
 						$html .= '
@@ -1122,14 +1169,14 @@ class FedexCarrier extends CarrierModule
 		else
 		{
 			$html .= '<p align="center"><b>'.$this->l('Add a rule').'</b></p>
-					<form action="index.php?tab='.Tools::getValue('tab').'&configure='.Tools::getValue('configure').'&token='.Tools::getValue('token').'&tab_module='.Tools::getValue('tab_module').'&module_name='.Tools::getValue('module_name').'&id_tab=3&section=product&action=add" method="post" class="form">
+					<form action="index.php?tab='.Tools::safeOutput(Tools::getValue('tab')).'&configure='.Tools::safeOutput(Tools::getValue('configure')).'&token='.Tools::safeOutput(Tools::getValue('token')).'&tab_module='.Tools::safeOutput(Tools::getValue('tab_module')).'&module_name='.Tools::safeOutput(Tools::getValue('module_name')).'&id_tab=3&section=product&action=add" method="post" class="form">
 						<label>'.$this->l('Product').' : </label>
 						<div class="margin-form">
 							<select name="id_product">
 								<option value="0">'.$this->l('Select a product ...').'</option>';
-						$productsList = Db::getInstance()->ExecuteS('
+						$productsList = Db::getInstance()->executeS('
 						SELECT pl.* FROM `'._DB_PREFIX_.'product` p
-						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.`id_lang` = 2)
+						LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.`id_product` = p.`id_product` AND pl.`id_lang` = '.(int)$this->context->language->id.$this->context->shop->addSqlRestrictionOnLang('pl').')
 						WHERE p.`active` = 1
 						ORDER BY pl.`name`');
 						foreach ($productsList as $product)
@@ -1153,10 +1200,10 @@ class FedexCarrier extends CarrierModule
 						$html .= '</select>
 						</div>
 						<label>'.$this->l('Additional charges').' : </label>
-						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::getValue('additional_charges').'" /></div><br />
+						<div class="margin-form"><input type="text" size="20" name="additional_charges" value="'.Tools::safeOutput(Tools::getValue('additional_charges')).'" /></div><br />
 						<label>'.$this->l('Delivery Service').' : </label>
 							<div class="margin-form">';
-								$rateServiceList = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+								$rateServiceList = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 								foreach($rateServiceList as $rateService)
 									$html .= '<input type="checkbox" name="service[]" value="'.$rateService['id_fedex_rate_service_code'].'" '.(($this->_isPostCheck($rateService['id_fedex_rate_service_code']) == 1) ? 'checked="checked"' : '').' /> '.$rateService['service'].'<br />';
 						$html .= '
@@ -1238,7 +1285,7 @@ class FedexCarrier extends CarrierModule
 				'date_upd' => pSQL($date)
 			);
 			$result = Db::getInstance()->autoExecute(_DB_PREFIX_.'fedex_rate_config', $updTab, 'UPDATE', '`id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
-			Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
 			foreach ($services as $s)
 			{
 				$addTab = array('id_fedex_rate_service_code' => pSQL($s), 'id_fedex_rate_config' => (int)Tools::getValue('id_fedex_rate_config'), 'date_add' => pSQL($date), 'date_upd' => pSQL($date));
@@ -1255,8 +1302,8 @@ class FedexCarrier extends CarrierModule
 		// Delete Script
 		if (Tools::getValue('action') == 'delete' && Tools::getValue('id_fedex_rate_config'))
 		{
-			$result1 = Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
-			$result2 = Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			$result1 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
+			$result2 = Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'fedex_rate_config_service` WHERE `id_fedex_rate_config` = '.(int)Tools::getValue('id_fedex_rate_config'));
 
 			// Display Results
 			if ($result1)
@@ -1343,7 +1390,7 @@ class FedexCarrier extends CarrierModule
 		foreach ($wsParams as $k => $v)
 			if ($k != 'products')
 			$paramHash .= '/'.$v;
-		return md5($productHash.$paramHash);
+		return md5($productHash.$paramHash.Configuration::get('FEDEX_CARRIER_CALCUL_MODE'));
 	}
 
 	public function getOrderShippingCostCache($wsParams)
@@ -1399,7 +1446,7 @@ class FedexCarrier extends CarrierModule
 			$productConfiguration = Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_product` = '.(int)($product['id_product']));
 			if ($productConfiguration['id_fedex_rate_config'])
 			{
-				$servicesConfiguration = Db::getInstance()->ExecuteS('
+				$servicesConfiguration = Db::getInstance()->executeS('
 				SELECT urcs.*, ursc.`id_carrier`
 				FROM `'._DB_PREFIX_.'fedex_rate_config_service` urcs
 				LEFT JOIN `'._DB_PREFIX_.'fedex_rate_service_code` ursc ON (ursc.`id_fedex_rate_service_code` = urcs.`id_fedex_rate_service_code`)
@@ -1416,7 +1463,7 @@ class FedexCarrier extends CarrierModule
 			$categoryConfiguration = Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_config` WHERE `id_category` = '.(int)($product['id_category_default']));
 			if ($categoryConfiguration['id_fedex_rate_config'])
 			{
-				$servicesConfiguration = Db::getInstance()->ExecuteS('
+				$servicesConfiguration = Db::getInstance()->executeS('
 				SELECT urcs.*, ursc.`id_carrier`
 				FROM `'._DB_PREFIX_.'fedex_rate_config_service` urcs
 				LEFT JOIN `'._DB_PREFIX_.'fedex_rate_service_code` ursc ON (ursc.`id_fedex_rate_service_code` = urcs.`id_fedex_rate_service_code`)
@@ -1429,7 +1476,7 @@ class FedexCarrier extends CarrierModule
 
 		// Return general config
 		$config['pickup_type_code'] = Configuration::get('FEDEX_CARRIER_PICKUP_TYPE');
-		$servicesConfiguration = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code` WHERE `active` = 1');
+		$servicesConfiguration = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code` WHERE `active` = 1');
 		foreach ($servicesConfiguration as $service)
 			$config['services'][$service['id_fedex_rate_service_code']] = $service;
 		return $config;
@@ -1440,6 +1487,44 @@ class FedexCarrier extends CarrierModule
 		// Init var
 		$cost = 0;
 
+		// Calcul mode condition
+		if (Configuration::get('FEDEX_CARRIER_CALCUL_MODE') == 'onepackage')
+		{
+			$width = 0;
+			$height = 0;
+			$depth = 0;
+			$weight = 0;
+
+			foreach ($wsParams['products'] as $product)
+			{
+				if ($product['width'] && $product['width'] > $width) $width = $product['width'];
+				if ($product['height'] && $product['height'] > $height) $height = $product['height'];
+				if ($product['depth'] && $product['depth'] > $depth) $depth = $product['depth'];
+				if ($product['weight'])
+					$weight += ($product['weight'] * $product['quantity']);
+			}
+			$weight += Tools::getValue('fedex_carrier_packaging_weight', Configuration::get('FEDEX_CARRIER_PACKAGING_WEIGHT'));
+
+			// Get service in adequation with carrier and check if available
+			$servicesConfiguration = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code` WHERE `active` = 1');
+			foreach ($servicesConfiguration as $service)
+				$config['services'][$service['id_fedex_rate_service_code']] = $service;
+			$serviceSelected = Db::getInstance()->getRow('SELECT * FROM `'._DB_PREFIX_.'fedex_rate_service_code` WHERE `id_carrier` = '.(int)($this->id_carrier));
+			if (!isset($config['services'][$serviceSelected['id_fedex_rate_service_code']]))
+				return false;
+
+			$wsParams['service'] = $serviceSelected['code'];
+			$wsParams['package_list'] = array();
+			$wsParams['package_list'][] = array(
+				'width' => ($width > 0 ? $width : 7),
+				'height' => ($height > 0 ? $height : 3),
+				'depth' => ($depth > 0 ? $depth : 5),
+				'weight' => ($weight > 0 ? $weight : .5),
+				'packaging_type' => Configuration::get('FEDEX_CARRIER_PACKAGING_TYPE'),
+			);
+		}
+		else 
+		{
 		// Getting shipping cost for each product
 		foreach ($wsParams['products'] as $product)
 		{
@@ -1458,7 +1543,7 @@ class FedexCarrier extends CarrierModule
 					'width' => ($product['width'] ? $product['width'] : 1),
 					'height' => ($product['height'] ? $product['height'] : 1),
 					'depth' => ($product['depth'] ? $product['depth'] : 1),
-					'weight' => ($product['weight'] ? $product['weight'] : 1),
+						'weight' => ($product['weight'] > 0.1 ? $product['weight'] : 0.1),
 					'pickup_type' => (isset($config['pickup_type_code']) ? $config['pickup_type_code'] : Configuration::get('FEDEX_CARRIER_PICKUP_TYPE')),
 				);
 
@@ -1470,12 +1555,13 @@ class FedexCarrier extends CarrierModule
 				$cost += ($config['additional_charges'] * $conversionRate);
 			}
 		}
+		}
 
 
 		// If webservice return a cost, we add it, else, we return the original shipping cost
 		$result = $this->getFedexShippingCost($wsParams);
 		if ($result['connect'] && $result['cost'] > 0)
-			return ($cost + $result['cost']);
+			return ($cost + $result['cost'] + Tools::getValue('fedex_carrier_handling_fee', Configuration::get('FEDEX_CARRIER_HANDLING_FEE')));
 		return false;
 	}
 
@@ -1483,6 +1569,14 @@ class FedexCarrier extends CarrierModule
 	{	
 		// Init var
 		$address = new Address($params->id_address_delivery);
+		if (!Validate::isLoadedObject($address))
+		{
+			// If address is not loaded, we take data from shipping estimator module (if installed)
+			global $cookie;
+			$address->id_country = $cookie->id_country;
+			$address->id_state = $cookie->id_state;
+			$address->postcode = $cookie->postcode;
+		}
 		$recipient_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)($address->id_country));
 		$recipient_state = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'state` WHERE `id_state` = '.(int)($address->id_state));
 		$shipper_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)(Configuration::get('FEDEX_CARRIER_COUNTRY')));
@@ -1557,7 +1651,7 @@ class FedexCarrier extends CarrierModule
 
 		// Enable Php Soap
 		ini_set("soap.wsdl_cache_enabled", "0");
-		$client = new SoapClient($dir.'/RateService_v9.wsdl', array('trace' => 1)); // Refer to http://us3.php.net/manual/en/ref.soap.php for more information
+		$client = new SoapClient($dir.'/RateService_v10.wsdl', array('trace' => 1)); // Refer to http://us3.php.net/manual/en/ref.soap.php for more information
 
 		// Country / State
 		$shipper_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)(Configuration::get('FEDEX_CARRIER_COUNTRY')));
@@ -1566,8 +1660,8 @@ class FedexCarrier extends CarrierModule
 		// Generating soap request
 		$request['WebAuthenticationDetail']['UserCredential'] = array('Key' => Configuration::get('FEDEX_CARRIER_API_KEY'), 'Password' => Configuration::get('FEDEX_CARRIER_PASSWORD')); 
 		$request['ClientDetail'] = array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'MeterNumber' => Configuration::get('FEDEX_CARRIER_METER'));
-		$request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Available Services Request v9 using PHP ***');
-		$request['Version'] = array('ServiceId' => 'crs', 'Major' => '9', 'Intermediate' => '0', 'Minor' => '0');
+		$request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Available Services Request v10 using PHP ***');
+		$request['Version'] = array('ServiceId' => 'crs', 'Major' => '10', 'Intermediate' => '0', 'Minor' => '0');
 		$request['ReturnTransitAndCommit'] = true;
 		$request['RequestedShipment']['DropoffType'] = Configuration::get('FEDEX_CARRIER_PICKUP_TYPE'); // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
 		$request['RequestedShipment']['ShipTimestamp'] = date('c');
@@ -1580,16 +1674,15 @@ class FedexCarrier extends CarrierModule
 		$request['RequestedShipment']['ShippingChargesPayment'] = array('PaymentType' => 'SENDER', 'Payor' => array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'CountryCode' => 'US'));
 		$request['RequestedShipment']['RateRequestTypes'] = 'ACCOUNT'; 
 		$request['RequestedShipment']['RateRequestTypes'] = 'LIST'; 
-		$request['RequestedShipment']['PackageCount'] = '2';
-		$request['RequestedShipment']['PackageDetail'] = 'INDIVIDUAL_PACKAGES';
-		$request['RequestedShipment']['RequestedPackageLineItems'] = array('0' => array('Weight' => array('Value' => 2.0, 'Units' => 'LB'), 'Dimensions' => array('Length' => 10, 'Width' => 10, 'Height' => 3, 'Units' => 'IN')));
+		$request['RequestedShipment']['PackageCount'] = '1';
+		$request['RequestedShipment']['RequestedPackageLineItems'] = array('0' => array('SequenceNumber' => 1, 'GroupPackageCount' => 1, 'Weight' => array('Value' => 2.0, 'Units' => 'LB'), 'Dimensions' => array('Length' => 10, 'Width' => 10, 'Height' => 3, 'Units' => 'IN')));
 
 
 		// Unit or Large Test
 		if (!empty($service))
 			$servicesList = array(array('code' => $service));
 		else
-			$servicesList = Db::getInstance()->ExecuteS('SELECT `code` FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
+			$servicesList = Db::getInstance()->executeS('SELECT `code` FROM `'._DB_PREFIX_.'fedex_rate_service_code`');
 
 
 		// Testing Service
@@ -1604,14 +1697,17 @@ class FedexCarrier extends CarrierModule
 			if ($resultTabTmp)
 				$resultTab = unserialize($resultTabTmp);
 			else
-				$resultTab = $client->getRates($request);
+			{
+				try { $resultTab = $client->getRates($request); }
+				catch (Exception $e) { }				
+			}
 
 			// Cache test result
 			if (empty($resultTabTmp) && isset($resultTab->HighestSeverity) && ($resultTab->HighestSeverity == 'SUCCESS' OR $resultTab->HighestSeverity == 'ERROR'))
 				Db::getInstance()->autoExecute(_DB_PREFIX_.'fedex_cache_test', array('hash' => pSQL(md5(var_export($requestHash, true))), 'result' => pSQL(serialize($resultTab)), 'date_add' => pSQL(date('Y-m-d H:i:s')), 'date_upd' => pSQL(date('Y-m-d H:i:s'))), 'INSERT');
 
 			// Return results
-			if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity == 'SUCCESS')
+			if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity != 'ERROR' && isset($resultTab->RateReplyDetails->RatedShipmentDetails[0]->ShipmentRateDetail->TotalNetCharge->Amount))
 				return true;
 
 			if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity == 'ERROR')
@@ -1643,7 +1739,7 @@ class FedexCarrier extends CarrierModule
 
 		// Enable Php Soap
 		ini_set("soap.wsdl_cache_enabled", "0");
-		$client = new SoapClient($dir.'/RateService_v9.wsdl', array('trace' => 1)); // Refer to http://us3.php.net/manual/en/ref.soap.php for more information
+		$client = new SoapClient($dir.'/RateService_v10.wsdl', array('trace' => 1)); // Refer to http://us3.php.net/manual/en/ref.soap.php for more information
 
 		// Country / State
 		$shipper_country = Db::getInstance()->getRow('SELECT `iso_code` FROM `'._DB_PREFIX_.'country` WHERE `id_country` = '.(int)(Configuration::get('FEDEX_CARRIER_COUNTRY')));
@@ -1652,8 +1748,8 @@ class FedexCarrier extends CarrierModule
 		// Generating soap request
 		$request['WebAuthenticationDetail']['UserCredential'] = array('Key' => Configuration::get('FEDEX_CARRIER_API_KEY'), 'Password' => Configuration::get('FEDEX_CARRIER_PASSWORD')); 
 		$request['ClientDetail'] = array('AccountNumber' => Configuration::get('FEDEX_CARRIER_ACCOUNT'), 'MeterNumber' => Configuration::get('FEDEX_CARRIER_METER'));
-		$request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Available Services Request v9 using PHP ***');
-		$request['Version'] = array('ServiceId' => 'crs', 'Major' => '9', 'Intermediate' => '0', 'Minor' => '0');
+		$request['TransactionDetail'] = array('CustomerTransactionId' => ' *** Rate Available Services Request v10 using PHP ***');
+		$request['Version'] = array('ServiceId' => 'crs', 'Major' => '10', 'Intermediate' => '0', 'Minor' => '0');
 		$request['ReturnTransitAndCommit'] = true;
 		$request['RequestedShipment']['DropoffType'] = Configuration::get('FEDEX_CARRIER_PICKUP_TYPE'); // valid values REGULAR_PICKUP, REQUEST_COURIER, ...
 		$request['RequestedShipment']['ShipTimestamp'] = date('c');
@@ -1667,14 +1763,22 @@ class FedexCarrier extends CarrierModule
 		$request['RequestedShipment']['RateRequestTypes'] = 'ACCOUNT'; 
 		$request['RequestedShipment']['RateRequestTypes'] = 'LIST'; 
 		$request['RequestedShipment']['PackageCount'] = '2';
-		$request['RequestedShipment']['PackageDetail'] = 'INDIVIDUAL_PACKAGES';
+		$count = 1;
 		foreach ($wsParams['package_list'] as $p)
-			$request['RequestedShipment']['RequestedPackageLineItems'][] = array('Weight' => array('Value' => $p['weight'], 'Units' => substr($this->_weightUnit, 0, 2)), 'Dimensions' => array('Length' => $p['depth'], 'Width' => $p['width'], 'Height' => $p['height'], 'Units' => $this->_dimensionUnit));
+		{
+			$request['RequestedShipment']['RequestedPackageLineItems'][] = array(
+				'SequenceNumber' => $count,
+				'GroupPackageCount' => $count,
+				'Weight' => array('Value' => $p['weight'], 'Units' => substr($this->_weightUnit, 0, 2)),
+				'Dimensions' => array('Length' => $p['depth'], 'Width' => $p['width'], 'Height' => $p['height'], 'Units' => $this->_dimensionUnit));
+			$count++;
+		}
 		$request['RequestedShipment']['PackageCount'] = count($request['RequestedShipment']['RequestedPackageLineItems']);
 
 
 		// Get Rates
-		$resultTab = $client->getRates($request);
+		try { $resultTab = $client->getRates($request); }
+		catch (Exception $e) { }
 
 
 		// Check currency
@@ -1686,7 +1790,7 @@ class FedexCarrier extends CarrierModule
 		}
 
 		// Return results
-		if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity == 'SUCCESS')
+		if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity != 'ERROR' && isset($resultTab->RateReplyDetails->RatedShipmentDetails[0]->ShipmentRateDetail->TotalNetCharge->Amount))
 			return array('connect' => true, 'cost' => number_format($resultTab->RateReplyDetails->RatedShipmentDetails[0]->ShipmentRateDetail->TotalNetCharge->Amount,2,'.',',') * $conversionRate);
 
 		if (isset($resultTab->HighestSeverity) && $resultTab->HighestSeverity == 'ERROR')

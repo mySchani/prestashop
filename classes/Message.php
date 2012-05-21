@@ -61,7 +61,7 @@ class MessageCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 
 		$fields['message'] = pSQL($this->message, true);
 		$fields['id_cart'] = (int)($this->id_cart);
@@ -80,7 +80,7 @@ class MessageCore extends ObjectModel
 	  * @param integer $id_cart Cart ID
 	  * @return array Message
 	  */
-	static public function getMessageByCartId($id_cart)
+	public static function getMessageByCartId($id_cart)
 	{
 		$db = Db::getInstance();
 		$result = $db->getRow('
@@ -98,18 +98,19 @@ class MessageCore extends ObjectModel
 	  * @param boolean $private return WITH private messages
 	  * @return array Messages
 	  */
-	static public function getMessagesByOrderId($id_order, $private = false)
+	static public function getMessagesByOrderId($id_order, $private = false, Context $context = null)
 	{
 	 	if (!Validate::isBool($private))
 	 		die(Tools::displayError());
 
-		global $cookie;
+		if (!$context)
+			$context = Context::getContext();
 		
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 		SELECT m.*, c.`firstname` AS cfirstname, c.`lastname` AS clastname, e.`firstname` AS efirstname, e.`lastname` AS elastname, (COUNT(mr.id_message) = 0 AND m.id_customer != 0) AS is_new_for_me
 		FROM `'._DB_PREFIX_.'message` m
 		LEFT JOIN `'._DB_PREFIX_.'customer` c ON m.`id_customer` = c.`id_customer`
-		LEFT JOIN `'._DB_PREFIX_.'message_readed` mr ON (mr.id_message = m.id_message AND mr.id_employee = '.(int)$cookie->id_employee.')
+		LEFT JOIN `'._DB_PREFIX_.'message_readed` mr ON (mr.`id_message` = m.`id_message` AND mr.`id_employee` = '.(isset($context->employee) ? (int)$context->employee->id : '\'\'').')
 		LEFT OUTER JOIN `'._DB_PREFIX_.'employee` e ON e.`id_employee` = m.`id_employee`
 		WHERE id_order = '.(int)$id_order.'
 		'.(!$private ? ' AND m.`private` = 0' : '').'
@@ -124,18 +125,19 @@ class MessageCore extends ObjectModel
 	  * @param boolean $private return WITH private messages
 	  * @return array Messages
 	  */
-	static public function getMessagesByCartId($id_cart, $private = false)
+	static public function getMessagesByCartId($id_cart, $private = false, Context $context = null)
 	{
 	 	if (!Validate::isBool($private))
 	 		die(Tools::displayError());
 
-		global $cookie;
-
-		return Db::getInstance()->ExecuteS('
+		if (!$context)
+			$context = Context::getContext();
+			
+		return Db::getInstance()->executeS('
 		SELECT m.*, c.`firstname` AS cfirstname, c.`lastname` AS clastname, e.`firstname` AS efirstname, e.`lastname` AS elastname, (COUNT(mr.id_message) = 0 AND m.id_customer != 0) AS is_new_for_me
 		FROM `'._DB_PREFIX_.'message` m
 		LEFT JOIN `'._DB_PREFIX_.'customer` c ON m.`id_customer` = c.`id_customer`
-		LEFT JOIN `'._DB_PREFIX_.'message_readed` mr ON (mr.id_message = m.id_message AND mr.id_employee = '.(int)$cookie->id_employee.')
+		LEFT JOIN `'._DB_PREFIX_.'message_readed` mr ON (mr.id_message = m.id_message AND mr.id_employee = '.(int)$context->employee->id.')
 		LEFT OUTER JOIN `'._DB_PREFIX_.'employee` e ON e.`id_employee` = m.`id_employee`
 		WHERE id_cart = '.(int)$id_cart.'
 		'.(!$private ? ' AND m.`private` = 0' : '').'
@@ -149,12 +151,12 @@ class MessageCore extends ObjectModel
 	  * @param integer $id_message Message ID
 	  * @param integer $id_emplyee Employee ID
 	  */
-	static public function markAsReaded($id_message, $id_employee)
+	public static function markAsReaded($id_message, $id_employee)
 	{
 	 	if (!Validate::isUnsignedId($id_message) OR !Validate::isUnsignedId($id_employee))
 	 		die(Tools::displayError());
 
-		$result = Db::getInstance()->Execute('
+		$result = Db::getInstance()->execute('
 		INSERT INTO '._DB_PREFIX_.'message_readed (id_message , id_employee , date_add) VALUES
 		('.(int)($id_message).', '.(int)($id_employee).', NOW());
 		');

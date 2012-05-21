@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 define('BLOCKTAGS_MAX_LEVEL', 3);
@@ -41,14 +41,14 @@ class BlockTags extends Module
 		$this->need_instance = 0;
 
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Tags block');
 		$this->description = $this->l('Adds a block containing a tag cloud.');
 	}
 
 	function install()
 	{
-		if (parent::install() == false 
+		if (parent::install() == false
 				OR $this->registerHook('leftColumn') == false
 				OR $this->registerHook('header') == false
 				OR Configuration::updateValue('BLOCKTAGS_NBR', 10) == false)
@@ -77,7 +77,7 @@ class BlockTags extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Tags displayed').'</label>
 				<div class="margin-form">
@@ -100,15 +100,14 @@ class BlockTags extends Module
 	*/
 	function hookLeftColumn($params)
 	{
-		global $smarty;
 
 		$tags = Tag::getMainTags((int)($params['cookie']->id_lang), (int)(Configuration::get('BLOCKTAGS_NBR')));
 		if (!sizeof($tags))
 			return false;
 		foreach ($tags AS &$tag)
 			$tag['class'] = 'tag_level'.($tag['times'] > BLOCKTAGS_MAX_LEVEL ? BLOCKTAGS_MAX_LEVEL : $tag['times']);
-		$smarty->assign('tags', $tags);
-		
+		$this->context->smarty->assign('tags', $tags);
+
 		return $this->display(__FILE__, 'blocktags.tpl');
 	}
 
@@ -116,10 +115,10 @@ class BlockTags extends Module
 	{
 		return $this->hookLeftColumn($params);
 	}
-	
+
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blocktags.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blocktags.css', 'all');
 	}
 
 }

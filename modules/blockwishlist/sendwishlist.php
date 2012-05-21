@@ -29,12 +29,14 @@ require_once(dirname(__FILE__).'/../../config/config.inc.php');
 require_once(dirname(__FILE__).'/../../init.php');
 require_once(dirname(__FILE__).'/WishList.php');
 
+$context = Context::getContext();
+
 if (Configuration::get('PS_TOKEN_ENABLE') == 1 AND
 	strcmp(Tools::getToken(false), Tools::getValue('token')) AND
-	$cookie->isLogged() === true)
+	$context->customer->isLogged() === true)
 	exit(Tools::displayError('invalid token',false));
 
-if ($cookie->isLogged())
+if ($context->customer->isLogged())
 {
 	$id_wishlist = (int)(Tools::getValue('id_wishlist'));
 	if (empty($id_wishlist) === true)
@@ -42,15 +44,15 @@ if ($cookie->isLogged())
 	for ($i = 1; empty($_POST['email'.strval($i)]) === false; ++$i)
 	{
 		$to = Tools::getValue('email'.$i);
-		$wishlist = WishList::exists($id_wishlist, $cookie->id_customer, true);
+		$wishlist = WishList::exists($id_wishlist, $context->customer->id, true);
 		if ($wishlist === false)
 			exit(Tools::displayError('Invalid wishlist',false));
 		if (WishList::addEmail($id_wishlist, $to) === false)
 			exit(Tools::displayError('Wishlist send error',false)); 
 		$toName = strval(Configuration::get('PS_SHOP_NAME'));
-		$customer = new Customer((int)($cookie->id_customer));
+		$customer = $context->customer;
 		if (Validate::isLoadedObject($customer))
-			Mail::Send((int)($cookie->id_lang), 'wishlist', Mail::l('Message from ').$customer->lastname.' '.$customer->firstname,
+			Mail::Send($context->language->id, 'wishlist', Mail::l('Message from ').$customer->lastname.' '.$customer->firstname,
 			array(
 			'{lastname}' => $customer->lastname, 
 			'{firstname}' => $customer->firstname, 

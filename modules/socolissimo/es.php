@@ -53,12 +53,12 @@ $_MODULE['<{socolissimo}prestashop>socolissimo_d38ac03101faea9ed5f9ea96bf8627b4'
 $_MODULE['<{socolissimo}prestashop>socolissimo_9954970bc5804ff557ced19516e2a55c'] = 'Tenga cuidado con estos parámetros, su modificación puede provocar un disfuncionamiento del módulo';
 $_MODULE['<{socolissimo}prestashop>socolissimo_b0b2896e75025245cbb05e96bd1466d6'] = 'Dirección FO';
 $_MODULE['<{socolissimo}prestashop>socolissimo_ce88aabea3b363c753b02ddcb2fbafff'] = 'URL de la administración de So Colissimo';
-$_MODULE['<{socolissimo}prestashop>socolissimo_85068ddf0b9bcbb6913008356fe328a0'] = 'Supervisión';
 $_MODULE['<{socolissimo}prestashop>socolissimo_00d23a76e43b46dae9ec7aa9dcbebb32'] = 'Activado';
 $_MODULE['<{socolissimo}prestashop>socolissimo_b9f5c797ebbf55adccdd8539a65a0241'] = 'Desactivado';
+$_MODULE['<{socolissimo}prestashop>socolissimo_85068ddf0b9bcbb6913008356fe328a0'] = 'Supervisión';
 $_MODULE['<{socolissimo}prestashop>socolissimo_fdd526b84abc0b8fc17060e62d022b84'] = 'Autorizar o no la comprobación de la disponiblidad de los servicios SoColissimo';
 $_MODULE['<{socolissimo}prestashop>socolissimo_32996bdf4214d6cb8bf7fa02273813c8'] = 'Dirección de comprobación';
-$_MODULE['<{socolissimo}prestashop>socolissimo_995a56aecac4198b9bc0a17a976561b5'] = 'Dirección de comprobación de disponibilidad';
+$_MODULE['<{socolissimo}prestashop>socolissimo_947d84460ad5676c9d79fa05727f1e8a'] = 'La dirección URL de supervisión asegura la disponibilidad del servicio  socolissimo. No se recomienda desactivarla: ';
 $_MODULE['<{socolissimo}prestashop>socolissimo_c9cc8cce247e49bae79f15173ce97354'] = 'Guardar';
 $_MODULE['<{socolissimo}prestashop>socolissimo_a82be0f551b8708bc08eb33cd9ded0cf'] = 'Información';
 $_MODULE['<{socolissimo}prestashop>socolissimo_3e387f5ebd657c6372f0594c8226863e'] = 'Aquí tiene las dos direcciones que debe indicar en su Back-Office Coliposte';

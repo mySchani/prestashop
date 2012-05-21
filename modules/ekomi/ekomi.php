@@ -24,7 +24,8 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 	
 class Ekomi extends Module
@@ -32,17 +33,31 @@ class Ekomi extends Module
 	private $_html = '';
 	private $_postErrors = array();
 
+	public $id_lang;
+	public $iso_lang;
+
     function __construct()
     {
         $this->name = 'ekomi';
         $this->tab = 'advertising_marketing';
-        $this->version = 1.0;
+		$this->author = 'PrestaShop';
+		$this->version = 1.2;
 		$this->need_instance = 0;
 
 		parent::__construct();
 
 		$this->displayName = $this->l('eKomi');
 		$this->description = $this->l('Adds an eKomi block');
+
+		if (self::isInstalled($this->name))
+		{
+			$this->id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
+			$this->iso_lang = pSQL(Language::getIsoById($this->id_lang));
+
+			/* Check Mail Directory */
+			if (!file_exists(dirname(__FILE__.'/'.$this->iso_lang.'/')))
+				$this->warning .= $this->l('directory').' "'.$this->iso_lang.'" does not exist ';
+	}
 	}
 
 	public function install()
@@ -82,9 +97,9 @@ class Ekomi extends Module
 					<br class="clear"/><br />
 					<label>Display block</label>
 					<div class="margin-form">
-						<input type="radio" name="ekomi_display" id="ekomi_display_on" value="1" />
+						<input type="radio" name="ekomi_display" id="ekomi_display_on" value="1" '.(Configuration::get('PS_EKOMI_DISPLAY') == 1 ? 'checked="checked"' : '').' />
 						<label class="t" for="ekomi_display_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
-						<input type="radio" name="ekomi_display" id="ekomi_display_off" value="0" checked="checked" />
+						<input type="radio" name="ekomi_display" id="ekomi_display_off" value="0" '.(Configuration::get('PS_EKOMI_DISPLAY') == 0 ? 'checked="checked"' : '').' />
 						<label class="t" for="ekomi_display_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 						<p class="clear">'.$this->l('Show or don\'t show the block (orders will be sent to eKomi whether you choose to hide or display the block).').'</p>
 					</div>
@@ -114,6 +129,10 @@ class Ekomi extends Module
 		if (!Configuration::get('PS_EKOMI_EMAIL'))
 			return true;
 
+		/* Check Mail Directory */
+		if (!file_exists(dirname(__FILE__.'/'.$this->iso_lang.'/')))
+			return true;
+
 		/* Email generation */
 		$subject = '[Ekomi-Prestashop] '.Configuration::get('PS_SHOP_NAME');
 		$templateVars = array(
@@ -124,8 +143,9 @@ class Ekomi extends Module
 		);
 
 		/* Email sending */
-		if (!Mail::Send(1, 'ekomi', $subject, $templateVars, Configuration::get('PS_EKOMI_EMAIL'), NULL, $params['customer']->email, Configuration::get('PS_SHOP_NAME'), NULL, NULL, dirname(__FILE__).'/mails/'))
+		if (!Mail::Send((int)$this->id_lang, 'ekomi', $subject, $templateVars, Configuration::get('PS_EKOMI_EMAIL'), NULL, $params['customer']->email, Configuration::get('PS_SHOP_NAME'), NULL, NULL, dirname(__FILE__).'/mails/'))
 			return true;
+
 		return true;
 	}
 }

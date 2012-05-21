@@ -32,7 +32,6 @@
 {else}
 <script type="text/javascript">
 	// <![CDATA[
-	var baseDir = '{$base_dir_ssl}';
 	var imgDir = '{$img_dir}';
 	var authenticationUrl = '{$link->getPageLink("authentication", true)}';
 	var orderOpcUrl = '{$link->getPageLink("order-opc", true)}';
@@ -81,7 +80,7 @@
 	{if $productNumber}
 		<!-- Shopping Cart -->
 		{include file="$tpl_dir./shopping-cart.tpl"}
-		<!-- Shopping Cart -->
+		<!-- End Shopping Cart -->
 		{if $isLogged AND !$isGuest}
 			{include file="$tpl_dir./order-address.tpl"}
 		{else}

@@ -1,5 +1,5 @@
 {*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -26,7 +26,7 @@
 
 {if $display_mode == 0}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; margin-left: 7px; padding: 0.6em;">
+	<p class="payment_module" style="display: block; text-decoration: none;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />
@@ -49,7 +49,7 @@
 		{if isset($state) && !empty($state)}<input type="hidden" name="state" value="{$state}" />{/if}
 		<input type="hidden" name="country" value="{$country}" />
 		<input type="hidden" name="amount" value="{$amount}" />
-		<input type="hidden" name="currency" value="{$currency}" />
+		<input type="hidden" name="currency" value="{$mb_currency}" />
 		<input type="hidden" name="amount2_description" value="{if isset($amount2_description)}{$amount2_description}{/if}" />
 		<input type="hidden" name="amount2" value="{if isset($amount2)}{$amount2}{/if}" />
 		<input type="hidden" name="amount3_description" value="{if isset($amount3_description)}{$amount3_description}{/if}" />
@@ -73,7 +73,7 @@
 {else}
 	{foreach from=$inter item=i}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; height: 50px; margin-left: 7px; padding: 0.6em;">
+	<p class="payment_module" style="display: block; text-decoration: none; height: 50px;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />
@@ -96,7 +96,7 @@
 		{if isset($state) && !empty($state)}<input type="hidden" name="state" value="{$state}" />{/if}
 		<input type="hidden" name="country" value="{$country}" />
 		<input type="hidden" name="amount" value="{$amount}" />
-		<input type="hidden" name="currency" value="{$currency}" />
+		<input type="hidden" name="currency" value="{$mb_currency}" />
 		<input type="hidden" name="amount2_description" value="{if isset($amount2_description)}{$amount2_description}{/if}" />
 		<input type="hidden" name="amount2" value="{if isset($amount2)}{$amount2}{/if}" />
 		<input type="hidden" name="amount3_description" value="{if isset($amount3_description)}{$amount3_description}{/if}" />
@@ -115,7 +115,7 @@
 	{/foreach}
 	{foreach from=$local item=i}
 	<form action="https://www.moneybookers.com/app/payment.pl" method="post">
-	<p class="payment_module" style="border: 1px solid #595A5E; display: block; text-decoration: none; height: 50px; margin-left: 7px; padding: 0.6em;">
+	<p class="payment_module" style="display: block; text-decoration: none; height: 50px;">
 		<input type="hidden" name="pay_to_email" value="{$pay_to_email}" />
 		<input type="hidden" name="recipient_description" value="{$recipient_description}" />
 		<input type="hidden" name="transaction_id" value="{$transaction_id}" />
@@ -138,7 +138,7 @@
 		{if isset($state) && (!empty($state))}<input type="hidden" name="state" value="{$state}" />{/if}
 		<input type="hidden" name="country" value="{$country}" />
 		<input type="hidden" name="amount" value="{$amount}" />
-		<input type="hidden" name="currency" value="{$currency}" />
+		<input type="hidden" name="currency" value="{$mb_currency}" />
 		<input type="hidden" name="amount2_description" value="{if isset($amount2_description)}{$amount2_description}{/if}" />
 		<input type="hidden" name="amount2" value="{if isset($amount2)}{$amount2}{/if}" />
 		<input type="hidden" name="amount3_description" value="{if isset($amount3_description)}{$amount3_description}{/if}" />

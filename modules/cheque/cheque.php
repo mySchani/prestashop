@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Cheque extends PaymentModule
@@ -42,7 +42,7 @@ class Cheque extends PaymentModule
 		$this->tab = 'payments_gateways';
 		$this->version = '2.3';
 		$this->author = 'PrestaShop';
-		
+
 		$this->currencies = true;
 		$this->currencies_mode = 'checkbox';
 
@@ -51,13 +51,13 @@ class Cheque extends PaymentModule
 			$this->chequeName = $config['CHEQUE_NAME'];
 		if (isset($config['CHEQUE_ADDRESS']))
 			$this->address = $config['CHEQUE_ADDRESS'];
-			
+
 		parent::__construct();
 
 		$this->displayName = $this->l('Check');
 		$this->description = $this->l('Module for accepting payments by check.');
 		$this->confirmUninstall = $this->l('Are you sure you want to delete your details ?');
-		
+
 		if (!isset($this->chequeName) OR !isset($this->address))
 			$this->warning = $this->l('\'To the order of\' and address must be configured in order to use this module correctly.');
 		if (!sizeof(Currency::checkPaymentCurrencies($this->id)))
@@ -149,27 +149,7 @@ class Cheque extends PaymentModule
 
 	public function execPayment($cart)
 	{
-		if (!$this->active)
-			return ;
-		
-		if (!$this->_checkCurrency($cart))
-			Tools::redirect('index.php?controller=order');
-
-		global $cookie, $smarty;
-		
-		$smarty->assign(array(
-			'nbProducts' => $cart->nbProducts(),
-			'cust_currency' => $cart->id_currency,
-			'currencies' => $this->getCurrency((int)$cart->id_currency),
-			'total' => $cart->getOrderTotal(true, Cart::BOTH),
-			'isoCode' => Language::getIsoById((int)($cookie->id_lang)),
-			'chequeName' => $this->chequeName,
-			'chequeAddress' => nl2br2($this->address),
-			'this_path' => $this->_path,
-			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
-		));
-
-		return $this->display(__FILE__, 'payment_execution.tpl');
+		return $this->actionPayment(true);
 	}
 
 	public function hookPayment($params)
@@ -179,9 +159,7 @@ class Cheque extends PaymentModule
 		if (!$this->_checkCurrency($params['cart']))
 			return ;
 
-		global $smarty;
-
-		$smarty->assign(array(
+		$this->context->smarty->assign(array(
 			'this_path' => $this->_path,
 			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
 		));
@@ -193,31 +171,101 @@ class Cheque extends PaymentModule
 		if (!$this->active)
 			return ;
 
-		global $smarty;
 		$state = $params['objOrder']->getCurrentState();
-		if ($state == _PS_OS_CHEQUE_ OR $state == _PS_OS_OUTOFSTOCK_)
-			$smarty->assign(array(
+		if ($state == Configuration::get('PS_OS_CHEQUE') OR $state == Configuration::get('PS_OS_OUTOFSTOCK'))
+			$this->context->smarty->assign(array(
 				'total_to_pay' => Tools::displayPrice($params['total_to_pay'], $params['currencyObj'], false),
 				'chequeName' => $this->chequeName,
-				'chequeAddress' => nl2br2($this->address),
+				'chequeAddress' => Tools::nl2br($this->address),
 				'status' => 'ok',
 				'id_order' => $params['objOrder']->id
 			));
 		else
-			$smarty->assign('status', 'failed');
+			$this->context->smarty->assign('status', 'failed');
 		return $this->display(__FILE__, 'payment_return.tpl');
 	}
-	
+
 	private function _checkCurrency($cart)
 	{
 		$currency_order = new Currency((int)($cart->id_currency));
 		$currencies_module = $this->getCurrency((int)$cart->id_currency);
-		$currency_default = Configuration::get('PS_CURRENCY_DEFAULT');
 
 		if (is_array($currencies_module))
 			foreach ($currencies_module AS $currency_module)
 				if ($currency_order->id == $currency_module['id_currency'])
 					return true;
 		return false;
+	}
+
+	/**
+	 * This action display payment form
+	 *
+	 * @param bool $direct_call For retrocompatibility
+	 */
+	public function actionPayment($direct_call = false)
+	{
+		if (!$this->active)
+			return ;
+
+		$cart = $this->context->cart;
+		if (!$this->_checkCurrency($cart))
+			Tools::redirect('index.php?controller=order');
+
+		$this->context->smarty->assign(array(
+			'nbProducts' => $cart->nbProducts(),
+			'cust_currency' => $cart->id_currency,
+			'currencies' => $this->getCurrency((int)$cart->id_currency),
+			'total' => $cart->getOrderTotal(true, Cart::BOTH),
+			'isoCode' => $this->context->language->iso_code,
+			'chequeName' => $this->chequeName,
+			'chequeAddress' => Tools::nl2br($this->address),
+			'this_path' => $this->_path,
+			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
+		));
+
+		if (!$direct_call)
+			return $this->getTemplatePath('payment_execution.tpl');
+		else
+			// For retrocompatibility
+			return $this->display(__FILE__, 'payment_execution.tpl');
+	}
+
+	/**
+	 * This action validate the payment
+	 */
+	public function actionValidation($direct_call = false)
+	{
+		$cart = $this->context->cart;
+
+		if ($cart->id_customer == 0 || $cart->id_address_delivery == 0 || $cart->id_address_invoice == 0 || !$this->active)
+			Tools::redirect('index.php?controller=order&step=1');
+
+		// Check that this payment option is still available in case the customer changed his address just before the end of the checkout process
+		$authorized = false;
+		foreach (Module::getPaymentModules() as $module)
+			if ($module['name'] == 'cheque')
+			{
+				$authorized = true;
+				break;
+			}
+		if (!$authorized)
+			die(Tools::displayError('This payment method is not available.'));
+
+		$customer = new Customer($cart->id_customer);
+
+		if (!Validate::isLoadedObject($customer))
+			Tools::redirect('index.php?controller=order&step=1');
+
+		$currency = Tools::isSubmit('currency_payement') ? new Currency(Tools::getValue('currency_payement')) : $context->currency;
+		$total = (float)$cart->getOrderTotal(true, Cart::BOTH);
+
+		$mailVars =	array(
+			'{cheque_name}' => Configuration::get('CHEQUE_NAME'),
+			'{cheque_address}' => Configuration::get('CHEQUE_ADDRESS'),
+			'{cheque_address_html}' => str_replace("\n", '<br />', Configuration::get('CHEQUE_ADDRESS')));
+
+		$this->validateOrder((int)$cart->id, Configuration::get('PS_OS_CHEQUE'), $total, $this->displayName, NULL, $mailVars, (int)$currency->id, false, $customer->secure_key);
+
+		Tools::redirect('index.php?controller=order-confirmation&id_cart='.(int)($cart->id).'&id_module='.(int)$this->id.'&id_order='.$this->currentOrder.'&key='.$customer->secure_key);
 	}
 }

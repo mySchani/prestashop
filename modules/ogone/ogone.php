@@ -24,9 +24,10 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
-	exit;
 	
+if (!defined('_PS_VERSION_'))
+	exit;
+
 class Ogone extends PaymentModule
 {
 	private $_ignoreKeyList = array('secure_key');
@@ -35,13 +36,19 @@ class Ogone extends PaymentModule
 	{
 		$this->name = 'ogone';
 		$this->tab = 'payments_gateways';
-		$this->version = '2.0';
-		$this->need_instance = 0;
+		$this->version = '2.3';
 
         parent::__construct();
 
         $this->displayName = 'Ogone';
         $this->description = '';
+
+		/* For 1.4.3 and less compatibility */
+		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT');
+		if (!Configuration::get('PS_OS_PAYMENT'))
+			foreach ($updateConfig as $u)
+				if (!Configuration::get($u) && defined('_'.$u.'_'))
+					Configuration::updateValue($u, constant('_'.$u.'_'));
 	}
 	
 	public function install()
@@ -89,6 +96,7 @@ class Ogone extends PaymentModule
 						<li><a href="../modules/'.$this->name.'/docs/en2.png">'.$this->l('See the screenshot for step').' 2</a></li>
 						<li><a href="../modules/'.$this->name.'/docs/en3.png">'.$this->l('See the screenshot for step').' 3</a></li>
 						<li><a href="../modules/'.$this->name.'/docs/en4.png">'.$this->l('See the screenshot for step').' 4</a></li>
+						<li><a href="../modules/'.$this->name.'/docs/en5.png">'.$this->l('See the screenshot for step').' 5</a></li>
 					</ol>
 				</li>
 			</ol>
@@ -110,17 +118,17 @@ class Ogone extends PaymentModule
 			<fieldset><legend><img src="../img/admin/contact.gif" /> '.$this->l('Settings').'</legend>
 				<label for="pspid">'.$this->l('PSPID').'</label>
 				<div class="margin-form">
-					<input type="text" id="pspid" size="20" name="OGONE_PSPID" value="'.Tools::getValue('OGONE_PSPID', Configuration::get('OGONE_PSPID')).'" />
+					<input type="text" id="pspid" size="20" name="OGONE_PSPID" value="'.Tools::safeOutput(Tools::getValue('OGONE_PSPID', Configuration::get('OGONE_PSPID'))).'" />
 				</div>
 				<div class="clear">&nbsp;</div>
 				<label for="sha-in">'.$this->l('SHA-in signature').'</label>
 				<div class="margin-form">
-					<input type="text" id="sha-in" size="20" name="OGONE_SHA_IN" value="'.Tools::getValue('OGONE_SHA_IN', Configuration::get('OGONE_SHA_IN')).'" />
+					<input type="text" id="sha-in" size="20" name="OGONE_SHA_IN" value="'.Tools::safeOutput(Tools::getValue('OGONE_SHA_IN', Configuration::get('OGONE_SHA_IN'))).'" />
 				</div>
 				<div class="clear">&nbsp;</div>
 				<label for="sha-out">'.$this->l('SHA-out signature').'</label>
 				<div class="margin-form">
-					<input type="text" id="sha-out" size="20" name="OGONE_SHA_OUT" value="'.Tools::getValue('OGONE_SHA_OUT', Configuration::get('OGONE_SHA_OUT')).'" />
+					<input type="text" id="sha-out" size="20" name="OGONE_SHA_OUT" value="'.Tools::safeOutput(Tools::getValue('OGONE_SHA_OUT', Configuration::get('OGONE_SHA_OUT'))).'" />
 				</div>
 				<div class="clear">&nbsp;</div>
 				<label>'.$this->l('Mode').'</label>
@@ -142,10 +150,13 @@ class Ogone extends PaymentModule
 		<div class="clear">&nbsp;</div>';
 	}
 	
+	public function getIgnoreKeyList()
+	{
+		return $this->_ignoreKeyList;
+	}
+	
 	public function hookPayment($params)
 	{
-		global $smarty;
-		
 		$currency = new Currency((int)($params['cart']->id_currency));
 		$lang = new Language((int)($params['cart']->id_lang));
 		$customer = new Customer((int)($params['cart']->id_customer));
@@ -165,7 +176,7 @@ class Ogone extends PaymentModule
 		$ogoneParams['OWNERADDRESS'] = ($address->address1);
 		$ogoneParams['OWNERCTY'] = $country->iso_code;
 		$ogoneParams['OWNERTOWN'] = $address->city;
-		$ogoneParams['paramplus'] = 'secure_key='.$params['cart']->secure_key;
+		$ogoneParams['PARAMPLUS'] = 'secure_key='.$params['cart']->secure_key;
 		if (!empty($address->phone))
 			$ogoneParams['OWNERTELNO'] = $address->phone;
 
@@ -175,46 +186,34 @@ class Ogone extends PaymentModule
 			$shasign .= strtoupper($key).'='.$value.Configuration::get('OGONE_SHA_IN');
 		$ogoneParams['SHASign'] = strtoupper(sha1($shasign));
 		
-		$smarty->assign('ogone_params', $ogoneParams);
-		$smarty->assign('OGONE_MODE', Configuration::get('OGONE_MODE'));
+		$this->context->smarty->assign('ogone_params', $ogoneParams);
+		$this->context->smarty->assign('OGONE_MODE', Configuration::get('OGONE_MODE'));
 		
-		return $this->display(dirname(__FILE__), 'ogone.tpl');
+		return $this->display(__FILE__, 'ogone.tpl');
     }
 	
 	public function hookOrderConfirmation($params)
 	{
-		global $smarty, $cookie;
-		
 		if ($params['objOrder']->module != $this->name)
 			return;
 		
 		if ($params['objOrder']->valid)
-			$smarty->assign(array('status' => 'ok', 'id_order' => $params['objOrder']->id));
+			$this->context->smarty->assign(array('status' => 'ok', 'id_order' => $params['objOrder']->id));
 		else
-			$smarty->assign('status', 'failed');
-		$link = new Link();
-		$smarty->assign('ogone_link', (method_exists($link, 'getPageLink') ? $link->getPageLink('contact', true) : Tools::getHttpHost(true).'contact'));
-		return $this->display(dirname(__FILE__), 'hookorderconfirmation.tpl');
+			$this->context->smarty->assign('status', 'failed');
+
+		$this->context->smarty->assign('ogone_link', (method_exists($link, 'getPageLink') ? $this->context->link->getPageLink('contact', true) : Tools::getHttpHost(true).'contact'));
+		return $this->display(__FILE__, 'hookorderconfirmation.tpl');
 	}
 	
 	public function validate($id_cart, $id_order_state, $amount, $message = '', $secure_key)
 	{
-		$this->validateOrder((int)$id_cart, $id_order_state, $amount, $this->displayName, $message, NULL, NULL, true, pSQL($secure_key));
-		if ($amount > 0 AND class_exists('PaymentCC'))
-		{
-			$pcc = new PaymentCC();
-			$order = Db::getInstance()->getRow('SELECT * FROM '._DB_PREFIX_.'orders WHERE id_cart = '.(int)$secure_cart[0]);
-			$pcc->id_order = (int)$order['id_order'];
-			$pcc->id_currency = (int)$order['id_currency'];
-			$pcc->amount = $amount;
-			$pcc->transaction_id = Tools::getValue('PAYID');
-			$pcc->card_number = Tools::getValue('CARDNO');
-			$pcc->card_brand = Tools::getValue('BRAND');
-			$pcc->card_expiration = Tools::getValue('ED');
-			$pcc->card_holder = Tools::getValue('CN');
-			$pcc->add();
-		}		
+		$this->pcc->transaction_id = Tools::getValue('PAYID');
+		$this->pcc->card_number = Tools::getValue('CARDNO');
+		$this->pcc->card_brand = Tools::getValue('BRAND');
+		$this->pcc->card_expiration = Tools::getValue('ED');
+		$this->pcc->card_holder = Tools::getValue('CN');
+		
+		$this->validateOrder((int)$id_cart, $id_order_state, $amount, $this->displayName, $message, NULL, NULL, true, pSQL($secure_key));		
 	}
 }
-
-

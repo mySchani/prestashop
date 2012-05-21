@@ -29,8 +29,8 @@ class PackageTnt
 	
 	public function insertSql($number)
 	{
-		Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_shipping_number` (`id_order`, `shipping_number`) 
-							VALUES ("'.(int)($this->_idOrder).'", "'.pSQL($number).'")');
+		Db::getInstance()->ExecuteS('INSERT INTO `'._DB_PREFIX_.'tnt_carrier_shipping_number` (`id_order`, `shipping_number`) 
+							VALUES ("'.(int)($this->_idOrder).'", "'.$number.'")');
 	}
 	
 	public function getOrder()

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,130 +25,57 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (Configuration::get('PS_FORCE_SMARTY_2'))
-	define('_PS_SMARTY_DIR_', _PS_TOOL_DIR_.'smarty_v2/');
-else
-	define('_PS_SMARTY_DIR_', _PS_TOOL_DIR_.'smarty/');
+define('_PS_SMARTY_DIR_', _PS_TOOL_DIR_.'smarty/');
 
 require_once(_PS_SMARTY_DIR_.'Smarty.class.php');
 
 global $smarty;
 $smarty = new Smarty();
-$smarty->template_dir = _PS_THEME_DIR_.'tpl';
-$smarty->compile_dir = _PS_SMARTY_DIR_.'compile';
-$smarty->cache_dir = _PS_SMARTY_DIR_.'cache';
+$smarty->compile_dir = _PS_CACHE_DIR_.'smarty/compile';
+$smarty->cache_dir = _PS_CACHE_DIR_.'smarty/cache';
 $smarty->config_dir = _PS_SMARTY_DIR_.'configs';
 $smarty->caching = false;
-$smarty->force_compile = (bool)Configuration::get('PS_SMARTY_FORCE_COMPILE');
-$smarty->compile_check = false;
-$smarty->debugging = false; 
+$smarty->force_compile = (Configuration::get('PS_SMARTY_FORCE_COMPILE') == _PS_SMARTY_FORCE_COMPILE_) ? true : false;
+$smarty->compile_check = (Configuration::get('PS_SMARTY_FORCE_COMPILE') == _PS_SMARTY_CHECK_COMPILE_) ? true : false;
+$smarty->debugging = false;
 $smarty->debugging_ctrl = 'URL'; // 'NONE' on production
-$smarty->deprecation_notices = false; // so many depreciated yet not migrated smarty calls
 
-if (Configuration::get('PS_FORCE_SMARTY_2')) 
-{	
-	$smarty->debug_tpl = _PS_ALL_THEMES_DIR_.'debug.tpl';
-	
-	if (Configuration::get('PS_HTML_THEME_COMPRESSION'))
-		$smarty->register_outputfilter('smartyMinifyHTML');
-	if (Configuration::get('PS_JS_HTML_THEME_COMPRESSION'))
-		$smarty->register_outputfilter('smartyPackJSinHTML');
-}
+if (defined('_PS_ADMIN_DIR_'))
+	require_once (dirname(__FILE__).'/smartyadmin.config.inc.php');
 else
-{
-	if (Configuration::get('PS_HTML_THEME_COMPRESSION'))
-		$smarty->registerFilter('output', 'smartyMinifyHTML');
-	if (Configuration::get('PS_JS_HTML_THEME_COMPRESSION'))
-		$smarty->registerFilter('output', 'smartyPackJSinHTML');
-}
+	require_once (dirname(__FILE__).'/smartyfront.config.inc.php');
+
+if (Configuration::get('PS_HTML_THEME_COMPRESSION'))
+	$smarty->registerFilter('output', 'smartyMinifyHTML');
+if (Configuration::get('PS_JS_HTML_THEME_COMPRESSION'))
+	$smarty->registerFilter('output', 'smartyPackJSinHTML');
 
 smartyRegisterFunction($smarty, 'modifier', 'truncate', 'smarty_modifier_truncate');
 smartyRegisterFunction($smarty, 'modifier', 'secureReferrer', array('Tools', 'secureReferrer'));
 
 smartyRegisterFunction($smarty, 'function', 't', 'smartyTruncate'); // unused
 smartyRegisterFunction($smarty, 'function', 'm', 'smartyMaxWords'); // unused
-smartyRegisterFunction($smarty, 'function', 'p', 'smartyShowObject'); // unused
-smartyRegisterFunction($smarty, 'function', 'd', 'smartyDieObject'); // unused
+smartyRegisterFunction($smarty, 'function', 'p', 'smartyShowObject'); // Debug only
+smartyRegisterFunction($smarty, 'function', 'd', 'smartyDieObject'); // Debug only
 smartyRegisterFunction($smarty, 'function', 'l', 'smartyTranslate');
 
 smartyRegisterFunction($smarty, 'function', 'dateFormat', array('Tools', 'dateFormat'));
-smartyRegisterFunction($smarty, 'function', 'productPrice', array('Product', 'productPrice')); // unused
 smartyRegisterFunction($smarty, 'function', 'convertPrice', array('Product', 'convertPrice'));
-smartyRegisterFunction($smarty, 'function', 'convertPriceWithoutDisplay', array('Product', 'productPriceWithoutDisplay')); // unused
 smartyRegisterFunction($smarty, 'function', 'convertPriceWithCurrency', array('Product', 'convertPriceWithCurrency'));
 smartyRegisterFunction($smarty, 'function', 'displayWtPrice', array('Product', 'displayWtPrice'));
 smartyRegisterFunction($smarty, 'function', 'displayWtPriceWithCurrency', array('Product', 'displayWtPriceWithCurrency'));
 smartyRegisterFunction($smarty, 'function', 'displayPrice', array('Tools', 'displayPriceSmarty'));
 smartyRegisterFunction($smarty, 'modifier', 'convertAndFormatPrice', array('Product', 'convertAndFormatPrice')); // used twice
-
-function smartyTranslate($params, &$smarty)
-{
-	/*
-	 * Warning in Smarty-v2 : 2 lines have been added to the Smarty class.
-	 * "public $currentTemplate = null;" into the class itself
-	 * "$this->currentTemplate = Tools::substr(basename($resource_name), 0, -4);" into the "fetch" method
-	 * Notice : before 1.4.2.5, this modification was in the display method
-	 *
-	 * In Smarty-v3 : No modifications, using the existing var $this->smarty->_current_file instead
-	 */
-	global $_LANG, $_MODULES, $cookie, $_MODULE;
-	if (!isset($params['js'])) $params['js'] = 0;
-	if (!isset($params['mod'])) $params['mod'] = false;
-	
-	$string = str_replace('\'', '\\\'', $params['s']);
-	$key = '';
-	if (Configuration::get('PS_FORCE_SMARTY_2')) /* Keep a backward compatibility for Smarty v2 */
-		$key = $smarty->currentTemplate.'_'.md5($string);
-	else
-	{
-		$filename = ((!isset($smarty->compiler_object) OR !is_object($smarty->compiler_object->template)) ? $smarty->template_filepath : $smarty->compiler_object->template->getTemplateFilepath());
-		$key = Tools::substr(basename($filename), 0, -4).'_'.md5($string);
-	}
-	$lang_array = $_LANG;
-	if ($params['mod'])
-	{
-		$iso = Language::getIsoById($cookie->id_lang);
-
-		if (Tools::file_exists_cache(_PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php'))
-		{
-			$translationsFile = _PS_THEME_DIR_.'modules/'.$params['mod'].'/'.$iso.'.php';
-			$key = '<{'.$params['mod'].'}'._THEME_NAME_.'>'.$key;
-		}
-		else
-		{
-			$translationsFile = _PS_MODULE_DIR_.$params['mod'].'/'.$iso.'.php';
-			$key = '<{'.$params['mod'].'}prestashop>'.$key;
-		}
-		
-		if(!is_array($_MODULES))
-			$_MODULES = array();
-		if (@include_once($translationsFile))
-			if(is_array($_MODULE))
-				$_MODULES = array_merge($_MODULES, $_MODULE);
-		$lang_array = $_MODULES;
-	}
-	
-	if (is_array($lang_array) AND key_exists($key, $lang_array))
-		$msg = $lang_array[$key];
-	elseif (is_array($lang_array) AND key_exists(Tools::strtolower($key), $lang_array))
-		$msg = $lang_array[Tools::strtolower($key)];
-	else
-		$msg = $params['s'];
-	
-	if ($msg != $params['s'])
-		$msg = $params['js'] ? addslashes($msg) : stripslashes($msg);
-	return $params['js'] ? $msg : Tools::htmlentitiesUTF8($msg);
-}
+smartyRegisterFunction($smarty, 'function', 'getAdminToken', array('Tools', 'getAdminTokenLiteSmarty'));
+smartyRegisterFunction($smarty, 'function', 'displayAddressDetail', array('AddressFormat', 'generateAddressSmarty'));
 
 function smartyDieObject($params, &$smarty)
 {
-	Tools::displayAsDeprecated();
 	return Tools::d($params['var']);
 }
 
 function smartyShowObject($params, &$smarty)
 {
-	Tools::displayAsDeprecated();
 	return Tools::p($params['var']);
 }
 
@@ -157,7 +84,7 @@ function smartyMaxWords($params, &$smarty)
 	Tools::displayAsDeprecated();
 	$params['s'] = str_replace('...', ' ...', html_entity_decode($params['s'], ENT_QUOTES, 'UTF-8'));
 	$words = explode(' ', $params['s']);
-	
+
 	foreach($words AS &$word)
 		if(Tools::strlen($word) > $params['n'])
 			$word = Tools::substr(trim(chunk_split($word, $params['n']-1, '- ')), 0, -1);
@@ -182,27 +109,31 @@ function smarty_modifier_truncate($string, $length = 80, $etc = '...', $break_wo
 {
 	if (!$length)
 		return '';
- 
+
 	if (Tools::strlen($string) > $length)
 	{
 		$length -= min($length, Tools::strlen($etc));
 		if (!$break_words && !$middle)
 			$string = preg_replace('/\s+?(\S+)?$/u', '', Tools::substr($string, 0, $length+1, $charset));
-		return !$middle ? Tools::substr($string, 0, $length, $charset).$etc : Tools::substr($string, 0, $length/2, $charset).$etc.Tools::substr($string, -$length/2, $charset);
+		return !$middle ? Tools::substr($string, 0, $length, $charset).$etc : Tools::substr($string, 0, $length/2, $charset).$etc.Tools::substr($string, -$length/2, $length, $charset);
 	}
 	else
 		return $string;
 }
 
+function smarty_modifier_htmlentitiesUTF8($string)
+{
+		return Tools::htmlentitiesUTF8($string);
+}
 function smartyMinifyHTML($tpl_output, &$smarty)
 {
-    $tpl_output = Tools::minifyHTML($tpl_output);
+    $tpl_output = Media::minifyHTML($tpl_output);
     return $tpl_output;
 }
 
 function smartyPackJSinHTML($tpl_output, &$smarty)
 {
-    $tpl_output = Tools::packJSinHTML($tpl_output);
+    $tpl_output = Media::packJSinHTML($tpl_output);
     return $tpl_output;
 }
 
@@ -210,8 +141,5 @@ function smartyRegisterFunction($smarty, $type, $function, $params)
 {
 	if (!in_array($type, array('function', 'modifier')))
 		return false;
-	if (!Configuration::get('PS_FORCE_SMARTY_2'))
-		$smarty->registerPlugin($type, $function, $params); // Use Smarty 3 API calls, only if PHP version > 5.1.2
-	else
-		$smarty->{'register_'.$type}($function, $params); // or keep a backward compatibility if PHP version < 5.1.2
+	$smarty->registerPlugin($type, $function, $params);
 }

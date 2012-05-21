@@ -25,20 +25,20 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class StatsBestSuppliers extends ModuleGrid
 {
 	private $_html = null;
-	private $_query =  null;
+	private $_query = null;
 	private $_columns = null;
 	private $_defaultSortColumn = null;
 	private $_defaultSortDirection = null;
 	private $_emptyMessage = null;
 	private $_pagingMessage = null;
 
-	function __construct()
+	public function __construct()
 	{
 		$this->name = 'statsbestsuppliers';
 		$this->tab = 'analytics_stats';
@@ -80,10 +80,10 @@ class StatsBestSuppliers extends ModuleGrid
 		$this->displayName = $this->l('Best suppliers');
 		$this->description = $this->l('A list of the best suppliers');
 	}
-	
+
 	public function install()
 	{
-		return (parent::install() AND $this->registerHook('AdminStatsModules'));
+		return (parent::install() && $this->registerHook('AdminStatsModules'));
 	}
 
 	public function hookAdminStatsModules($params)
@@ -101,9 +101,9 @@ class StatsBestSuppliers extends ModuleGrid
 		if (Tools::getValue('export') == 1)
 				$this->csvExport($engineParams);
 		$this->_html = '
-		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
+		<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			'.$this->engine($engineParams).'
-			<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+			<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 		</fieldset>';
 		return $this->_html;
 	}
@@ -119,14 +119,14 @@ class StatsBestSuppliers extends ModuleGrid
 				LEFT JOIN '._DB_PREFIX_.'orders o ON o.id_order = od.id_order
 				LEFT JOIN '._DB_PREFIX_.'supplier s ON s.id_supplier = p.id_supplier
 				WHERE o.invoice_date BETWEEN '.$this->getDate().'
-					'.$this->sqlShopRestriction(false, 'o').'
+					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND s.id_supplier IS NOT NULL';
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue($sql);
 	}
 
 	public function getData()
-	{	
+	{
 		$this->_totalCount = $this->getTotalCount();
 
 		$this->_query = 'SELECT s.name, SUM(od.product_quantity) as quantity, ROUND(SUM(od.product_quantity * od.product_price) / o.conversion_rate, 2) as sales
@@ -135,19 +135,19 @@ class StatsBestSuppliers extends ModuleGrid
 				LEFT JOIN '._DB_PREFIX_.'orders o ON o.id_order = od.id_order
 				LEFT JOIN '._DB_PREFIX_.'supplier s ON s.id_supplier = p.id_supplier
 				WHERE o.invoice_date BETWEEN '.$this->getDate().'
-					'.$this->sqlShopRestriction(false, 'o').'
+					'.$this->sqlShopRestriction(Shop::SHARE_ORDER, 'o').'
 					AND o.valid = 1
 					AND s.id_supplier IS NOT NULL
 				GROUP BY p.id_supplier';
 		if (Validate::IsName($this->_sort))
 		{
 			$this->_query .= ' ORDER BY `'.$this->_sort.'`';
-			if (isset($this->_direction) AND Validate::IsSortDirection($this->_direction))
+			if (isset($this->_direction) && Validate::IsSortDirection($this->_direction))
 				$this->_query .= ' '.$this->_direction;
 		}
 
-		if (($this->_start === 0 OR Validate::IsUnsignedInt($this->_start)) AND Validate::IsUnsignedInt($this->_limit))
+		if (($this->_start === 0 || Validate::IsUnsignedInt($this->_start)) && Validate::IsUnsignedInt($this->_limit))
 			$this->_query .= ' LIMIT '.$this->_start.', '.($this->_limit);
-		$this->_values = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query);
+		$this->_values = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query);
 	}
 }

@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class LiveZilla extends Module
@@ -100,15 +100,12 @@ class LiveZilla extends Module
 
 	private function displayBlock()
 	{
-		global $smarty;
-		
-		
 		if ($livezilla_script = Configuration::get('LIVEZILLA_SCRIPT'))
-			$smarty->assign('LIVEZILLA_SCRIPT', $livezilla_script);
+			$this->context->smarty->assign('LIVEZILLA_SCRIPT', $livezilla_script);
 		elseif ($livezilla_url = Configuration::get('LIVEZILLA_URL'))
-			$smarty->assign('LIVEZILLA_URL', $livezilla_url);
+			$this->context->smarty->assign('LIVEZILLA_URL', $livezilla_url);
 		else
-			$smarty->assign('LIVEZILLA_UNDEFINED', 1);
+			$this->context->smarty->assign('LIVEZILLA_UNDEFINED', 1);
 		return $this->display(__FILE__, 'livezilla.tpl');
 	}
 	

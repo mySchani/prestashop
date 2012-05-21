@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,5 +25,13 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-$controller = new FrontController();
-$controller->displayFooter();
+if (isset(Context::getContext()->controller))
+	$controller = Context::getContext()->controller;
+else
+{
+	$controller = new FrontController();
+	$controller->init();
+}
+
+$controller->initFooter();
+Context::getContext()->smarty->display(_PS_THEME_DIR_.'footer.tpl');

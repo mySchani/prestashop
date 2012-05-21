@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockPermanentLinks extends Module
@@ -76,9 +76,14 @@ class BlockPermanentLinks extends Module
 		return $this->hookLeftColumn($params);
 	}
 	
+	function hookFooter($params)
+	{
+		return $this->display(__FILE__, 'blockpermanentlinks-footer.tpl');
+	}
+	
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blockpermanentlinks.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockpermanentlinks.css', 'all');
 	}
 }
 

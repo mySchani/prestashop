@@ -24,16 +24,15 @@
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<script type="text/javascript">
-//<![CDATA[
-	var baseDir = '{$base_dir_ssl}';
-//]]>
-</script>
-
 {capture name=path}{l s='My account'}{/capture}
 {include file="$tpl_dir./breadcrumb.tpl"}
 
 <h1>{l s='My account'}</h1>
+{if isset($account_created)}
+	<p class="success">
+		{l s='Your account is now created.'}
+	</p>
+{/if}
 <h4>{l s='Welcome to your account. Here you can manage your addresses and orders.'}</h4>
 <ul>
 	<li><a href="{$link->getPageLink('history', true)}" title="{l s='Orders'}"><img src="{$img_dir}icon/order.gif" alt="{l s='Orders'}" class="icon" /></a><a href="{$link->getPageLink('history', true)}" title="{l s='Orders'}">{l s='History and details of my orders'}</a></li>

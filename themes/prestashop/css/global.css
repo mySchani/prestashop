@@ -361,6 +361,8 @@ table.std {
 .std tr.alternate_item td,
 .std tr.alternate_item th { background-color: #f1f2f4 }
 .std tbody td,.std tfoot td { border-top: 1px solid #bdc2c9 }
+.std tbody tr.shipping-address td,.std tfoot tr.shipping-address td { border-top: none }
+.std tbody tr.shipping-address td.label,.std tfoot tr.shipping-address td.label { text-align: right; }
 .std thead th {
 	background-color: transparent;
 	background-image: url('../img/table_header.gif');
@@ -763,6 +765,8 @@ ul#order_step { background-color: white }
 }
 
 /* Default block style */
+div.block-cms h1 a { color: #374853; text-decoration: none; }
+div.block-cms h1 a:hover { text-decoration: underline; }
 div.block {
 	margin-bottom: 1em;
 	width: 191px
@@ -973,6 +977,14 @@ p.price_container { text-align: center }
 /* discount.tpl */
 td.discount_value { white-space: nowrap }
 
+/* address.tpl */
+p.address_navigation { 
+	padding: 1em 0!important;
+	margin-bottom: 1.5em
+}
+p.address_navigation a.button { float: left }
+p.address_navigation input[type=submit].button { float: right }
+
 /* shopping cart */
 .cart_last_product { 
 	width: 300px;
@@ -1014,10 +1026,13 @@ p.cart_navigation .button,
 p.cart_navigation .exclusive,
  p.cart_navigation .exclusive_large,
  p.cart_navigation .exclusive_large_disabled { float: right }
+p.cart_navigation .multishipping-button { margin-right: 10px }
 p.cart_navigation_extra {
 	text-align: center;
 	width: auto
 }
+.address-form-multishipping { padding: 10px; }
+.address-form-multishipping a { float: none; margin-left: 210px; }
 form.std p.cart_navigation span {
 	float: none;
 	text-align: left;
@@ -1034,6 +1049,7 @@ form.std p.cart_navigation span {
 	font-size: 1em;
 	text-decoration: none
 }
+tr.cart_item td .cart_address_delivery { width: 100px; margin-right: 10px; }
 tr.cart_item td { padding: 0.5em 0 }
 td.cart_product a { margin: 0 0.6em }
 td.cart_product a img {
@@ -1089,22 +1105,12 @@ tr.cart_total_price { font-weight: bold }
 	cursor:pointer;
 }
 #order form#voucher h4,
- #order form#voucher p,
- #order form#voucher .button { display: inline }
+#order form#voucher p,
+#order form#voucher .button { display: inline }
 #order form#voucher h4 {
 	float: left;
 	line-height: 1.5em;
 	margin-right: 6em
-}
-#order #order_carrier {
-	clear: both;
-	margin-top: 1em;
-	border: 1px solid #bdc2c9;
-	padding: 0.5em
-}
-#order #order_carrier h4 {
-	width: 50%;
-	display: inline
 }
 #order #order_carrier img { vertical-align: middle }
 #order #order_carrier span { margin: 0 0.2em }
@@ -1113,6 +1119,65 @@ tr.cart_total_price { font-weight: bold }
 	display: block;
 	width: 100%;
 	margin: 1em 0
+}
+#order .delivery_options_address, #orderopc .delivery_options_address {
+	width: 541px;
+	margin-left: 7px;
+}
+#order .delivery_options_address h3, #orderopc .delivery_options_address h3 {
+	background: url("../img/table_header.gif") no-repeat;
+	background: url("../img/table_header.gif") no-repeat;
+	color: #374853;
+	font-weight: bold;
+	height: 14px;
+	padding: 5px 10px;
+	margin: 10px 0 0 0;
+}
+#order .delivery_option_radio, #orderopc .delivery_option_radio {
+	float: left;
+	margin-top: 12px;
+}
+#order .delivery_option label, #orderopc .delivery_option label {
+	display: block;
+	padding-bottom: 5px;
+}
+#order .delivery_option label > table.resume, #orderopc .delivery_option label > table.resume {
+	width: 522px;
+	height: 40px;
+}
+#order .delivery_option.item, #orderopc .delivery_option.item, #orderopc {
+	background: #FAFAFA;
+}
+#order .delivery_option.alternate_item, #orderopc .delivery_option.alternate_item {
+	background: #F1F2F4;
+	border-top: 1px solid #BDC2C9;
+}
+#order .delivery_option label > table.resume td, #orderopc .delivery_option label > table.resume td, #orderopc {
+	padding: 0 8px;
+}
+#order .delivery_option label > table.resume td + td, #orderopc .delivery_option label > table.resume td + td {
+	text-align: left;
+	width: 380px;
+}
+#order .delivery_option label > table.resume td + td + td, #orderopc .delivery_option label > table.resume td + td + td {
+	text-align: right;
+	width: 100px;
+}
+#order .delivery_options_address .delivery_option_logo, #orderopc .delivery_options_address .delivery_option_logo {
+	text-align: center;
+	width: 100px;
+}
+#order .delivery_option_icon, #orderopc .delivery_option_icon {
+}
+#order .delivery_option_price, #orderopc .delivery_option_price {
+}
+#order .delivery_options_address .delivery_option_logo img, #orderopc .delivery_options_address .delivery_option_logo img { height: 40px; }
+#order .delivery_option_carrier, #orderopc .delivery_option_carrier {
+	border: 1px solid #BDC2C9;
+	background: white;
+	margin: 5px 20px;
+	padding: 5px;
+	width: 500px;
 }
 
 #order-opc tfoot p {
@@ -1165,6 +1230,9 @@ tr.cart_total_price { font-weight: bold }
 	margin: 1em 0
 }
 
+#guest-tracking p.center { width: 100%; text-align: center; }
+#guest-tracking p.center input.exclusive_large { display: inline; }
+
 /* views block */
 #views_block {
 	margin: 0 auto;
@@ -1213,7 +1281,7 @@ span.view_scroll_spacer {
 	background: #d0d3d8 url('../img/block_category_item_bg.jpg') repeat-x;
 	border: solid 1px #d0d3d8;
 	padding: 0.6em;
-	margin-bottom: 1.5em
+	margin-bottom: 1.5em;
 }
 #suppliers_list li a, #manufacturers_list li a {
 	text-decoration: none;
@@ -1493,3 +1561,7 @@ div.star_hover a, div.star a:hover { background-position: 0 -32px }
     padding: 4px; 
     border: 2px solid #D0D3D8;
 }
+
+.page404_input { float: left; }
+
+#order #discount_name { width: 130px; }

@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockCategories extends Module
@@ -85,6 +85,9 @@ class BlockCategories extends Module
 				Configuration::updateValue('BLOCK_CATEG_MAX_DEPTH', (int)($maxDepth));
 				Configuration::updateValue('BLOCK_CATEG_DHTML', (int)($dhtml));
 				Configuration::updateValue('BLOCK_CATEG_NBR_COLUMN_FOOTER', $nbrColumns);
+				Configuration::updateValue('BLOCK_CATEG_SORT_WAY', Tools::getValue('BLOCK_CATEG_SORT_WAY'));
+				Configuration::updateValue('BLOCK_CATEG_SORT', Tools::getValue('BLOCK_CATEG_SORT'));
+				
 				$this->_clearBlockcategoriesCache();
 				$output .= '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Settings updated').'</div>';
 			}
@@ -95,7 +98,7 @@ class BlockCategories extends Module
 	public function displayForm()
 	{
 		return '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Maximum depth').'</label>
@@ -112,7 +115,19 @@ class BlockCategories extends Module
 					<label class="t" for="dhtml_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p class="clear">'.$this->l('Activate dynamic (animated) mode for sublevels').'</p>
 				</div>
-				<label>'.$this->l('Footer columns number').'</label>			
+				<label>'.$this->l('Sort').'</label>
+
+				<div class="margin-form">
+					<input type="radio" name="BLOCK_CATEG_SORT" id="sort_on" value="0" '.(!Tools::getValue('BLOCK_CATEG_SORT', Configuration::get('BLOCK_CATEG_SORT')) ? 'checked="checked" ' : '').'/>
+					<label class="t" for="sort_on"> <img src="../modules/'.$this->name.'/sort_number.png" alt="'.$this->l('Enabled').'" title="'.$this->l('By position').'" />'.$this->l('By position').'</label>
+					<input type="radio" name="BLOCK_CATEG_SORT" id="sort_off" value="1" '.(Tools::getValue('BLOCK_CATEG_SORT', Configuration::get('BLOCK_CATEG_SORT')) ? 'checked="checked" ' : '').'/>
+					<label class="t" for="sort_off"> <img src="../modules/'.$this->name.'/sort_alphabet.png" alt="'.$this->l('Disabled').'" title="'.$this->l('By name').'" />'.$this->l('By name').'</label> - 
+					<select name="BLOCK_CATEG_SORT_WAY">
+						<option value="0" '.(!Tools::getValue('BLOCK_CATEG_SORT_WAY', Configuration::get('BLOCK_CATEG_SORT_WAY')) ? 'selected="selected" ' : '').'>'.$this->l('Ascending').'</option>
+						<option value="1" '.(Tools::getValue('BLOCK_CATEG_SORT_WAY', Configuration::get('BLOCK_CATEG_SORT_WAY')) ? 'selected="selected" ' : '').'>'.$this->l('Descending').'</option>
+					</select>
+				</div>
+				<label>'.$this->l('Footer columns number').'</label>
 				<div class="margin-form">
 					<input type="text" name="nbrColumns" value="'.Configuration::get('BLOCK_CATEG_NBR_COLUMN_FOOTER').'" />
 					<p class="clear">'.$this->l('Set the number of footer columns').'</p>
@@ -122,9 +137,10 @@ class BlockCategories extends Module
 		</form>';
 	}
 
-	public function getTree($resultParents, $resultIds, $maxDepth, $id_category = 1, $currentDepth = 0)
+	public function getTree($resultParents, $resultIds, $maxDepth, $id_category = null, $currentDepth = 0)
 	{
-		global $link;
+		if (is_null($id_category))
+			$id_category = $this->context->shop->getCategory();
 
 		$children = array();
 		if (isset($resultParents[$id_category]) AND sizeof($resultParents[$id_category]) AND ($maxDepth == 0 OR $currentDepth < $maxDepth))
@@ -132,7 +148,7 @@ class BlockCategories extends Module
 				$children[] = $this->getTree($resultParents, $resultIds, $maxDepth, $subcat['id_category'], $currentDepth + 1);
 		if (!isset($resultIds[$id_category]))
 			return false;
-		$return = array('id' => $id_category, 'link' => $link->getCategoryLink($id_category, $resultIds[$id_category]['link_rewrite']),
+		$return = array('id' => $id_category, 'link' => $this->context->link->getCategoryLink($id_category, $resultIds[$id_category]['link_rewrite']),
 					 'name' => $resultIds[$id_category]['name'], 'desc'=> $resultIds[$id_category]['description'],
 					 'children' => $children);
 		return $return;
@@ -140,9 +156,7 @@ class BlockCategories extends Module
 
 	public function hookLeftColumn($params)
 	{
-		global $smarty, $cookie;
-
-		$id_current_shop = $this->shopID;
+		$id_current_shop = $this->context->shop->getID();
 
 		$id_customer = (int)($params['cookie']->id_customer);
 		// Get all groups for this customer and concatenate them as a string: "1,2,3..."
@@ -157,19 +171,19 @@ class BlockCategories extends Module
 		if (!$this->isCached('blockcategories.tpl', $smartyCacheId))
 		{
 			$maxdepth = Configuration::get('BLOCK_CATEG_MAX_DEPTH');
-			if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+			if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 				SELECT c.id_parent, c.id_category, cl.name, cl.description, cl.link_rewrite
 				FROM `'._DB_PREFIX_.'category` c
-				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category` AND `id_lang` = '.$id_lang.' AND cl.`id_shop`='.(int)$id_current_shop.')
+				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category` AND cl.`id_lang` = '.$id_lang.$this->context->shop->addSqlRestrictionOnLang('cl').')
 				LEFT JOIN `'._DB_PREFIX_.'category_group` cg ON (cg.`id_category` = c.`id_category`)
 				WHERE (c.`active` = 1 OR c.`id_category` = 1)
 				'.((int)($maxdepth) != 0 ? ' AND `level_depth` <= '.(int)($maxdepth) : '').'
 				AND cg.`id_group` IN ('.pSQL($groups).')
 				GROUP BY id_category
-				ORDER BY `level_depth` ASC, c.`position` ASC')
+				ORDER BY `level_depth` ASC, '.(Configuration::get('BLOCK_CATEG_SORT') ? 'cl.`name`' : 'c.`position`').' '.(Configuration::get('BLOCK_CATEG_SORT_WAY') ? 'DESC' : 'ASC'))
 			)
-				
-				return;
+
+				return Tools::restoreCacheSettings();
 
 			$resultParents = array();
 			$resultIds = array();
@@ -181,39 +195,33 @@ class BlockCategories extends Module
 			}
 
 			$blockCategTree = $this->getTree($resultParents, $resultIds, Configuration::get('BLOCK_CATEG_MAX_DEPTH'));
-			unset($resultParents);
-			unset($resultIds);
-			//TODO clean that
-			$res = $blockCategTree;
-			$shopcurrentroot = Shop::getCurrentRootCategory();
-			if($blockCategTree['id'] != Shop::getCurrentRootCategory())
-				$blockCategTree = $this->cleanTree($blockCategTree['children']);
-			$isDhtml = (Configuration::get('BLOCK_CATEG_DHTML') == 1 ? true : false);
+			unset($resultParents, $resultIds);
 
+			$isDhtml = (Configuration::get('BLOCK_CATEG_DHTML') == 1 ? true : false);
 			if (Tools::isSubmit('id_category'))
 			{
-				$cookie->last_visited_category = $id_category;
-				$smarty->assign('currentCategoryId', $cookie->last_visited_category);
+				$this->context->cookie->last_visited_category = $id_category;
+				$this->context->smarty->assign('currentCategoryId', $this->context->cookie->last_visited_category);
 			}
 			if (Tools::isSubmit('id_product'))
 			{
-				if (!isset($cookie->last_visited_category) OR !Product::idIsOnCategoryId($id_product, array('0' => array('id_category' => $cookie->last_visited_category))))
+				if (!isset($this->context->cookie->last_visited_category) OR !Product::idIsOnCategoryId($id_product, array('0' => array('id_category' => $this->context->cookie->last_visited_category))))
 				{
 					$product = new Product($id_product);
 					if (isset($product) AND Validate::isLoadedObject($product))
-						$cookie->last_visited_category = (int)($product->id_category_default);
+						$this->context->cookie->last_visited_category = (int)($product->id_category_default);
 				}
-				$smarty->assign('currentCategoryId', (int)($cookie->last_visited_category));
+				$this->context->smarty->assign('currentCategoryId', (int)($this->context->cookie->last_visited_category));
 			}
-			$smarty->assign('blockCategTree', $blockCategTree);
+			$this->context->smarty->assign('blockCategTree', $blockCategTree);
 
 			if (file_exists(_PS_THEME_DIR_.'modules/blockcategories/blockcategories.tpl'))
-				$smarty->assign('branche_tpl_path', _PS_THEME_DIR_.'modules/blockcategories/category-tree-branch.tpl');
+				$this->context->smarty->assign('branche_tpl_path', _PS_THEME_DIR_.'modules/blockcategories/category-tree-branch.tpl');
 			else
-				$smarty->assign('branche_tpl_path', _PS_MODULE_DIR_.'blockcategories/category-tree-branch.tpl');
-			$smarty->assign('isDhtml', $isDhtml);
+				$this->context->smarty->assign('branche_tpl_path', _PS_MODULE_DIR_.'blockcategories/category-tree-branch.tpl');
+			$this->context->smarty->assign('isDhtml', $isDhtml);
 		}
-		$smarty->cache_lifetime = 31536000; // 1 Year
+		$this->context->smarty->cache_lifetime = 31536000; // 1 Year
 		$display = $this->display(__FILE__, 'blockcategories.tpl', $smartyCacheId);
 		Tools::restoreCacheSettings();
 		return $display;
@@ -221,31 +229,30 @@ class BlockCategories extends Module
 
 	public function hookFooter($params)
 	{
-		global $smarty, $cookie;
+		$id_current_shop = $this->context->shop->getID();
 
-		$id_current_shop = $this->shopID;
-		
 		$id_customer = (int)($params['cookie']->id_customer);
 		// Get all groups for this customer and concatenate them as a string: "1,2,3..."
 		$groups = $id_customer ? implode(', ', Customer::getGroupsStatic($id_customer)) : _PS_DEFAULT_CUSTOMER_GROUP_;
 		$id_product = (int)(Tools::getValue('id_product', 0));
 		$id_category = (int)(Tools::getValue('id_category', 0));
 		$id_lang = (int)($params['cookie']->id_lang);
-		$smartyCacheId = 'blockcategories|'.$groups.'_'.$id_lang.'_'.$id_product.'_'.$id_category;
+		$smartyCacheId = 'blockcategories|'.$id_current_shop.'_'.$groups.'_'.$id_lang.'_'.$id_product.'_'.$id_category;
+
 		Tools::enableCache();
 		if (!$this->isCached('blockcategories_footer.tpl', $smartyCacheId))
 		{
 			$maxdepth = Configuration::get('BLOCK_CATEG_MAX_DEPTH');
 
-			if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+			if (!$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 				SELECT c.id_parent, c.id_category, cl.name, cl.description, cl.link_rewrite
 				FROM `'._DB_PREFIX_.'category` c
-				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category` AND cl.`id_lang` = '.$id_lang.' AND cl.`id_shop`='.(int)$id_current_shop.')
+				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category` AND cl.`id_lang` = '.$id_lang.$this->context->shop->addSqlRestrictionOnLang('cl').')
 				LEFT JOIN `'._DB_PREFIX_.'category_group` cg ON (cg.`id_category` = c.`id_category`)
 				WHERE (c.`active` = 1 OR c.`id_category` = 1)
 				'.((int)($maxdepth) != 0 ? ' AND `level_depth` <= '.(int)($maxdepth) : '').'
 				AND cg.`id_group` IN ('.pSQL($groups).')
-				ORDER BY `level_depth` ASC, c.`position` ASC')
+				ORDER BY `level_depth` ASC, '.(Configuration::get('BLOCK_CATEG_SORT') ? 'cl.`name`' : 'c.`position`').' '.(Configuration::get('BLOCK_CATEG_SORT_WAY') ? 'DESC' : 'ASC'))
 			)
 				return;
 			$resultParents = array();
@@ -262,58 +269,41 @@ class BlockCategories extends Module
 				$nbrColumns=3;
 			$numberColumn = abs(sizeof($result)/$nbrColumns);
 			$widthColumn= floor(100/$nbrColumns);
-			$smarty->assign('numberColumn', $numberColumn);
-			$smarty->assign('widthColumn', $widthColumn);
-			
+			$this->context->smarty->assign('numberColumn', $numberColumn);
+			$this->context->smarty->assign('widthColumn', $widthColumn);
+
 			$blockCategTree = $this->getTree($resultParents, $resultIds, Configuration::get('BLOCK_CATEG_MAX_DEPTH'));
-			unset($resultParents);
-			unset($resultIds);
-			//TODO clean that
-			$res = $blockCategTree;
-			if($blockCategTree['id'] != Shop::getCurrentRootCategory())
-				$blockCategTree = $this->cleanTree($blockCategTree['children']);
-			$isDhtml = (Configuration::get('BLOCK_CATEG_DHTML') == 1 ? true : false);
+			unset($resultParents, $resultIds);
+
 			$isDhtml = (Configuration::get('BLOCK_CATEG_DHTML') == 1 ? true : false);
 
 			if (Tools::isSubmit('id_category'))
 			{
-				$cookie->last_visited_category = $id_category;
-				$smarty->assign('currentCategoryId', $cookie->last_visited_category);
+				$this->context->cookie->last_visited_category = $id_category;
+				$this->context->smarty->assign('currentCategoryId', $this->context->cookie->last_visited_category);
 			}
 			if (Tools::isSubmit('id_product'))
 			{
-				if (!isset($cookie->last_visited_category) OR !Product::idIsOnCategoryId($id_product, array('0' => array('id_category' => $cookie->last_visited_category))))
+				if (!isset($this->context->cookie->last_visited_category) OR !Product::idIsOnCategoryId($id_product, array('0' => array('id_category' => $this->context->cookie->last_visited_category))))
 				{
 					$product = new Product($id_product);
 					if (isset($product) AND Validate::isLoadedObject($product))
-						$cookie->last_visited_category = (int)($product->id_category_default);
+						$this->context->cookie->last_visited_category = (int)($product->id_category_default);
 				}
-				$smarty->assign('currentCategoryId', (int)($cookie->last_visited_category));
+				$this->context->smarty->assign('currentCategoryId', (int)($this->context->cookie->last_visited_category));
 			}
-			$smarty->assign('blockCategTree', $blockCategTree);
+			$this->context->smarty->assign('blockCategTree', $blockCategTree);
 
 			if (file_exists(_PS_THEME_DIR_.'modules/blockcategories/blockcategories_footer.tpl'))
-				$smarty->assign('branche_tpl_path', _PS_THEME_DIR_.'modules/blockcategories/category-tree-branch.tpl');
+				$this->context->smarty->assign('branche_tpl_path', _PS_THEME_DIR_.'modules/blockcategories/category-tree-branch.tpl');
 			else
-				$smarty->assign('branche_tpl_path', _PS_MODULE_DIR_.'blockcategories/category-tree-branch.tpl');
-			$smarty->assign('isDhtml', $isDhtml);
+				$this->context->smarty->assign('branche_tpl_path', _PS_MODULE_DIR_.'blockcategories/category-tree-branch.tpl');
+			$this->context->smarty->assign('isDhtml', $isDhtml);
 		}
-		$smarty->cache_lifetime = 31536000; // 1 Year
+		$this->context->smarty->cache_lifetime = 31536000; // 1 Year
 		$display = $this->display(__FILE__, 'blockcategories_footer.tpl', $smartyCacheId);
 		Tools::restoreCacheSettings();
 		return $display;
-	}
-	
-	public function cleanTree($categories)
-	{
-		$id_category_root = (int)Shop::getCurrentRootCategory();
-		foreach ($categories AS $row)
-		{
-			if ($row['id'] == $id_category_root)
-				return $row;
-			elseif (sizeof($row['children']))
-				$this->cleanTree($row['children']);
-		}
 	}
 
 	public function hookRightColumn($params)
@@ -323,8 +313,8 @@ class BlockCategories extends Module
 
 	public function hookHeader()
 	{
-		Tools::addJS(_THEME_JS_DIR_.'tools/treeManagement.js');
-		Tools::addCSS(($this->_path).'blockcategories.css', 'all');
+		$this->context->controller->addJS(_THEME_JS_DIR_.'tools/treeManagement.js');
+		$this->context->controller->addCSS(($this->_path).'blockcategories.css', 'all');
 	}
 
 	private function _clearBlockcategoriesCache()
@@ -347,7 +337,7 @@ class BlockCategories extends Module
 	{
 		$this->_clearBlockcategoriesCache();
 	}
-	
+
 	public function hookAfterSaveAdminMeta($params)
 	{
 		$this->_clearBlockcategoriesCache();

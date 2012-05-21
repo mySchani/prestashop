@@ -31,13 +31,12 @@ class PaypalPayment extends Paypal
 
 	public function PayPalRound($value)
 	{
-		return (floor($value * 100) / 100);
+		return (floor(round($value * 100, 2)) / 100);
 	}
 
 	public function getAuthorisation()
 	{
-		global $cookie, $cart;
-
+		$cart = Context::getContext()->cart;
 		// Getting cart informations
 		$currency = new Currency((int)($cart->id_currency));
 		if (!Validate::isLoadedObject($currency))
@@ -47,8 +46,8 @@ class PaypalPayment extends Paypal
 
 		// Making request
 		$vars = '?fromPayPal=1';
-		$returnURL = Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/paypal/payment/submit.php'.$vars;
-		$cancelURL = Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'order.php';
+		$returnURL = PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/paypal/payment/submit.php'.$vars;
+		$cancelURL = PayPal::getShopDomainSsl(true, true).__PS_BASE_URI__.'order.php';
 		$paymentAmount = (float)($cart->getOrderTotal());
 		$currencyCodeType = strval($currency->iso_code);
 		$paymentType = Configuration::get('PAYPAL_CAPTURE') == 1 ? 'Authorization' : 'Sale';
@@ -69,17 +68,26 @@ class PaypalPayment extends Paypal
 		$country = new Country((int)$address->id_country);
 		if ($address->id_state)
 			$state = new State((int)$address->id_state);
-		$discounts = (float)($cart->getOrderTotal(true, Cart::ONLY_DISCOUNTS));
+		$discounts = (float)($cart->getOrderTotal(true, PayPal::ONLY_DISCOUNTS));
 		if ($discounts == 0)
 		{
+			if ($params['cart']->id_customer)
+			{
+				$customer = new Customer((int)$params['cart']->id_customer);
+				$taxCalculationMethod = Group::getPriceDisplayMethod((int)$customer->id_default_group);
+			}
+			else
+				$taxCalculationMethod = Group::getDefaultPriceDisplayMethod();
+			$priceField = (($taxCalculationMethod == PS_TAX_EXC) ? 'price' : 'price_wt');
+
 			$products = $cart->getProducts();
 			$amt = 0;
 			for ($i = 0; $i < sizeof($products); $i++)
 			{
 				$request .= '&L_NAME'.$i.'='.substr(urlencode($products[$i]['name'].(isset($products[$i]['attributes'])?' - '.$products[$i]['attributes']:'').(isset($products[$i]['instructions'])?' - '.$products[$i]['instructions']:'') ), 0, 127);
-				$request .= '&L_AMT'.$i.'='.urlencode($this->PayPalRound($products[$i]['price_wt']));
+				$request .= '&L_AMT'.$i.'='.urlencode($this->PayPalRound($products[$i][$priceField]));
 				$request .= '&L_QTY'.$i.'='.urlencode($products[$i]['cart_quantity']);
-				$amt += $this->PayPalRound($products[$i]['price_wt']*$products[$i]['cart_quantity']);
+				$amt += $this->PayPalRound($products[$i][$priceField] * $products[$i]['cart_quantity']);
 			}
 			$shipping = $this->PayPalRound($cart->getOrderShippingCost($cart->id_carrier, false));
 			$request .= '&ITEMAMT='.urlencode($amt);

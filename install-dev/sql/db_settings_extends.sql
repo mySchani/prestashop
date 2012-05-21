@@ -1,8 +1,8 @@
 SET NAMES 'utf8';
 
 /* Carrier */
-INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`, `is_free`) VALUES (2, 1, 'My carrier', 1, 0, 1, 0);
-INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (2, 1);
+INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_reference`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`, `is_free`, `position`) VALUES (2, 2, 1, 'My carrier', 1, 0, 1, 0, 1);
+INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (2, 1), (2, 2), (2, 3);
 INSERT INTO `PREFIX_carrier_shop` (`id_carrier`, `id_shop`) VALUES (2, 1);
 INSERT INTO `PREFIX_carrier_lang` (`id_carrier`, `id_lang`, `delay`) VALUES (2, 1, 'Delivery next day!'),(2, 2, 'Livraison le lendemain !'),(2, 3, '¡Entrega día siguiente!'),(2, 4, 'Zustellung am nächsten Tag!'),(2, 5, 'Consegna il giorno dopo!');
 INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (2, 1),(2, 2);
@@ -10,13 +10,13 @@ INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (2, 1),(2, 2)
 UPDATE `PREFIX_configuration` SET `value` = '2' WHERE `name` = 'PS_CARRIER_DEFAULT';
 
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES
-	('MB_PAY_TO_EMAIL', 'testmerchant@moneybookers.com', NOW(), NOW()),
-	('MB_SECRET_WORD', 'mbtest', NOW(), NOW()),
+	('MB_PAY_TO_EMAIL', '', NOW(), NOW()),
+	('MB_SECRET_WORD', '', NOW(), NOW()),
 	('MB_HIDE_LOGIN', 1, NOW(), NOW()),
 	('MB_ID_LOGO', 1, NOW(), NOW()),
 	('MB_ID_LOGO_WALLET', 1, NOW(), NOW()),
-	('MB_PARAMETERS', 1, NOW(), NOW()),
-	('MB_PARAMETERS_2', 1, NOW(), NOW()),
+	('MB_PARAMETERS', 0, NOW(), NOW()),
+	('MB_PARAMETERS_2', 0, NOW(), NOW()),
 	('MB_DISPLAY_MODE', 0, NOW(), NOW()),
 	('MB_CANCEL_URL', 'http://www.yoursite.com', NOW(), NOW()),
 	('MB_LOCAL_METHODS', '2', NOW(), NOW()),
@@ -45,6 +45,7 @@ INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VAL
 	('CHECKUP_STOCK_GT', '3', NOW(), NOW()),
 	('FOOTER_CMS', '0_3|0_4', NOW(), NOW()),
 	('FOOTER_BLOCK_ACTIVATION', '0_3|0_4', NOW(), NOW()),
+	('FOOTER_POWEREDBY', 1, NOW(), NOW()),
 	('BLOCKADVERT_LINK', 0, NOW(), NOW()),
 	('BLOCKSTORE_IMG', 'store.jpg', NOW(), NOW());
 
@@ -58,8 +59,9 @@ INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeat
 (47, 'statsbestvouchers', 1),(48, 'statsbestsuppliers', 1),(49, 'statscarrier', 1),(50, 'statsnewsletter', 1),(51, 'statssearch', 1),(52, 'statscheckup', 1),(53, 'statsstock', 1),
 (54, 'blockstore', 1),(55, 'statsforecast', 1);
 
-INSERT INTO `PREFIX_module_shop` (`id_module`, `id_shop`) (SELECT `id_module`, 1 FROM `PREFIX_module`);
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 1, `id_module`, 1, 1 FROM `PREFIX_module`);
 
+INSERT INTO `PREFIX_module_shop` (`id_module`, `id_shop`) (SELECT `id_module`, 1 FROM `PREFIX_module`);
 
 INSERT INTO `PREFIX_hook` (`name`, `title`, `description`, `position`) VALUES
 	('myAccountBlock', 'My account block', 'Display extra informations inside the "my account" block', 1);
@@ -70,7 +72,7 @@ INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES (3,
 (35, 33, 2),(36, 33, 3),(37, 33, 4),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
 (47, 32, 14),(48, 32, 16),(49, 32, 17),(55, 32, 22),(50, 32, 18),(51, 32, 19),(51, 45, 1),(25, 25, 1),(41, 20, 2),(52, 32, 20),(53, 32, 21),(17, 9, 2),(18, 9, 3),(24, 9, 4),(9, 9, 5),
 (15, 9, 6),(5, 9, 7),(8, 9, 8),(10, 9, 9),(20, 9, 10),(11, 9, 11),(16, 9, 12),(22, 9, 13),(13, 9, 14),(14, 9, 15),(12, 9, 16),(7, 9, 17),(21, 9, 18),(10, 60, 1),(10, 61, 1),(10, 62, 1),
-(54, 9, 19),(10,66,1);
+(54, 9, 19),(10,66,1),(19,9,20);
 
 CREATE TABLE `PREFIX_pagenotfound` (
   `id_pagenotfound` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -109,7 +111,7 @@ CREATE TABLE `PREFIX_cms_block` (
 	`name` varchar(40) NOT NULL,
 	`location` tinyint(1) unsigned NOT NULL,
 	`position` int(10) unsigned NOT NULL default '0',
-	`display_store` tinyint(1) NOT NULL DEFAULT '1',
+	`display_store` tinyint(1) unsigned NOT NULL DEFAULT '1',
 	PRIMARY KEY (`id_cms_block`)
 ) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
 
@@ -157,35 +159,42 @@ INSERT INTO `PREFIX_range_weight` (`id_range_weight`, `id_carrier`, `delimiter1`
 INSERT INTO `PREFIX_delivery` (`id_delivery`, `id_range_price`, `id_range_weight`, `id_carrier`, `id_zone`, `price`) VALUES
 (1, NULL, 1, 2, 1, 5.00),(2, NULL, 1, 2, 2, 5.00),(4, 1, NULL, 2, 1, 5.00),(5, 1, NULL, 2, 2, 5.00);
 
-INSERT INTO `PREFIX_customer_group` (`id_customer`, `id_group`) VALUES (1, 1);
-INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) VALUES (2, 1),(3, 1),(4, 1);
+INSERT INTO `PREFIX_customer_group` (`id_customer`, `id_group`) VALUES (1, 3);
+INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) VALUES (2, 1),(3, 1),(4, 1),(2, 2),(3, 2),(4, 2),(2, 3),(3, 3),(4, 3);
 
 INSERT INTO `PREFIX_customer` (`id_customer`, `id_gender`, `id_default_group`, `secure_key`, `email`, `passwd`, `birthday`, `lastname`, `newsletter`, `optin`, `firstname`, `active`, `is_guest`, `date_add`, `date_upd`)
-	VALUES (1, 1, 1, '47ce86627c1f3c792a80773c5d2deaf8', 'pub@prestashop.com', 'ad807bdf0426766c05c64041124d30ce', '1970-01-15', 'DOE', 1, 1, 'John', 1, 0, NOW(), NOW());
+	VALUES (1, 1, 3, '47ce86627c1f3c792a80773c5d2deaf8', 'pub@prestashop.com', 'ad807bdf0426766c05c64041124d30ce', '1970-01-15', 'DOE', 1, 1, 'John', 1, 0, NOW(), NOW());
 INSERT INTO `PREFIX_connections` (`id_connections`, `id_guest`, `id_page`, `ip_address`, `date_add`, `http_referer`)
 	VALUES (1, 1, 1, '2130706433', NOW(), 'http://www.prestashop.com');
 INSERT INTO `PREFIX_guest` (`id_guest`, `id_operating_system`, `id_web_browser`, `id_customer`, `javascript`, `screen_resolution_x`, `screen_resolution_y`, `screen_color`, `sun_java`, `adobe_flash`, `adobe_director`, `apple_quicktime`, `real_player`, `windows_media`, `accept_language`)
 	VALUES (1, 1, 3, 1, 1, 1680, 1050, 32, 1, 1, 0, 1, 1, 0, 'en-us');
 
 INSERT INTO `PREFIX_cart` (`id_cart`, `id_carrier`, `id_lang`, `id_address_delivery`, `id_address_invoice`, `id_currency`, `id_customer`, `id_guest`, `recyclable`, `gift`, `date_add`, `date_upd`)
-	VALUES (1, 2, 2, 6, 6, 1, 1, 1, 1, 0, NOW(), NOW());
-INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_product_attribute`, `quantity`, `date_add`) VALUES (1, 7, 23, 1, NOW());
-INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_product_attribute`, `quantity`, `date_add`) VALUES (1, 9, 0, 1, NOW());
+	VALUES (1, 2, 2, 2, 2, 1, 1, 1, 1, 0, NOW(), NOW());
+INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_shop`, `id_product_attribute`, `quantity`, `date_add`) VALUES (1, 7, 1, 23, 1, NOW());
+INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_shop`, `id_product_attribute`, `quantity`, `date_add`) VALUES (1, 9, 1, 0, 1, NOW());
 
-INSERT INTO `PREFIX_orders` (`id_order`, `id_carrier`, `id_lang`, `id_customer`, `id_cart`, `id_currency`, `id_address_delivery`, `id_address_invoice`, `secure_key`, `payment`, `module`, `recyclable`, `gift`, `gift_message`, `shipping_number`, `total_discounts`, `total_paid`, `total_paid_real`, `total_products`, `total_products_wt`, `total_shipping`, `total_wrapping`, `invoice_number`, `delivery_number`, `invoice_date`, `delivery_date`, `date_add`, `date_upd`)
-	VALUES (1, 2, 2, 1, 1, 1, 2, 2, '47ce86627c1f3c792a80773c5d2deaf8', 'Chèque', 'cheque', 0, 0, '', '', '0.00', '625.98', '625.98', '516.72', '618.00', '7.98', '0.00', 0, 0, '0000-00-00 00:00:00', '0000-00-00 00:00:00', NOW(), NOW());
-INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `tax_name`, `tax_rate`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`)
-	VALUES (1, 1, 7, 23, 'iPod touch - Capacité: 32Go', 1, 0, '392.140500', '0.000000', NULL, NULL, NULL, 0, 'TVA 19.6%', '19.60', '0.00', '', 0, '0000-00-00 00:00:00');
-INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `tax_name`, `tax_rate`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`)
-	VALUES (2, 1, 9, 0, 'Écouteurs à isolation sonore Shure SE210', 1, 0, '124.581900', '0.000000', NULL, NULL, NULL, 0, 'TVA 19.6%', '19.60', '0.00', '', 0, '0000-00-00 00:00:00');
+INSERT INTO `PREFIX_orders` (`id_order`, `reference`, `id_carrier`, `id_lang`, `id_customer`, `id_cart`, `id_currency`, `id_address_delivery`, `id_address_invoice`, `secure_key`, `payment`, `module`, `recyclable`, `gift`, `gift_message`, `shipping_number`, `total_discounts`, `total_paid`, `total_paid_real`, `total_products`, `total_products_wt`, `total_shipping`, `total_wrapping`, `invoice_number`, `delivery_number`, `invoice_date`, `delivery_date`, `date_add`, `date_upd`, `total_paid_tax_incl`, `total_paid_tax_excl`, `total_shipping_tax_incl`, `total_shipping_tax_excl`, `carrier_tax_rate`)
+	VALUES (1, 'XKBKNABJ', 2, 2, 1, 1, 1, 2, 2, '47ce86627c1f3c792a80773c5d2deaf8', 'Chèque', 'cheque', 0, 0, '', '', '0.00', '626.37', '626.37', '516.72', '618.00', '7.98', '0.00', 0, 0, '0000-00-00 00:00:00', '0000-00-00 00:00:00', NOW(), NOW(), '626.37', '523.72', '8.37', '7.00', '19.600');
+
+INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`, `tax_name`, `total_price_tax_incl`, `total_price_tax_excl`,  `unit_price_tax_incl`, `unit_price_tax_excl`)
+	VALUES (1, 1, 7, 23, 'iPod touch - Capacité: 32Go', 1, 0, '392.140500', '0.000000', NULL, NULL, NULL, 0, '0.00', '', 0, '0000-00-00 00:00:00', '', '469.000000', '392.140000', '469.000000', '392.140468');
+INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`, `tax_name`, `total_price_tax_incl`, `total_price_tax_excl`,  `unit_price_tax_incl`, `unit_price_tax_excl`)
+	VALUES (2, 1, 9, 0, 'Écouteurs à isolation sonore Shure SE210', 1, 0, '124.581900', '0.000000', NULL, NULL, NULL, 0, '0.00', '', 0, '0000-00-00 00:00:00', '', '149.000000', '124.580000', '149.000000', '124.581940');
 INSERT INTO `PREFIX_order_history` (`id_order_history`, `id_employee`, `id_order`, `id_order_state`, `date_add`) VALUES (1, 0, 1, 1, NOW());
+
+INSERT INTO `PREFIX_order_detail_tax` (`id_order_detail`, `id_tax`, `unit_amount`, `total_amount`) VALUES
+(1, 1, '76.860000', '76.860000'),
+(2, 1, '24.420000', '24.420000');
+
+INSERT INTO `PREFIX_order_payment` (`id_order`, `id_currency`, `amount`, `payment_method`, `date_add`) VALUES (1, 1, '626.37', 'Chèque', NOW());
 
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'Apple Computer, Inc', NOW(), NOW(), 1);
 INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES(2, 'Shure Incorporated', NOW(), NOW(), 1);
 
 INSERT INTO `PREFIX_manufacturer_group_shop` (`id_manufacturer`, `id_group_shop`) (SELECT `id_manufacturer`, 1  FROM `PREFIX_manufacturer`);
 
-INSERT INTO `PREFIX_manufacturer_lang` (`id_manufacturer`, `id_lang`, `description`, `short_description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
+INSERT INTO `PREFIX_manufacturer_lang` (`id_manufacturer`, `id_lang`, `description`, `short_description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
 (1, 1, '', '', '', '', ''),
 (1, 2, '', '', '', '', ''),
 (1, 3, '', '', '', '', ''),
@@ -202,21 +211,27 @@ INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `a
 
 INSERT INTO `PREFIX_supplier_group_shop` (`id_supplier`, `id_group_shop`) (SELECT `id_supplier`, 1 FROM `PREFIX_supplier`);
 
-INSERT INTO `PREFIX_supplier_lang` (`id_supplier`, `id_lang`, `description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
+INSERT INTO `PREFIX_supplier_lang` (`id_supplier`, `id_lang`, `description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
 (1, 1, '', '', '', ''),
 (1, 2, '', '', '', ''),
 (1, 3, '', '', '', ''),
 (1, 4, '', '', '', ''),
 (1, 5, '', '', '', '');
 
-INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufacturer`, `id_tax_rules_group`, `id_category_default`, `id_color_default`, `on_sale`, `online_only`, `ean13`, `ecotax`, `quantity`, `price`, `wholesale_price`, `reference`, `supplier_reference`, `weight`, `out_of_stock`, `quantity_discount`, `customizable`, `uploadable_files`, `text_fields`, `active`, `date_add`, `date_upd`) VALUES
-(1, 1, 1, 1, 1, 2, 2, 0, 0, '0', 0.00, 800, 124.581940, 70.000000, '', '', 0.5, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(2, 1, 1, 1, 1, 2, 0, 0, 0, '0', 0.00, 100, 66.053500, 33.000000, '', '', 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(5, 1, 1, 1, 1, 4, 0, 0, 0, '0', 0.00, 274, 1504.180602, 1000.000000, '', NULL, 1.36, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(6, 1, 1, 1, 1, 4, 0, 0, 0, '0', 0.00, 250, 1170.568561, 0.000000, '', NULL, 0.75, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(7, 1, 0, 0, 1, 2, 0, 0, 0, '', 0.00, 180, 241.638796, 200.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(8, 1, 0, 0, 1, 3, 0, 0, 1, '', 0.00, 1, 25.041806, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(9, 1, 2, 2, 1, 3, 0, 0, 1, '', 0.00, 1, 124.581940, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW());
+INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufacturer`, `id_tax_rules_group`, `id_category_default`, `on_sale`, `online_only`, `ean13`, `ecotax`, `quantity`, `price`, `wholesale_price`, `reference`, `supplier_reference`, `weight`, `out_of_stock`, `quantity_discount`, `customizable`, `uploadable_files`, `text_fields`, `active`, `date_add`, `date_upd`, `available_date`) VALUES
+(1, 1, 1, 1, 1, 2, 0, 0, '0', 0.00, 0, 124.581940, 70.000000, '', '', 0.5, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(2, 1, 1, 1, 1, 2, 0, 0, '0', 0.00, 0, 66.053500, 33.000000, '', '', 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(5, 1, 1, 1, 1, 4, 0, 0, '0', 0.00, 0, 1504.180602, 1000.000000, '', NULL, 1.36, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(6, 1, 1, 1, 1, 4, 0, 0, '0', 0.00, 0, 1170.568561, 0.000000, '', NULL, 0.75, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(7, 1, 0, 0, 1, 2, 0, 0, '0', 0.00, 0, 241.638796, 200.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(8, 1, 0, 0, 1, 3, 0, 1, '0', 0.00, 0, 25.041806, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00'),
+(9, 1, 2, 2, 1, 3, 0, 1, '0', 0.00, 0, 124.581940, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW(), '0000-00-00');
+
+INSERT INTO `PREFIX_product_supplier` (`id_product_supplier`, `id_product`, `id_product_attribute`, `id_supplier`, `product_supplier_reference`) VALUES
+(1, 1, 0, 1, ''),
+(2, 2, 0, 1, ''),
+(3, 6, 0, 1, ''),
+(4, 7, 0, 1, '');
 
 INSERT INTO `PREFIX_product_shop` (`id_product`, `id_shop`) (SELECT `id_product`, 1 FROM `PREFIX_product`);
 
@@ -257,8 +272,8 @@ INSERT INTO `PREFIX_product_lang` (`id_product`, `id_lang`, `description`, `desc
 (8, 5, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'custodia-portafoglio-in-pelle-belkin-per-ipod-nano-nero-cioccolato', '', '', '', 'Custodia portafoglio in pelle Belkin per iPod nano - Nero/Cioccolato', '', NULL),
 (9, 5, '<div class="product-overview-full">L\'ascolto con la tecnologia dei Micro-Auricolari ad Alta Definizione permette l\'ascolto ideale del tuo iPod o iPhone. E\' quanto ti offre il design leggero, ergonomico ed elegante degli auricolari SE210. Ti garantiscono un rendimento audio ad alto livello di stereo portatili e fissi, per un livello di precisione mai raggiunto prima.  Inoltre, la forma flessibile ti peremtte di scegliere la posizione migliore per indossarli. <br /> <br /> <strong>Caratteristiche</strong> <br /> \r\n<ul>\r\n<li>Design di isolamento del suono </li>\r\n<li> Micro-speaker ad alta definizione con driver singolo ad armatura bilanciata </li>\r\n<li> Cavo staccabile e regolabile in modo da poterlo allungare o accorciare in base alle tue attività </li>\r\n<li> Connettore compatibile con porte auricolari sia su iPod che iPhone </li>\r\n</ul>\r\n<strong>Specifiche tecniche </strong><br /> \r\n<ul>\r\n<li>Tipo speaker: MicroSpeaker ad alta definizione</li>\r\n<li> Gamma di frequenza: 25Hz-18.5kHz </li>\r\n<li> Impedenza (1kHz): 26 Ohms </li>\r\n<li> Sensibilità (1mW): 114 dB SPL/mW </li>\r\n<li> Lunghezza cavo (con prolunga): 18.0 in./45,0 cm (54.0 in./137,1 cm) </li>\r\n</ul>\r\n<strong>Nella confezione</strong><br /> \r\n<ul>\r\n<li>Auricolari Shure SE210 </li>\r\n<li> Cavo prolunga (36.0 in./91,4 cm) </li>\r\n<li> Tre paia di imbuti in spugna (small, medium, large) </li>\r\n<li> Tre paia di imbuti morbidi (small, medium, large) </li>\r\n<li> Un paio di imbuti a tripla aletta </li>\r\n<li> Custodia da viaggio </li>\r\n</ul>\r\nGaranzia<br /> Due anni limitata <br />(Per informazioni, visitare <br />www.shure.com/PersonalAudio/CustomerSupport/ProductReturnsAndWarranty/index.htm.) <br /><br /> Mfr. Parte N.: SE210-A-EFS <br /><br />Nota: I prodotti venduti tramite questo sito web e che non hanno il marchio Apple ricevono assistenza esclusivamente dai loro produttori con i termini e le condizioni contenute nella confezione del prodotto.  La Garanzia Limitata di Apple non si applica ai prodotti che non appartengono al marchio Apple, anche se imballati o venduti con i prodotti Apple . Contatta direttamente il produttore per supporto tecnico e servizio clienti.</div>', '<p>Basati sulla tecnologia all\'avanguardia, testati da musicisti professionisti, e messi a punto da ingegneri Shure, i leggeri ed eleganti SE210 offrono un suono nitido e privo di rumori di fondo.</p>', 'ecouteurs-a-isolation-sonore-shure-se210-blanc', '', '', '', 'auricolari-sound-isolating-shure-se210-per-ipod-e-iphone', '', NULL);
 
-INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_currency`, `id_country`, `id_group`, `price`, `from_quantity`, `reduction`, `reduction_type`, `from`, `to`) VALUES
-(1, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_currency`, `id_country`, `id_group`, `id_product_attribute`, `price`, `from_quantity`, `reduction`, `reduction_type`, `from`, `to`) VALUES
+(1, 0, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
 
 INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft`, `nright`, `active`, `date_add`, `date_upd`, `position`) VALUES
 (2, 1, 1, 2, 3, 1, NOW(), NOW(), 0),(3, 1, 1, 3, 4, 1, NOW(), NOW(), 1),(4, 1, 1, 4, 5, 1, NOW(), NOW(), 2);
@@ -283,7 +298,7 @@ INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `descripti
 INSERT INTO `PREFIX_category_product` (`id_category`, `id_product`, `position`) VALUES
 (1, 1, 0),(1, 2, 1),(1, 6, 2),(1, 7, 3),(2, 1, 0),(2, 2, 1),(2, 7, 2),(3, 8, 0),(3, 9, 1),(4, 5, 0),(4, 6, 1);
 
-INSERT INTO `PREFIX_attribute_group` (`id_attribute_group`, `is_color_group`) VALUES (1, 0),(2, 1),(3, 0);
+INSERT INTO `PREFIX_attribute_group` (`id_attribute_group`, `is_color_group`, `group_type`, `position`) VALUES (1, 0, 'select', 0),(2, 1, 'color', 1),(3, 0, 'select', 2);
 INSERT INTO `PREFIX_attribute_group_group_shop` (`id_attribute_group`, `id_group_shop`) (SELECT `id_attribute_group`, 1 FROM `PREFIX_attribute_group`);
 INSERT INTO `PREFIX_attribute_group_lang` (`id_attribute_group`, `id_lang`, `name`, `public_name`) VALUES
 (1, 1, 'Disk space', 'Disk space'),(1, 2, 'Capacité', 'Capacité'),(2, 1, 'Color', 'Color'),(2, 2, 'Couleur', 'Couleur'),(3, 1, 'ICU', 'Processor'),
@@ -294,8 +309,8 @@ INSERT INTO `PREFIX_attribute_impact` (`id_attribute_impact`, `id_product`, `id_
 (9, 1, 7, 0, 0.00),(10, 1, 20, 0, 0.00),(11, 1, 6, 0, 0.00),(12, 1, 18, 0, 0.00);
 
 INSERT INTO `PREFIX_scene` (`id_scene`, `active`) VALUES (1, 1),(2, 1),(3, 1);
-
 INSERT INTO `PREFIX_scene_category` (`id_scene`, `id_category`) VALUES (1, 2),(2, 2),(3, 4);
+INSERT INTO `PREFIX_scene_shop` (`id_scene`, `id_shop`) VALUES (1, 1),(2, 1),(3, 1);
 
 INSERT INTO `PREFIX_scene_lang` (`id_scene`, `id_lang`, `name`) VALUES
 (1, 1, 'The iPods Nano'),(1, 2, 'Les iPods Nano'),(1, 3, 'El iPod Nano'),(1, 4, 'Die iPods Nano'),(1, 5, 'Gli iPod Nano'),
@@ -307,9 +322,9 @@ INSERT INTO `PREFIX_scene_products` (`id_scene`, `id_product`, `x_axis`, `y_axis
 (3, 5, 198, 47, 137, 92),(1, 1, 394, 14, 73, 168),(1, 1, 318, 14, 69, 168),(1, 1, 244, 14, 66, 169),(1, 1, 180, 13, 59, 168),(1, 1, 6, 12, 30, 175),
 (1, 1, 38, 12, 30, 170),(1, 1, 76, 14, 41, 169),(1, 1, 123, 13, 49, 169);
 
-INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`) VALUES (1, 1),(2, 1),(8, 1),(9, 1),(10, 3),(11, 3),(12, 1),(13, 1);
-INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`, `color`) VALUES (3, 2, '#D2D6D5'),(4, 2, '#008CB7'),(5, 2, '#F3349E'),(6, 2, '#93D52D'),
-(7, 2, '#FD9812'),(15, 1, ''),(16, 1, ''),(17, 1, ''),(18, 2, '#7800F0'),(19, 2, '#F6EF04'),(20, 2, '#F60409'),(14, 2, '#000000');
+INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`, `position`) VALUES (1, 1, 0),(2, 1, 1),(8, 1, 2),(9, 1, 3),(10, 3, 0),(11, 3, 1),(12, 1, 4),(13, 1, 5);
+INSERT INTO `PREFIX_attribute` (`id_attribute`, `id_attribute_group`, `color`, `position`) VALUES (3, 2, '#D2D6D5', 0),(4, 2, '#008CB7', 1),(5, 2, '#F3349E', 2),(6, 2, '#93D52D', 3),
+(7, 2, '#FD9812', 4),(15, 1, '', 6),(16, 1, '', 7),(17, 1, '', 8),(18, 2, '#7800F0', 5),(19, 2, '#F6EF04', 6),(20, 2, '#F60409', 7),(14, 2, '#000000', 8);
 
 INSERT INTO `PREFIX_attribute_group_shop` (`id_attribute`, `id_group_shop`) (SELECT `id_attribute`, 1 FROM `PREFIX_attribute`);
 
@@ -333,34 +348,34 @@ INSERT INTO `PREFIX_attribute_lang` VALUES (1, 1, '2GB'),(1, 2, '2Go'),(1, 3, '2
 INSERT INTO `PREFIX_attribute_lang` (`id_attribute`, `id_lang`, `name`) VALUES
 (18, 1, 'Purple'),(18, 2, 'Violet'),(18, 3, 'Violeta'),(19, 1, 'Yellow'),(19, 2, 'Jaune'),(19, 3, 'Amarillo'),(20, 1, 'Red'),(20, 2, 'Rouge'),(20, 3, 'Rojo'),(18, 4, 'Violett'),(19, 4, 'Gelb'),(20, 4, 'Rot'),(18, 5, 'Viola'),(19, 5, 'Giallo'),(20, 5, 'Rosso');
 
-INSERT INTO `PREFIX_product_attribute` (`id_product_attribute`, `id_product`, `reference`, `supplier_reference`, `ean13`, `wholesale_price`, `price`, `ecotax`, `quantity`, `weight`, `default_on`, `minimal_quantity`) VALUES
-(30, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(29, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(28, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(27, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(26, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(25, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 4),
-(7, 2, '', '', '', 0.000000, 0.00, 0.00, 10, 0, 0, 1),
-(8, 2, '', '', '', 0.000000, 0.00, 0.00, 20, 0, 1, 1),
-(9, 2, '', '', '', 0.000000, 0.00, 0.00, 30, 0, 0, 1),
-(10, 2, '', '', '', 0.000000, 0.00, 0.00, 40, 0, 0, 1),
-(12, 5, '', NULL, '', 0.000000, 751.672241, 0.00, 100, 0, 0, 1),
-(13, 5, '', NULL, '', 0.000000, 0.00, 0.00, 99, 0, 1, 1),
-(14, 5, '', NULL, '', 0.000000, 225.752508, 0.00, 50, 0, 0, 1),
-(15, 5, '', NULL, '', 0.000000, 977.424749, 0.00, 25, 0, 0, 1),
-(23, 7, '', NULL, '', 0.000000, 150.501672, 0.00, 70, 0, 0, 1),
-(22, 7, '', NULL, '', 0.000000, 75.250836, 0.00, 60, 0, 0, 1),
-(19, 7, '', NULL, '', 0.000000, 0.00, 0.00, 50, 0, 1, 1),
-(31, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 1, 1),
-(32, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(33, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(34, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(35, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(36, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(39, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(40, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(41, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(42, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1);
+INSERT INTO `PREFIX_product_attribute` (`id_product_attribute`, `id_product`, `reference`, `supplier_reference`, `ean13`, `wholesale_price`, `price`, `ecotax`, `quantity`, `weight`, `default_on`, `minimal_quantity`, `available_date`) VALUES
+(30, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(29, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(28, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(27, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(26, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(25, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 4, '0000-00-00'),
+(7, 2, '', '', '', 0.000000, 0.00, 0.00, 10, 0, 0, 1, '0000-00-00'),
+(8, 2, '', '', '', 0.000000, 0.00, 0.00, 20, 0, 1, 1, '0000-00-00'),
+(9, 2, '', '', '', 0.000000, 0.00, 0.00, 30, 0, 0, 1, '0000-00-00'),
+(10, 2, '', '', '', 0.000000, 0.00, 0.00, 40, 0, 0, 1, '0000-00-00'),
+(12, 5, '', NULL, '', 0.000000, 751.672241, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(13, 5, '', NULL, '', 0.000000, 0.00, 0.00, 0, 0, 1, 1, '0000-00-00'),
+(14, 5, '', NULL, '', 0.000000, 225.752508, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(15, 5, '', NULL, '', 0.000000, 977.424749, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(23, 7, '', NULL, '', 0.000000, 150.501672, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(22, 7, '', NULL, '', 0.000000, 75.250836, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(19, 7, '', NULL, '', 0.000000, 0.00, 0.00, 0, 0, 1, 1, '0000-00-00'),
+(31, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 1, 1, '0000-00-00'),
+(32, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(33, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(34, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(35, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(36, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(39, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(40, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(41, 1, '', '', '', 0.000000, 41.806020, 0.00, 0, 0, 0, 1, '0000-00-00'),
+(42, 1, '', '', '', 0.000000, 0.00, 0.00, 0, 0, 0, 1, '0000-00-00');
 
 INSERT INTO `PREFIX_product_attribute_image` (`id_product_attribute`, `id_image`) VALUES (30, 44),(29, 44),(28, 45),(27, 45),(26, 38),(25, 38),(7, 46),(8, 47),(9, 49),
 (10, 48),(12, 0),(13, 0),(14, 0),(15, 0),(23, 0),(22, 0),(19, 0),(31, 37),(32, 37),(33, 40),(34, 40),(35, 41),(36, 41),(39, 39),(40, 39),(41, 42),(42, 42);
@@ -369,7 +384,7 @@ INSERT INTO `PREFIX_product_attribute_combination` (`id_attribute`, `id_product_
 (4, 26),(5, 10),(5, 35),(5, 36),(6, 8),(6, 39),(6, 40),(7, 33),(7, 34),(8, 13),(8, 15),(9, 12),(9, 14),(10, 12),(10, 13),(11, 14),(11, 15),(14, 31),(14, 32),(15, 19),
 (15, 26),(15, 28),(15, 30),(15, 32),(15, 34),(15, 36),(15, 40),(15, 42),(16, 22),(16, 25),(16, 27),(16, 29),(16, 31),(16, 33),(16, 35),(16, 39),(16, 41),(17, 23),(18, 41),(18, 42),(19, 27),(19, 28);
 
-INSERT INTO `PREFIX_feature` (`id_feature`) VALUES (1), (2), (3), (4), (5);
+INSERT INTO `PREFIX_feature` (`id_feature`, `position`) VALUES (1, 0), (2, 1), (3, 2), (4, 3), (5, 4);
 
 INSERT INTO `PREFIX_feature_group_shop` (`id_feature`, `id_group_shop`) (SELECT `id_feature`, 1 FROM PREFIX_feature);
 
@@ -415,7 +430,7 @@ INSERT INTO `PREFIX_image_lang` (`id_image`, `id_lang`, `legend`) VALUES
 
 INSERT INTO `PREFIX_tag` (`id_tag`, `id_lang`, `name`) VALUES (5, 1, 'apple'),(6, 2, 'ipod'),(7, 2, 'nano'),(8, 2, 'apple'),(18, 2, 'shuffle'),
 (19, 2, 'macbook'),(20, 2, 'macbookair'),(21, 2, 'air'),(22, 1, 'superdrive'),(27, 2, 'marche'),(26, 2, 'casque'),(25, 2, 'écouteurs'),
-(24, 2, 'ipod touch tacticle'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
+(24, 2, 'ipod touch tactile'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
 (34, 3, 'shuffle'),(35, 2, 'superdrive'),(36, 3, 'superdrive'),(37, 3, 'Ipod touch');
 
 INSERT INTO `PREFIX_product_tag` (`id_product`, `id_tag`) VALUES (1, 5),(1, 6),(1, 7),(1, 8),(1, 28),(1, 29),(1, 30),(1, 31),(1, 32),(2, 6),(2, 18),(2, 28),
@@ -472,7 +487,7 @@ INSERT INTO `PREFIX_cms_block_lang` (`id_cms_block`, `id_lang`, `name`) VALUES (
 
 /* Currency/Country module */
 INSERT INTO `PREFIX_module_currency` (`id_module`, `id_currency`) VALUES (3, 1),(3, 2),(3, 3),(4, 1),(4, 2),(4, 3),(6, 1),(6, 2),(6, 3);
-INSERT INTO `PREFIX_module_group` (`id_module`, `id_group`) VALUES (3, 1),(4, 1),(6, 1);
+INSERT INTO `PREFIX_module_group` (`id_module`, `id_group`) VALUES (3, 2),(4, 2),(6, 2),(3, 3),(4, 3),(6, 3);
 
 INSERT INTO `PREFIX_module_country` (`id_module`, `id_country`) VALUES (3, 1),(3, 2),(3, 3),(3, 4),(3, 5),(3, 6),(3, 7),(3, 8),
 (3, 9),(3, 10),(3, 11),(3, 12),(3, 13),(3, 14),(3, 15),(3, 16),(3, 17),(3, 18),(3, 19),(3, 20),(3, 21),(3, 22),(3, 23),(3, 24),
@@ -768,7 +783,7 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (925, 2, 'internet'),(926, 2, 'poche'),(927, 2, 'navigateur'),(928, 2, 'safari,'),(929, 2, 'consulter'),(930, 2, 'sites'),(931, 2, 'leur'),(932, 2, 'mise'),
 (933, 2, 'page'),(934, 2, 'effectuer'),(935, 2, 'zoom'),(936, 2, 'arrière'),(937, 2, 'simple'),(938, 2, 'pression'),(939, 2, 'l''écran'),(940, 2, 'contenu'),
 (941, 2, 'coffret'),(942, 2, 'écouteurs'),(943, 2, 'câble'),(944, 2, 'dock'),(945, 2, 'chiffon'),(946, 2, 'nettoyage'),(947, 2, 'support'),(948, 2, 'guide'),
-(949, 2, 'démarrage'),(950, 2, 'tacticle'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
+(949, 2, 'démarrage'),(950, 2, 'tactile'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
 (957, 3, 'interfaz'),(958, 3, 'revolucionaria'),(959, 3, 'color'),(960, 3, 'pulgadas'),(961, 3, '(80211b'),(962, 3, 'espesor'),(963, 3, 'safari,'),
 (964, 3, 'youtube,'),(965, 3, 'music'),(966, 3, 'store,'),(967, 3, 'correo,'),(968, 3, 'mapas,'),(969, 3, 'bolsa,'),(970, 3, 'tiempo,'),(971, 3, 'notas'),
 (972, 3, 'cinco'),(973, 3, 'mano'),(974, 3, 'consulta'),(975, 3, 'correo'),(976, 3, 'formato'),(977, 3, 'html'),(978, 3, 'enriquecido,'),(979, 3, 'fotos'),
@@ -855,107 +870,30 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (1543, 3, 'khz)'),(1544, 3, 'frecuencias'),(1545, 3, 'longitud'),(1546, 3, 'alargador'),(1547, 3, 'caja'),(1548, 3, 'altavoces'),(1549, 3, '(almohadillas'),
 (1550, 3, 'sonoro,'),(1551, 3, 'transporte)'),(1552, 3, 'incorporated');
 
+
+INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) (SELECT 2, id_tab, 1, 1, 1, 1 FROM PREFIX_tab);
 INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES
-(2, 1, 1, 1, 1, 1),
-(2, 2, 1, 1, 1, 1),
-(2, 3, 1, 1, 1, 1),
-(2, 4, 0, 0, 0, 0),
-(2, 5, 1, 1, 1, 1),
-(2, 6, 0, 0, 0, 0),
-(2, 7, 0, 0, 0, 0),
-(2, 8, 0, 0, 0, 0),
-(2, 9, 0, 0, 0, 0),
-(2, 10, 0, 0, 0, 0),
-(2, 11, 0, 0, 0, 0),
-(2, 12, 1, 1, 1, 1),
-(2, 13, 1, 1, 1, 1),
-(2, 14, 0, 0, 0, 0),
-(2, 15, 0, 0, 0, 0),
-(2, 16, 0, 0, 0, 0),
-(2, 17, 1, 1, 1, 1),
-(2, 18, 0, 0, 0, 0),
-(2, 19, 0, 0, 0, 0),
-(2, 20, 1, 1, 1, 1),
-(2, 21, 1, 1, 1, 1),
-(2, 22, 0, 0, 0, 0),
-(2, 23, 0, 0, 0, 0),
-(2, 24, 0, 0, 0, 0),
-(2, 26, 0, 0, 0, 0),
-(2, 27, 0, 0, 0, 0),
-(2, 28, 0, 0, 0, 0),
-(2, 29, 0, 0, 0, 0),
-(2, 30, 0, 0, 0, 0),
-(2, 31, 0, 0, 0, 0),
-(2, 32, 0, 0, 0, 0),
-(2, 33, 0, 0, 0, 0),
-(2, 34, 1, 1, 1, 1),
-(2, 35, 0, 0, 0, 0),
-(2, 36, 0, 0, 0, 0),
-(2, 37, 0, 0, 0, 0),
-(2, 38, 0, 0, 0, 0),
-(2, 39, 0, 0, 0, 0),
-(2, 40, 0, 0, 0, 0),
-(2, 41, 0, 0, 0, 0),
-(2, 42, 1, 1, 1, 1),
-(2, 43, 0, 0, 0, 0),
-(2, 44, 0, 0, 0, 0),
-(2, 46, 0, 0, 0, 0),
-(2, 47, 1, 1, 1, 1),
-(2, 48, 0, 0, 0, 0),
-(2, 49, 1, 1, 1, 1),
-(2, 51, 0, 0, 0, 0),
-(2, 52, 0, 0, 0, 0),
-(2, 53, 0, 0, 0, 0),
-(2, 54, 0, 0, 0, 0),
-(2, 55, 1, 1, 1, 1),
-(2, 56, 0, 0, 0, 0),
-(2, 57, 0, 0, 0, 0),
-(2, 58, 0, 0, 0, 0),
-(2, 59, 1, 1, 1, 1),
-(2, 60, 1, 1, 1, 1),
-(2, 61, 0, 0, 0, 0),
-(2, 62, 0, 0, 0, 0),
-(2, 63, 0, 0, 0, 0),
-(2, 64, 0, 0, 0, 0),
-(2, 65, 0, 0, 0, 0),
-(2, 66, 0, 0, 0, 0),
-(2, 67, 0, 0, 0, 0),
-(2, 68, 0, 0, 0, 0),
-(2, 69, 0, 0, 0, 0),
-(2, 70, 0, 0, 0, 0),
-(2, 71, 0, 0, 0, 0),
-(2, 72, 0, 0, 0, 0),
-(2, 73, 1, 1, 1, 1),
-(2, 80, 0, 0, 0, 0),
-(2, 81, 0, 0, 0, 0),
-(2, 82, 0, 0, 0, 0),
-(2, 83, 0, 0, 0, 0),
-(2, 84, 0, 0, 0, 0),
-(2, 85, 0, 0, 0, 0),
-(2, 86, 0, 0, 0, 0),
-(2, 87, 0, 0, 0, 0),
-(2, 88, 1, 1, 1, 1),
 (3, 1, 1, 1, 1, 1),
-(3, 2, 0, 0, 0, 0),
-(3, 3, 0, 0, 0, 0),
+(3, 2, 1, 1, 1, 1),
+(3, 3, 1, 1, 1, 1),
 (3, 4, 0, 0, 0, 0),
-(3, 5, 0, 0, 0, 0),
+(3, 5, 1, 1, 1, 1),
 (3, 6, 0, 0, 0, 0),
 (3, 7, 0, 0, 0, 0),
 (3, 8, 0, 0, 0, 0),
-(3, 9, 1, 0, 0, 0),
+(3, 9, 0, 0, 0, 0),
 (3, 10, 0, 0, 0, 0),
 (3, 11, 0, 0, 0, 0),
-(3, 12, 0, 0, 0, 0),
-(3, 13, 0, 0, 0, 0),
+(3, 12, 1, 1, 1, 1),
+(3, 13, 1, 1, 1, 1),
 (3, 14, 0, 0, 0, 0),
 (3, 15, 0, 0, 0, 0),
 (3, 16, 0, 0, 0, 0),
-(3, 17, 0, 0, 0, 0),
+(3, 17, 1, 1, 1, 1),
 (3, 18, 0, 0, 0, 0),
 (3, 19, 0, 0, 0, 0),
-(3, 20, 0, 0, 0, 0),
-(3, 21, 0, 0, 0, 0),
+(3, 20, 1, 1, 1, 1),
+(3, 21, 1, 1, 1, 1),
 (3, 22, 0, 0, 0, 0),
 (3, 23, 0, 0, 0, 0),
 (3, 24, 0, 0, 0, 0),
@@ -965,9 +903,9 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (3, 29, 0, 0, 0, 0),
 (3, 30, 0, 0, 0, 0),
 (3, 31, 0, 0, 0, 0),
-(3, 32, 1, 1, 1, 1),
-(3, 33, 1, 1, 1, 1),
-(3, 34, 0, 0, 0, 0),
+(3, 32, 0, 0, 0, 0),
+(3, 33, 0, 0, 0, 0),
+(3, 34, 1, 1, 1, 1),
 (3, 35, 0, 0, 0, 0),
 (3, 36, 0, 0, 0, 0),
 (3, 37, 0, 0, 0, 0),
@@ -975,23 +913,23 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (3, 39, 0, 0, 0, 0),
 (3, 40, 0, 0, 0, 0),
 (3, 41, 0, 0, 0, 0),
-(3, 42, 0, 0, 0, 0),
-(3, 43, 1, 0, 0, 0),
+(3, 42, 1, 1, 1, 1),
+(3, 43, 0, 0, 0, 0),
 (3, 44, 0, 0, 0, 0),
 (3, 46, 0, 0, 0, 0),
-(3, 47, 0, 0, 0, 0),
+(3, 47, 1, 1, 1, 1),
 (3, 48, 0, 0, 0, 0),
-(3, 49, 0, 0, 0, 0),
+(3, 49, 1, 1, 1, 1),
 (3, 51, 0, 0, 0, 0),
 (3, 52, 0, 0, 0, 0),
 (3, 53, 0, 0, 0, 0),
 (3, 54, 0, 0, 0, 0),
-(3, 55, 0, 0, 0, 0),
+(3, 55, 1, 1, 1, 1),
 (3, 56, 0, 0, 0, 0),
-(3, 57, 1, 1, 1, 1),
+(3, 57, 0, 0, 0, 0),
 (3, 58, 0, 0, 0, 0),
-(3, 59, 0, 0, 0, 0),
-(3, 60, 0, 0, 0, 0),
+(3, 59, 1, 1, 1, 1),
+(3, 60, 1, 1, 1, 1),
 (3, 61, 0, 0, 0, 0),
 (3, 62, 0, 0, 0, 0),
 (3, 63, 0, 0, 0, 0),
@@ -1004,7 +942,7 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (3, 70, 0, 0, 0, 0),
 (3, 71, 0, 0, 0, 0),
 (3, 72, 0, 0, 0, 0),
-(3, 73, 0, 0, 0, 0),
+(3, 73, 1, 1, 1, 1),
 (3, 80, 0, 0, 0, 0),
 (3, 81, 0, 0, 0, 0),
 (3, 82, 0, 0, 0, 0),
@@ -1013,19 +951,36 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (3, 85, 0, 0, 0, 0),
 (3, 86, 0, 0, 0, 0),
 (3, 87, 0, 0, 0, 0),
-(3, 88, 1, 1, 1, 1),
+(3, 88, 0, 0, 0, 0),
+(3, 90, 0, 0, 0, 0),
+(3, 91, 0, 0, 0, 0),
+(3, 92, 0, 0, 0, 0),
+(3, 93, 1, 1, 1, 1),
+(3, 94, 1, 1, 1, 1),
+(3, 95, 1, 1, 1, 1),
+(3, 96, 1, 1, 1, 1),
+(3, 97, 1, 1, 1, 1),
+(3, 98, 1, 1, 1, 1),
+(3, 99, 1, 1, 1, 1),
+(3, 100, 1, 1, 1, 1),
+(3, 101, 1, 1, 1, 1),
+(3, 102, 1, 1, 1, 1),
+(3, 103, 1, 1, 1, 1),
+(3, 104, 1, 1, 1, 1),
+(3, 105, 0, 0, 0, 0),
+(3, 106, 0, 0, 0, 0),
 (4, 1, 1, 1, 1, 1),
-(4, 2, 1, 1, 1, 1),
-(4, 3, 1, 1, 1, 1),
+(4, 2, 0, 0, 0, 0),
+(4, 3, 0, 0, 0, 0),
 (4, 4, 0, 0, 0, 0),
 (4, 5, 0, 0, 0, 0),
-(4, 6, 1, 1, 1, 1),
+(4, 6, 0, 0, 0, 0),
 (4, 7, 0, 0, 0, 0),
 (4, 8, 0, 0, 0, 0),
-(4, 9, 0, 0, 0, 0),
-(4, 10, 1, 0, 0, 0),
+(4, 9, 1, 0, 0, 0),
+(4, 10, 0, 0, 0, 0),
 (4, 11, 0, 0, 0, 0),
-(4, 12, 1, 1, 1, 1),
+(4, 12, 0, 0, 0, 0),
 (4, 13, 0, 0, 0, 0),
 (4, 14, 0, 0, 0, 0),
 (4, 15, 0, 0, 0, 0),
@@ -1044,8 +999,8 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (4, 29, 0, 0, 0, 0),
 (4, 30, 0, 0, 0, 0),
 (4, 31, 0, 0, 0, 0),
-(4, 32, 0, 0, 0, 0),
-(4, 33, 0, 0, 0, 0),
+(4, 32, 1, 1, 1, 1),
+(4, 33, 1, 1, 1, 1),
 (4, 34, 0, 0, 0, 0),
 (4, 35, 0, 0, 0, 0),
 (4, 36, 0, 0, 0, 0),
@@ -1054,28 +1009,28 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (4, 39, 0, 0, 0, 0),
 (4, 40, 0, 0, 0, 0),
 (4, 41, 0, 0, 0, 0),
-(4, 42, 1, 1, 1, 1),
+(4, 42, 0, 0, 0, 0),
 (4, 43, 1, 0, 0, 0),
 (4, 44, 0, 0, 0, 0),
 (4, 46, 0, 0, 0, 0),
 (4, 47, 0, 0, 0, 0),
 (4, 48, 0, 0, 0, 0),
-(4, 49, 1, 1, 1, 1),
+(4, 49, 0, 0, 0, 0),
 (4, 51, 0, 0, 0, 0),
 (4, 52, 0, 0, 0, 0),
 (4, 53, 0, 0, 0, 0),
-(4, 54, 1, 1, 1, 1),
+(4, 54, 0, 0, 0, 0),
 (4, 55, 0, 0, 0, 0),
 (4, 56, 0, 0, 0, 0),
-(4, 57, 0, 0, 0, 0),
+(4, 57, 1, 1, 1, 1),
 (4, 58, 0, 0, 0, 0),
-(4, 59, 1, 1, 1, 1),
+(4, 59, 0, 0, 0, 0),
 (4, 60, 0, 0, 0, 0),
 (4, 61, 0, 0, 0, 0),
-(4, 62, 1, 1, 1, 1),
-(4, 63, 1, 1, 1, 1),
+(4, 62, 0, 0, 0, 0),
+(4, 63, 0, 0, 0, 0),
 (4, 64, 0, 0, 0, 0),
-(4, 65, 1, 1, 1, 1),
+(4, 65, 0, 0, 0, 0),
 (4, 66, 0, 0, 0, 0),
 (4, 67, 0, 0, 0, 0),
 (4, 68, 0, 0, 0, 0),
@@ -1086,57 +1041,340 @@ INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `del
 (4, 73, 0, 0, 0, 0),
 (4, 80, 0, 0, 0, 0),
 (4, 81, 0, 0, 0, 0),
-(4, 82, 1, 1, 1, 1),
+(4, 82, 0, 0, 0, 0),
 (4, 83, 0, 0, 0, 0),
 (4, 84, 0, 0, 0, 0),
 (4, 85, 0, 0, 0, 0),
 (4, 86, 0, 0, 0, 0),
 (4, 87, 0, 0, 0, 0),
-(4, 88, 1, 1, 1, 1);
+(4, 88, 0, 0, 0, 0),
+(4, 89, 0, 0, 0, 0),
+(4, 90, 0, 0, 0, 0),
+(4, 91, 0, 0, 0, 0),
+(4, 92, 0, 0, 0, 0),
+(4, 93, 1, 1, 1, 1),
+(4, 94, 1, 1, 1, 1),
+(4, 95, 0, 0, 0, 0),
+(4, 96, 0, 0, 0, 0),
+(4, 97, 0, 0, 0, 0),
+(4, 98, 0, 0, 0, 0),
+(4, 99, 0, 0, 0, 0),
+(4, 100, 0, 0, 0, 0),
+(4, 101, 1, 1, 1, 1),
+(4, 102, 1, 1, 1, 1),
+(4, 103, 1, 1, 1, 1),
+(4, 104, 1, 1, 1, 1),
+(4, 105, 1, 1, 1, 1),
+(4, 106, 1, 1, 1, 1),
+(5, 1, 1, 1, 1, 1),
+(5, 2, 1, 1, 1, 1),
+(5, 3, 1, 1, 1, 1),
+(5, 4, 0, 0, 0, 0),
+(5, 5, 0, 0, 0, 0),
+(5, 6, 1, 1, 1, 1),
+(5, 7, 0, 0, 0, 0),
+(5, 8, 0, 0, 0, 0),
+(5, 9, 0, 0, 0, 0),
+(5, 10, 1, 0, 0, 0),
+(5, 11, 0, 0, 0, 0),
+(5, 12, 1, 1, 1, 1),
+(5, 13, 0, 0, 0, 0),
+(5, 14, 0, 0, 0, 0),
+(5, 15, 0, 0, 0, 0),
+(5, 16, 0, 0, 0, 0),
+(5, 17, 0, 0, 0, 0),
+(5, 18, 0, 0, 0, 0),
+(5, 19, 0, 0, 0, 0),
+(5, 20, 0, 0, 0, 0),
+(5, 21, 0, 0, 0, 0),
+(5, 22, 0, 0, 0, 0),
+(5, 23, 0, 0, 0, 0),
+(5, 24, 0, 0, 0, 0),
+(5, 26, 0, 0, 0, 0),
+(5, 27, 0, 0, 0, 0),
+(5, 28, 0, 0, 0, 0),
+(5, 29, 0, 0, 0, 0),
+(5, 30, 0, 0, 0, 0),
+(5, 31, 0, 0, 0, 0),
+(5, 32, 0, 0, 0, 0),
+(5, 33, 0, 0, 0, 0),
+(5, 34, 0, 0, 0, 0),
+(5, 35, 0, 0, 0, 0),
+(5, 36, 0, 0, 0, 0),
+(5, 37, 0, 0, 0, 0),
+(5, 38, 0, 0, 0, 0),
+(5, 39, 0, 0, 0, 0),
+(5, 40, 0, 0, 0, 0),
+(5, 41, 0, 0, 0, 0),
+(5, 42, 1, 1, 1, 1),
+(5, 43, 1, 0, 0, 0),
+(5, 44, 0, 0, 0, 0),
+(5, 46, 0, 0, 0, 0),
+(5, 47, 0, 0, 0, 0),
+(5, 48, 0, 0, 0, 0),
+(5, 49, 1, 1, 1, 1),
+(5, 51, 0, 0, 0, 0),
+(5, 52, 0, 0, 0, 0),
+(5, 53, 0, 0, 0, 0),
+(5, 54, 1, 1, 1, 1),
+(5, 55, 0, 0, 0, 0),
+(5, 56, 0, 0, 0, 0),
+(5, 57, 0, 0, 0, 0),
+(5, 58, 0, 0, 0, 0),
+(5, 59, 1, 1, 1, 1),
+(5, 60, 0, 0, 0, 0),
+(5, 61, 0, 0, 0, 0),
+(5, 62, 1, 1, 1, 1),
+(5, 63, 1, 1, 1, 1),
+(5, 64, 0, 0, 0, 0),
+(5, 65, 1, 1, 1, 1),
+(5, 66, 0, 0, 0, 0),
+(5, 67, 0, 0, 0, 0),
+(5, 68, 0, 0, 0, 0),
+(5, 69, 0, 0, 0, 0),
+(5, 70, 0, 0, 0, 0),
+(5, 71, 0, 0, 0, 0),
+(5, 72, 0, 0, 0, 0),
+(5, 73, 0, 0, 0, 0),
+(5, 80, 0, 0, 0, 0),
+(5, 81, 0, 0, 0, 0),
+(5, 82, 1, 1, 1, 1),
+(5, 83, 0, 0, 0, 0),
+(5, 84, 0, 0, 0, 0),
+(5, 85, 0, 0, 0, 0),
+(5, 86, 0, 0, 0, 0),
+(5, 87, 0, 0, 0, 0),
+(5, 88, 0, 0, 0, 0),
+(5, 89, 0, 0, 0, 0),
+(5, 90, 0, 0, 0, 0),
+(5, 91, 0, 0, 0, 0),
+(5, 92, 0, 0, 0, 0),
+(5, 93, 1, 1, 1, 1),
+(5, 94, 1, 1, 1, 1),
+(5, 95, 1, 0, 0, 0),
+(5, 96, 0, 0, 0, 0),
+(5, 97, 0, 0, 0, 0),
+(5, 98, 0, 0, 0, 0),
+(5, 99, 0, 0, 0, 0),
+(5, 100, 1, 0, 0, 0),
+(5, 101, 1, 1, 1, 1),
+(5, 102, 1, 1, 1, 1),
+(5, 103, 1, 1, 1, 1),
+(5, 104, 1, 1, 1, 1),
+(5, 105, 0, 0, 0, 0),
+(5, 106, 0, 0, 0, 0);
 
-INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (2),(3),(4);
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 2, id_module, 0, 1 FROM PREFIX_module);
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 3, id_module, 0, 1 FROM PREFIX_module);
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 4, id_module, 0, 1 FROM PREFIX_module);
+INSERT INTO `PREFIX_module_access` (`id_profile`, `id_module`, `configure`, `view`) (SELECT 5, id_module, 0, 1 FROM PREFIX_module);
+
+INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (2),(3),(4),(5);
 INSERT INTO `PREFIX_profile_lang` (`id_lang`, `id_profile`, `name`) VALUES
-(1, 2, 'Logistician'),(2, 2, 'Logisticien'),(3, 2, 'Logistician'),(4, 2, 'Logistiker'),(5, 2, 'Logista'),
-(1, 3, 'Translator'),(2, 3, 'Traducteur'),(3, 3, 'Translator'),(4, 3, 'Übersetzer'),(5, 3, 'Traduttore'),
-(1, 4, 'Salesman'),(2, 4, 'Commercial'),(3, 4, 'Salesman'),(4, 4, 'Verkäufer'),(5, 4, 'Venditore');
+(1, 2, 'Administrator'),(2, 2, 'Administrateur'),(3, 2, 'Administrador'),(4, 2, 'Administrator'),(5, 2, 'Administrator'),
+(1, 3, 'Logistician'),(2, 3, 'Logisticien'),(3, 3, 'Logistician'),(4, 3, 'Logistiker'),(5, 3, 'Logista'),
+(1, 4, 'Translator'),(2, 4, 'Traducteur'),(3, 4, 'Translator'),(4, 4, 'Übersetzer'),(5, 4, 'Traduttore'),
+(1, 5, 'Salesman'),(2, 5, 'Commercial'),(3, 5, 'Salesman'),(4, 5, 'Verkäufer'),(5, 5, 'Venditore');
 
 INSERT INTO `PREFIX_store` (`id_store`, `id_country`, `id_state`, `name`, `address1`, `address2`, `city`, `postcode`, `latitude`, `longitude`, `hours`, `phone`, `fax`, `email`, `note`, `active`, `date_add`, `date_upd`) VALUES
 (1, 21, 9, 'Dade County', '3030 SW 8th St Miami', '', 'Miami', ' 33135', 25.765005, -80.243797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:53:13', '2010-11-09 10:53:13'),
-(2, 21, 9, 'E Fort Lauderdale', '1000 Northeast 4th Ave Fort Lauderdale', '', 'miami', ' 33304', 26.137936, -80.139435, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:56:26', '2010-11-09 10:56:26'),
-(3, 21, 9, 'Pembroke Pines', '11001 Pines Blvd Pembroke Pines', '', 'miami', '33026', 26.009987, -80.294472, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:58:42', '2010-11-09 11:01:11'),
+(2, 21, 9, 'E Fort Lauderdale', '1000 Northeast 4th Ave Fort Lauderdale', '', 'Miami', ' 33304', 26.137936, -80.139435, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:56:26', '2010-11-09 10:56:26'),
+(3, 21, 9, 'Pembroke Pines', '11001 Pines Blvd Pembroke Pines', '', 'Miami', '33026', 26.009987, -80.294472, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:58:42', '2010-11-09 11:01:11'),
 (4, 21, 9, 'Coconut Grove', '2999 SW 32nd Avenue', '', ' Miami', ' 33133', 25.736296, -80.244797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:00:38', '2010-11-09 11:04:52'),
 (5, 21, 9, 'N Miami/Biscayne', '12055 Biscayne Blvd', '', 'Miami', '33181', 25.886740, -80.163292, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:11:28', '2010-11-09 11:11:28');
 
 INSERT INTO `PREFIX_store_shop` (`id_store`, `id_shop`) (SELECT `id_store`, 1 FROM `PREFIX_store`);
 
-INSERT INTO `PREFIX_stock` (`id_stock`, `id_product`, `id_product_attribute`, `id_group_shop`, `id_shop`, `quantity`) VALUES
-(1, 1, 25, 1, 1, 150),
-(2, 1, 26, 1, 1, 120),
-(3, 1, 27, 1, 1, 230),
-(4, 1, 28, 1, 1, 150),
-(5, 1, 29, 1, 1, 120),
-(6, 1, 30, 1, 1, 230),
-(7, 1, 31, 1, 1, 150),
-(8, 1, 32, 1, 1, 120),
-(9, 1, 33, 1, 1, 230),
-(10, 1, 34, 1, 1, 150),
-(11, 1, 35, 1, 1, 120),
-(12, 1, 36, 1, 1, 230),
-(13, 1, 39, 1, 1, 150),
-(14, 1, 40, 1, 1, 120),
-(15, 1, 41, 1, 1, 230),
-(16, 1, 42, 1, 1, 150),
-(17, 2, 7, 1, 1, 120),
-(18, 2, 8, 1, 1, 230),
-(19, 2, 9, 1, 1, 150),
-(20, 2, 10, 1, 1, 120),
-(21, 5, 12, 1, 1, 230),
-(22, 5, 13, 1, 1, 150),
-(23, 5, 14, 1, 1, 120),
-(24, 5, 15, 1, 1, 230),
-(25, 6, 0, 1, 1, 230),
-(26, 7, 19, 1, 1, 150),
-(27, 7, 22, 1, 1, 120),
-(28, 7, 23, 1, 1, 230),
-(29, 8, 0, 1, 1, 230),
-(30, 9, 0, 1, 1, 150);
+INSERT INTO `PREFIX_group_module_restriction` (`id_group`, `id_module`, `authorized`) VALUES
+("1", "1", "1"),
+("1", "2", "1"),
+("1", "3", "1"),
+("1", "4", "1"),
+("1", "5", "1"),
+("1", "6", "1"),
+("1", "7", "1"),
+("1", "8", "1"),
+("1", "9", "1"),
+("1", "10", "1"),
+("1", "11", "1"),
+("1", "12", "1"),
+("1", "13", "1"),
+("1", "14", "1"),
+("1", "15", "1"),
+("1", "16", "1"),
+("1", "17", "1"),
+("1", "18", "1"),
+("1", "19", "1"),
+("1", "20", "1"),
+("1", "21", "1"),
+("1", "22", "1"),
+("1", "24", "1"),
+("1", "25", "1"),
+("1", "26", "1"),
+("1", "27", "1"),
+("1", "28", "1"),
+("1", "30", "1"),
+("1", "31", "1"),
+("1", "32", "1"),
+("1", "33", "1"),
+("1", "34", "1"),
+("1", "35", "1"),
+("1", "36", "1"),
+("1", "37", "1"),
+("1", "39", "1"),
+("1", "40", "1"),
+("1", "41", "1"),
+("1", "42", "1"),
+("1", "43", "1"),
+("1", "44", "1"),
+("1", "45", "1"),
+("1", "46", "1"),
+("1", "47", "1"),
+("1", "48", "1"),
+("1", "49", "1"),
+("1", "50", "1"),
+("1", "51", "1"),
+("1", "52", "1"),
+("1", "53", "1"),
+("1", "54", "1"),
+("1", "55", "1"),
+("2", "1", "1"),
+("2", "2", "1"),
+("2", "3", "1"),
+("2", "4", "1"),
+("2", "5", "1"),
+("2", "6", "1"),
+("2", "7", "1"),
+("2", "8", "1"),
+("2", "9", "1"),
+("2", "10", "1"),
+("2", "11", "1"),
+("2", "12", "1"),
+("2", "13", "1"),
+("2", "14", "1"),
+("2", "15", "1"),
+("2", "16", "1"),
+("2", "17", "1"),
+("2", "18", "1"),
+("2", "19", "1"),
+("2", "20", "1"),
+("2", "21", "1"),
+("2", "22", "1"),
+("2", "24", "1"),
+("2", "25", "1"),
+("2", "26", "1"),
+("2", "27", "1"),
+("2", "28", "1"),
+("2", "30", "1"),
+("2", "31", "1"),
+("2", "32", "1"),
+("2", "33", "1"),
+("2", "34", "1"),
+("2", "35", "1"),
+("2", "36", "1"),
+("2", "37", "1"),
+("2", "39", "1"),
+("2", "40", "1"),
+("2", "41", "1"),
+("2", "42", "1"),
+("2", "43", "1"),
+("2", "44", "1"),
+("2", "45", "1"),
+("2", "46", "1"),
+("2", "47", "1"),
+("2", "48", "1"),
+("2", "49", "1"),
+("2", "50", "1"),
+("2", "51", "1"),
+("2", "52", "1"),
+("2", "53", "1"),
+("2", "54", "1"),
+("2", "55", "1"),
+("3", "1", "1"),
+("3", "2", "1"),
+("3", "3", "1"),
+("3", "4", "1"),
+("3", "5", "1"),
+("3", "6", "1"),
+("3", "7", "1"),
+("3", "8", "1"),
+("3", "9", "1"),
+("3", "10", "1"),
+("3", "11", "1"),
+("3", "12", "1"),
+("3", "13", "1"),
+("3", "14", "1"),
+("3", "15", "1"),
+("3", "16", "1"),
+("3", "17", "1"),
+("3", "18", "1"),
+("3", "19", "1"),
+("3", "20", "1"),
+("3", "21", "1"),
+("3", "22", "1"),
+("3", "24", "1"),
+("3", "25", "1"),
+("3", "26", "1"),
+("3", "27", "1"),
+("3", "28", "1"),
+("3", "30", "1"),
+("3", "31", "1"),
+("3", "32", "1"),
+("3", "33", "1"),
+("3", "34", "1"),
+("3", "35", "1"),
+("3", "36", "1"),
+("3", "37", "1"),
+("3", "39", "1"),
+("3", "40", "1"),
+("3", "41", "1"),
+("3", "42", "1"),
+("3", "43", "1"),
+("3", "44", "1"),
+("3", "45", "1"),
+("3", "46", "1"),
+("3", "47", "1"),
+("3", "48", "1"),
+("3", "49", "1"),
+("3", "50", "1"),
+("3", "51", "1"),
+("3", "52", "1"),
+("3", "53", "1"),
+("3", "54", "1"),
+("3", "55", "1");
+
+INSERT INTO `PREFIX_stock_available` (`id_stock_available`, `id_product`, `id_product_attribute`, `id_shop`, `quantity`, `depends_on_stock`, `out_of_stock`) VALUES
+(1, 2, 7, 1, 10, 0, 2),
+(2, 2, 8, 1, 20, 0, 2),
+(3, 2, 9, 1, 30, 0, 2),
+(4, 2, 10, 1, 40, 0, 2),
+(5, 5, 12, 1, 100, 0, 2),
+(6, 5, 13, 1, 99, 0, 2),
+(7, 5, 14, 1, 50, 0, 2),
+(8, 5, 15, 1, 25, 0, 2),
+(9, 7, 19, 1, 50, 0, 2),
+(10, 7, 22, 1, 60, 0, 2),
+(11, 7, 23, 1, 70, 0, 2),
+(12, 1, 25, 1, 50, 0, 2),
+(13, 1, 26, 1, 50, 0, 2),
+(14, 1, 27, 1, 50, 0, 2),
+(15, 1, 28, 1, 50, 0, 2),
+(16, 1, 29, 1, 50, 0, 2),
+(17, 1, 30, 1, 50, 0, 2),
+(18, 1, 31, 1, 50, 0, 2),
+(19, 1, 32, 1, 50, 0, 2),
+(20, 1, 33, 1, 50, 0, 2),
+(21, 1, 34, 1, 50, 0, 2),
+(22, 1, 35, 1, 50, 0, 2),
+(23, 1, 36, 1, 50, 0, 2),
+(24, 1, 39, 1, 50, 0, 2),
+(25, 1, 40, 1, 50, 0, 2),
+(26, 1, 41, 1, 50, 0, 2),
+(27, 1, 42, 1, 50, 0, 2),
+(28, 6, 0, 1, 4, 0, 2),
+(29, 8, 0, 1, 8, 0, 2),
+(30, 9, 0, 1, 15, 0, 2);
+
+INSERT INTO `PREFIX_order_carrier` (`id_order`, `id_carrier`, `date_add`) VALUES
+(1, 2, NOW());
+

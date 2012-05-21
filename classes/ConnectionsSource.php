@@ -43,7 +43,7 @@ class ConnectionsSourceCore extends ObjectModel
 	
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_connections'] = (int)($this->id_connections);
 		$fields['http_referer'] = pSQL($this->http_referer);
 		$fields['request_uri'] = pSQL($this->request_uri);
@@ -54,15 +54,15 @@ class ConnectionsSourceCore extends ObjectModel
 	
 	public function add($autodate = true, $nullValues = false)
 	{
-		if($result = parent::add($autodate, $nullValues))
+		if ($result = parent::add($autodate, $nullValues))
 			Referrer::cacheNewSource($this->id);
 		return $result;
 	}
 	
-	public static function logHttpReferer()
+	public static function logHttpReferer(Cookie $cookie = null)
 	{
-		global $cookie;
-
+		if (!$cookie)
+			$cookie = Context::getContext()->cookie;
 		if (!isset($cookie->id_connections) OR !Validate::isUnsignedId($cookie->id_connections))
 			return false;
 		if (!isset($_SERVER['HTTP_REFERER']) AND !Configuration::get('TRACKING_DIRECT_TRAFFIC'))
@@ -85,7 +85,7 @@ class ConnectionsSourceCore extends ObjectModel
 			}
 		}
 		
-		$source->id_connections = (int)($cookie->id_connections);
+		$source->id_connections = (int)$cookie->id_connections;
 		$source->request_uri = Tools::getHttpHost(false, false);
 		if (isset($_SERVER['REDIRECT_URL']))
 			$source->request_uri .= strval($_SERVER['REDIRECT_URL']);
@@ -98,7 +98,7 @@ class ConnectionsSourceCore extends ObjectModel
 	
 	public static function getOrderSources($id_order)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT cos.http_referer, cos.request_uri, cos.keywords, cos.date_add
 		FROM '._DB_PREFIX_.'orders o
 		INNER JOIN '._DB_PREFIX_.'guest g ON g.id_customer = o.id_customer
@@ -108,5 +108,3 @@ class ConnectionsSourceCore extends ObjectModel
 		ORDER BY cos.date_add DESC');
 	}
 }
-
-

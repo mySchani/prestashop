@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -29,19 +29,22 @@ class ProductDownloadCore extends ObjectModel
 {
 	/** @var integer Product id which download belongs */
 	public $id_product;
-	
+
+	/** @var integer Attribute Product id which download belongs */
+	public $id_product_attribute;
+
 	/** @var string DisplayFilename the name which appear */
 	public $display_filename;
 
 	/** @var string PhysicallyFilename the name of the file on hard disk */
-	public $physically_filename;
-	
+	public $filename;
+
 	/** @var string DateDeposit when the file is upload */
-	public $date_deposit;
+	public $date_add;
 
 	/** @var string DateExpiration deadline of the file */
 	public $date_expiration;
-	
+
 	/** @var string NbDaysAccessible how many days the customer can access to file */
 	public $nb_days_accessible;
 
@@ -51,78 +54,116 @@ class ProductDownloadCore extends ObjectModel
 	/** @var boolean Active if file is accessible or not */
 	public $active = 1;
 
+	/** @var boolean is_shareable indicates whether the product can be shared */
+	public $is_shareable = 0;
+
 	protected static $_productIds = array();
 
 	protected	$fieldsRequired = array(
-		'id_product',
-		'display_filename'
+		'id_product'
 	);
+
 	protected	$fieldsSize = array(
 		'display_filename' => 255,
-		'physically_filename' => 255,
-		'date_deposit' => 20,
+		'filename' => 255,
+		'date_add' => 20,
 		'date_expiration' => 20,
 		'nb_days_accessible' => 10,
 		'nb_downloadable' => 10,
-		'active' => 1
+		'active' => 1,
+		'is_shareable' => 1
 	);
 	protected	$fieldsValidate = array(
 		'id_product' => 'isUnsignedId',
+		'id_product_attribute ' => 'isUnsignedId',
 		'display_filename' => 'isGenericName',
-		'physically_filename' => 'isSha1',
-		'date_deposit' => 'isDate',
+		'filename' => 'isSha1',
+		'date_add' => 'isDate',
 		'date_expiration' => 'isDate',
 		'nb_days_accessible' => 'isUnsignedInt',
 		'nb_downloadable' => 'isUnsignedInt',
-		'active' => 'isUnsignedInt'
+		'active' => 'isUnsignedInt',
+		'is_shareable' => 'isUnsignedInt'
 	);
 
 	protected $table = 'product_download';
 	protected $identifier = 'id_product_download';
-	
+
 	/**
 	 * Build a virtual product
 	 *
 	 * @param integer $id_product_download Existing productDownload id in order to load object (optional)
 	 */
-	public function __construct($id_product_download = NULL)
+	public function __construct($id_product_download = null)
 	{
 		parent::__construct($id_product_download);
-		// TODO check if the file is present on hard drive
+		// @TODO check if the file is present on hard drive
 	}
-	
-	public function delete($deleteFile=false)
+
+	public function add($autodate = true, $nullValues = false)
+	{
+		if (parent::add($autodate, $nullValues))
+		{
+			// Set cache of feature detachable to true
+			if ($this->active)
+				Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', '1');
+			return true;
+		}
+		return false;
+	}
+
+	public function update($nullValues = false)
+	{
+		if (parent::update($nullValues))
+		{
+			// Refresh cache of feature detachable because the row can be deactive
+			Configuration::updateGlobalValue('PS_VIRTUAL_PROD_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+			return true;
+		}
+		return false;
+	}
+
+	public function delete($deleteFile = false)
 	{
 		if ($deleteFile)
-			$this->deleteFile();
+			return $this->deleteFile();
+		return true;
 	}
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
+		$date_expiration = $this->date_expiration;
+		if (!$date_expiration)
+			$date_expiration = '0000-00-00 00:00:00';
 
-		$fields['id_product'] = (int)($this->id_product);
+		$fields['id_product'] = (int)$this->id_product;
+		$fields['id_product_attribute'] = pSQL($this->id_product_attribute);
 		$fields['display_filename'] = pSQL($this->display_filename);
-		$fields['physically_filename'] = pSQL($this->physically_filename);
-		$fields['date_deposit'] = pSQL($this->date_deposit);
-		$fields['date_expiration'] = pSQL($this->date_expiration);
-		$fields['nb_days_accessible'] = (int)($this->nb_days_accessible);
-		$fields['nb_downloadable'] = (int)($this->nb_downloadable);
-		$fields['active'] = (int)($this->active);
+		$fields['filename'] = pSQL($this->filename);
+		$fields['date_add'] = pSQL($this->date_add);
+		$fields['date_expiration'] = pSQL($date_expiration);
+		$fields['nb_days_accessible'] = (int)$this->nb_days_accessible;
+		$fields['nb_downloadable'] = (int)$this->nb_downloadable;
+		$fields['active'] = (int)$this->active;
+		$fields['is_shareable'] = (int)$this->is_shareable;
 		return $fields;
 	}
 
-
 	/**
 	 * Delete the file
+	 * @param int $id_product_download : if we need to delete a specific product attribute file
 	 *
 	 * @return boolean
 	 */
-	public function deleteFile()
+	public function deleteFile($id_product_download = NULL)
 	{
 		if (!$this->checkFile())
 			return false;
-		return unlink(_PS_DOWNLOAD_DIR_.$this->physically_filename);
+		
+		return unlink(_PS_DOWNLOAD_DIR_.$this->filename) && Db::getInstance()->Execute('DELETE
+			FROM `'._DB_PREFIX_.'product_download` 
+			WHERE `id_product_download` = '.(int)$id_product_download);
 	}
 
 	/**
@@ -132,8 +173,8 @@ class ProductDownloadCore extends ObjectModel
 	 */
 	public function checkFile()
 	{
-		if (!$this->physically_filename) return false;
-		return file_exists(_PS_DOWNLOAD_DIR_.$this->physically_filename);
+		if (!$this->filename) return false;
+		return file_exists(_PS_DOWNLOAD_DIR_.$this->filename);
 	}
 
 	/**
@@ -141,7 +182,7 @@ class ProductDownloadCore extends ObjectModel
 	 *
 	 * @return boolean
 	 */
-	static public function checkWritableDir()
+	public static function checkWritableDir()
 	{
 		return is_writable(_PS_DOWNLOAD_DIR_);
 	}
@@ -154,17 +195,72 @@ class ProductDownloadCore extends ObjectModel
 	 */
 	public static function getIdFromIdProduct($id_product)
 	{
+		if (!self::isFeatureActive())
+			return false;
 		if (array_key_exists($id_product, self::$_productIds))
 			return self::$_productIds[$id_product];
-			
-		$data = Db::getInstance()->getRow('
+		self::$_productIds[$id_product] = (int)Db::getInstance()->getValue('
 		SELECT `id_product_download`
 		FROM `'._DB_PREFIX_.'product_download`
-		WHERE `id_product` = '.(int)($id_product).' AND `active` = 1');
-		
-		self::$_productIds[$id_product] = isset($data['id_product_download']) ? (int)($data['id_product_download']) : false;
-		
+		WHERE `id_product` = '.(int)$id_product.' 
+		AND `active` = 1
+		ORDER BY `id_product_download` DESC');
+
 		return self::$_productIds[$id_product];
+	}
+
+	/**
+	 * Return the id_product_download from an id_product
+	 * @since 1.5.0.1
+	 * @param int $id_product Product the id
+	 * @return integer Product the id for this virtual product
+	 */
+	public static function getIdFromIdAttribute($id_product, $id_product_attribute)
+	{
+		if (!self::isFeatureActive())
+			return false;
+		if (array_key_exists($id_product_attribute, self::$_productIds))
+			return self::$_productIds[$id_product];	
+		self::$_productIds[$id_product_attribute] = (int)Db::getInstance()->getValue('
+		SELECT `id_product_download`
+		FROM `'._DB_PREFIX_.'product_download`
+		WHERE `id_product` = '.(int)$id_product.'
+		AND `id_product_attribute` = '.(int)$id_product_attribute.' AND `active` = 1');
+		return self::$_productIds[$id_product_attribute];
+	}
+
+	/**
+	 * Return the display filename from a physical filename
+	 *
+	 * @since 1.5.0.1
+	 *
+	 * @param string $filename Filename physically
+	 * @return integer Product the id for this virtual product
+	 *
+	 */
+	public static function getAttributeFromIdProduct($id_product)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
+		SELECT `id_product_download`
+		FROM `'._DB_PREFIX_.'product_download`
+		WHERE `id_product` = '.(int)$id_product.' AND `active` = 1');
+	}
+
+	/**
+	 * Return the display filename from a physical filename
+	 *
+	 * @since 1.5.0.1
+	 *
+	 * @param string $filename Filename physically
+	 * @return integer Product the id for this virtual product
+	 *
+	 */
+	public static function getIdFromFilename($filename)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT `id_product_download`
+		FROM `'._DB_PREFIX_.'product_download`
+		WHERE `filename` = \''.pSQL($filename).'\'');
 	}
 
 	/**
@@ -175,26 +271,42 @@ class ProductDownloadCore extends ObjectModel
 	 */
 	public static function getFilenameFromIdProduct($id_product)
 	{
-		$data = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-		SELECT `physically_filename`
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT `filename`
 		FROM `'._DB_PREFIX_.'product_download`
-		WHERE `id_product` = '.(int)($id_product).'
+		WHERE `id_product` = '.(int)$id_product.'
 		AND `active` = 1');
-		return $data['physically_filename'];
+	}
+	
+	/**
+	 * Return the filename from an id_product_attribute
+	 *
+	 * @param int $id_product Product the id
+	 * @param int $id_product_attribute Attribute the id
+	 * @return string Filename the filename for this virtual product
+	 */
+	public static function getFilenameFromIdAttribute($id_product, $id_product_attribute)
+	{
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+		SELECT `filename`
+		FROM `'._DB_PREFIX_.'product_download`
+		WHERE `id_product` = '.(int)$id_product.'
+		AND `id_product_attribute` = '.(int)$id_product_attribute.'
+		AND `active` = 1');
 	}
 
 	/**
 	 * Return the display filename from a physical filename
 	 *
-	 * @param string $physically_filename Filename physically
+	 * @param string $filename Filename physically
 	 * @return string Filename the display filename for this virtual product
 	 */
-	public static function getFilenameFromFilename($physically_filename)
+	public static function getFilenameFromFilename($filename)
 	{
 		return Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
 		SELECT `display_filename`
 		FROM `'._DB_PREFIX_.'product_download`
-		WHERE `physically_filename` = \''.pSQL($physically_filename).'\'');
+		WHERE `filename` = \''.pSQL($filename).'\'');
 	}
 
 	/**
@@ -205,11 +317,11 @@ class ProductDownloadCore extends ObjectModel
 	 * @param string $hash hash code in table order detail (optionnal)
 	 * @return string Html all the code for print a link to the file
 	 */
-	public function getTextLink($admin=true, $hash=false)
+	public function getTextLink($admin = true, $hash = false)
 	{
-		$key = $this->physically_filename . '-' . ($hash ? $hash : 'orderdetail');
-		$link = ($admin) ? './index.php?controller=get-file-admin' : Tools::getHttpHost(true, true).'index.php?controller=get-file';
-		$link .= ($admin) ? 'file='.$this->physically_filename : 'key='.$key;
+		$key = $this->filename . '-' . ($hash ? $hash : 'orderdetail');
+		$link = ($admin) ? 'get-file-admin.php?' : _PS_BASE_URL_.__PS_BASE_URI__.'index.php?controller=get-file&';
+		$link .= ($admin) ? 'file='.$this->filename : 'key='.$key;
 		return $link;
 	}
 
@@ -259,7 +371,7 @@ class ProductDownloadCore extends ObjectModel
 	 *
 	 * @return string Sha1 unique filename
 	 */
-	static public function getNewFilename()
+	public static function getNewFilename()
 	{
 		$ret = sha1(microtime());
 		if (file_exists(_PS_DOWNLOAD_DIR_.$ret))
@@ -267,6 +379,13 @@ class ProductDownloadCore extends ObjectModel
 		return $ret;
 	}
 
+	/**
+	 * This method is allow to know if a feature is used or active
+	 * @since 1.5.0.1
+	 * @return bool
+	 */
+	public static function isFeatureActive()
+	{
+		return Configuration::get('PS_VIRTUAL_PROD_FEATURE_ACTIVE');
+	}
 }
-
-

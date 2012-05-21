@@ -104,11 +104,7 @@ class PDFCore extends PDF_PageGroupCore
 	*/
 	public function __construct($orientation='P', $unit='mm', $format='A4')
 	{
-		global $cookie;
-
-		if (!isset($cookie) OR !is_object($cookie))
-			$cookie->id_lang = (int)(Configuration::get('PS_LANG_DEFAULT'));
-		self::$_iso = strtoupper(Language::getIsoById($cookie->id_lang));
+		self::$_iso = strtoupper(Context::getContext()->language->iso_code);
 		FPDF::FPDF($orientation, $unit, $format);
 		$this->_initPDFFonts();
 	}
@@ -132,6 +128,10 @@ class PDFCore extends PDF_PageGroupCore
 			$this->AddFont($font);
 			$this->AddFont($font, 'B');
 		}
+		
+		/* If the user is using a ISO code no present in the languages, use the first language available instead */
+		if (!isset(self::$_pdfparams[self::$_iso]) && isset($languages[0]['iso_code']))
+			self::$_iso = strtoupper($languages[0]['iso_code']);
 	}
 
 	/**
@@ -139,8 +139,7 @@ class PDFCore extends PDF_PageGroupCore
 	*/
 	public function Header()
 	{
-		global $cookie;
-
+		$context = Context::getContext();
 		$conf = Configuration::getMultiple(array('PS_SHOP_NAME', 'PS_SHOP_ADDR1', 'PS_SHOP_CODE', 'PS_SHOP_CITY', 'PS_SHOP_COUNTRY', 'PS_SHOP_STATE'));
 		$conf['PS_SHOP_NAME'] = isset($conf['PS_SHOP_NAME']) ? Tools::iconv('utf-8', self::encoding(), $conf['PS_SHOP_NAME']) : 'Your company';
 		$conf['PS_SHOP_ADDR1'] = isset($conf['PS_SHOP_ADDR1']) ? Tools::iconv('utf-8', self::encoding(), $conf['PS_SHOP_ADDR1']) : 'Your company';
@@ -150,9 +149,19 @@ class PDFCore extends PDF_PageGroupCore
 		$conf['PS_SHOP_STATE'] = isset($conf['PS_SHOP_STATE']) ? Tools::iconv('utf-8', self::encoding(), $conf['PS_SHOP_STATE']) : '';
 
 		if (file_exists(_PS_IMG_DIR_.'/logo_invoice.jpg'))
+		{
+			if ($this->_isPngFile(_PS_IMG_DIR_.'/logo_invoice.jpg'))
+				$this->Image(_PS_IMG_DIR_.'/logo_invoice.jpg', 10, 8, 0, 15, 'PNG');
+			else
 			$this->Image(_PS_IMG_DIR_.'/logo_invoice.jpg', 10, 8, 0, 15);
+		}
 		else if (file_exists(_PS_IMG_DIR_.'/logo.jpg'))
+		{
+			if ($this->_isPngFile(_PS_IMG_DIR_.'/logo.jpg'))
+				$this->Image(_PS_IMG_DIR_.'/logo.jpg', 10, 8, 0, 15, 'PNG');
+			else			
 			$this->Image(_PS_IMG_DIR_.'/logo.jpg', 10, 8, 0, 15);
+		}
 		$this->SetFont(self::fontname(), 'B', 15);
 		$this->Cell(115);
 
@@ -161,14 +170,39 @@ class PDFCore extends PDF_PageGroupCore
 		elseif (self::$orderSlip)
 			$this->Cell(77, 10, self::l('SLIP #').' '.sprintf('%06d', self::$orderSlip->id), 0, 1, 'R');
 		elseif (self::$delivery)
-			$this->Cell(77, 10, self::l('DELIVERY SLIP #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_DELIVERY_PREFIX', (int)($cookie->id_lang))).sprintf('%06d', self::$delivery), 0, 1, 'R');
+			$this->Cell(77, 10, self::l('DELIVERY SLIP #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_DELIVERY_PREFIX', $context->language->id)).sprintf('%06d', self::$delivery), 0, 1, 'R');
 		elseif (self::$order->invoice_number)
-			$this->Cell(77, 10, self::l('INVOICE #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_INVOICE_PREFIX', (int)($cookie->id_lang))).sprintf('%06d', self::$order->invoice_number), 0, 1, 'R');
+			$this->Cell(77, 10, self::l('INVOICE #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_INVOICE_PREFIX', $context->language->id)).sprintf('%06d', self::$order->invoice_number), 0, 1, 'R');
 		else
 			$this->Cell(77, 10, self::l('ORDER #').' '.sprintf('%06d', self::$order->id), 0, 1, 'R');
    }
 
    /*
+	* Detect if the file header match a PNG file
+	* 
+	* @param string $file Filename to check (include full path)
+	* @return boolean True if the file is a PNG file
+	*/
+	private function _isPngFile($file)
+	{
+		$pngReferenceHeader = array(137, 80, 78, 71, 13, 10, 26, 10);
+		$fp = fopen($file, 'r');
+		if ($fp)
+		{
+			for ($n = 0; $n < 8; $n++)
+				if (ord(fread($fp, 1)) !== $pngReferenceHeader[$n])
+				{
+					fclose($fp);
+					return false;
+				}
+		}
+		else
+			return false;
+
+		return true;
+	}
+
+	/*
     * Return the complete Address format
     */
    private function _getCompleteUSAddressFormat($conf)
@@ -193,29 +227,28 @@ class PDFCore extends PDF_PageGroupCore
     */
    private function _builMerchantFooterDetail($conf)
    {
-   	$footerText;
-   	
-   	// If the country is USA
-   	if ($conf['PS_SHOP_COUNTRY_ID'] == 21)
-   	{
-   		$completeAddressShop = $this->_getCompleteUSAddressFormat($conf);
-   	
-   		$footerText = self::l('Headquarters:')."\n".
-				$conf['PS_SHOP_NAME_UPPER']."\n".
-				(isset($conf['PS_SHOP_ADDR1']) && !empty($conf['PS_SHOP_ADDR1']) ? $conf['PS_SHOP_ADDR1']."\n" : '').
-				(isset($conf['PS_SHOP_ADDR2']) && !empty($conf['PS_SHOP_ADDR2']) ? $conf['PS_SHOP_ADDR2']."\n" : '').
-				(!empty($completeAddressShop) ? $completeAddressShop."\n" : '').
-				(isset($conf['PS_SHOP_COUNTRY']) && !empty($conf['PS_SHOP_COUNTRY']) ? $conf['PS_SHOP_COUNTRY']."\n" : '').
-				((isset($conf['PS_SHOP_PHONE']) && !empty($conf['PS_SHOP_PHONE'])) ? self::l('PHONE:').' '.$conf['PS_SHOP_PHONE'] : '');
-   	}
-   	else 
-   	{
-   		$footerText = $conf['PS_SHOP_NAME_UPPER'].(!empty($conf['PS_SHOP_ADDR1']) ? ' - '.self::l('Headquarters:').' '.$conf['PS_SHOP_ADDR1'].
-   			(!empty($conf['PS_SHOP_ADDR2']) ? ' '.$conf['PS_SHOP_ADDR2'] : '').' '.$conf['PS_SHOP_CODE'].' '.$conf['PS_SHOP_CITY'].
-   			((isset($conf['PS_SHOP_STATE']) AND !empty($conf['PS_SHOP_STATE'])) ? (', '.$conf['PS_SHOP_STATE']) : '').' '.$conf['PS_SHOP_COUNTRY'] : '').
-   			"\n".(!empty($conf['PS_SHOP_DETAILS']) ? self::l('Details:').' '.$conf['PS_SHOP_DETAILS'].' - ' : '').
-				(!empty($conf['PS_SHOP_PHONE']) ? self::l('PHONE:').' '.$conf['PS_SHOP_PHONE'] : '');
-   	}		
+		// If the country is USA
+	   	if (Context::getContext()->country->iso_code == 'US')
+	   	{
+	   		$completeAddressShop = $this->_getCompleteUSAddressFormat($conf);
+	   	
+	   		$footerText = self::l('Headquarters:')."\n".
+					$conf['PS_SHOP_NAME_UPPER']."\n".
+					(isset($conf['PS_SHOP_ADDR1']) && !empty($conf['PS_SHOP_ADDR1']) ? $conf['PS_SHOP_ADDR1']."\n" : '').
+					(isset($conf['PS_SHOP_ADDR2']) && !empty($conf['PS_SHOP_ADDR2']) ? $conf['PS_SHOP_ADDR2']."\n" : '').
+					(!empty($completeAddressShop) ? $completeAddressShop."\n" : '').
+					(isset($conf['PS_SHOP_COUNTRY']) && !empty($conf['PS_SHOP_COUNTRY']) ? $conf['PS_SHOP_COUNTRY']."\n" : '').
+					((isset($conf['PS_SHOP_PHONE']) && !empty($conf['PS_SHOP_PHONE'])) ? self::l('PHONE:').' '.$conf['PS_SHOP_PHONE'] : '');
+	   	}
+	   	else 
+	   	{
+	   		$footerText = $conf['PS_SHOP_NAME_UPPER'].(!empty($conf['PS_SHOP_ADDR1']) ? ' - '.self::l('Headquarters:').' '.$conf['PS_SHOP_ADDR1'].
+	   			(!empty($conf['PS_SHOP_ADDR2']) ? ' '.$conf['PS_SHOP_ADDR2'] : '').' '.$conf['PS_SHOP_CODE'].' '.$conf['PS_SHOP_CITY'].
+	   			((isset($conf['PS_SHOP_STATE']) AND !empty($conf['PS_SHOP_STATE'])) ? (', '.$conf['PS_SHOP_STATE']) : '').' '.$conf['PS_SHOP_COUNTRY'] : '').
+	   			"\n".(!empty($conf['PS_SHOP_DETAILS']) ? self::l('Details:').' '.$conf['PS_SHOP_DETAILS'].' - ' : '').
+					(!empty($conf['PS_SHOP_PHONE']) ? self::l('PHONE:').' '.$conf['PS_SHOP_PHONE'] : '');
+	   	}		
+
 		return $footerText;
    }
    
@@ -255,6 +288,14 @@ class PDFCore extends PDF_PageGroupCore
 		$this->SetY(-(21.0 + (4 * $totalLineDetailFooter)) - ($y_delta * 7.0));
 		$this->SetFont(self::fontname(), '', 7);
 		$this->Cell(190, 5, ' '."\n".Tools::iconv('utf-8', self::encoding(), 'P. ').$this->GroupPageNo().' / '.$this->PageGroupAlias(), 'T', 1, 'R');
+
+		global $cookie;
+		if (Configuration::get('PS_INVOICE_FREE_TEXT', $cookie->id_lang))
+		{
+
+			$this->Cell(0, 10, utf8_decode(Configuration::get('PS_INVOICE_FREE_TEXT', $cookie->id_lang)), 0, 0, 'C', 0);
+			$this->Ln(4);
+		}
 
 		/*
 		 * Display a message for customer
@@ -434,9 +475,10 @@ class PDFCore extends PDF_PageGroupCore
 	 */
 	public static function generateHeaderAddresses(&$pdf, $order, $addressType, $patternRules, $width)
 	{
+		
 		$maxY = 0;
 		$pdf->setY($pdf->GetY() + 5);
-		foreach($addressType as $type => $idNameAttribute)
+		foreach(array_keys($addressType) as $type)
 		{
 			$currentY = $pdf->GetY();
 			
@@ -454,9 +496,21 @@ class PDFCore extends PDF_PageGroupCore
 					$tmp = '';
 					foreach($patternsList as $pattern)
 						if (!in_array($pattern, $patternRules['avoid']))
+						{
+							if ($pattern == 'State:name' && 
+								Context::getContext()->country->iso_code == 'US')
+							{
+								$state_name = &$addressType[$type]['addressFormatedValues'][$pattern];
+								$state = new State((int)State::getIdByName($state_name));
+								if (Validate::isLoadedObject($state))
+									$state_name = $state->iso_code;
+								else 
+									$state_name = strtoupper(substr($state_name, 0, 2));
+							}
 							$tmp .= ((isset($addressType[$type]['addressFormatedValues'][$pattern]) && 
 								!empty($addressType[$type]['addressFormatedValues'][$pattern])) ?
 								(Tools::iconv('utf-8', self::encoding(), $addressType[$type]['addressFormatedValues'][$pattern]).' ') : '');
+						}
 					$tmp = trim($tmp);
 					$addressType[$type]['displayed'] .= (!empty($tmp)) ? $tmp."\n" : '';
 				}
@@ -481,11 +535,12 @@ class PDFCore extends PDF_PageGroupCore
 	* @param object $order Order
 	* @param string $mode Download or display (optional)
 	*/
-	public static function invoice($order, $mode = 'D', $multiple = false, &$pdf = NULL, $slip = false, $delivery = false)
+	public static function invoice($order, $mode = 'D', $multiple = false, &$pdf = NULL, $slip = false, $delivery = false, Context $context = null)
 	{
-	 	global $cookie;
+	 	if (!$context)
+	 		$context = Context::getContext();
 
-		if (!Validate::isLoadedObject($order) OR (!$cookie->id_employee AND (!OrderState::invoiceAvailable($order->getCurrentState()) AND !$order->invoice_number)))
+		if (!Validate::isLoadedObject($order) OR (!Validate::isLoadedObject($context->employee) AND (!OrderState::invoiceAvailable($order->getCurrentState()) AND !$order->invoice_number)))
 			die('Invalid order or invalid order state');
 		self::$order = $order;
 		self::$orderSlip = $slip;
@@ -551,7 +606,7 @@ class PDFCore extends PDF_PageGroupCore
 				$carrier->name = Configuration::get('PS_SHOP_NAME');
 		$history = self::$order->getHistory(self::$order->id_lang);
 		foreach($history as $h)
-			if ($h['id_order_state'] == _PS_OS_SHIPPING_)
+			if ($h['id_order_state'] == Configuration::get('PS_OS_SHIPPING'))
 				$shipping_date = $h['date_add'];
 		$pdf->Ln(12);
 		$pdf->SetFillColor(240, 240, 240);
@@ -560,9 +615,12 @@ class PDFCore extends PDF_PageGroupCore
 		if (self::$orderSlip)
 			$pdf->Cell(0, 6, self::l('SLIP #').' '.sprintf('%06d', self::$orderSlip->id).' '.self::l('from') . ' ' .Tools::displayDate(self::$orderSlip->date_upd, self::$order->id_lang), 1, 2, 'L', 1);
 		elseif (self::$delivery)
-			$pdf->Cell(0, 6, self::l('DELIVERY SLIP #').Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_DELIVERY_PREFIX', (int)($cookie->id_lang))).sprintf('%06d', self::$delivery).' '.self::l('from') . ' ' .Tools::displayDate(self::$order->delivery_date, self::$order->id_lang), 1, 2, 'L', 1);
+			$pdf->Cell(0, 6, self::l('DELIVERY SLIP #').Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_DELIVERY_PREFIX', $context->language->id)).sprintf('%06d', self::$delivery).' '.self::l('from') . ' ' .Tools::displayDate(self::$order->delivery_date, self::$order->id_lang), 1, 2, 'L', 1);
+		elseif ((int)self::$order->invoice_date)
+			$pdf->Cell(0, 6, self::l('INVOICE #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_INVOICE_PREFIX', $context->language->id)).sprintf('%06d', self::$order->invoice_number).' '.self::l('from') . ' ' .Tools::displayDate(self::$order->invoice_date, self::$order->id_lang), 1, 2, 'L', 1);
 		else
-			$pdf->Cell(0, 6, self::l('INVOICE #').' '.Tools::iconv('utf-8', self::encoding(), Configuration::get('PS_INVOICE_PREFIX', (int)($cookie->id_lang))).sprintf('%06d', self::$order->invoice_number).' '.self::l('from') . ' ' .Tools::displayDate(self::$order->invoice_date, self::$order->id_lang), 1, 2, 'L', 1);
+			$pdf->Cell(0, 6, self::l('Invoice draft'), 1, 2, 'L', 1);
+
 		$pdf->Cell(55, 6, self::l('Order #').' '.sprintf('%06d', self::$order->id), 'L', 0);
 		$pdf->Cell(70, 6, self::l('Carrier:').($order->gift ? ' '.Tools::iconv('utf-8', self::encoding(), $carrier->name) : ''), 'L');
 		$pdf->Cell(0, 6, self::l('Payment method:'), 'LR');
@@ -572,6 +630,22 @@ class PDFCore extends PDF_PageGroupCore
 		$pdf->Cell(0, 6, Tools::iconv('utf-8', self::encoding(), $order->payment), 'LRB');
 		$pdf->Ln(15);
 		$pdf->ProdTab((self::$delivery ? true : ''));
+
+
+
+		/* Canada */
+		$taxable_address = new Address((int)self::$order->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
+		if (!self::$delivery && strtoupper(Country::getIsoById((int)$taxable_address->id_country)) == 'CA')
+		{
+			$pdf->Ln(15);
+			$taxToDisplay = Db::getInstance()->ExecuteS('SELECT * FROM '._DB_PREFIX_.'order_tax WHERE id_order = '.(int)self::$order->id);
+			foreach ($taxToDisplay AS $t)
+			{
+				$pdf->Cell(0, 6, utf8_decode($t['tax_name']).' ('.number_format($t['tax_rate'], 2, '.', '').'%)      '.self::convertSign(Tools::displayPrice($t['amount'], self::$currency, true)), 0, 0, 'R');
+				$pdf->Ln(5);
+			}
+		}
+		/* End */
 
 		/* Exit if delivery */
 		if (!self::$delivery)
@@ -725,7 +799,7 @@ class PDFCore extends PDF_PageGroupCore
 				$products = self::$order->getProducts();
 		}
 		else
-			$products = self::$orderSlip->getProducts();
+			$products = self::$orderSlip->getOrdersSlipProducts(self::$orderSlip->id, self::$order);
 		$customizedDatas = Product::getAllCustomizedDatas((int)(self::$order->id_cart));
 		Product::addCustomizationPrice($products, $customizedDatas);
 
@@ -782,11 +856,11 @@ class PDFCore extends PDF_PageGroupCore
 						$customizationGroup = $customizedData['datas'];
 						$nb_images = 0;
 						
-						if (array_key_exists(_CUSTOMIZE_FILE_, $customizationGroup))
-							$nb_images = sizeof($customizationGroup[_CUSTOMIZE_FILE_]);
+						if (array_key_exists(Product::CUSTOMIZE_FILE, $customizationGroup))
+							$nb_images = sizeof($customizationGroup[Product::CUSTOMIZE_FILE]);
 
-						if (array_key_exists(_CUSTOMIZE_TEXTFIELD_, $customizationGroup))
-							foreach($customizationGroup[_CUSTOMIZE_TEXTFIELD_] as $customization)
+						if (array_key_exists(Product::CUSTOMIZE_TEXTFIELD, $customizationGroup))
+							foreach($customizationGroup[Product::CUSTOMIZE_TEXTFIELD] as $customization)
 								if(!empty($customization['name'])) $custoLabel .= '- '.$customization['name'].': '.$customization['value']."\n"; 
 								
 						
@@ -824,7 +898,7 @@ class PDFCore extends PDF_PageGroupCore
 					$this->MultiCell($w[++$i], 5, Tools::iconv('utf-8', self::encoding(), $product['product_name']), 'B');
 					$lineSize = $this->GetY() - $before;
 					$this->SetXY($this->GetX() + $w[0] + ($delivery ? 15 : 0), $this->GetY() - $lineSize);
-					$this->Cell($w[++$i], $lineSize, ($product['product_reference'] ? $product['product_reference'] : '--'), 'B');
+					$this->Cell($w[++$i], $lineSize, ($product['product_reference'] ? Tools::iconv('utf-8', self::encoding(), $product['product_reference']) : '--'), 'B');
 					if (!$delivery)
 						$this->Cell($w[++$i], $lineSize, (self::$orderSlip ? '-' : '').self::convertSign(Tools::displayPrice($unit_price, self::$currency, true)), 'B', 0, 'R');
 					$this->Cell($w[++$i], $lineSize, $productQuantity, 'B', 0, 'C');
@@ -834,7 +908,7 @@ class PDFCore extends PDF_PageGroupCore
 				}
 			}
 
-		if (!sizeof(self::$order->getDiscounts()) AND !$delivery)
+		if (!sizeof(self::$order->getCartRules()) AND !$delivery)
 			$this->Cell(array_sum($w), 0, '');
 	}
 
@@ -845,7 +919,7 @@ class PDFCore extends PDF_PageGroupCore
 	{
 		$w = array(90, 25, 15, 10, 25, 25);
 		$this->SetFont(self::fontname(), 'B', 7);
-		$discounts = self::$order->getDiscounts();
+		$discounts = self::$order->getCartRules();
 
 		foreach($discounts AS $discount)
 		{
@@ -892,12 +966,16 @@ class PDFCore extends PDF_PageGroupCore
 				$priceBreakDown['totalsWithTax'][$product['tax_rate']] = 0;
 			if (!isset($priceBreakDown['totalsEcotax'][$product['tax_rate']]))
 				$priceBreakDown['totalsEcotax'][$product['tax_rate']] = 0;
+			if (!isset($priceBreakDown['totalsEcotaxWithTax'][$product['tax_rate']]))
+				$priceBreakDown['totalsEcotaxWithTax'][$product['tax_rate']] = 0;				
 			if (!isset($priceBreakDown['totalsWithoutTax'][$product['tax_rate']]))
 				$priceBreakDown['totalsWithoutTax'][$product['tax_rate']] = 0;
 			if (!isset($taxes[$product['tax_rate']]))
 				$taxes[$product['tax_rate']] = 0;
 			if (!isset($priceBreakDown['totalsProductsWithTaxAndReduction'][$product['tax_rate']]))
 				$priceBreakDown['totalsProductsWithTaxAndReduction'][$product['tax_rate']] = 0;
+			if (!isset($priceBreakDown['totalsProductsWithoutTaxAndReduction'][$product['tax_rate']]))
+				$priceBreakDown['totalsProductsWithoutTaxAndReduction'][$product['tax_rate']] = 0;
 
 
 			/* Without tax */
@@ -920,7 +998,10 @@ class PDFCore extends PDF_PageGroupCore
 		$tmp = 0;
 		$product = &$tmp;
 		/* And secondly assign to each tax its own reduction part */
+		$discountAmount = 0;
+		if (!self::$orderSlip)
 		$discountAmount = (float)(self::$order->total_discounts);
+
 		foreach ($products as $product)
 		{
 			$ratio = $amountWithoutTax == 0 ? 0 : $product['priceWithoutTax'] / $amountWithoutTax;
@@ -931,7 +1012,7 @@ class PDFCore extends PDF_PageGroupCore
 				$vat = $priceWithTaxAndReduction - Tools::ps_round($priceWithTaxAndReduction / $product['product_quantity'] / (((float)($product['tax_rate']) / 100) + 1), 2) * $product['product_quantity'];
 				$priceBreakDown['totalsWithoutTax'][$product['tax_rate']] += $product['priceWithoutTax'] ;
 				$priceBreakDown['totalsProductsWithoutTax'][$product['tax_rate']] += $product['priceWithoutTax'];
-				$priceBreakDown['totalsProductsWithoutTaxAndReduction'][$product['tax_rate']] = Tools::ps_round($product['priceWithoutTax'] - (float)$discountAmountWithoutTax, 2);
+				$priceBreakDown['totalsProductsWithoutTaxAndReduction'][$product['tax_rate']] += Tools::ps_round($product['priceWithoutTax'] - (float)$discountAmountWithoutTax, 2);
 			}
 			else
 			{
@@ -943,6 +1024,7 @@ class PDFCore extends PDF_PageGroupCore
 			}
 
 			$priceBreakDown['totalsEcotax'][$product['tax_rate']] += ($product['priceEcotax']  * $product['product_quantity']);
+			$priceBreakDown['totalsEcotaxWithTax'][$product['tax_rate']] += ($product['priceEcotax'] * (1 + ($product['ecotax_tax_rate'] / 100))  * $product['product_quantity']);
 			if ($priceBreakDown['totalsEcotax'][$product['tax_rate']])
 				$priceBreakDown['hasEcotax'] = 1;
 			$taxes[$product['tax_rate']] += $vat;
@@ -958,9 +1040,9 @@ class PDFCore extends PDF_PageGroupCore
 			{
 				$priceBreakDown['totalsWithoutTax'][$tax_rate] = Tools::ps_round($priceBreakDown['totalsWithoutTax'][$tax_rate], 2);
 				$priceBreakDown['totalsProductsWithoutTax'][$tax_rate] = Tools::ps_round($priceBreakDown['totalsWithoutTax'][$tax_rate], 2);
-				$priceBreakDown['totalsWithTax'][$tax_rate] = Tools::ps_round($priceBreakDown['totalsWithoutTax'][$tax_rate] * (1 + $tax_rate / 100), 2);
-				$priceBreakDown['totalsProductsWithTax'][$tax_rate] = Tools::ps_round($priceBreakDown['totalsProductsWithoutTax'][$tax_rate] * (1 + $tax_rate / 100), 2);
-				$priceBreakDown['totalsProductsWithTaxAndReduction'][$product['tax_rate']] += Tools::ps_round($priceBreakDown['totalsProductsWithoutTaxAndReduction'][$product['tax_rate']] * (1 + $tax_rate / 100), 2);
+				$priceBreakDown['totalsWithTax'][$tax_rate] = Tools::ps_round(($priceBreakDown['totalsWithoutTax'][$tax_rate]- $priceBreakDown['totalsEcotax'][$tax_rate]) * (1 + $tax_rate / 100) + $priceBreakDown['totalsEcotaxWithTax'][$tax_rate], 2);
+				$priceBreakDown['totalsProductsWithTax'][$tax_rate] = Tools::ps_round(($priceBreakDown['totalsProductsWithoutTax'][$tax_rate] - $priceBreakDown['totalsEcotax'][$tax_rate]) * (1 + $tax_rate / 100) + $priceBreakDown['totalsEcotaxWithTax'][$tax_rate], 2);
+				$priceBreakDown['totalsProductsWithTaxAndReduction'][$tax_rate] += Tools::ps_round(($priceBreakDown['totalsProductsWithoutTaxAndReduction'][$tax_rate] - $priceBreakDown['totalsEcotax'][$tax_rate]) * (1 + $tax_rate / 100) + $priceBreakDown['totalsEcotaxWithTax'][$tax_rate], 2);
 			}
 			else
 			{
@@ -989,8 +1071,10 @@ class PDFCore extends PDF_PageGroupCore
 	*/
 	public function TaxTab(&$priceBreakDown)
 	{
+		$taxable_address = new Address((int)self::$order->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
+		if (strtoupper(Country::getIsoById((int)$taxable_address->id_country)) == 'CA')
+		 	return;
 
-     $invoiceAddress = new Address(self::$order->id_address_invoice);
 		if (Configuration::get('VATNUMBER_MANAGEMENT') AND !empty($invoiceAddress->vat_number) AND $invoiceAddress->id_country != Configuration::get('VATNUMBER_COUNTRY'))
 		{
 			$this->Ln();
@@ -1026,7 +1110,7 @@ class PDFCore extends PDF_PageGroupCore
 		$nb_tax = 0;
 
 		// Display product tax
-		foreach ($priceBreakDown['taxes'] AS $tax_rate => $vat)
+		foreach (array_keys($priceBreakDown['taxes']) AS $tax_rate)
 		{
 			if ($tax_rate != '0.00' AND $priceBreakDown['totalsProductsWithTax'][$tax_rate] != '0.00')
 			{
@@ -1036,7 +1120,7 @@ class PDFCore extends PDF_PageGroupCore
 				$this->SetXY($this->GetX(), $this->GetY() - $lineSize + 3);
 				$this->Cell($w[0], $lineSize, self::l('Products'), 0, 0, 'R');
 				$this->Cell($w[1], $lineSize, number_format($tax_rate, 3, ',', ' ').' %', 0, 0, 'R');
-				$this->Cell($w[2], $lineSize, (self::$orderSlip ? '-' : '').self::convertSign(Tools::displayPrice($priceBreakDown['totalsProductsWithoutTaxAndReduction'][$tax_rate], self::$currency, true)), 0, 0, 'R');
+				$this->Cell($w[2], $lineSize, (self::$orderSlip ? '-' : '').self::convertSign(Tools::displayPrice($priceBreakDown['totalsProductsWithoutTaxAndReduction'][$tax_rate] - $priceBreakDown['totalsEcotax'][$tax_rate], self::$currency, true)), 0, 0, 'R');
 				$this->Cell($w[3], $lineSize, (self::$orderSlip ? '-' : '').self::convertSign(Tools::displayPrice($priceBreakDown['totalsProductsWithTaxAndReduction'][$tax_rate] - $priceBreakDown['totalsProductsWithoutTaxAndReduction'][$tax_rate], self::$currency, true)), 0, 0, 'R');
 				if ($priceBreakDown['hasEcotax'])
 					$this->Cell($w[4], $lineSize, (self::$orderSlip ? '-' : '').self::convertSign(Tools::displayPrice($priceBreakDown['totalsEcotax'][$tax_rate], self::$currency, true)), 0, 0, 'R');
@@ -1092,8 +1176,7 @@ class PDFCore extends PDF_PageGroupCore
 
 	static protected function l($string)
 	{
-		global $cookie;
-		$iso = Language::getIsoById((isset($cookie->id_lang) AND Validate::isUnsignedId($cookie->id_lang)) ? $cookie->id_lang : Configuration::get('PS_LANG_DEFAULT'));
+		$iso = Context::getContext()->language->iso_code;
 
 		if (@!include(_PS_TRANSLATIONS_DIR_.$iso.'/pdf.php'))
 			die('Cannot include PDF translation language file : '._PS_TRANSLATIONS_DIR_.$iso.'/pdf.php');
@@ -1106,17 +1189,17 @@ class PDFCore extends PDF_PageGroupCore
 		return (Tools::iconv('utf-8', self::encoding(), $str));
 	}
 
-	static public function encoding()
+	public static function encoding()
 	{
 		return (isset(self::$_pdfparams[self::$_iso]) AND is_array(self::$_pdfparams[self::$_iso]) AND self::$_pdfparams[self::$_iso]['encoding']) ? self::$_pdfparams[self::$_iso]['encoding'] : 'iso-8859-1';
 	}
 
-	static public function embedfont()
+	public static function embedfont()
 	{
 		return (((isset(self::$_pdfparams[self::$_iso]) AND is_array(self::$_pdfparams[self::$_iso]) AND self::$_pdfparams[self::$_iso]['font']) AND !in_array(self::$_pdfparams[self::$_iso]['font'], self::$_fpdf_core_fonts)) ? self::$_pdfparams[self::$_iso]['font'] : false);
 	}
 
-	static public function fontname()
+	public static function fontname()
 	{
 		$font = self::embedfont();
 		if (in_array(self::$_pdfparams[self::$_iso]['font'], self::$_fpdf_core_fonts))

@@ -1,6 +1,31 @@
 <?php
+/*
+* 2007-2011 PrestaShop 
+*
+* NOTICE OF LICENSE
+*
+* This source file is subject to the Academic Free License (AFL 3.0)
+* that is bundled with this package in the file LICENSE.txt.
+* It is also available through the world-wide-web at this URL:
+* http://opensource.org/licenses/afl-3.0.php
+* If you did not receive a copy of the license and are unable to
+* obtain it through the world-wide-web, please send an email
+* to license@prestashop.com so we can send you a copy immediately.
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+* versions in the future. If you wish to customize PrestaShop for your
+* needs please refer to http://www.prestashop.com for more information.
+*
+*  @author PrestaShop SA <contact@prestashop.com>
+*  @copyright  2007-2011 PrestaShop SA
+*  @version  Release: $Revision$
+*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*  International Registered Trademark & Property of PrestaShop SA
+*/
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class GAnalytics extends Module
@@ -53,12 +78,12 @@ class GAnalytics extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset class="width2">
 				<legend><img src="../img/admin/cog.gif" alt="" class="middle" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Your username').'</label>
 				<div class="margin-form">
-					<input type="text" name="ganalytics_id" value="'.Tools::getValue('ganalytics_id', Configuration::get('GANALYTICS_ID')).'" />
+					<input type="text" name="ganalytics_id" value="'.Tools::safeOutput(Tools::getValue('ganalytics_id', Configuration::get('GANALYTICS_ID'))).'" />
 					<p class="clear">'.$this->l('Example:').' UA-1234567-1</p>
 				</div>
 				<center><input type="submit" name="submitGAnalytics" value="'.$this->l('Update ID').'" class="button" /></center>
@@ -126,33 +151,32 @@ class GAnalytics extends Module
 	
 	function hookHeader($params)
 	{
-		global $smarty, $cookie;
-		
 		// hookOrderConfirmation() already send the sats bypass this step
-		if (strpos($_SERVER['REQUEST_URI'], __PS_BASE_URI__.'order-confirmation.php') === 0) return '';
+		if (strpos($_SERVER['REQUEST_URI'], __PS_BASE_URI__.'order-confirmation.php') === 0)
+			return '';
 	
 		// Otherwise, create Google Analytics stats
 		$ganalytics_id = Configuration::get('GANALYTICS_ID');
-		$multilang = (Language::countActiveLanguages() > 1);
-		$defaultMetaOrder = Meta::getMetaByPage('order',(int)$cookie->id_lang);
+		$multilang = Language::isMultiLanguageActivated();
+		$defaultMetaOrder = Meta::getMetaByPage('order',$this->context->language->id);
 		$order = ($multilang?((string)Tools::getValue('isolang').'/'):'').$defaultMetaOrder['url_rewrite'];
 		$pageTrack = ((strpos($_SERVER['REQUEST_URI'], __PS_BASE_URI__.'order.php') === 0 || strpos($_SERVER['REQUEST_URI'], __PS_BASE_URI__.($multilang?((string)Tools::getValue('isolang').'/'):'').$defaultMetaOrder['url_rewrite']) === 0) ? '/order/step'.(int)(Tools::getValue('step')).'.html' : '');
-		$smarty->assign('ganalytics_id', $ganalytics_id);
-		$smarty->assign('pageTrack', $pageTrack);
-		$smarty->assign('isOrder', false);
+		$this->context->smarty->assign('ganalytics_id', $ganalytics_id);
+		$this->context->smarty->assign('pageTrack', $pageTrack);
+		$this->context->smarty->assign('isOrder', false);
 		return $this->display(__FILE__, 'header.tpl');
 	}
 	
 	function hookFooter($params)
 	{
 		// for retrocompatibility
-		if (!$this->isRegisteredInHook('header')) $this->registerHook('header');
+		if (!$this->isRegisteredInHook('header'))
+			$this->registerHook('header');
 		return ;
 	}
 
 	function hookOrderConfirmation($params)
 	{
-		global $smarty;
 		// Setting parameters
 		$parameters = Configuration::getMultiple(array('PS_LANG_DEFAULT'));
 		
@@ -169,7 +193,8 @@ class GAnalytics extends Module
 			}
 
 			// Order general information
-		$trans = array('id' => intval($order->id),				// order ID - required
+			$trans = array(
+				'id' => intval($order->id),				// order ID - required
 						'store' => htmlentities(Configuration::get('PS_SHOP_NAME')), // affiliation or store name
 						'total' => Tools::ps_round(floatval($order->total_paid) / floatval($conversion_rate), 2),		// total - required
 						'tax' => '0', // tax
@@ -188,7 +213,8 @@ class GAnalytics extends Module
 								WHERE `id_product` = '.intval($product['product_id']).' AND `id_category_default` = `id_category` 
 								AND `id_lang` = '.intval($parameters['PS_LANG_DEFAULT']));
 				
-				$items[] = array('OrderId' => intval($order->id),				// order ID - required
+				$items[] = array(
+					'OrderId' => intval($order->id),								// order ID - required
 								'SKU' => addslashes($product['product_id']),		// SKU/code - required
 								'Product' => addslashes($product['product_name']),		// product name
 								'Category' => addslashes($category['name']),			// category or variation
@@ -197,12 +223,11 @@ class GAnalytics extends Module
 								);
 			}
 			$ganalytics_id = Configuration::get('GANALYTICS_ID');
-			$pageTrack = (strpos($_SERVER['REQUEST_URI'], __PS_BASE_URI__.'order.php') === 0 ? '/order/step'.intval($step).'.html' : '');
-			$smarty->assign('items', $items);
-			$smarty->assign('trans', $trans);
-			$smarty->assign('ganalytics_id', $ganalytics_id);
-			$smarty->assign('pageTrack', $pageTrack);
-			$smarty->assign('isOrder', true);
+
+			$this->context->smarty->assign('items', $items);
+			$this->context->smarty->assign('trans', $trans);
+			$this->context->smarty->assign('ganalytics_id', $ganalytics_id);
+			$this->context->smarty->assign('isOrder', true);
 			return $this->display(__FILE__, 'header.tpl');
 		}
 	}

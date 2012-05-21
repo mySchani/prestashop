@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockStore extends Module
@@ -60,20 +60,20 @@ class BlockStore extends Module
 	{
 		return $this->hookRightColumn($params);
 	}
-	
+
 	function hookRightColumn($params)
 	{
-		global $smarty;
-		
-		$smarty->assign('store_img', Configuration::get('BLOCKSTORE_IMG'));
+
+
+		$this->context->smarty->assign('store_img', Configuration::get('BLOCKSTORE_IMG'));
 		return $this->display(__FILE__, 'blockstore.tpl');
 	}
-	
+
 	function hookHeader($params)
 	{
-		Tools::addCSS($this->_path.'/blockstore.css', 'all');
+		$this->context->controller->addCSS($this->_path.'blockstore.css', 'all');
 	}
-	
+
 	public function postProcess()
 	{
 		if (Tools::isSubmit('submitStoreConf'))
@@ -88,7 +88,7 @@ class BlockStore extends Module
 						return $this->displayError($this->l('an error occurred on uploading file'));
 					else
 					{
-						if (Configuration::get('BLOCKSTORE_IMG') != $_FILES['store_img']['name'])
+						if (Configuration::hasContext('BLOCKSTORE_IMG', null, $this->context->shop->getContextType()) && Configuration::get('BLOCKSTORE_IMG') != $_FILES['store_img']['name'])
 							@unlink(dirname(__FILE__).'/'.Configuration::get('BLOCKSTORE_IMG'));
 						Configuration::updateValue('BLOCKSTORE_IMG', $_FILES['store_img']['name']);
 						return $this->displayConfirmation($this->l('Settings are updated'));
@@ -98,11 +98,11 @@ class BlockStore extends Module
 		}
 		return '';
 	}
-	
+
 	public function getContent()
 	{
 		$output = $this->postProcess().'
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post" enctype="multipart/form-data">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" enctype="multipart/form-data">
 			<fieldset>
 				<legend>'.$this->l('Store block configuration').'</legend>';
 		if (Configuration::get('BLOCKSTORE_IMG'))
@@ -112,7 +112,7 @@ class BlockStore extends Module
 				<div class="margin-form">
 					<input id="store_img" type="file" name="store_img" /> ( '.$this->l('image will be displayed as 174x115').' )
 				</div>
-		
+
 				<p class="center">
 					<input class="button" type="submit" name="submitStoreConf" value="'.$this->l('Save').'"/>
 				</p>

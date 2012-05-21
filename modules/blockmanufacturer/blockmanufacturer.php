@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockManufacturer extends Module
@@ -51,14 +51,11 @@ class BlockManufacturer extends Module
 		Configuration::updateValue('MANUFACTURER_DISPLAY_FORM', true);
         return (parent::install() AND $this->registerHook('leftColumn') AND $this->registerHook('header'));
     }
-   
+
     function hookLeftColumn($params)
     {
-		global $smarty, $link;
-		//$getNbProducts = false, $id_lang = 0, $active = true, $p = false, $n = false, $all_group = false, $id_shop = false
-		$smarty->assign(array(
-			'manufacturers' => Manufacturer::getManufacturers(false, 0, true, false, false, false, $this->shopGroupID),
-			'link' => $link,
+		$this->templateAssign(array(
+			'manufacturers' => Manufacturer::getManufacturers(),
 			'text_list' => Configuration::get('MANUFACTURER_DISPLAY_TEXT'),
 			'text_list_nb' => Configuration::get('MANUFACTURER_DISPLAY_TEXT_NB'),
 			'form_list' => Configuration::get('MANUFACTURER_DISPLAY_FORM'),
@@ -66,12 +63,12 @@ class BlockManufacturer extends Module
 		));
 		return $this->display(__FILE__, 'blockmanufacturer.tpl');
 	}
-	
+
 	function hookRightColumn($params)
 	{
 		return $this->hookLeftColumn($params);
 	}
-	
+
 	function getContent()
 	{
 		$output = '<h2>'.$this->displayName.'</h2>';
@@ -97,11 +94,11 @@ class BlockManufacturer extends Module
 		}
 		return $output.$this->displayForm();
 	}
-	
+
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Use a plain-text list').'</label>
 				<div class="margin-form">
@@ -125,9 +122,9 @@ class BlockManufacturer extends Module
 		</form>';
 		return $output;
 	}
-	
+
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blockmanufacturer.css', 'all');
-	}	
+		$this->context->controller->addCSS(($this->_path).'blockmanufacturer.css', 'all');
+	}
 }

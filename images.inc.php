@@ -40,28 +40,23 @@ function cacheImage($image, $cacheImage, $size, $imageType = 'jpg', $disableCach
 	{
 		if (!file_exists(_PS_TMP_IMG_DIR_.$cacheImage))
 		{
-			$memory_limit = ini_get('memory_limit');
+			$infos = getimagesize($image);
+
+			$memory_limit = Tools::getMemoryLimit();
 			// memory_limit == -1 => unlimited memory
-			if ((int)$memory_limit != -1)
+			if (function_exists('memory_get_usage') && (int)$memory_limit != -1)
 			{
-				if (preg_match('/[0-9]+k/i', $memory_limit))
-					$memory_limit = 1024 * (int)$memory_limit;
-				elseif (preg_match('/[0-9]+m/i', $memory_limit))
-					$memory_limit = 1024 * 1024 * (int)$memory_limit;
-				elseif (preg_match('/[0-9]+g/i', $memory_limit))
-					$memory_limit = 1024 * 1024 * 1024 * (int)$memory_limit;
 				$current_memory = memory_get_usage();
-				$infos = getimagesize($image);
 				
 				// Evaluate the memory required to resize the image: if it's too much, you can't resize it.
-				if (($infos[0] * $infos[1] * $infos['bits'] * ($infos['channels'] / 8) + pow(2, 16)) * 1.8 + $current_memory > $memory_limit - 1024 * 1024)
+				if (($infos[0] * $infos[1] * $infos['bits'] * (isset($infos['channels']) ? ($infos['channels'] / 8) : 1) + pow(2, 16)) * 1.8 + $current_memory > $memory_limit - 1024 * 1024)
 					return false;
 			}
 				
-			$imageGd = ($imageType == 'gif' ? imagecreatefromgif($image) : imagecreatefromjpeg($image));
-			$x = imagesx($imageGd);
-			$y = imagesy($imageGd);
+			$x = $infos[0];
+			$y = $infos[1];
 			$max_x = ((int)$size)*3;
+
 			/* Size is already ok */
 			if ($y < $size && $x <= $max_x )
 				copy($image, _PS_TMP_IMG_DIR_.$cacheImage);
@@ -75,19 +70,8 @@ function cacheImage($image, $cacheImage, $size, $imageType = 'jpg', $disableCach
 				    $ratioX = $max_x;
 				    $size = $y / ($x / $max_x);
 				}
-				$newImage = ($imageType == 'gif' ? imagecreate($ratioX, $size) : imagecreatetruecolor($ratioX, $size));
 
-				/* Allow to keep nice look even if resized */
-				$white = imagecolorallocate($newImage, 255, 255, 255);
-				imagefill($newImage, 0, 0, $white);
-				imagecopyresampled($newImage, $imageGd, 0, 0, 0, 0, $ratioX, $size, $x, $y);
-				imagecolortransparent($newImage, $white);
-
-				/* Quality alteration and image creation */
-				if ($imageType == 'gif')
-					imagegif($newImage, _PS_TMP_IMG_DIR_.$cacheImage);
-				else
-					imagejpeg($newImage, _PS_TMP_IMG_DIR_.$cacheImage, 86);
+   		 		imageResize($image, _PS_TMP_IMG_DIR_.$cacheImage, $ratioX, $size, 'jpg');
 			}
 		}
 		return '<img src="'._PS_TMP_IMG_.$cacheImage.($disableCache ? '?time='.time() : '').'" alt="" class="imgm" />';
@@ -99,11 +83,11 @@ function cacheImage($image, $cacheImage, $size, $imageType = 'jpg', $disableCach
   * Check image upload
   *
   * @param array $file Upload $_FILE value
-  * @param integer $maxFileSize Maximum upload size
+  * @param integer $maxFileSize Maximum upload size (optional)
   */
-function checkImage($file, $maxFileSize)
+function checkImage($file, $maxFileSize = 0)
 {
-	if ($file['size'] > $maxFileSize)
+	if ((int)$maxFileSize > 0 && $file['size'] > (int)$maxFileSize)
 		return Tools::displayError('Image is too large').' ('.($file['size'] / 1000).Tools::displayError('KB').'). '.Tools::displayError('Maximum allowed:').' '.($maxFileSize / 1000).Tools::displayError('KB');
 	if (!isPicture($file))
 		return Tools::displayError('Image format not recognized, allowed formats are: .gif, .jpg, .png');
@@ -185,11 +169,11 @@ function isPicture($file, $types = NULL)
   * Check icon upload
   *
   * @param array $file Upload $_FILE value
-  * @param integer $maxFileSize Maximum upload size
+  * @param integer $maxFileSize Maximum upload size (optional)
   */
-function checkIco($file, $maxFileSize)
+function checkIco($file, $maxFileSize = 0)
 {
-	if ($file['size'] > $maxFileSize)
+	if ((int)$maxFileSize > 0 && $file['size'] > $maxFileSize)
 		return Tools::displayError('Image is too large').' ('.($file['size'] / 1000).'ko). '.Tools::displayError('Maximum allowed:').' '.($maxFileSize / 1000).'ko';
 	if (substr($file['name'], -4) != '.ico')
 		return Tools::displayError('Image format not recognized, allowed formats are: .ico');
@@ -210,7 +194,16 @@ function checkIco($file, $maxFileSize)
   */
 function imageResize($sourceFile, $destFile, $destWidth = NULL, $destHeight = NULL, $fileType = 'jpg')
 {
+	if (!file_exists($sourceFile))
+		return false;
 	list($sourceWidth, $sourceHeight, $type, $attr) = getimagesize($sourceFile);
+	// If PS_IMAGE_QUALITY is activated, the generated image will be a PNG with .jpg as a file extension.
+	// This allow for higher quality and for transparency. JPG source files will also benefit from a higher quality
+	// because JPG reencoding by GD, even with max quality setting, degrades the image.
+	if (Configuration::get('PS_IMAGE_QUALITY') == 'png_all'
+		|| (Configuration::get('PS_IMAGE_QUALITY') == 'png' && $type == IMAGETYPE_PNG))
+		$fileType = 'png';
+	
 	if (!$sourceWidth)
 		return false;
 	if ($destWidth == NULL) $destWidth = $sourceWidth;
@@ -244,11 +237,21 @@ function imageResize($sourceFile, $destFile, $destWidth = NULL, $destHeight = NU
 
 	$destImage = imagecreatetruecolor($destWidth, $destHeight);
 
+	// If image is a PNG and the output is PNG, fill with transparency. Else fill with white background.
+	if ($fileType == 'png' && $type == IMAGETYPE_PNG)
+	{
+		imagealphablending($destImage, false);
+		imagesavealpha($destImage, true);	
+		$transparent = imagecolorallocatealpha($destImage, 255, 255, 255, 127);
+		imagefilledrectangle($destImage, 0, 0, $destWidth, $destHeight, $transparent);
+	}else
+	{
 	$white = imagecolorallocate($destImage, 255, 255, 255);
 	imagefilledrectangle ($destImage, 0, 0, $destWidth, $destHeight, $white);
+	}
 
 	imagecopyresampled($destImage, $sourceImage, (int)(($destWidth - $nextWidth) / 2), (int)(($destHeight - $nextHeight) / 2), 0, 0, $nextWidth, $nextHeight, $sourceWidth, $sourceHeight);
-	imagecolortransparent($destImage, $white);
+
 	return (returnDestImage($fileType, $destImage, $destFile));
 }
 
@@ -321,11 +324,14 @@ function returnDestImage($type, $ressource, $filename)
 			$flag = imagegif($ressource, $filename);
 			break;
 		case 'png':
-			$flag = imagepng($ressource, $filename, 7);
+			$quality = (Configuration::get('PS_PNG_QUALITY') === false ? 7 : Configuration::get('PS_PNG_QUALITY'));
+			$flag = imagepng($ressource, $filename, (int)$quality);
 			break;
+		case 'jpg':
 		case 'jpeg':
 		default:
-			$flag = imagejpeg($ressource, $filename, 90);
+			$quality = (Configuration::get('PS_JPEG_QUALITY') === false ? 90 : Configuration::get('PS_JPEG_QUALITY'));
+			$flag = imagejpeg($ressource, $filename, (int)$quality);
 			break;
 	}
 	imagedestroy($ressource);

@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockCart extends Module
@@ -44,9 +44,9 @@ class BlockCart extends Module
 		$this->description = $this->l('Adds a block containing the customer\'s shopping cart.');
 	}
 
-	public function smartyAssigns(&$smarty, &$params)
+	public function assignContentVars(&$params)
 	{
-		global $errors, $cookie;
+		global $errors;
 
 		// Set currency
 		if (!(int)($params['cart']->id_currency))
@@ -77,15 +77,15 @@ class BlockCart extends Module
 		if ($useTax AND Configuration::get('PS_TAX_DISPLAY') == 1)
 		{
 			$totalToPayWithoutTaxes = $params['cart']->getOrderTotal(false);
-			$smarty->assign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
+			$this->templateAssign('tax_cost', Tools::displayPrice($totalToPay - $totalToPayWithoutTaxes, $currency));
 		}
 
-		$smarty->assign(array(
+		$this->templateAssign(array(
 			'products' => $products,
 			'customizedDatas' => Product::getAllCustomizedDatas((int)($params['cart']->id)),
 			'CUSTOMIZE_FILE' => _CUSTOMIZE_FILE_,
 			'CUSTOMIZE_TEXTFIELD' => _CUSTOMIZE_TEXTFIELD_,
-			'discounts' => $params['cart']->getDiscounts(false, Tools::isSubmit('id_product')),
+			'discounts' => $params['cart']->getCartRules(false, Tools::isSubmit('id_product')),
 			'nb_total_products' => (int)($nbTotalProducts),
 			'shipping_cost' => Tools::displayPrice($params['cart']->getOrderTotal($useTax, Cart::ONLY_SHIPPING), $currency),
 			'show_wrapping' => $wrappingCost > 0 ? true : false,
@@ -93,14 +93,13 @@ class BlockCart extends Module
 			'wrapping_cost' => Tools::displayPrice($wrappingCost, $currency),
 			'product_total' => Tools::displayPrice($params['cart']->getOrderTotal($useTax, Cart::BOTH_WITHOUT_SHIPPING), $currency),
 			'total' => Tools::displayPrice($totalToPay, $currency),
-			'id_carrier' => (int)($params['cart']->id_carrier),
 			'order_process' => Configuration::get('PS_ORDER_PROCESS_TYPE') ? 'order-opc' : 'order',
 			'ajax_allowed' => (int)(Configuration::get('PS_BLOCK_CART_AJAX')) == 1 ? true : false
 		));
 		if (sizeof($errors))
-			$smarty->assign('errors', $errors);
-		if(isset($cookie->ajax_blockcart_display))
-			$smarty->assign('colapseExpandStatus', $cookie->ajax_blockcart_display);
+			$this->templateAssign('errors', $errors);
+		if(isset($this->context->cookie->ajax_blockcart_display))
+			$this->templateAssign('colapseExpandStatus', $this->context->cookie->ajax_blockcart_display);
 	}
 
 	public function getContent()
@@ -123,7 +122,7 @@ class BlockCart extends Module
 	public function displayForm()
 	{
 		return '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 
@@ -146,7 +145,7 @@ class BlockCart extends Module
 		if
 		(
 			parent::install() == false
-			OR $this->registerHook('rightColumn') == false
+			OR $this->registerHook('top') == false
 			OR $this->registerHook('header') == false
 			OR Configuration::updateValue('PS_BLOCK_CART_AJAX', 1) == false
 		)
@@ -159,9 +158,9 @@ class BlockCart extends Module
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return;
 
-		global $smarty;
-		$smarty->assign('order_page', strpos($_SERVER['PHP_SELF'], 'order') !== false);
-		$this->smartyAssigns($smarty, $params);
+		// @todo this variable seems not used
+		$this->templateAssign('order_page', strpos($_SERVER['PHP_SELF'], 'order') !== false);
+		$this->assignContentVars($params);
 		return $this->display(__FILE__, 'blockcart.tpl');
 	}
 
@@ -175,8 +174,7 @@ class BlockCart extends Module
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return;
 
-		global $smarty;
-		$this->smartyAssigns($smarty, $params);
+		$this->assignContentVars($params);
 		$res = $this->display(__FILE__, 'blockcart-json.tpl');
 		return $res;
 	}
@@ -185,10 +183,14 @@ class BlockCart extends Module
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return;
-
-		Tools::addCSS(($this->_path).'blockcart.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockcart.css', 'all');
 		if ((int)(Configuration::get('PS_BLOCK_CART_AJAX')))
-			Tools::addJS(($this->_path).'ajax-cart.js');
+			$this->context->controller->addJS(($this->_path).'ajax-cart.js');
+	}
+	
+	public function hookTop($params)
+	{
+		return $this->hookRightColumn($params);
 	}
 }
 

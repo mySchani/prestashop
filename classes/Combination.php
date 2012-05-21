@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -36,7 +36,7 @@ class CombinationCore extends ObjectModel
 	public $location;
 
 	public $ean13;
-	
+
 	public $upc;
 
 	public $wholesale_price;
@@ -50,6 +50,8 @@ class CombinationCore extends ObjectModel
 	public $weight;
 
 	public $default_on;
+
+	public $available_date;
 
 	protected	$fieldsRequired = array(
 		'id_product',
@@ -76,11 +78,12 @@ class CombinationCore extends ObjectModel
 		'quantity' => 'isUnsignedInt',
 		'weight' => 'isFloat',
 		'default_on' => 'isBool',
+		'available_date' => 'isDateFormat',
 	);
 
 	protected $table = 'product_attribute';
 	protected $identifier = 'id_product_attribute';
-	
+
 	protected	$webserviceParameters = array(
 		'objectNodeName' => 'combination',
 		'objectsNodeName' => 'combinations',
@@ -95,7 +98,7 @@ class CombinationCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_product'] = (int)($this->id_product);
 		$fields['reference'] = pSQL($this->reference);
 		$fields['supplier_reference'] = pSQL($this->supplier_reference);
@@ -108,27 +111,28 @@ class CombinationCore extends ObjectModel
 		$fields['quantity'] = (int)($this->quantity);
 		$fields['weight'] = pSQL($this->weight);
 		$fields['default_on'] = (int)($this->default_on);
+		$fields['available_date'] = pSQL($this->available_date);
 		return $fields;
 	}
-	
+
 	public function delete()
 	{
 		if (!parent::delete() OR $this->deleteAssociations() === false)
 			return false;
 		return true;
 	}
-	
+
 	public function deleteAssociations()
 	{
 		if (
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 				DELETE FROM `'._DB_PREFIX_.'product_attribute_combination`
 				WHERE `id_product_attribute` = '.(int)($this->id)) === false
 			)
 			return false;
 		return true;
 	}
-	
+
 	public function setWsProductOptionValues($values)
 	{
 		if ($this->deleteAssociations())
@@ -136,7 +140,7 @@ class CombinationCore extends ObjectModel
 			$sqlValues = array();
 			foreach ($values as $value)
 				$sqlValues[] = '('.(int)$value['id'].', '.(int)$this->id.')';
-			$result = Db::getInstance()->Execute('
+			$result = Db::getInstance()->execute('
 				INSERT INTO `'._DB_PREFIX_.'product_attribute_combination` (`id_attribute`, `id_product_attribute`)
 				VALUES '.implode(',', $sqlValues)
 			);
@@ -144,7 +148,7 @@ class CombinationCore extends ObjectModel
 		}
 		return false;
 	}
-	
+
 	public function getWsProductOptionValues()
 	{
 		$result = Db::getInstance()->executeS('SELECT id_attribute AS id from `'._DB_PREFIX_.'product_attribute_combination` WHERE id_product_attribute = '.(int)$this->id);
@@ -153,27 +157,57 @@ class CombinationCore extends ObjectModel
 
 	public function getWsImages()
 	{
-		return Db::getInstance()->ExecuteS('
+		return Db::getInstance()->executeS('
 		SELECT `id_image` as id
 		FROM `'._DB_PREFIX_.'product_attribute_image`
 		WHERE `id_product_attribute` = '.(int)($this->id).'
 		');
-}
+	}
 
 	public function setWsImages($values)
 	{
-		if (Db::getInstance()->Execute('
+		if (Db::getInstance()->execute('
 			DELETE FROM `'._DB_PREFIX_.'product_attribute_image`
 			WHERE `id_product_attribute` = '.(int)($this->id)) === false)
 		return false;
 		$sqlValues = array();
 		foreach ($values as $value)
 			$sqlValues[] = '('.(int)$this->id.', '.(int)$value['id'].')';
-		$result = Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'product_attribute_image` (`id_product_attribute`, `id_image`)
 			VALUES '.implode(',', $sqlValues)
 		);
 		return true;
+	}
+	
+	public function getAttributesName($id_lang)
+	{
+		return Db::getInstance()->executeS('SELECT al.*
+														FROM '._DB_PREFIX_.'product_attribute_combination pac
+														JOIN '._DB_PREFIX_.'attribute_lang al ON (pac.id_attribute = al.id_attribute AND al.id_lang='.(int)$id_lang.')
+														WHERE pac.id_product_attribute='.(int)$this->id);
+	}
+
+	/**
+	 * This method is allow to know if a feature is active
+	 * @since 1.5.0.1
+	 * @return bool
+	 */
+	public static function isFeatureActive()
+	{
+		return Configuration::get('PS_COMBINATION_FEATURE_ACTIVE');
+	}
+
+	/**
+	 * This method is allow to know if a Combination entity is currently used
+	 * @since 1.5.0.1
+	 * @param $table
+	 * @param $has_active_column
+	 * @return bool
+	 */
+	public static function isCurrentlyUsed($table = null, $has_active_column = false)
+	{
+		return parent::isCurrentlyUsed('product_attribute');
 	}
 }
 

@@ -1,4 +1,5 @@
 <?php
+	define('_PS_ADMIN_DIR_', getcwd());
 	require_once('../../config/config.inc.php');
 	require_once('../init.php');
 	/**
@@ -83,8 +84,8 @@
 		$error = TXT_UNKNOWN_REQUEST;
 	}
 		echo "{";
-		echo "error:'" . $error . "',\n";
-		echo  "path:'" . $path . "'";
+		echo "error:'" . Tools::safeOutput($error) . "',\n";
+		echo  "path:'" . Tools::safeOutput($path) . "'";
 		echo "}";
 	
 ?>

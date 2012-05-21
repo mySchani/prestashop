@@ -19,9 +19,9 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 6844 $
+*  @version  Release: $Revision: 10093 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 *}
 
-<li><a href="{$this_path}sendtoafriend-form.php?id_product={$smarty.get.id_product|intval}">{l s='Send to a friend' mod='sendtoafriend'}</a></li>
+<li class="sendtofriend"><a href="{$this_path}sendtoafriend-form.php?id_product={$smarty.get.id_product|intval}">{l s='Send to a friend' mod='sendtoafriend'}</a></li>

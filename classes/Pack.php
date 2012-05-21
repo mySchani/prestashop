@@ -33,6 +33,9 @@ class PackCore extends Product
 
 	public static function isPack($id_product)
 	{
+		if (!self::isFeatureActive())
+			return false;
+
 		if (!array_key_exists($id_product, self::$cacheIsPack))
 		{
 			$result = Db::getInstance()->getValue('SELECT COUNT(*) FROM '._DB_PREFIX_.'pack WHERE id_product_pack = '.(int)($id_product));
@@ -43,6 +46,9 @@ class PackCore extends Product
 
 	public static function isPacked($id_product)
 	{
+		if (!self::isFeatureActive())
+			return false;
+
 		if (!array_key_exists($id_product, self::$cacheIsPacked))
 		{
 			$result = Db::getInstance()->getValue('SELECT COUNT(*) FROM '._DB_PREFIX_.'pack WHERE id_product_item = '.(int)($id_product));
@@ -53,10 +59,7 @@ class PackCore extends Product
 
 	public static function noPackPrice($id_product)
 	{
-		global $cookie;
-
 		$sum = 0;
-
 		$price_display_method = !self::$_taxCalculationMethod;
 		$items = self::getItems($id_product, Configuration::get('PS_LANG_DEFAULT'));
 		foreach ($items as $item)
@@ -66,9 +69,12 @@ class PackCore extends Product
 
 	public static function getItems($id_product, $id_lang)
 	{
+		if (!self::isFeatureActive())
+			return array();
+
 		if (array_key_exists($id_product, self::$cachePackItems))
 			return self::$cachePackItems[$id_product];
-		$result = Db::getInstance()->ExecuteS('SELECT id_product_item, quantity FROM '._DB_PREFIX_.'pack where id_product_pack = '.(int)($id_product));
+		$result = Db::getInstance()->executeS('SELECT id_product_item, quantity FROM '._DB_PREFIX_.'pack where id_product_pack = '.(int)($id_product));
 		$arrayResult = array();
 		foreach ($result AS $row)
 		{
@@ -82,30 +88,39 @@ class PackCore extends Product
 
 	public static function isInStock($id_product)
 	{
-		$items = self::getItems((int)($id_product), Configuration::get('PS_LANG_DEFAULT'));
-		foreach ($items AS $item)
-			if ($item->quantity < $item->pack_quantity AND !$item->isAvailableWhenOutOfStock((int)($item->out_of_stock)))
+		if (!self::isFeatureActive())
+			return true;
+
+		$items = self::getItems((int)$id_product, Configuration::get('PS_LANG_DEFAULT'));
+
+		foreach ($items as $item)
+		{
+			// Updated for 1.5.0
+			if (Product::getQuantity($item->id) < $item->pack_quantity || !$item->isAvailableWhenOutOfStock((int)$item->out_of_stock))
 				return false;
+		}
 		return true;
 	}
 
 	public static function getItemTable($id_product, $id_lang, $full = false)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT p.*, pl.*, i.`id_image`, il.`legend`, t.`rate`, cl.`name` AS category_default, a.quantity AS pack_quantity
-		FROM `'._DB_PREFIX_.'pack` a
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON p.id_product = a.id_product_item
-		LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.id_product = pl.id_product AND pl.`id_lang` = '.(int)($id_lang).')
-		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
-		LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)($id_lang).')
-		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (p.`id_category_default` = cl.`id_category` AND cl.`id_lang` = '.(int)($id_lang).')
-		LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
-		                                           AND tr.`id_country` = '.(int)Country::getDefaultCountryId().'
-	                                           	   AND tr.`id_state` = 0)
-	    LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)
-		LEFT JOIN `'._DB_PREFIX_.'tax_lang` tl ON (t.`id_tax` = tl.`id_tax` AND tl.`id_lang` = '.(int)($id_lang).')
-		WHERE a.`id_product_pack` = '.(int)($id_product)
-		);
+		if (!self::isFeatureActive())
+			return array();
+
+		$sql = 'SELECT p.*, pl.*, i.`id_image`, il.`legend`, t.`rate`, cl.`name` AS category_default, a.quantity AS pack_quantity
+				FROM `'._DB_PREFIX_.'pack` a
+				LEFT JOIN `'._DB_PREFIX_.'product` p ON p.id_product = a.id_product_item
+				LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (p.id_product = pl.id_product AND pl.`id_lang` = '.(int)$id_lang.Context::getContext()->shop->addSqlRestrictionOnLang('pl').')
+				LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
+				LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
+				LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (p.`id_category_default` = cl.`id_category` AND cl.`id_lang` = '.(int)$id_lang.Context::getContext()->shop->addSqlRestrictionOnLang('cl').')
+				LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
+					AND tr.`id_country` = '.(int)Context::getContext()->country->id.'
+					AND tr.`id_state` = 0)
+			    LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)
+				LEFT JOIN `'._DB_PREFIX_.'tax_lang` tl ON (t.`id_tax` = tl.`id_tax` AND tl.`id_lang` = '.(int)$id_lang.')
+				WHERE a.`id_product_pack` = '.(int)$id_product;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 		if (!$full)
 			return $result;
 
@@ -116,8 +131,11 @@ class PackCore extends Product
 		return $arrayResult;
 	}
 
-	public static function getPacksTable($id_product, $id_lang, $full = false, $limit = NULL)
+	public static function getPacksTable($id_product, $id_lang, $full = false, $limit = null)
 	{
+		if (!self::isFeatureActive())
+			return array();
+
 		$packs = Db::getInstance()->getValue('
 		SELECT GROUP_CONCAT(a.`id_product_pack`)
 		FROM `'._DB_PREFIX_.'pack` a
@@ -133,15 +151,16 @@ class PackCore extends Product
 		LEFT JOIN `'._DB_PREFIX_.'image` i ON (i.`id_product` = p.`id_product` AND i.`cover` = 1)
 		LEFT JOIN `'._DB_PREFIX_.'image_lang` il ON (i.`id_image` = il.`id_image` AND il.`id_lang` = '.(int)$id_lang.')
 		LEFT JOIN `'._DB_PREFIX_.'tax_rule` tr ON (p.`id_tax_rules_group` = tr.`id_tax_rules_group`
-		                                           AND tr.`id_country` = '.(int)Country::getDefaultCountryId().'
+		                                           AND tr.`id_country` = '.(int)Context::getContext()->country->id.'
 	                                           	   AND tr.`id_state` = 0)
 	    LEFT JOIN `'._DB_PREFIX_.'tax` t ON (t.`id_tax` = tr.`id_tax`)
 		LEFT JOIN `'._DB_PREFIX_.'tax_lang` tl ON (t.`id_tax` = tl.`id_tax` AND tl.`id_lang` = '.(int)$id_lang.')
 		WHERE pl.`id_lang` = '.(int)$id_lang.'
-		AND p.`id_product` IN ('.$packs.')';
+			'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').'
+			AND p.`id_product` IN ('.$packs.')';
 		if ($limit)
 			$sql .= ' LIMIT '.(int)$limit;
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 		if (!$full)
 			return $result;
 
@@ -154,25 +173,9 @@ class PackCore extends Product
 
 	public static function deleteItems($id_product)
 	{
-		Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'product SET cache_is_pack = 0 WHERE id_product = '.(int)($id_product).' LIMIT 1');
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'pack` WHERE `id_product_pack` = '.(int)($id_product));
-	}
-
-	/**
-	 * @deprecated
-	 */
-	public static function addItems($id_product, $ids)
-	{
-		Tools::displayAsDeprecated();
-
-		array_pop($ids);
-		foreach ($ids as $id_product_item)
-		{
-			$idQty = explode('x', $id_product_item);
-			if (!self::addItem($id_product, $idQty[1], $idQty[0]))
-				return false;
-		}
-		return true;
+		return Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'product SET cache_is_pack = 0 WHERE id_product = '.(int)($id_product).' LIMIT 1') &&
+			Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'pack` WHERE `id_product_pack` = '.(int)($id_product)) &&
+			Configuration::updateGlobalValue('PS_PACK_FEATURE_ACTIVE', self::isCurrentlyUsed());
 	}
 
 	/**
@@ -185,17 +188,44 @@ class PackCore extends Product
 	*/
 	public static function addItem($id_product, $id_item, $qty)
 	{
-		Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'product SET cache_is_pack = 1 WHERE id_product = '.(int)($id_product).' LIMIT 1');
-		return Db::getInstance()->AutoExecute(_DB_PREFIX_.'pack', array('id_product_pack' => (int)($id_product), 'id_product_item' => (int)($id_item), 'quantity' => (int)($qty)), 'INSERT');
+		return Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'product SET cache_is_pack = 1 WHERE id_product = '.(int)($id_product).' LIMIT 1') &&
+			Db::getInstance()->AutoExecute(_DB_PREFIX_.'pack', array('id_product_pack' => (int)($id_product), 'id_product_item' => (int)($id_item), 'quantity' => (int)($qty)), 'INSERT') &&
+			Configuration::updateGlobalValue('PS_PACK_FEATURE_ACTIVE', '1');
 	}
 
 	public static function duplicate($id_product_old, $id_product_new)
 	{
-		Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'pack (id_product_pack, id_product_item, quantity)
+		Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'pack (id_product_pack, id_product_item, quantity)
 		(SELECT '.(int)($id_product_new).', id_product_item, quantity FROM '._DB_PREFIX_.'pack WHERE id_product_pack = '.(int)($id_product_old).')');
 
 		// If return query result, a non-pack product will return false
 		return true;
+	}
+
+	/**
+	 * This method is allow to know if a feature is used or active
+	 * @since 1.5.0.1
+	 * @return bool
+	 */
+	public static function isFeatureActive()
+	{
+		return Configuration::get('PS_PACK_FEATURE_ACTIVE');
+	}
+
+	/**
+	 * This method is allow to know if a Pack entity is currently used
+	 * @since 1.5.0.1
+	 * @param $table
+	 * @param $has_active_column
+	 * @return bool
+	 */
+	public static function isCurrentlyUsed($table = null, $has_active_column = false)
+	{
+		// We dont't use the parent method because the identifier isn't id_pack
+		return (bool)Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
+			SELECT `id_product_pack`
+			FROM `'._DB_PREFIX_.'pack`
+		');
 	}
 }
 

@@ -32,16 +32,16 @@ require_once(dirname(__FILE__).'/../../init.php');
 
 include_once(dirname(__FILE__).'/ReferralProgramModule.php');
 
-if (!$cookie->isLogged())
+$context = Context::getContext();
+if (!$context->customer->isLogged())
 	Tools::redirect('index.php?controller=authentication&back=modules/referralprogram/referralprogram-program.php');
 
-Tools::addCSS(_PS_CSS_DIR_.'thickbox.css', 'all');
-Tools::addJS(array(_PS_JS_DIR_.'jquery/thickbox-modified.js',_PS_JS_DIR_.'jquery/jquery.idTabs.modified.js'));
+$context->controller->addJqueryPlugin(array('thickbox', 'idTabs'));
 
 include(dirname(__FILE__).'/../../header.php');
 
 // get discount value (ready to display)
-$discount = Discount::display((float)(Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency))), (int)(Configuration::get('REFERRAL_DISCOUNT_TYPE')), new Currency($cookie->id_currency));
+$discount = ReferralProgram::displayDiscount((float)Configuration::get('REFERRAL_DISCOUNT_VALUE_'.(int)($cookie->id_currency)), (int)Configuration::get('REFERRAL_DISCOUNT_TYPE'), new Currency($cookie->id_currency));
 
 $activeTab = 'sponsor';
 $error = false;

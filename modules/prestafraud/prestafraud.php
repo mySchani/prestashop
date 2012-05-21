@@ -25,7 +25,8 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registred Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class PrestaFraud extends Module
@@ -97,7 +98,7 @@ class PrestaFraud extends Module
 		$sql = preg_split("/;\s*[\r\n]+/", $sql);
 
 		foreach ($sql as $query)
-			if ($query AND sizeof($query) AND !Db::getInstance()->Execute(trim($query)))
+			if ($query AND sizeof($query) AND !Db::getInstance()->execute(trim($query)))
 				return false;
 		return true;
 	}
@@ -117,7 +118,6 @@ class PrestaFraud extends Module
 	
 	private function _displayConfiguration()
 	{
-		global $cookie;
 		$this->_html .= '<script type="text/javascript">
 									$(document).ready(function() {
 										$(\'#submitCreateAccount\').unbind(\'click\').click(function() {
@@ -153,7 +153,7 @@ class PrestaFraud extends Module
 						<input id="terms_and_conditions" type="checkbox" value="1" />'.$this->l('I agree with the terms of PrestaShop Security service and I adhere to them unconditionally.').'</label>
 					</div>
 					<div id="terms" class="margin-form">';
-					$terms = file_get_contents($this->_trustUrl.'terms.php?lang='.Language::getIsoById((int)$cookie->id_lang));
+					$terms = file_get_contents($this->_trustUrl.'terms.php?lang='.$this->context->language->iso_code);
 					$this->_html .= $terms;
 					$this->_html .= '</div>
 					<div class="margin-form">
@@ -181,7 +181,7 @@ class PrestaFraud extends Module
 			$this->_html .= '</select>
 				</div>';
 
-		$carriers = Carrier::getCarriers((int)$cookie->id_lang, true);
+		$carriers = Carrier::getCarriers($this->context->language->id, true);
 		$trust_carriers_type = $this->_getPrestaTrustCarriersType();
 		$configured_carriers = $this->_getConfiguredCarriers();
 		
@@ -401,7 +401,7 @@ class PrestaFraud extends Module
 		$order->addChild('payment_name', $paymentModule->displayName);
 		$order->addChild('payment_type', (int)$configured_payments[$paymentModule->id]);
 		$order->addChild('order_date', $params['order']->date_add);
-		$order->addChild('order_ip_address', $this->_getIpByCart($id_cart));
+		$order->addChild('order_ip_address', $this->_getIpByCart((int)$params['order']->id_cart));
 
 		$carrier = new Carrier((int)$params['order']->id_carrier);
 		$carrier_infos = $order->addChild('carrier_infos');
@@ -410,7 +410,7 @@ class PrestaFraud extends Module
 
 		$carrier_infos->addChild('type', $carriers_type[$carrier->id]);
 		if ($this->_pushDatas($root->asXml()) !== false)
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'prestafraud_orders (id_order) VALUES('.(int)$params['order']->id.')');
+			Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'prestafraud_orders (id_order) VALUES('.(int)$params['order']->id.')');
 		return true;
 	}
 	
@@ -425,12 +425,12 @@ class PrestaFraud extends Module
 		FROM '._DB_PREFIX_.'prestafraud_carts
 		WHERE id_cart='.(int)($params['cart']->id));
 		if ($res)
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'prestafraud_carts`
 			SET `ip_address` = '.ip2long($_SERVER['REMOTE_ADDR']).', `date` = \''.pSQL(date('Y-m-d H:i:s')).'\'
 			WHERE `id_cart` = '.(int)($params['cart']->id).' LIMIT 1');
 		else
-			Db::getInstance()->Execute('
+			Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'prestafraud_carts` (`id_cart`, `ip_address`, `date`)
 			VALUES ('.(int)($params['cart']->id).', '.ip2long($_SERVER['REMOTE_ADDR']).',\''.date('Y-m-d H:i:s').'\')');
 		return true;
@@ -453,7 +453,7 @@ class PrestaFraud extends Module
 		FROM '._DB_PREFIX_.'orders
 		WHERE valid=0 AND id_order!='.(int)$order->id.' AND id_customer = '.(int)$order->id_customer);
 
-		$ip_addresses = Db::getInstance()->ExecuteS('
+		$ip_addresses = Db::getInstance()->executeS('
 		SELECT c.ip_address
 		FROM '._DB_PREFIX_.'guest g
 		LEFT JOIN '._DB_PREFIX_.'connections c ON (c.id_guest = g.id_guest)
@@ -483,14 +483,13 @@ class PrestaFraud extends Module
 	
 	public function hookAdminOrder($params)
 	{
-		global $cookie;
 		$id_order = Db::getInstance()->getValue('SELECT id_order FROM '._DB_PREFIX_.'prestafraud_orders WHERE id_order = '.(int)$params['id_order']);
 		$this->_html .= '<br /><fieldset><legend>'.$this->l('PrestaShop Security').'</legend>';
 		if (!$id_order)
 			$this->_html .= $this->l('This order has not been sent to PrestaShop Security.');
 		else
 		{
-			$scoring = $this->_getScoring((int)$id_order, $cookie->id_lang);
+			$scoring = $this->_getScoring((int)$id_order, $this->context->language->id);
 			$this->_html .= '<p><b>'.$this->l('Scoring:').'</b> '.($scoring['scoring'] < 0 ? $this->l('Unknown') : (float)$scoring['scoring']).'</p>
 			<p><b>'.$this->l('Comment:').'</b> '.htmlentities($scoring['comment']).'</p>
 			<p><center><a target="_BLANK" href="'.$this->_trustUrl.'fraud_report.php?shop_id='.Configuration::get('PS_TRUST_SHOP_ID').'&shop_key='.Configuration::get('PS_TRUST_SHOP_KEY').'&order_id='.$id_order.'">'.$this->l('Report this order as a fraud to PrestaShop').'</a></center></p>';
@@ -498,9 +497,7 @@ class PrestaFraud extends Module
 		$this->_html .= '</fieldset>';
 		return $this->_html;
 	}
-	
-	
-		
+			
 	private function _getScoring($id_order, $id_lang)
 	{
 		if (!$scoring = Db::getInstance()->getRow('SELECT * FROM '._DB_PREFIX_.'prestafraud_orders WHERE scoring IS NOT NULL AND id_order = '.(int)$id_order))
@@ -516,7 +513,7 @@ class PrestaFraud extends Module
 				return false;
 			$xml = simplexml_load_string($result);
 			if ((int)$xml->check_scoring->status != -1)
-				Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'prestafraud_orders SET scoring = '.(float)$xml->check_scoring->scoring.', comment = \''.pSQL($xml->check_scoring->comment).'\' WHERE id_order='.(int)$id_order);
+				Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'prestafraud_orders SET scoring = '.(float)$xml->check_scoring->scoring.', comment = \''.pSQL($xml->check_scoring->comment).'\' WHERE id_order='.(int)$id_order);
 			$scoring = 	array('scoring' => (float)$xml->check_scoring->scoring, 'comment' => (string)$xml->check_scoring->comment);
 		}
 		return $scoring;
@@ -533,7 +530,7 @@ class PrestaFraud extends Module
 	
 	private function _getConfiguredCarriers()
 	{
-		$res =  Db::getInstance()->ExecuteS('SELECT * FROM '._DB_PREFIX_.'prestafraud_carrier');
+		$res =  Db::getInstance()->executeS('SELECT * FROM '._DB_PREFIX_.'prestafraud_carrier');
 		$carriers = array();
 		foreach ($res AS $row)
 			$carriers[$row['id_carrier']] = $row['id_prestafraud_carrier_type'];
@@ -543,7 +540,7 @@ class PrestaFraud extends Module
 	
 	private function _getConfiguredPayments()
 	{
-		$res =  Db::getInstance()->ExecuteS('SELECT * FROM '._DB_PREFIX_.'prestafraud_payment');
+		$res =  Db::getInstance()->executeS('SELECT * FROM '._DB_PREFIX_.'prestafraud_payment');
 		$payments = array();
 		foreach ($res AS $row)
 			$payments[$row['id_module']] = $row['id_prestafraud_payment_type'];
@@ -553,21 +550,21 @@ class PrestaFraud extends Module
 	
 	private function _setCarriersConfiguration($carriers)
 	{
-		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'prestafraud_carrier');
+		Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'prestafraud_carrier');
 		foreach ($carriers AS $id_carrier => $id_carrier_type)
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'prestafraud_carrier (id_carrier, id_prestafraud_carrier_type) VALUES ('.(int)$id_carrier.', '.(int)$id_carrier_type.')');
+			Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'prestafraud_carrier (id_carrier, id_prestafraud_carrier_type) VALUES ('.(int)$id_carrier.', '.(int)$id_carrier_type.')');
 	}
 	
 	private function _setPaymentsConfiguration($payments)
 	{
-		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'prestafraud_payment');
+		Db::getInstance()->execute('DELETE FROM '._DB_PREFIX_.'prestafraud_payment');
 		foreach ($payments AS $id_module => $id_payment_type)
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'prestafraud_payment (id_module, id_prestafraud_payment_type) VALUES ('.(int)$id_module.', '.(int)$id_payment_type.')');
+			Db::getInstance()->execute('INSERT INTO '._DB_PREFIX_.'prestafraud_payment (id_module, id_prestafraud_payment_type) VALUES ('.(int)$id_module.', '.(int)$id_payment_type.')');
 	}
 	
 	private function _updateConfiguredCarrier($old, $new)
 	{
-		return Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'prestafraud_carrier SET id_carrier='.(int)$new.' WHERE id_carrier='.(int)$old);
+		return Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'prestafraud_carrier SET id_carrier='.(int)$new.' WHERE id_carrier='.(int)$old);
 	}
 	
 	private function _pushDatas($datas)
@@ -586,8 +583,8 @@ class PrestaFraud extends Module
 		}
 		elseif (function_exists('file_get_contents'))
 		{
-			$context = stream_context_create(array('http' => array('timeout' => 5)));
-			return file_get_contents($this->_trustUrl.'?xml='.urlencode(str_replace("\r", "\n", '', $datas)), $context);
+			$stream_context = @stream_context_create(array('http' => array('timeout' => 5)));
+			return file_get_contents($this->_trustUrl.'?xml='.urlencode(str_replace("\r", "\n", '', $datas)), $stream_context);
 		}
 		else
 			return false;

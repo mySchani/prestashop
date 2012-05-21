@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,29 +25,58 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
-	
+
 class authorizeAIM extends PaymentModule
 {
 	public function __construct()
 	{
 		$this->name = 'authorizeaim';
 		$this->tab = 'payments_gateways';
-		$this->version = '1.0';
+		$this->version = '1.3';
 		$this->author = 'PrestaShop';
 		$this->limited_countries = array('us');
 		$this->need_instance = 0;
 
-        parent::__construct();
+   	parent::__construct();
 
-        $this->displayName = 'Authorize.net AIM (Advanced Integration Method)';
-        $this->description = $this->l('Receive payment with Authorize.net');
+		$this->displayName = 'Authorize.net AIM (Advanced Integration Method)';
+    $this->description = $this->l('Receive payment with Authorize.net');
+
+		/* For 1.4.3 and less compatibility */
+		$updateConfig = array(
+			'PS_OS_CHEQUE' => 1,
+			'PS_OS_PAYMENT' => 2,
+			'PS_OS_PREPARATION' => 3,
+			'PS_OS_SHIPPING' => 4,
+			'PS_OS_DELIVERED' => 5,
+			'PS_OS_CANCELED' => 6,
+			'PS_OS_REFUND' => 7,
+			'PS_OS_ERROR' => 8,
+			'PS_OS_OUTOFSTOCK' => 9,
+			'PS_OS_BANKWIRE' => 10,
+			'PS_OS_PAYPAL' => 11,
+			'PS_OS_WS_PAYMENT' => 12);
+
+		foreach ($updateConfig as $u => $v)
+			if (!Configuration::get($u) || (int)Configuration::get($u) < 1)
+			{
+				if (defined('_'.$u.'_') && (int)constant('_'.$u.'_') > 0)
+					Configuration::updateValue($u, constant('_'.$u.'_'));
+				else
+					Configuration::updateValue($u, $v);
+			}
+
+		/* Check if cURL is enabled */
+		if (!is_callable('curl_exec'))
+			$this->warning = $this->l('cURL extension must be enabled on your server to use this module.');
 	}
 
 	public function install()
 	{
-		return (parent::install() AND $this->registerHook('orderConfirmation') AND $this->registerHook('payment') AND Configuration::updateValue('AUTHORIZE_AIM_DEMO', 1));
+		return (parent::install() && $this->registerHook('orderConfirmation') && $this->registerHook('payment')
+			AND $this->registerHook('header') && Configuration::updateValue('AUTHORIZE_AIM_DEMO', 1));
 	}
 
 	public function uninstall()
@@ -65,17 +94,15 @@ class authorizeAIM extends PaymentModule
 
 	public function hookOrderConfirmation($params)
 	{
-		global $smarty; 
-
-		if ($params['objOrder']->module != $this->name) 
+		if ($params['objOrder']->module != $this->name)
 			return;
 
-		if ($params['objOrder']->getCurrentState() != _PS_OS_ERROR_) 
-			$smarty->assign(array('status' => 'ok', 'id_order' => intval($params['objOrder']->id)));
+		if ($params['objOrder']->getCurrentState() != Configuration::get('PS_OS_ERROR'))
+			$this->context->smarty->assign(array('status' => 'ok', 'id_order' => intval($params['objOrder']->id)));
 		else
-			$smarty->assign('status', 'failed');
+			$this->context->smarty->assign('status', 'failed');
 
-		return $this->display(__FILE__, 'hookorderconfirmation.tpl'); 
+		return $this->display(__FILE__, 'hookorderconfirmation.tpl');
 	}
 
 	public function getContent()
@@ -135,13 +162,10 @@ class authorizeAIM extends PaymentModule
 
 	public function hookPayment($params)
 	{
-		global $cookie, $smarty;
-
-		if (!empty($_SERVER['HTTPS']) AND strtolower($_SERVER['HTTPS']) != 'off' AND Configuration::get('PS_SSL_ENABLED'))
+		if (Configuration::get('PS_SSL_ENABLED') || (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) != 'off'))
 		{
 			$invoiceAddress = new Address((int)$params['cart']->id_address_invoice);
-			$customer = new Customer((int)$cookie->id_customer);
-			
+
 			$authorizeAIMParams = array();
 			$authorizeAIMParams['x_login'] = Configuration::get('AUTHORIZE_AIM_LOGIN_ID');
 			$authorizeAIMParams['x_tran_key'] = Configuration::get('AUTHORIZE_AIM_KEY');
@@ -156,9 +180,9 @@ class authorizeAIM extends PaymentModule
 			$authorizeAIMParams['x_amount'] = number_format($params['cart']->getOrderTotal(true, 3), 2, '.', '');
 			$authorizeAIMParams['x_address'] = $invoiceAddress->address1.' '.$invoiceAddress->address2;
 			$authorizeAIMParams['x_zip'] = $invoiceAddress->postcode;
-			$authorizeAIMParams['x_first_name'] = $customer->firstname;
-			$authorizeAIMParams['x_last_name'] = $customer->lastname;
-			
+			$authorizeAIMParams['x_first_name'] = $this->context->customer->firstname;
+			$authorizeAIMParams['x_last_name'] = $this->context->customer->lastname;
+
 			$isFailed = Tools::getValue('aimerror');
 
 			$cards = array();
@@ -167,12 +191,42 @@ class authorizeAIM extends PaymentModule
 			$cards['discover'] = Configuration::get('AUTHORIZE_AIM_CARD_DISCOVER') == 'on' ? 1 : 0;
 			$cards['ax'] = Configuration::get('AUTHORIZE_AIM_CARD_AX') == 'on' ? 1 : 0;
 
-			$smarty->assign('p', $authorizeAIMParams);
-			$smarty->assign('cards', $cards);
-			$smarty->assign('isFailed', $isFailed);
+			$this->context->smarty->assign('p', $authorizeAIMParams);
+			$this->context->smarty->assign('cards', $cards);
+			$this->context->smarty->assign('isFailed', $isFailed);
 
 			return $this->display(__FILE__, 'authorizeaim.tpl');
 		}
-    }
+	}
+
+	public function hookHeader()
+	{
+		$this->context->controller->addJS(_PS_JS_DIR_.'jquery/jquery.validate.creditcard2-1.0.1.js');
+  	}
+
+	/**
+	* Set the detail of a payment - Call before the validate order init
+	* correctly the pcc object
+	* See Authorize documentation to know the associated key => value
+	* @param array fields
+	*/
+	public function setTransactionDetail($response)
+	{
+	// If Exist we can store the details
+	if (isset($this->pcc))
+	{
+		$this->pcc->transaction_id = (string)$response[6];
+
+			// 50 => Card number (XXXX0000)
+			$this->pcc->card_number = (string)substr($response[50], -4);
+
+			// 51 => Card Mark (Visa, Master card)
+			$this->pcc->card_brand = (string)$response[51];
+
+			$this->pcc->card_expiration = (string)Tools::getValue('x_exp_date');
+
+			// 68 => Owner name
+			$this->pcc->card_holder = (string)$response[68];
+	}
+	}
 }
-?>

@@ -25,16 +25,16 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('PS_ADMIN_DIR', getcwd());
-include(PS_ADMIN_DIR.'/../config/config.inc.php');
+define('_PS_ADMIN_DIR_', getcwd());
+include(_PS_ADMIN_DIR_.'/../config/config.inc.php');
 /* Getting cookie or logout */
 require_once(dirname(__FILE__).'/init.php');
 
-require_once(PS_ADMIN_DIR.'/tabs/AdminCounty.php');
+$context = Context::getContext();
 
-if (isset($_GET['changeParentUrl']))
+if (Tools::isSubmit('changeParentUrl'))
 	echo '<script type="text/javascript">parent.parent.document.location.href = "'.addslashes(urldecode(Tools::getValue('changeParentUrl'))).'";</script>';
-if (isset($_GET['installBoughtModule']))
+if (Tools::isSubmit('installBoughtModule'))
 {
 	$file = false;
 	while ($file === false OR file_exists(_PS_MODULE_DIR_.$file))
@@ -66,48 +66,54 @@ if (isset($_GET['installBoughtModule']))
 	die(displayJavascriptAlert('Module copied to disk'));
 }
 
-function displayJavascriptAlert($s){echo '<script type="text/javascript">alert(\''.addslashes($s).'\');</script>';}
-
-if (isset($_GET['ajaxProductManufacturers']))
+function displayJavascriptAlert($s)
 {
-	$currentIndex = 'index.php?tab=AdminCatalog';
+	echo '<script type="text/javascript">alert(\''.addslashes($s).'\');</script>';
+}
+
+if (Tools::isSubmit('ajaxProductManufacturers'))
+{
+	AdminTab::$currentIndex = 'index.php?tab=AdminCatalog';
 	$manufacturers = Manufacturer::getManufacturers();
 	if ($manufacturers)
 	{
 		$jsonArray = array();
 		foreach ($manufacturers AS $manufacturer)
-			$jsonArray[] = '{"optionValue": "'.$manufacturer['id_manufacturer'].'", "optionDisplay": "'.htmlspecialchars($manufacturer['name']).'"}';
+			$jsonArray[] = '{"optionValue": "'.$manufacturer['id_manufacturer'].'", "optionDisplay": "'.htmlspecialchars(trim($manufacturer['name'])).'"}';
 		die('['.implode(',', $jsonArray).']');
 	}
 }
-if (isset($_GET['ajaxReferrers']))
+
+
+if (Tools::isSubmit('ajaxReferrers'))
 {
-	require('tabs/AdminReferrers.php');
+	require(_PS_CONTROLLER_DIR_.'admin/AdminReferrersController.php');
 }
 
-if (isset($_GET['ajaxProductSuppliers']))
+if (Tools::isSubmit('ajaxProductSuppliers'))
 {
-	$currentIndex = 'index.php?tab=AdminCatalog';
+	AdminTab::$currentIndex = 'index.php?tab=AdminCatalog';
 	$suppliers = Supplier::getSuppliers();
 	if ($suppliers)
 	{
 		$jsonArray = array();
 		foreach ($suppliers AS $supplier)
-			$jsonArray[] = '{"optionValue": "'.$supplier['id_supplier'].'", "optionDisplay": "'.htmlspecialchars($supplier['name']).'"}';
+			$jsonArray[] = '{"optionValue": "'.$supplier['id_supplier'].'", "optionDisplay": "'.htmlspecialchars(trim($supplier['name'])).'"}';
 		die('['.implode(',', $jsonArray).']');
 	}
 }
 
-if (isset($_GET['ajaxProductAccessories']))
+if (Tools::isSubmit('ajaxProductAccessories'))
 {
-	$currentIndex = 'index.php?tab=AdminCatalog';
+	AdminTab::$currentIndex = 'index.php?tab=AdminCatalog';
 	$jsonArray = array();
 
-	$products = Db::getInstance()->ExecuteS('
+	$products = Db::getInstance()->executeS('
 	SELECT p.`id_product`, pl.`name`
 	FROM `'._DB_PREFIX_.'product` p
 	NATURAL LEFT JOIN `'._DB_PREFIX_.'product_lang` pl
 	WHERE pl.`id_lang` = '.(int)(Tools::getValue('id_lang')).'
+	'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').'
 	AND p.`id_product` != '.(int)(Tools::getValue('id_product')).'
 	AND p.`id_product` NOT IN (
 		SELECT a.`id_product_2`
@@ -120,18 +126,16 @@ if (isset($_GET['ajaxProductAccessories']))
 	die('['.implode(',', $jsonArray).']');
 }
 
-if (isset($_GET['ajaxDiscountCustomers']))
+if (Tools::isSubmit('ajaxDiscountCustomers'))
 {
-	global $cookie;
-
-	$currentIndex = 'index.php?tab=AdminDiscounts';
+	AdminTab::$currentIndex = 'index.php?tab=AdminDiscounts';
 	$jsonArray = array();
 	$filter = Tools::getValue('filter');
 
 	if (Validate::isBool_Id($filter))
 		$filterArray = explode('_', $filter);
 
-	$customers = Db::getInstance()->ExecuteS('
+	$customers = Db::getInstance()->executeS('
 	SELECT `id_customer`, `email`, CONCAT(`lastname`, \' \', `firstname`) as name
 	FROM `'._DB_PREFIX_.'customer`
 	WHERE `deleted` = 0 AND is_guest = 0
@@ -143,10 +147,10 @@ if (isset($_GET['ajaxDiscountCustomers']))
 	ORDER BY CONCAT(`lastname`, \' \', `firstname`) ASC
 	LIMIT 50');
 
-	$groups = Db::getInstance()->ExecuteS('
+	$groups = Db::getInstance()->executeS('
 	SELECT g.`id_group`, gl.`name`
 	FROM `'._DB_PREFIX_.'group` g
-	LEFT JOIN `'._DB_PREFIX_.'group_lang` AS gl ON (g.`id_group` = gl.`id_group` AND gl.`id_lang` = '.(int)($cookie->id_lang).')
+	LEFT JOIN `'._DB_PREFIX_.'group_lang` AS gl ON (g.`id_group` = gl.`id_group` AND gl.`id_lang` = '.(int)($context->language->id).')
 	WHERE '.(Validate::isUnsignedInt($filter) ? 'g.`id_group` = '.(int)($filter) : 'gl.`name` LIKE "%'.pSQL($filter).'%"
 	'.((Validate::isBool_Id($filter) AND $filterArray[0] == 1) ? 'OR g.`id_group` = '.(int)($filterArray[1]) : '')).'
 	ORDER BY gl.`name` ASC
@@ -165,9 +169,7 @@ if (isset($_GET['ajaxDiscountCustomers']))
 }
 
 if (Tools::getValue('page') == 'prestastore' AND @fsockopen('addons.prestashop.com', 80, $errno, $errst, 3))
-	readfile('http://addons.prestashop.com/adminmodules.php?lang='.Language::getIsoById($cookie->id_lang));
-if (Tools::getValue('page') == 'themes'  AND @fsockopen('addons.prestashop.com', 80, $errno, $errst, 3))
-	readfile('http://addons.prestashop.com/adminthemes.php?lang='.Language::getIsoById($cookie->id_lang));
+	readfile('http://addons.prestashop.com/adminmodules.php?lang='.$context->language->iso_code);
 
 if ($step = (int)(Tools::getValue('ajaxProductTab')))
 {
@@ -182,17 +184,15 @@ if ($step = (int)(Tools::getValue('ajaxProductTab')))
 		die (Tools::displayError('Product cannot be loaded'));
 
 	$switchArray = array(3 => 'displayFormPrices', 4 => 'displayFormAttributes', 5 => 'displayFormFeatures', 6 => 'displayFormCustomization', 7 => 'displayFormAttachments');
-	$currentIndex = 'index.php?tab=AdminCatalog';
+	AdminTab::$currentIndex = 'index.php?tab=AdminCatalog';
 	if (key_exists($step, $switchArray))
 		$admin->{$switchArray[$step]}($product, $languages, $defaultLanguage);
 }
 
-if (isset($_GET['getAvailableFields']) and isset($_GET['entity']))
+if (Tools::isSubmit('getAvailableFields') AND Tools::isSubmit('entity'))
 {
-	$currentIndex = 'index.php?tab=AdminImport';
 	$jsonArray = array();
-	require_once(dirname(__FILE__).'/tabs/AdminImport.php');
-	$import = new AdminImport();
+	$import = new AdminImportController();
 
 	$languages = Language::getLanguages(false);
 	$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
@@ -202,7 +202,7 @@ if (isset($_GET['getAvailableFields']) and isset($_GET['entity']))
 	die('['.implode(',', $jsonArray).']');
 }
 
-if (array_key_exists('ajaxModulesPositions', $_POST))
+if (Tools::isSubmit('ajaxModulesPositions'))
 {
 	$id_module = (int)(Tools::getValue('id_module'));
 	$id_hook = (int)(Tools::getValue('id_hook'));
@@ -219,7 +219,7 @@ if (array_key_exists('ajaxModulesPositions', $_POST))
 		die('{"hasError" : true, "errors" : "This module can not be loaded"}');
 }
 
-if (array_key_exists('ajaxCategoriesPositions', $_POST))
+if (Tools::isSubmit('ajaxCategoriesPositions'))
 {
 	$id_category_to_move = (int)(Tools::getValue('id_category_to_move'));
 	$id_category_parent = (int)(Tools::getValue('id_category_parent'));
@@ -240,7 +240,7 @@ if (array_key_exists('ajaxCategoriesPositions', $_POST))
 	{
 		if (isset($position) && $category->updatePosition($way, $position))
 		{
-			Module::hookExec('categoryUpdate');
+			Hook::exec('categoryUpdate');
 			die(true);
 		}
 		else
@@ -251,7 +251,7 @@ if (array_key_exists('ajaxCategoriesPositions', $_POST))
 
 }
 
-if (array_key_exists('ajaxCMSCategoriesPositions', $_POST))
+if (Tools::isSubmit('ajaxCMSCategoriesPositions'))
 {
 	$id_cms_category_to_move = (int)(Tools::getValue('id_cms_category_to_move'));
 	$id_cms_category_parent = (int)(Tools::getValue('id_cms_category_parent'));
@@ -279,7 +279,7 @@ if (array_key_exists('ajaxCMSCategoriesPositions', $_POST))
 		die('{"hasError" : true, "errors" : "This cms category can not be loaded"}');
 }
 
-if (array_key_exists('ajaxCMSPositions', $_POST))
+if (Tools::isSubmit('ajaxCMSPositions'))
 {
 	$id_cms = (int)(Tools::getValue('id_cms'));
 	$id_category = (int)(Tools::getValue('id_cms_category'));
@@ -308,7 +308,7 @@ if (array_key_exists('ajaxCMSPositions', $_POST))
 }
 
 /* Modify product position in catalog */
-if (array_key_exists('ajaxProductsPositions', $_POST))
+if (Tools::isSubmit('ajaxProductsPositions'))
 {
 	$way = (int)(Tools::getValue('way'));
 	$id_product = (int)(Tools::getValue('id_product'));
@@ -336,14 +336,45 @@ if (array_key_exists('ajaxProductsPositions', $_POST))
 		}
 }
 
-if (isset($_GET['ajaxProductPackItems']))
+if (Tools::isSubmit('ajaxProductImagesPositions'))
+{
+	$id_image = (int)(Tools::getValue('id_image'));
+	$way = (int)(Tools::getValue('way'));
+	$positions = Tools::getValue('imageTable');
+
+	if (is_array($positions))
+		foreach ($positions AS $key => $value)
+		{
+			$pos = explode('_', $value);
+			if ((isset($pos[1])) AND ($pos[1] == $id_image))
+			{
+				// +1 is added because images position range starts from 1 instead of 0 for other objects (products, categories...)
+				$position = ($key + 1);
+				break;
+			}
+		}
+	$image = new Image($id_image);
+	if (Validate::isLoadedObject($image))
+	{
+		if (isset($position) && $image->updatePosition($way, $position))
+			die(true);
+		else
+			die('{"hasError" : true, "errors" : "Cannot update image position"}');
+	}
+	else
+		die('{"hasError" : true, "errors" : "This image cannot be loaded"}');
+}
+
+
+if (Tools::isSubmit('ajaxProductPackItems'))
 {
 	$jsonArray = array();
-	$products = Db::getInstance()->ExecuteS('
+	$products = Db::getInstance()->executeS('
 	SELECT p.`id_product`, pl.`name`
 	FROM `'._DB_PREFIX_.'product` p
 	NATURAL LEFT JOIN `'._DB_PREFIX_.'product_lang` pl
 	WHERE pl.`id_lang` = '.(int)(Tools::getValue('id_lang')).'
+	'.Context::getContext()->shop->addSqlRestrictionOnLang('pl').'
 	AND p.`id_product` NOT IN (SELECT DISTINCT id_product_pack FROM `'._DB_PREFIX_.'pack`)
 	AND p.`id_product` != '.(int)(Tools::getValue('id_product')));
 
@@ -352,20 +383,23 @@ if (isset($_GET['ajaxProductPackItems']))
 	die('['.implode(',', $jsonArray).']');
 }
 
-if (isset($_GET['ajaxStates']) AND isset($_GET['id_country']))
+if (Tools::isSubmit('ajaxStates') AND Tools::isSubmit('id_country'))
 {
-	$states = Db::getInstance()->ExecuteS('
+	$states = Db::getInstance()->executeS('
 	SELECT s.id_state, s.name
 	FROM '._DB_PREFIX_.'state s
 	LEFT JOIN '._DB_PREFIX_.'country c ON (s.`id_country` = c.`id_country`)
 	WHERE s.id_country = '.(int)(Tools::getValue('id_country')).' AND s.active = 1 AND c.`contains_states` = 1
 	ORDER BY s.`name` ASC');
-	
+
 	if (is_array($states) AND !empty($states))
 	{
 		$list = '';
 		if (Tools::getValue('no_empty') != true)
-			$list = '<option value="0">-----------</option>'."\n";
+		{
+			$empty_value = (Tools::isSubmit('empty_value')) ? Tools::getValue('empty_value') : '----------';
+			$list = '<option value="0">'.Tools::htmlentitiesUTF8($empty_value).'</option>'."\n";
+		}
 
 		foreach ($states AS $state)
 			$list .= '<option value="'.(int)($state['id_state']).'"'.((isset($_GET['id_state']) AND $_GET['id_state'] == $state['id_state']) ? ' selected="selected"' : '').'>'.$state['name'].'</option>'."\n";
@@ -381,33 +415,31 @@ if (Tools::isSubmit('submitCustomerNote') AND $id_customer = (int)Tools::getValu
 	$note = html_entity_decode(Tools::getValue('note'));
 	if (!empty($note) AND !Validate::isCleanHtml($note))
 		die ('error:validation');
-	if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `note` = "'.pSQL($note, true).'" WHERE id_customer = '.(int)$id_customer.' LIMIT 1'))
+	if (!Db::getInstance()->execute('UPDATE '._DB_PREFIX_.'customer SET `note` = "'.pSQL($note, true).'" WHERE id_customer = '.(int)$id_customer.' LIMIT 1'))
 		die ('error:update');
 	die('ok');
 }
 
 if (Tools::getValue('form_language_id'))
 {
-	if (!($cookie->employee_form_lang = (int)(Tools::getValue('form_language_id'))))
+	if (!($context->cookie->employee_form_lang = (int)(Tools::getValue('form_language_id'))))
 		die ('Error while updating cookie.');
 	die ('Form language updated.');
 }
 
 if (Tools::getValue('submitPublishProduct'))
 {
-	global $cookie;
-
 	if (Tools::getIsset('id_product'))
 	{
 		$id_product = (int)(Tools::getValue('id_product'));
-		$id_tab_catalog = (int)(Tab::getIdFromClassName('AdminCatalog'));
-		$token = Tools::getAdminToken('AdminCatalog'.(int)($id_tab_catalog).(int)($cookie->id_employee));
-		$bo_product_url = dirname($_SERVER['PHP_SELF']).'/index.php?tab=AdminCatalog&id_product='.$id_product.'&updateproduct&token='.$token;
+		$id_tab_catalog = (int)(Tab::getIdFromClassName('AdminProducts'));
+		$token = Tools::getAdminToken('AdminProducts'.(int)($id_tab_catalog).(int)$context->employee->id);
+		$bo_product_url = dirname($_SERVER['PHP_SELF']).'/index.php?tab=AdminProducts&id_product='.$id_product.'&updateproduct&token='.$token;
 
 		if (Tools::getValue('redirect'))
 			die($bo_product_url);
 
-		$profileAccess = Profile::getProfileAccess((int)$cookie->profile, $id_tab_catalog);
+		$profileAccess = Profile::getProfileAccess($context->employee->id_profile, $id_tab_catalog);
 		if($profileAccess['edit'])
 		{
 			$product = new Product((int)(Tools::getValue('id_product')));
@@ -431,19 +463,17 @@ if (Tools::getValue('submitPublishProduct'))
 
 if (Tools::getValue('submitPublishCMS'))
 {
-	global $cookie;
-
 	if (Tools::getIsset('id_cms'))
 	{
 		$id_cms = (int)(Tools::getValue('id_cms'));
-		$id_tab_cms = (int)(Tab::getIdFromClassName('AdminCMSContent'));
-		$token = Tools::getAdminToken('AdminCMSContent'.(int)($id_tab_cms).(int)($cookie->id_employee));
-		$bo_cms_url = dirname($_SERVER['PHP_SELF']).'/index.php?tab=AdminCMSContent&id_cms='.(int)$id_cms.'&updatecms&token='.$token;
+		$id_tab_cms = (int)(Tab::getIdFromClassName('AdminCmsContent'));
+		$token = Tools::getAdminToken('AdminCmsContent'.(int)($id_tab_cms).(int)$context->employee->id);
+		$bo_cms_url = dirname($_SERVER['PHP_SELF']).'/index.php?tab=AdminCmsContent&id_cms='.(int)$id_cms.'&updatecms&token='.$token;
 
 		if (Tools::getValue('redirect'))
 			die($bo_cms_url);
 
-		$profileAccess = Profile::getProfileAccess((int)$cookie->profile, $id_tab_cms);
+		$profileAccess = Profile::getProfileAccess($context->employee->id_profile, $id_tab_cms);
 		if($profileAccess['edit'])
 		{
 			$cms = new CMS((int)(Tools::getValue('id_cms')));
@@ -477,7 +507,7 @@ if (Tools::isSubmit('submitTrackClickOnHelp'))
 if (Tools::isSubmit('saveImportMatchs'))
 {
    $match = implode('|', Tools::getValue('type_value'));
-   Db::getInstance()->Execute('INSERT INTO  `'._DB_PREFIX_.'import_match` (
+   Db::getInstance()->execute('INSERT INTO  `'._DB_PREFIX_.'import_match` (
 								`id_import_match` ,
 								`name` ,
 								`match`,
@@ -495,41 +525,22 @@ if (Tools::isSubmit('saveImportMatchs'))
 
 if (Tools::isSubmit('deleteImportMatchs'))
 {
-   Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'import_match` WHERE id_import_match = '.pSQL(Tools::getValue('idImportMatchs')));
+   Db::getInstance()->execute('DELETE FROM `'._DB_PREFIX_.'import_match` WHERE `id_import_match` = '.(int)Tools::getValue('idImportMatchs'));
 }
 
 if (Tools::isSubmit('loadImportMatchs'))
 {
-   $return = Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'import_match` WHERE id_import_match = '.pSQL(Tools::getValue('idImportMatchs')));
+   $return = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'import_match` WHERE `id_import_match` = '.(int)Tools::getValue('idImportMatchs'));
    die('{"id" : "'.$return[0]['id_import_match'].'", "matchs" : "'.$return[0]['match'].'", "skip" : "'.$return[0]['skip'].'"}');
 }
 
 if (Tools::isSubmit('toggleScreencast'))
 {
-	global $cookie;
-	$cookie->show_screencast = (int)(!(bool)$cookie->show_screencast);
-}
-
-if (Tools::isSubmit('ajaxAddZipCode') OR Tools::isSubmit('ajaxRemoveZipCode'))
-{
-	$zipcodes = Tools::getValue('zipcodes');
-	$id_county = (int)Tools::getValue('id_county');
-
-	$county = new County($id_county);
-	if (!Validate::isLoadedObject($county))
-		die('error');
-
-	if (Tools::isSubmit('ajaxAddZipCode'))
+	if (Validate::isLoadedObject($context->employee))
 	{
-		if ($county->isZipCodeRangePresent($zipcodes))
-			die('error:'.Tools::displayError('This Zip Code is already in use.'));
-		if ($county->addZipCodes($zipcodes))
-			die(AdminCounty::renderZipCodeList($county->getZipCodes()));
+		$context->employee->bo_show_screencast = !$context->employee->bo_show_screencast;
+		$context->employee->update();
 	}
-	else if (Tools::isSubmit('ajaxRemoveZipCode') AND $county->removeZipCodes($zipcodes))
-			die(AdminCounty::renderZipCodeList($county->getZipCodes()));
-
-	die('error');
 }
 
 if (Tools::isSubmit('helpAccess'))
@@ -541,14 +552,23 @@ if (Tools::isSubmit('helpAccess'))
 
 	if (isset($item) AND isset($isoUser) AND isset($country))
 		die(HelpAccess::displayHelp($item, $isoUser,  $country, $version));
-	die();
+	die('{nohelp}');
 }
 
 if (Tools::isSubmit('getHookableList'))
 {
+	/* PrestaShop demo mode */
+	if (_PS_MODE_DEMO_)
+		die('{"hasError" : true, "errors" : ["Live Edit : This functionnality has been disabled"]}');
+	/* PrestaShop demo mode*/
+
+	if (!strlen(Tools::getValue('hooks_list')))
+		die('{"hasError" : true, "errors" : ["Live Edit : no module on this page"]}');
+
 	$modules_list = explode(',', Tools::getValue('modules_list'));
 	$hooks_list = explode(',', Tools::getValue('hooks_list'));
 	$hookableList = array();
+
 	foreach ($modules_list as $module)
 	{
 		$module = trim($module);
@@ -566,18 +586,23 @@ if (Tools::isSubmit('getHookableList'))
 			if ($moduleInstance->isHookableOn($hook_name))
 				array_push($hookableList[$hook_name], $module);
 		}
-			
+
 	}
+	$hookableList['hasError'] = false;
 	die(Tools::jsonEncode($hookableList));
 }
 
 if (Tools::isSubmit('getHookableModuleList'))
 {
-	
+	/* PrestaShop demo mode */
+	if (_PS_MODE_DEMO_)
+		die('{"hasError" : true, "errors" : ["Live Edit : This functionnality has been disabled"]}');
+	/* PrestaShop demo mode*/
+
 	include('../init.php');
 	$hook_name = Tools::getValue('hook');
 	$hookableModulesList = array();
-	$modules = Db::getInstance()->ExecuteS('SELECT id_module, name FROM `'._DB_PREFIX_.'module` ');
+	$modules = Db::getInstance()->executeS('SELECT id_module, name FROM `'._DB_PREFIX_.'module` ');
 	foreach ($modules as $module)
 	{
 		if (file_exists(_PS_MODULE_DIR_.$module['name'].'/'.$module['name'].'.php'))
@@ -585,14 +610,19 @@ if (Tools::isSubmit('getHookableModuleList'))
 			include_once(_PS_MODULE_DIR_.$module['name'].'/'.$module['name'].'.php');
 			$mod = new $module['name']();
 			if ($mod->isHookableOn($hook_name))
-				$hookableModulesList[] = array('id' => (int)$mod->id, 'name' => $mod->displayName, 'display' => Module::hookExec($hook_name, array(), (int)$mod->id));
-		}		
+				$hookableModulesList[] = array('id' => (int)$mod->id, 'name' => $mod->displayName, 'display' => Hook::exec($hook_name, array(), (int)$mod->id));
+		}
 	}
-	die(Tools::jsonEncode($hookableModulesList));			
+	die(Tools::jsonEncode($hookableModulesList));
 }
 
 if (Tools::isSubmit('saveHook'))
 {
+	/* PrestaShop demo mode */
+	if (_PS_MODE_DEMO_)
+		die('{"hasError" : true, "errors" : ["Live Edit : This functionnality has been disabled"]}');
+	/* PrestaShop demo mode*/
+
 	$hooks_list = explode(',', Tools::getValue('hooks_list'));
 	$id_shop = (int)Tools::getValue('id_shop');
 	if ($id_shop)
@@ -603,23 +633,28 @@ if (Tools::isSubmit('saveHook'))
 			$hook = trim($hook);
 			if (!$hook)
 				continue;
-	
+
 			$sql = 'DELETE FROM '._DB_PREFIX_.'hook_module
 					WHERE id_hook = (SELECT id_hook FROM '._DB_PREFIX_.'hook WHERE `name` = \''.pSQL($hook).'\' LIMIT 1)
 						AND id_shop = '.$id_shop;
-			Db::getInstance()->Execute($sql);
+			Db::getInstance()->execute($sql);
 			$hookedModules = explode(',', Tools::getValue($hook));
 			$i = 1;
 			$value = '';
+			$ids = array();
 			foreach ($hookedModules as $module)
 			{
-				$ids = explode('_', $module);
-				$value .= '('.$ids[1].', '.$id_shop.', (SELECT id_hook FROM '._DB_PREFIX_.'hook WHERE `name` = \''.pSQL($hook).'\' LIMIT 1), '.$i.'),';
+				$id = explode('_', $module);
+				if (!in_array($id[1], $ids))
+				{
+					$ids[] = $id[1];
+					$value .= '('.(int)$id[1].', (SELECT id_hook FROM `'._DB_PREFIX_.'hook` WHERE `name` = \''.pSQL($hook).'\' LIMIT 0, 1), '.(int)$i.'),';
+				}
 				$i++;
 			}
 			$value = rtrim($value, ',');
-			Db::getInstance()->Execute('INSERT INTO  '._DB_PREFIX_.'hook_module (id_module, id_shop, id_hook, position) VALUES '.$value);
-				
+			Db::getInstance()->execute('INSERT INTO  '._DB_PREFIX_.'hook_module (id_module, id_shop, id_hook, position) VALUES '.$value);
+
 		}
 	}
 	die('{"hasError" : false, "errors" : ""}');
@@ -628,26 +663,26 @@ if (Tools::isSubmit('saveHook'))
 if (Tools::isSubmit('getAdminHomeElement'))
 {
 	$result = array();
-	
-	$protocol = (!empty($_SERVER['HTTPS']) AND strtolower($_SERVER['HTTPS']) != 'off') ? 'https' : 'http';
-	$isoUser = Language::getIsoById(intval($cookie->id_lang));
-	$isoCountry = Country::getIsoById(Configuration::get('PS_COUNTRY_DEFAULT'));
-	$context = stream_context_create(array('http' => array('method'=>"GET", 'timeout' => 5)));
-	
+
+	$protocol = Tools::usingSecureMode() ? 'https' : 'http';
+	$isoUser = Context::getContext()->language->iso_code;
+	$isoCountry = Context::getContext()->country->iso_code;
+	$stream_context = @stream_context_create(array('http' => array('method'=> 'GET', 'timeout' => 5)));
+
 	// SCREENCAST
 	if (@fsockopen('www.prestashop.com', 80, $errno, $errst, 3))
 		$result['screencast'] = 'OK';
 	else
 		$result['screencast'] = 'NOK';
-	
+
 	// PREACTIVATION
-	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)$cookie->id_lang.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $context);
+	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/preactivation/preactivation-block.php?version=1.0&shop='.urlencode(Configuration::get('PS_SHOP_NAME')).'&protocol='.$protocol.'&url='.urlencode($_SERVER['HTTP_HOST']).'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&date_creation='._PS_CREATION_DATE_.'&v='._PS_VERSION_.'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
 	if (!$content)
 		$result['partner_preactivation'] = 'NOK';
 	else
 	{
 		$content = explode('|', $content);
-		if ($content[0] == 'OK')
+		if ($content[0] == 'OK' && Validate::isCleanHtml($content[2]) && Validate::isCleanHtml($content[1]))
 		{
 			$result['partner_preactivation'] = $content[2];
 			$content[1] = explode('#%#', $content[1]);
@@ -665,44 +700,299 @@ if (Tools::isSubmit('getAdminHomeElement'))
 		else
 			$result['partner_preactivation'] = 'NOK';
 	}
-	
+
+	// PREACTIVATION PAYPAL WARNING
+	$content = @file_get_contents('https://www.prestashop.com/partner/preactivation/preactivation-warnings.php?version=1.0&partner=paypal&iso_country='.Tools::strtolower(Context::getContext()->country->iso_code).'&iso_lang='.Tools::strtolower(Context::getContext()->language->iso_code).'&id_lang='.(int)Context::getContext()->language->id.'&email='.urlencode(Configuration::get('PS_SHOP_EMAIL')).'&security='.md5(Configuration::get('PS_SHOP_EMAIL')._COOKIE_IV_), false, $stream_context);
+	$content = explode('|', $content);
+	if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
+		Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', $content[1]);
+	else
+		Configuration::updateValue('PS_PREACTIVATION_PAYPAL_WARNING', '');
+
 	// DISCOVER PRESTASHOP
-	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)$cookie->id_lang, false, $context);
+	$content = @file_get_contents($protocol.'://www.prestashop.com/partner/prestashop/prestashop-link.php?iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 	if (!$content)
 		$result['discover_prestashop'] = 'NOK';
 	else
 	{
 		$content = explode('|', $content);
-		if ($content[0] == 'OK')
+		if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 			$result['discover_prestashop'] = $content[1];
 		else
 			$result['discover_prestashop'] = 'NOK';
-	
+
 		if (@fsockopen('www.prestashop.com', 80, $errno, $errst, 3))
 			$result['discover_prestashop'] .= '<iframe frameborder="no" style="margin: 0px; padding: 0px; width: 315px; height: 290px;" src="'.$protocol.'://www.prestashop.com/rss/news2.php?v='._PS_VERSION_.'&lang='.$isoUser.'"></iframe>';
-	
-		$content = @file_get_contents($protocol.'://www.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)$cookie->id_lang, false, $context);
+
+		$content = @file_get_contents($protocol.'://www.prestashop.com/partner/paypal/paypal-tips.php?protocol='.$protocol.'&iso_country='.$isoCountry.'&iso_lang='.Tools::strtolower($isoUser).'&id_lang='.(int)Context::getContext()->language->id, false, $stream_context);
 		$content = explode('|', $content);
-		if ($content[0] == 'OK')
+		if ($content[0] == 'OK' && Validate::isCleanHtml($content[1]))
 			$result['discover_prestashop'] .= $content[1];
-	}	
-	
+	}
+
 	die(Tools::jsonEncode($result));
 }
 
-if (Tools::isSubmit('getChildrenCategories') && Tools::getValue('id_category_parent')) 
+if (Tools::isSubmit('getChildrenCategories') && Tools::getValue('id_category_parent'))
 {
-	$children_categories = Category::getChildrenWithNbSelectedSubCatForProduct(Tools::getValue('id_category_parent'), Tools::getValue('id_product', 0), Tools::getValue('post_selected_cat', null), $cookie->id_lang);
+	$children_categories = Category::getChildrenWithNbSelectedSubCat(Tools::getValue('id_category_parent'), Tools::getValue('selectedCat'), Context::getContext()->language->id);
 	die(Tools::jsonEncode($children_categories));
 }
 
-if (Tools::isSubmit('updateProductImageShopAsso'))
+if (Tools::isSubmit('getNotifications'))
 {
-	if ($id_image = (int)Tools::getValue('id_image') AND $id_shop = (int)Tools::getValue('id_shop'))
+	$notification = new Notification;
+	die(Tools::jsonEncode($notification->getLastElements()));
+}
+
+if (Tools::isSubmit('updateElementEmployee') && Tools::getValue('updateElementEmployeeType'))
+{
+	$notification = new Notification;
+	die($notification->updateEmployeeLastElement(Tools::getValue('updateElementEmployeeType')));
+}
+
+if (Tools::isSubmit('syncImapMail'))
+{
+	if (!$url = Configuration::get('PS_SAV_IMAP_URL')
+	|| !$port = Configuration::get('PS_SAV_IMAP_PORT')
+	|| !$user = Configuration::get('PS_SAV_IMAP_USER')
+	|| !$password = Configuration::get('PS_SAV_IMAP_PWD'))
+	die('{"hasError" : true, "errors" : ["Configuration is not correct"]}');
+
+	if (!function_exists('imap_open'))
+		die('{"hasError" : true, "errors" : ["imap is not installed on this server"]}');
+
+	$mbox = @imap_open('{'.$url.':'.$port.(Configuration::get('PS_SAV_IMAP_SSL') ? '/ssl' : '').'}', $user, $password);
+
+	//checks if there is no error when connecting imap server
+	$errors = imap_errors();
+	$str_errors = '';
+	$str_error_delete = '';
+	if (sizeof($errors))
 	{
-		if ((int)Tools::getValue('active'))
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'image_shop (`id_image`, `id_shop`) VALUES('.(int)$id_image.', '.(int)$id_shop.')');
-		else
-			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'image_shop WHERE `id_image`='.(int)$id_image.' AND `id_shop`='.(int)$id_shop);
+		$str_errors = '["';
+		foreach($errors as $error)
+			$str_errors .= '"'.$error.'",';
+		$str_errors = rtrim($str_errors, ',').'';
+	}
+
+	//checks if imap connexion is active
+	if (!$mbox)
+		die('{"hasError" : true, "errors" : ["Cannot connect to the mailbox"]}');
+
+	//Returns information about the current mailbox. Returns FALSE on failure.
+	$check = imap_check($mbox);
+	if ($check)
+		die('{"hasError" : true, "errors" : ["Fail to get information about the current mailbox"]}');
+
+	if ($check->Nmsgs == 0)
+		die('{"hasError" : true, "errors" : ["NO message to sync"]}');
+
+	$result = imap_fetch_overview($mbox,"1:{$check->Nmsgs}",0);
+	foreach ($result as $overview)
+	{
+	    //check if message exist in database
+	    if (isset($overview->subject))
+	   		$subject = $overview->subject;
+	   	else
+	   		$subject = '';
+
+		//Creating an md5 to check if message has been allready processed
+	    $md5 = md5($overview->date.$overview->from.$subject.$overview->msgno);
+	    $exist = Db::getInstance()->getValue(
+			    'SELECT `md5_header`
+			    FROM `'._DB_PREFIX_.'customer_message_sync_imap`
+			    WHERE `md5_header` = \''.pSQL($md5).'\'');
+	    if ($exist)
+	    {
+			if (Configuration::get('PS_SAV_IMAP_DELETE_MSG'))
+				if (!imap_delete($mbox, $overview->msgno))
+					$str_error_delete = ', "Fail to delete message"';
+	    }
+	    else
+	    {
+	    	//check if subject has id_order
+	    	preg_match('/\#ct([0-9]*)/', $subject, $matches1);
+	    	preg_match('/\#tc([0-9-a-z-A-Z]*)/', $subject, $matches2);
+
+			if (isset($matches1[1]) && isset($matches2[1]))
+			{
+				//check if order exist in database
+				$ct = new CustomerThread((int)$matches1[1]);
+
+				if (Validate::isLoadedObject($ct) && $ct->token == $matches2[1])
+				{
+					$cm = new CustomerMessage();
+					$cm->id_customer_thread = $ct->id;
+					$cm->message = imap_fetchbody($mbox, $overview->msgno, 1);
+					$cm->add();
+				}
+			}
+			Db::getInstance()->execute('INSERT INTO `'._DB_PREFIX_.'customer_message_sync_imap` (`md5_header`) VALUES (\''.pSQL($md5).'\')');
+	    }
+	}
+	imap_expunge($mbox);
+	imap_close($mbox);
+	die('{"hasError" : false, "errors" : '.$str_errors.$str_errors_delete.'"]}');
+}
+
+/* Modify attribute position */
+if (Tools::isSubmit('ajaxAttributesPositions'))
+{
+	$way = (int)Tools::getValue('way');
+	$id_attribute = (int)Tools::getValue('id_attribute');
+	$id_attribute_group = (int)Tools::getValue('id_attribute_group');
+	$positions = Tools::getValue('attribute');
+
+	if (is_array($positions))
+		foreach ($positions as $position => $value)
+		{
+			// pos[1] = id_attribute_group, pos[2] = id_attribute, pos[3]=old position
+			$pos = explode('_', $value);
+
+			if ((isset($pos[1]) && isset($pos[2])) && ($pos[1] == $id_attribute_group && (int)$pos[2] === $id_attribute))
+			{
+				if ($attribute = new Attribute((int)$pos[2]))
+					if (isset($position) && $attribute->updatePosition($way, $position))
+						echo "ok position $position for attribute $pos[2]\r\n";
+					else
+						echo '{"hasError" : true, "errors" : "Can not update attribute '. $id_attribute . ' to position '.$position.' "}';
+				else
+					echo '{"hasError" : true, "errors" : "This attribute ('.$id_attribute.') can t be loaded"}';
+
+				break;
+			}
+		}
+}
+
+/* Modify group attribute position */
+if (Tools::isSubmit('ajaxGroupsAttributesPositions'))
+{
+	$way = (int)Tools::getValue('way');
+	$id_attribute_group = (int)Tools::getValue('id_attribute_group');
+	$positions = Tools::getValue('attribute_group');
+
+	$new_positions = array();
+	foreach($positions as $k => $v)
+		if (count(explode('_', $v)) == 3)
+			$new_positions[] = $v;
+
+	foreach ($new_positions as $position => $value)
+	{
+		// pos[1] = id_attribute_group, pos[2] = old position
+		$pos = explode('_', $value);
+
+		if (isset($pos[1]) && (int)$pos[1] === $id_attribute_group)
+		{
+			if ($group_attribute = new AttributeGroup((int)$pos[1]))
+				if (isset($position) && $group_attribute->updatePosition($way, $position))
+					echo "ok position $position for group attribute $pos[1]\r\n";
+				else
+					echo '{"hasError" : true, "errors" : "Can not update group attribute '. $id_attribute_group . ' to position '.$position.' "}';
+			else
+				echo '{"hasError" : true, "errors" : "This group attribute ('.$id_attribute_group.') can t be loaded"}';
+
+			break;
+		}
 	}
 }
+
+/* Modify feature position */
+if (Tools::isSubmit('ajaxFeaturesPositions'))
+{
+	$way = (int)Tools::getValue('way');
+	$id_feature = (int)Tools::getValue('id_feature');
+	$positions = Tools::getValue('feature');
+
+	$new_positions = array();
+	foreach($positions as $k => $v)
+		if (!empty($v))
+			$new_positions[] = $v;
+
+	foreach ($new_positions as $position => $value)
+	{
+		// pos[2] = id_feature, pos[3] = old position
+		$pos = explode('_', $value);
+
+		if (isset($pos[2]) && (int)$pos[2] === $id_feature)
+		{
+			if ($feature = new Feature((int)$pos[2]))
+				if (isset($position) && $feature->updatePosition($way, $position))
+					echo "ok position $position for feature $pos[1]\r\n";
+				else
+					echo '{"hasError" : true, "errors" : "Can not update feature '. $id_feature . ' to position '.$position.' "}';
+			else
+				echo '{"hasError" : true, "errors" : "This feature ('.$id_feature.') can t be loaded"}';
+
+			break;
+		}
+	}
+}
+
+/* Modify carrier position */
+if (Tools::isSubmit('ajaxCarriersPositions'))
+{
+	$way = (int)(Tools::getValue('way'));
+	$id_carrier = (int)(Tools::getValue('id_carrier'));
+	$positions = Tools::getValue('carrier');
+
+
+	foreach ($positions as $position => $value)
+	{
+		$pos = explode('_', $value);
+
+		if (isset($pos[2]) && (int)$pos[2] === $id_carrier)
+		{
+			if ($carrier = new Carrier((int)$pos[2]))
+				if (isset($position) && $carrier->updatePosition($way, $position))
+					echo "ok position $position for carrier $pos[1]\r\n";
+				else
+					echo '{"hasError" : true, "errors" : "Can not update carrier '. $id_carrier . ' to position '.$position.' "}';
+			else
+				echo '{"hasError" : true, "errors" : "This carrier ('.$id_carrier.') can t be loaded"}';
+
+			break;
+		}
+	}
+}
+
+if (Tools::isSubmit('searchCategory'))
+{
+	$q = Tools::getValue('q');
+	$limit = Tools::getValue('limit');
+	$results = Db::getInstance()->executeS(
+		'SELECT c.`id_category`, cl.`name`
+		FROM `'._DB_PREFIX_.'category` c
+		LEFT JOIN `'._DB_PREFIX_.'category_lang` cl ON (c.`id_category` = cl.`id_category`'.$context->shop->addSqlRestrictionOnLang('cl').')
+		WHERE cl.`id_lang` = '.(int)$context->language->id.' AND c.`level_depth` <> 0
+		AND cl.`name` LIKE \'%'.pSQL($q).'%\'
+		GROUP BY c.id_category
+		ORDER BY c.`position`
+		LIMIT '.(int)$limit);
+	if ($results)
+	foreach ($results as $result)
+		echo trim($result['name']).'|'.(int)$result['id_category']."\n";
+}
+
+if (Tools::isSubmit('getParentCategoriesId') && $id_category = Tools::getValue('id_category'))
+{
+	$category = new Category((int)$id_category);
+	$results = Db::getInstance()->executeS('SELECT `id_category` FROM `'._DB_PREFIX_.'category` c WHERE c.`nleft` < '.(int)$category->nleft.' AND c.`nright` > '.(int)$category->nright.'');
+	$output = array();
+	foreach ($results as $result)
+		$output[] = $result;
+
+	die(Tools::jsonEncode($output));
+}
+
+/* Update attribute */
+if (Tools::isSubmit('ajaxUpdateTaxRule'))
+{
+	$id_tax_rule = Tools::getValue('id_tax_rule');
+	$tax_rules = new TaxRule((int)$id_tax_rule);
+	$output = array();
+	foreach ($tax_rules as $key => $result)
+		$output[$key] = $result;
+	die(Tools::jsonEncode($output));
+}
+

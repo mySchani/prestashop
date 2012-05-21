@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -28,36 +28,36 @@
 class ContactCore extends ObjectModel
 {
 	public 		$id;
-	
+
 	/** @var string Name */
 	public 		$name;
-	
+
 	/** @var string e-mail */
 	public 		$email;
 
 	/** @var string Detailed description */
 	public 		$description;
-	
+
 	public 		$customer_service;
-	
+
  	protected 	$fieldsRequired = array();
  	protected 	$fieldsSize = array('email' => 128);
  	protected 	$fieldsValidate = array('email' => 'isEmail', 'customer_service' => 'isBool');
  	protected 	$fieldsRequiredLang = array('name');
  	protected 	$fieldsSizeLang = array('name' => 32);
  	protected 	$fieldsValidateLang = array('name' => 'isGenericName', 'description' => 'isCleanHtml');
-	
+
 	protected 	$table = 'contact';
 	protected 	$identifier = 'id_contact';
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['email'] = pSQL($this->email);
 		$fields['customer_service'] = (int)($this->customer_service);
 		return $fields;
 	}
-	
+
 	/**
 	  * Check then return multilingual fields for database interaction
 	  *
@@ -65,25 +65,29 @@ class ContactCore extends ObjectModel
 	  */
 	public function getTranslationsFieldsChild()
 	{
-		parent::validateFieldsLang();
-		return parent::getTranslationsFields(array('name', 'description'));
+		$this->validateFieldsLang();
+		return $this->getTranslationsFields(array('name', 'description'));
 	}
-	
+
 	/**
 	  * Return available contacts
 	  *
 	  * @param integer $id_lang Language ID
+	  * @param Context
 	  * @return array Contacts
 	  */
-	static public function getContacts($id_lang, $id_shop = false)
+	static public function getContacts($id_lang, Shop $shop = null)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
-		SELECT *
-		FROM `'._DB_PREFIX_.'contact` c
-		'.($id_shop ? 'LEFT JOIN '._DB_PREFIX_.'contact_shop cs ON (cs.id_contact = c.id_contact)' : '').'
-		LEFT JOIN `'._DB_PREFIX_.'contact_lang` cl ON (c.`id_contact` = cl.`id_contact`)
-		WHERE cl.`id_lang` = '.(int)($id_lang).($id_shop ? ' AND cs.id_shop='.(int)$id_shop : '').'
-		ORDER BY `name` ASC');
+		if (!$shop)
+			$shop = Context::getContext()->shop;
+
+		$sql = 'SELECT *
+				FROM `'._DB_PREFIX_.'contact` c
+				'.$shop->addSqlAssociation('contact', 'c', false).'
+				LEFT JOIN `'._DB_PREFIX_.'contact_lang` cl ON (c.`id_contact` = cl.`id_contact`)
+				WHERE cl.`id_lang` = '.(int)$id_lang.'
+				ORDER BY `name` ASC';
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 	}
 }
 

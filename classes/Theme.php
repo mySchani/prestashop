@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -29,22 +29,23 @@ class ThemeCore extends ObjectModel
 {
 	public $name;
 
-	
 	protected $fieldsSize = array('name' => 64);
  	protected $fieldsValidate = array('name' => 'isGenericName');
 	protected $table = 'theme';
 	protected $identifier = 'id_theme';
-	
+
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['name'] = pSQL($this->name);
 		return $fields;
 	}
-	
+
 	public static function getThemes()
 	{
-		return Db::getInstance()->ExecuteS('SELECT *
-														FROM '._DB_PREFIX_.'theme');
+		$sql = 'SELECT *
+				FROM '._DB_PREFIX_.'theme
+				ORDER BY name';
+		return Db::getInstance()->executeS($sql);
 	}
 }

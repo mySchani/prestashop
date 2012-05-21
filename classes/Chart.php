@@ -47,16 +47,13 @@ class ChartCore
 		if (!self::$poolId)
 		{
 			++self::$poolId;
-			echo '
-		    <!--[if IE]><script type="text/javascript" src="'.PS_BASE_URI.'js/jquery/excanvas.min.js"></script><![endif]-->
-		    <script type="text/javascript" src="'.PS_BASE_URI.'js/jquery/jquery.flot.min.js"></script>';
+			return true;
 		}
 	}
 	
 	/** @prototype void public function __construct() */
 	public function __construct()
 	{
-		self::init();
 		++self::$poolId;
 	}
 	
@@ -101,13 +98,17 @@ class ChartCore
 	/** @prototype void public function display() */
 	public function display()
 	{
-		$options = '';
+		echo $this->fetch();
+	}
+
+	public function fetch()
+	{
 		if ($this->timeMode)
 		{
 			$options = 'xaxis:{mode:"time",timeformat:\''.addslashes($this->format).'\',min:'.$this->from.'000,max:'.$this->to.'000}';
 			if ($this->granularity == 'd')
 				foreach ($this->curves as $curve)
-					for ($i = $this->from; $i <= $this->to; $i += 86400)
+					for ($i = $this->from; $i <= $this->to; $i = strtotime('+1 day', $i))
 						if (!$curve->getPoint($i))
 							$curve->setPoint($i, 0);
 		}
@@ -117,7 +118,7 @@ class ChartCore
 			$jsCurves[] = $curve->getValues($this->timeMode);
 
 		if (count($jsCurves))
-			echo '
+			return '
 			<div id="flot'.self::$poolId.'" style="width:'.$this->width.'px;height:'.$this->height.'px"></div>
 			<script type="text/javascript">
 				$(function () {
@@ -125,7 +126,7 @@ class ChartCore
 				});
 			</script>';
 		else
-			echo ErrorFacade::Display(PS_ERROR_UNDEFINED, 'No values for this chart.');
+			return ErrorFacade::Display(PS_ERROR_UNDEFINED, 'No values for this chart.');
 	}
 }
 

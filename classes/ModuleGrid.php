@@ -100,11 +100,11 @@ abstract class ModuleGridCore extends Module
 		if (!file_exists(dirname(__FILE__).'/../modules/'.$render.'/'.$render.'.php'))
 			return Tools::displayError('Grid engine selected is unavailable.');
 			
-		$grider = 'grider.php?render='.$render.'&module='.Tools::getValue('module');
+		$grider = 'grider.php?render='.$render.'&module='.Tools::safeOutput(Tools::getValue('module'));
 		
-		global $cookie;
-		$grider .= '&id_employee='.(int)($cookie->id_employee);
-		$grider .= '&id_lang='.(int)($cookie->id_lang);
+		$context = Context::getContext();
+		$grider .= '&id_employee='.(int)($context->employee->id);
+		$grider .= '&id_lang='.(int)($context->language->id);
 		
 		if (!isset($params['width']) OR !Validate::IsUnsignedInt($params['width']))
 			$params['width'] = 600;
@@ -136,9 +136,8 @@ abstract class ModuleGridCore extends Module
 	
 	protected function csvExport($datas)
 	{
-		global $cookie;
 		$this->_sort = $datas['defaultSortColumn'];
-		$this->setLang($cookie->id_lang);
+		$this->setLang(Context::getContext()->language->id);
 		$this->getData();
 
 		$layers = isset($datas['layers']) ?  $datas['layers'] : 1;

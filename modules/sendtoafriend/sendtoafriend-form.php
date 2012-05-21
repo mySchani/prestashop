@@ -20,7 +20,7 @@
 *
 *  @author PrestaShop SA <contact@prestashop.com>
 *  @copyright  2007-2011 PrestaShop SA
-*  @version  Release: $Revision: 7040 $
+*  @version  Release: $Revision: 10093 $
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
@@ -28,11 +28,6 @@
 include(dirname(__FILE__).'/../../config/config.inc.php');
 require_once(dirname(__FILE__).'/sendtoafriend.php');
 
-$sendtoafriend = new sendToAFriend();
-if (!$sendtoafriend->active)
-	Tools::display404Error();
-
-include(dirname(__FILE__).'/../../header.php');
-echo $sendtoafriend->displayFrontForm();
-include(dirname(__FILE__).'/../../footer.php');
+$sendtoafriend = new sendToAFriend($dontTranslate = true);
+echo $sendtoafriend->displayPageForm();
 

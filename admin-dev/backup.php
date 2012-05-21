@@ -25,21 +25,19 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-define('PS_ADMIN_DIR', getcwd());
+define('_PS_ADMIN_DIR_', getcwd());
 
-include(PS_ADMIN_DIR.'/../config/config.inc.php');
+include(_PS_ADMIN_DIR_.'/../config/config.inc.php');
 
-/* Header can't be included, so cookie must be created here */
-$cookie = new Cookie('psAdmin');
-if (!$cookie->id_employee)
-	Tools::redirectAdmin('login.php');
+if (!Context::getContext()->employee->isLoggedBack())
+	Tools::redirectAdmin(Context::getContext()->link->getAdminLink('AdminLogin'));
 
-$tabAccess = Profile::getProfileAccess($cookie->profile, Tab::getIdFromClassName('AdminBackup'));
+$tabAccess = Profile::getProfileAccess(Context::getContext()->employee->id_profile, Tab::getIdFromClassName('AdminBackup'));
 
 if ($tabAccess['view'] !== '1')
 	die (Tools::displayError('You do not have permission to view here'));
 
-$backupdir = realpath( PS_ADMIN_DIR . '/backups/');
+$backupdir = realpath(_PS_ADMIN_DIR_ . '/backups/');
 
 if ($backupdir === false)
 	die (Tools::displayError('Backups directory does not exist.'));

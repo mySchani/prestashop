@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -24,10 +24,11 @@
 *  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
 *  International Registered Trademark & Property of PrestaShop SA
 */
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
 
-class VatNumber extends Module
+class VatNumber extends TaxManagerModule
 {
 	public function __construct()
 	{
@@ -36,38 +37,41 @@ class VatNumber extends Module
 		$this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
+
+		$this->tax_manager_class = 'VATNumberTaxManager';
+
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('European VAT number');
 		$this->description = $this->l('Enable entering of the VAT intra-community number when creating the address (You must fill in the company field to allow keyboarding VAT number)');
 	}
-   
+
 	public function	install()
 	{
 		return (parent::install() AND Configuration::updateValue('VATNUMBER_MANAGEMENT', 1));
 	}
-	
+
 	public function uninstall()
 	{
 		return (parent::uninstall() AND Configuration::updateValue('VATNUMBER_MANAGEMENT', 0));
 	}
-	
-	public function enable()
+
+	public function enable($forceAll = false)
 	{
 		parent::enable();
 		Configuration::updateValue('VATNUMBER_MANAGEMENT', 1);
 	}
-	
-	public function disable()
+
+	public function disable($forceAll = false)
 	{
 		parent::disable();
 		Configuration::updateValue('VATNUMBER_MANAGEMENT', 0);
 	}
-	
+
 	public static function getPrefixIntracomVAT()
 	{
-		$intracom_array = array('AT'=>'AT',	//Austria
+		$intracom_array = array(
+			'AT'=>'AT',	//Austria
 			'BE'=>'BE',	//Belgium
 			'DK'=>'DK',	//Denmark
 			'FI'=>'FI',	//Finland
@@ -93,20 +97,15 @@ class VatNumber extends Module
 			'SK'=>'SK',	//Slovakia
 			'CZ'=>'CZ',	//Czech Republic
 			'SI'=>'SI',	//Slovenia
-			'RO'=>'RO', //Romania			
-			'BG'=>'BG'	//Bulgaria   
+			'RO'=>'RO', //Romania
+			'BG'=>'BG'	//Bulgaria
 		);
 		return $intracom_array;
 	}
 
-	public static function isApplicable($id_country) 
+	public static function isApplicable($id_country)
 	{
-		$isApplicable = in_array(Country::getIsoById((int)$id_country), VatNumber::getPrefixIntracomVAT());
-		if ($isApplicable == "")
-		{
-			return 0;
-		}
-		return 1;
+		return (((int)$id_country AND in_array(Country::getIsoById($id_country), self::getPrefixIntracomVAT())) ? 1 : 0);
 	}
 
 	public static function WebServiceCheck($vatNumber)
@@ -140,33 +139,32 @@ class VatNumber extends Module
 			else
 				sleep(1);
 		}
-		ini_restore('default_socket_timeout');
+		@ini_restore('default_socket_timeout');
 		return array(Tools::displayError('VAT number validation service unavailable'));
 	}
 
 	public function getContent()
 	{
-		global $cookie;
-		
+		$echo = '';
+
 		if (Tools::isSubmit('submitVatNumber'))
 		{
-			if (Tools::getValue('vatnumber_country'))
-				if (Configuration::updateValue('VATNUMBER_COUNTRY', (int)(Tools::getValue('vatnumber_country'))))
-					echo $this->displayConfirmation($this->l('Your country has been updated.'));
+			if (Configuration::updateValue('VATNUMBER_COUNTRY', (int)(Tools::getValue('vatnumber_country'))))
+				$echo .= $this->displayConfirmation($this->l('Your country has been updated.'));
 			$check = (int)Tools::getValue('vatnumber_checking');
-			if(Configuration::get('VATNUMBER_CHECKING') != $check AND Configuration::updateValue('VATNUMBER_CHECKING', $check))
-				echo ($check ? $this->displayConfirmation($this->l('The check of the VAT number with the WebService is now enabled.')) : $this->displayConfirmation($this->l('The check of the VAT number with the WebService is now disabled.')));
+			if (Configuration::get('VATNUMBER_CHECKING') != $check AND Configuration::updateValue('VATNUMBER_CHECKING', $check))
+				$echo .= ($check ? $this->displayConfirmation($this->l('The check of the VAT number with the WebService is now enabled.')) : $this->displayConfirmation($this->l('The check of the VAT number with the WebService is now disabled.')));
 		}
-		echo '
+		$echo .=  '
 		<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<form action="'.htmlentities($_SERVER['REQUEST_URI']).'" method="post">
 				<label>'.$this->l('Your country').'</label>
 				<div class="margin-form">
 					<select name="vatnumber_country">
 						<option value="0">'.$this->l('-- Choose a country --').'</option>';
-		foreach (Country::getCountries((int)($cookie->id_lang)) as $country)
-			echo '		<option value="'.$country['id_country'].'" '.(Tools::getValue('VATNUMBER_COUNTRY', Configuration::get('VATNUMBER_COUNTRY')) == $country['id_country'] ? 'selected="selected"' : '').'>'.$country['name'].'</option>';
-		echo '		</select>
+		foreach (Country::getCountries($this->context->language->id) as $country)
+			$echo .=  '		<option value="'.$country['id_country'].'" '.(Tools::getValue('VATNUMBER_COUNTRY', Configuration::get('VATNUMBER_COUNTRY')) == $country['id_country'] ? 'selected="selected"' : '').'>'.$country['name'].'</option>';
+		$echo .=  '		</select>
 				</div>
 				<div class="clear">&nbsp;</div>
 				<label>'.$this->l('Enable checking of the VAT number with the WebService').'</label>
@@ -180,7 +178,6 @@ class VatNumber extends Module
 				</div>
 			</form>
 		</fieldset>';
+		return $echo;
 	}
 }
-
-

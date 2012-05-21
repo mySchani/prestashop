@@ -47,22 +47,88 @@ class MRManagement extends MondialRelay
 		
 	}
 	
-	static public function replaceAccentedCharacters($string)
-	{
-		$currentLocale = setlocale(LC_ALL, NULL);
-		setlocale(LC_ALL, 'en_US.UTF8');
-		$cleanedString = iconv('UTF-8','ASCII//TRANSLIT', $string);
-		setLocale(LC_ALL, $currentLocale);
-		return $cleanedString;
-	}
-	
 	/*
-	** Retro compatibility for 1.3
 	** This method fill the database with the selected carrier
 	*/
 	public function addSelectedCarrierToDB()
 	{
-		$this->hookProcessCarrier($this->_params, false);
+		$query = 'SELECT `id_mr_selected`
+					FROM `' . _DB_PREFIX_ . 'mr_selected`
+					WHERE `id_cart` = '.(int)$this->_params['id_cart'];
+		
+		// Not exist and needed for database
+		unset($this->_params['relayPointInfo']['permaLinkDetail']);
+		
+		// Update if Exist else add a new entry	
+		if (Db::getInstance()->getRow($query))
+		{
+			$query = 'UPDATE `'._DB_PREFIX_.'mr_selected` 
+				SET `id_method` = '.(int)$this->_params['id_mr_method'].', ';
+			if (is_array($this->_params['relayPointInfo']))
+				foreach($this->_params['relayPointInfo'] as $nameKey => $value)
+					$query .= '`MR_Selected_'.MRTools::bqSQL($nameKey).'` = "'.pSQL($value).'", ';
+			else // Clean the existing relay point data
+				$query .= '
+					MR_Selected_Num = NULL,
+					MR_Selected_LgAdr1 = NULL, 
+					MR_Selected_LgAdr2 = NULL,
+					MR_Selected_LgAdr3 = NULL,
+					MR_Selected_LgAdr4 = NULL,
+					MR_Selected_CP = NULL,
+					MR_Selected_Pays = NULL,
+					MR_Selected_Ville = NULL, ';
+			$query = rtrim($query, ', ').' WHERE `id_cart` = '.(int)$this->_params['id_cart'];
+	}
+		else
+		{
+			$query = 'INSERT INTO `' . _DB_PREFIX_ . 'mr_selected`
+				(`id_customer`, `id_method`, `id_cart`, ';
+			if (is_array($this->_params['relayPointInfo']))
+				foreach($this->_params['relayPointInfo'] as $nameKey => $value)
+					$query .= '`MR_Selected_'.MRTools::bqSQL($nameKey).'`, ';
+			$query = rtrim($query, ', ').') VALUES (
+					'.(int)$this->_params['id_customer'].',
+					'.(int)$this->_params['id_mr_method'].',
+					'.(int)$this->_params['id_cart'].', ';
+			if (is_array($this->_params['relayPointInfo']))
+				foreach($this->_params['relayPointInfo'] as $nameKey => $value)
+					$query .= '"'.pSQL($value).'", ';
+			$query = rtrim($query, ', ').')';
+		}
+		Db::getInstance()->execute($query);
+	}
+
+	public function uninstallDetail()
+	{
+		$html = '';
+		
+		switch($this->_params['action'])
+		{
+			case 'showFancy':
+				$html .= '
+					<div id="PS_MRAskBackupContent">
+						<h2>'.$this->l('Uninstalling Mondial Relay').'</h2>
+						<div>
+							'.$this->l('You\'re attempt to uninstall the module, do you want to remove the database').' ?
+							<p id="PS_MRUninstallListSelection">
+									<input type="button" id="PS_MR_BackupAction" href="javascript:void(0)" value="'.$this->l('Keep it and uninstall').'"/>
+									<br />
+									<input type="button" id="PS_MR_UninstallAction" href="javascript:void(0)" value="'.$this->l('Remove and uninstall').'" />
+									<br />
+									<input type="button" id="PS_MR_StopUninstall" href="javascript:void(0)" value="'.$this->l('Cancel').'" />
+									<br />
+							</p>
+						</div>
+					</div>
+				';
+				$this->_resultList['html'] = $html;		
+				break;
+			case 'backupAndUninstall':
+				
+				break;
+			default:
+		}
+		return $this->_resultList;
 	}
 
 	public function DeleteHistory()
@@ -80,7 +146,7 @@ class MRManagement extends MondialRelay
 			$query = trim($query, ', ').')';
 			
 			$success['deletedListId'] = $this->_params['historyIdList'];
-			$totalDeleted = Db::getInstance()->Execute($query);
+			$totalDeleted = Db::getInstance()->execute($query);
 			if (count($success['deletedListId']) != $totalDeleted)
 			{
 				$error[] = $this->l('Some items can\'t be removed, please try to remove it again');

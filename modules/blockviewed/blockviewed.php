@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockViewed extends Module
@@ -78,7 +78,7 @@ class BlockViewed extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Products displayed').'</label>
 				<div class="margin-form">
@@ -93,8 +93,6 @@ class BlockViewed extends Module
 
 	function hookRightColumn($params)
 	{
-		global $link, $smarty, $cookie;
-
 		$id_product = (int)(Tools::getValue('id_product'));
 		$productsViewed = (isset($params['cookie']->viewed) AND !empty($params['cookie']->viewed)) ? array_slice(explode(',', $params['cookie']->viewed), 0, Configuration::get('PRODUCTS_VIEWED_NBR')) : array();
 
@@ -103,13 +101,13 @@ class BlockViewed extends Module
 			$defaultCover = Language::getIsoById($params['cookie']->id_lang).'-default';
 
 			$productIds = implode(',', $productsViewed);
-			$productsImages = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+			$productsImages = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 			SELECT i.id_image, p.id_product, il.legend, p.active, pl.name, pl.description_short, pl.link_rewrite, cl.link_rewrite AS category_rewrite
 			FROM '._DB_PREFIX_.'product p
-			LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
+			LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product'.$this->context->shop->addSqlRestrictionOnLang('pl').')
 			LEFT JOIN '._DB_PREFIX_.'image i ON (i.id_product = p.id_product AND i.cover = 1)
 			LEFT JOIN '._DB_PREFIX_.'image_lang il ON (il.id_image = i.id_image)
-			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = p.id_category_default)
+			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = p.id_category_default'.$this->context->shop->addSqlRestrictionOnLang('cl').')
 			WHERE p.id_product IN ('.$productIds.')
 			AND pl.id_lang = '.(int)($params['cookie']->id_lang).'
 			AND cl.id_lang = '.(int)($params['cookie']->id_lang)
@@ -154,7 +152,7 @@ class BlockViewed extends Module
 				LEFT JOIN `'._DB_PREFIX_.'category_group` cg ON (cg.`id_category` = cp.`id_category`)
 				LEFT JOIN `'._DB_PREFIX_.'customer_group` cug ON (cug.`id_group` = cg.`id_group`)
 				WHERE p.`id_product` = '.(int)($id_product).'
-				'.($cookie->id_customer ? 'AND cug.`id_customer` = '.(int)($cookie->id_customer) : 
+				'.($this->context->customer->id ? 'AND cug.`id_customer` = '.(int)$this->context->customer->id :
 				'AND cg.`id_group` = 1')
 				);
 				if ($result['total'])
@@ -168,7 +166,7 @@ class BlockViewed extends Module
 			if (!sizeof($productsViewedObj))
 				return ;
 
-			$smarty->assign(array(
+			$this->templateAssign(array(
 				'productsViewedObj' => $productsViewedObj,
 				'mediumSize' => Image::getSize('medium')));
 
@@ -186,6 +184,6 @@ class BlockViewed extends Module
 
 	function hookHeader($params)
 	{
-		Tools::addCSS(($this->_path).'blockviewed.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockviewed.css', 'all');
 	}
 }

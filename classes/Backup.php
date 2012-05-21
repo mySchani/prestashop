@@ -31,6 +31,13 @@ class BackupCore
 	public $id;
 	/** @var string Last error messages */
 	public $error;
+/** @var string default backup directory. */
+	public static $backupDir = '/backups/';
+	/** @var string custom backup directory. */
+	public $customBackupDir = NULL;
+
+	public $psBackupAll = true;
+	public $psBackupDropTable = true;
 
 	/**
 	 * Creates a new backup object
@@ -40,24 +47,70 @@ class BackupCore
 	public function __construct($filename = NULL)
 	{
 		if ($filename)
-			$this->id = self::getBackupPath($filename);
+			$this->id = $this->getRealBackupPath($filename);
+
+			$psBackupAll = Configuration::get('PS_BACKUP_ALL');
+			$psBackupDropTable = Configuration::get('PS_BACKUP_DROP_TABLE');
+			$this->psBackupAll = $psBackupAll !== false ? $psBackupAll : true;
+			$this->psBackupDropTable = $psBackupDropTable !== false ? $psBackupDropTable : true;
 	}
 
 	/**
+	 * you can set a different path with that function
+	 * 
+	 * @TODO include the prefix name
+	 * @param string $dir 
+	 * @return boolean bo
+	 */
+	public function setCustomBackupPath($dir)
+	{
+		$customDir = DIRECTORY_SEPARATOR.trim($dir,'/').DIRECTORY_SEPARATOR;
+		if(is_dir(_PS_ADMIN_DIR_.DIRECTORY_SEPARATOR.$customDir.DIRECTORY_SEPARATOR))
+			$this->customBackupDir = $customDir;
+		else
+			return false;
+
+		return true;
+
+	}
+
+	/**
+	 * get the path to use for backup (customBackupDir if specified, or default)
+	 * 
+	 * @param string $filename filename to use
+	 * @return string full path
+	 */
+	public function getRealBackupPath($filename = NULL)
+	{
+		$backupDir = Backup::getBackupPath($filename);
+		if (!empty($this->customBackupDir))
+		{
+			$backupDir = str_replace(_PS_ADMIN_DIR_.self::$backupDir, _PS_ADMIN_DIR_.$this->customBackupDir, $backupDir);
+
+			if(strrpos($backupDir,DIRECTORY_SEPARATOR))
+				$backupDir .= DIRECTORY_SEPARATOR;
+		}
+		return $backupDir;
+	}
+	/**
 	 * Get the full path of the backup file
 	 *
-	 * @param string $filename Filename of the backup file
+	 * @param string $filename prefix of the backup file (datetime will be the second part)
 	 * @return The full path of the backup file, or false if the backup file does not exists
 	 */
 	public static function getBackupPath($filename)
 	{
-		$backupdir = realpath(PS_ADMIN_DIR.'/backups/');
+		$backupdir = realpath(_PS_ADMIN_DIR_.self::$backupDir);
 
 		if ($backupdir === false)
 			die(Tools::displayError('Backups directory does not exist.'));
 
 		// Check the realpath so we can validate the backup file is under the backup directory
+		if(!empty($filename))
 		$backupfile = realpath($backupdir.'/'.$filename);
+		else
+			$backupfile = $backupdir.DIRECTORY_SEPARATOR;
+
 		if ($backupfile === false OR strncmp($backupdir, $backupfile, strlen($backupdir)) != 0)
 			die (Tools::displayError());
 
@@ -124,7 +177,7 @@ class BackupCore
 			return false;
 		}
 
-		if (!Configuration::get('PS_BACKUP_ALL'))
+		if (!$this->psBackupAll)
 			$ignore_insert_table = array(_DB_PREFIX_.'connections', _DB_PREFIX_.'connections_page', _DB_PREFIX_.'connections_source', _DB_PREFIX_.'guest', _DB_PREFIX_.'statssearch');
 		else
 			$ignore_insert_table = array();
@@ -132,7 +185,7 @@ class BackupCore
 		// Generate some random number, to make it extra hard to guess backup file names
 		$rand = dechex ( mt_rand(0, min(0xffffffff, mt_getrandmax() ) ) );
 		$date = time();
-		$backupfile = PS_ADMIN_DIR . '/backups/' . $date . '-' . $rand . '.sql';
+		$backupfile = $this->getRealBackupPath().$date.'-'.$rand.'.sql';
 
 		// Figure out what compression is available and open the file
 		if (function_exists('bzopen'))
@@ -160,7 +213,7 @@ class BackupCore
 		fwrite($fp, "\n".'SET NAMES \'utf8\';'."\n\n");
 
 		// Find all tables
-		$tables = Db::getInstance()->ExecuteS('SHOW TABLES');
+		$tables = Db::getInstance()->executeS('SHOW TABLES');
 		$found = 0;
 		foreach ($tables AS $table)
 		{
@@ -171,7 +224,7 @@ class BackupCore
 				continue;
 
 			// Export the table schema
-			$schema = Db::getInstance()->ExecuteS('SHOW CREATE TABLE `' . $table . '`');
+			$schema = Db::getInstance()->executeS('SHOW CREATE TABLE `' . $table . '`');
 
 			if (count($schema) != 1 || !isset($schema[0]['Table']) || !isset($schema[0]['Create Table']))
 			{
@@ -183,14 +236,14 @@ class BackupCore
 
 			fwrite($fp, '/* Scheme for table ' . $schema[0]['Table'] . " */\n");
 			
-			if (Configuration::get('PS_BACKUP_DROP_TABLE'))
+			if ($this->psBackupDropTable)
 				fwrite($fp, 'DROP TABLE IF EXISTS `'.$schema[0]['Table'].'`;'."\n");
 			
 			fwrite($fp, $schema[0]['Create Table'] . ";\n\n");
 
 			if (!in_array($schema[0]['Table'], $ignore_insert_table))
 			{
-				$data = Db::getInstance()->ExecuteS('SELECT * FROM `' . $schema[0]['Table'] . '`', false);
+				$data = Db::getInstance()->executeS('SELECT * FROM `' . $schema[0]['Table'] . '`', false);
 				$sizeof = DB::getInstance()->NumRows();
 				$lines = explode("\n", $schema[0]['Create Table']);
 
@@ -205,7 +258,7 @@ class BackupCore
 						
 						foreach ($row AS $field => $value)
 						{
-							$tmp = "'" . mysql_real_escape_string($value) . "',";
+							$tmp = "'" . pSQL($value) . "',";
 							if($tmp != "'',")
 								$s .= $tmp;
 							else

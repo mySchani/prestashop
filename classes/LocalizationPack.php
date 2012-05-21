@@ -78,17 +78,33 @@ class LocalizationPackCore
 	protected function _installStates($xml)
 	{
 		if (isset($xml->states->state))
-			foreach ($xml->states->state AS $data)
+			foreach ($xml->states->state as $data)
 			{
 				$attributes = $data->attributes();
-
 				if (!$id_state = State::getIdByName($attributes['name']))
 				{
 					$state = new State();
 					$state->name = strval($attributes['name']);
 					$state->iso_code = strval($attributes['iso_code']);
 					$state->id_country = Country::getByIso(strval($attributes['country']));
-					$state->id_zone = (int)(Zone::getIdByName(strval($attributes['zone'])));
+
+					$id_zone = (int)Zone::getIdByName(strval($attributes['zone']));
+					if (!$id_zone)
+					{
+						$zone = new Zone();
+						$zone->name = (string)$attributes['zone'];
+						$zone->active = true;
+
+						if (!$zone->add())
+						{
+							$this->_errors[] = Tools::displayError('Invalid Zone name.');
+							return false;
+						}
+
+						$id_zone = $zone->id;
+					}
+
+					$state->id_zone = $id_zone;
 
 					if (!$state->validateFields())
 					{
@@ -117,59 +133,7 @@ class LocalizationPackCore
 						return false;
 					}
 				}
-
-				// Add counties
-				foreach ($data->county AS $xml_county)
-				{
-					$county_attributes = $xml_county->attributes();
-					if (!$id_county = County::getIdCountyByNameAndIdState($county_attributes['name'], $state->id))
-					{
-						$county = new County();
-						$county->name = $county_attributes['name'];
-						$county->id_state = (int)$state->id;
-						$county->active = 1;
-
-						if (!$county->validateFields())
-						{
-							$this->_errors[] = Tools::displayError('Invalid County properties');
-							return false;
-						}
-
-						if (!$county->save())
-						{
-							$this->_errors[] = Tools::displayError('An error has occurred while adding the county');
-							return false;
-						}
-					} else {
-						$county = new County((int)$id_county);
-						if (!Validate::isLoadedObject($county))
-						{
-							$this->_errors[] = Tools::displayError('An error occurred while fetching the county.');
-							return false;
-						}
-					}
-
-					// add zip codes
-					foreach ($xml_county->zipcode AS $xml_zipcode)
-					{
-							$zipcode_attributes = $xml_zipcode->attributes();
-
-							$zipcodes = $zipcode_attributes['from'];
-							if (isset($zipcode_attributes['to']))
-								$zipcodes .= '-'.$zipcode_attributes['to'];
-
-							if ($county->isZipCodeRangePresent($zipcodes))
-								continue;
-
-							if (!$county->addZipCodes($zipcodes))
-							{
-								$this->_errors[] = Tools::displayError('An error has occurred while adding zipcodes');
-								return false;
-							}
-					}
-				}
 			}
-
 
 		return true;
 	}
@@ -178,9 +142,8 @@ class LocalizationPackCore
 	{
 		if (isset($xml->taxes->tax))
 		{
-			$available_behavior = array(PS_PRODUCT_TAX, PS_STATE_TAX, PS_BOTH_TAX);
 			$assoc_taxes = array();
-			foreach ($xml->taxes->tax AS $taxData)
+			foreach ($xml->taxes->tax as $taxData)
 			{
 				$attributes = $taxData->attributes();
 				if (Tax::getTaxIdByName($attributes['name']))
@@ -205,7 +168,7 @@ class LocalizationPackCore
 				$assoc_taxes[(int)$attributes['id']] = $tax->id;
 			}
 
-			foreach ($xml->taxes->taxRulesGroup AS $group)
+			foreach ($xml->taxes->taxRulesGroup as $group)
 			{
 				$group_attributes = $group->attributes();
 				if (!Validate::isGenericName($group_attributes['name']))
@@ -224,7 +187,7 @@ class LocalizationPackCore
 					return false;
 				}
 
-				foreach($group->taxRule as $rule)
+				foreach ($group->taxRule as $rule)
 				{
 					$rule_attributes = $rule->attributes();
 
@@ -240,27 +203,18 @@ class LocalizationPackCore
 						continue;
 
 					// Default values
-					$id_state = (int) isset($rule_attributes['iso_code_state']) ? State::getIdByIso(strtoupper($rule_attributes['iso_code_state'])) : 0;
+					$id_state = (int)isset($rule_attributes['iso_code_state']) ? State::getIdByIso(strtoupper($rule_attributes['iso_code_state'])) : 0;
 					$id_county = 0;
-					$state_behavior = 0;
-					$county_behavior = 0;
+					$zipcode_from = 0;
+					$zipcode_to = 0;
+					$behavior = $rule_attributes['behavior'];
 
-					if ($id_state)
+					if (isset($rule_attributes['zipcode_from']))
 					{
-						if (isset($rule_attributes['state_behavior']) && in_array($rule_attributes['state_behavior'], $available_behavior))
-							$state_behavior = (int)$rule_attributes['state_behavior'];
-
-						if (isset($rule_attributes['county_name']))
-						{
-							$id_county = County::getIdCountyByNameAndIdState($rule_attributes['county_name'], (int)$id_state);
-							if (!$id_county)
-								continue;
-						}
-
-						if (isset($rule_attributes['county_behavior']) && in_array($rule_attributes['state_behavior'], $available_behavior))
-							$county_behavior = (int)$rule_attributes['county_behavior'];
+						$zipcode_from = $rule_attributes['zipcode_from'];
+						if (isset($rule_attributes['zipcode_to']))
+							$zipcode_to = $rule_attributes['zipcode_to'];
 					}
-
 
 					// Creation
 					$tr = new TaxRule();
@@ -268,14 +222,15 @@ class LocalizationPackCore
 					$tr->id_country = $id_country;
 					$tr->id_state = $id_state;
 					$tr->id_county = $id_county;
-					$tr->state_behavior = $state_behavior;
-					$tr->county_behavior = $county_behavior;
+					$tr->zipcode_from = $zipcode_from;
+					$tr->zipcode_to = $zipcode_to;
+					$tr->behavior = $behavior;
+					$tr->description = '';
 					$tr->id_tax = $assoc_taxes[strval($rule_attributes['id_tax'])];
 					$tr->save();
 				}
 			}
 		}
-
 		return true;
 	}
 
@@ -283,7 +238,7 @@ class LocalizationPackCore
 	{
 		if (isset($xml->currencies->currency))
 		{
-			if (!$feed = @simplexml_load_file('http://www.prestashop.com/xml/currencies.xml') AND !$feed = @simplexml_load_file(dirname(__FILE__).'/../localization/currencies.xml'))
+			if (!$feed = Tools::simplexml_load_file('http://www.prestashop.com/xml/currencies.xml') AND !$feed = @simplexml_load_file(dirname(__FILE__).'/../localization/currencies.xml'))
 			{
 				$this->_errors[] = Tools::displayError('Cannot parse the currencies XML feed.');
 				return false;
@@ -316,6 +271,8 @@ class LocalizationPackCore
 						$this->_errors[] = Tools::displayError('An error occurred while importing the currency: ').strval($attributes['name']);
 						return false;
 					}
+
+					PaymentModule::addCurrencyPermissions($currency->id);
 				}
 			}
 
@@ -342,11 +299,13 @@ class LocalizationPackCore
 				foreach ($native_lang AS $lang)
 					$native_iso_code[] = $lang['iso_code'];
 				if ((in_array((string)$attributes['iso_code'], $native_iso_code) AND !$install_mode) OR !in_array((string)$attributes['iso_code'], $native_iso_code))
-					if(@fsockopen('www.prestashop.com', 80, $errno = 0, $errstr = '', 10))
+					$errno = 0;
+					$errstr = '';
+					if(@fsockopen('www.prestashop.com', 80, $errno, $errstr, 10))
 					{
 						if ($lang_pack = Tools::jsonDecode(Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/get_language_pack.php?version='._PS_VERSION_.'&iso_lang='.$attributes['iso_code'])))
 						{
-							if ($content = file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$lang_pack->version.'/'.$attributes['iso_code'].'.gzip'))
+							if ($content = Tools::file_get_contents('http://www.prestashop.com/download/lang_packs/gzip/'.$lang_pack->version.'/'.$attributes['iso_code'].'.gzip'))
 							{
 								$file = _PS_TRANSLATIONS_DIR_.$attributes['iso_code'].'.gzip';
 								if (file_put_contents($file, $content))

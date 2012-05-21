@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class CashOnDelivery extends PaymentModule
@@ -34,7 +34,7 @@ class CashOnDelivery extends PaymentModule
 	{
 		$this->name = 'cashondelivery';
 		$this->tab = 'payments_gateways';
-		$this->version = '0.3';
+		$this->version = '0.4';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 		
@@ -44,6 +44,13 @@ class CashOnDelivery extends PaymentModule
 
 		$this->displayName = $this->l('Cash on delivery (COD)');
 		$this->description = $this->l('Accept cash on delivery payments');
+
+		/* For 1.4.3 and less compatibility */
+		$updateConfig = array('PS_OS_CHEQUE', 'PS_OS_PAYMENT', 'PS_OS_PREPARATION', 'PS_OS_SHIPPING', 'PS_OS_CANCELED', 'PS_OS_REFUND', 'PS_OS_ERROR', 'PS_OS_OUTOFSTOCK', 'PS_OS_BANKWIRE', 'PS_OS_PAYPAL', 'PS_OS_WS_PAYMENT');
+		if (!Configuration::get('PS_OS_PAYMENT'))
+			foreach ($updateConfig as $u)
+				if (!Configuration::get($u) && defined('_'.$u.'_'))
+					Configuration::updateValue($u, constant('_'.$u.'_'));
 	}
 
 	public function install()
@@ -58,8 +65,6 @@ class CashOnDelivery extends PaymentModule
 		if (!$this->active)
 			return ;
 
-		global $smarty;
-
 		// Check if cart has product download
 		foreach ($params['cart']->getProducts() AS $product)
 		{
@@ -68,7 +73,7 @@ class CashOnDelivery extends PaymentModule
 				return false;
 		}
 
-		$smarty->assign(array(
+		$this->context->smarty->assign(array(
 			'this_path' => $this->_path,
 			'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/'
 		));

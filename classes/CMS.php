@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -27,7 +27,6 @@
 
 class CMSCore extends ObjectModel
 {
-	
 	/** @var string Name */
 	public $meta_title;
 	public $meta_description;
@@ -45,58 +44,47 @@ class CMSCore extends ObjectModel
 
 	protected $table = 'cms';
 	protected $identifier = 'id_cms';
-	
-	public function getFields() 
-	{ 
-		parent::validateFields();
+
+	protected	$webserviceParameters = array(
+		'objectNodeName' => 'content',
+		'objectsNodeName' => 'content_management_system',
+	);
+
+	public function getFields()
+	{
+		$this->validateFields();
 		$fields['id_cms'] = (int)($this->id);
 		$fields['id_cms_category'] = (int)($this->id_cms_category);
 		$fields['position'] = (int)($this->position);
 		$fields['active'] = (int)($this->active);
-		return $fields;	 
-	}
-	
-	public function getTranslationsFieldsChild()
-	{
-		parent::validateFieldsLang();
-
-		$fieldsArray = array('meta_title', 'meta_description', 'meta_keywords', 'link_rewrite');
-		$fields = array();
-		$languages = Language::getLanguages(false);
-		$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
-		foreach ($languages as $language)
-		{
-			$fields[$language['id_lang']]['id_lang'] = (int)($language['id_lang']);
-			$fields[$language['id_lang']][$this->identifier] = (int)($this->id);
-			$fields[$language['id_lang']]['content'] = (isset($this->content[$language['id_lang']])) ? pSQL($this->content[$language['id_lang']], true) : '';
-			foreach ($fieldsArray as $field)
-			{
-				if (!Validate::isTableOrIdentifier($field))
-					die(Tools::displayError());
-				if (isset($this->{$field}[$language['id_lang']]) AND !empty($this->{$field}[$language['id_lang']]))
-					$fields[$language['id_lang']][$field] = pSQL($this->{$field}[$language['id_lang']]);
-				elseif (in_array($field, $this->fieldsRequiredLang))
-					$fields[$language['id_lang']][$field] = pSQL($this->{$field}[$defaultLanguage]);
-				else
-					$fields[$language['id_lang']][$field] = '';
-			}
-		}
 		return $fields;
 	}
-	
-	public function add($autodate = true, $nullValues = false)
-	{ 
-		$this->position = CMS::getLastPosition((int)$this->id_cms_category);
-		return parent::add($autodate, true); 
+
+	public function getTranslationsFieldsChild()
+	{
+		$this->validateFieldsLang();
+		return $this->getTranslationsFields(array(
+			'meta_description',
+			'meta_keywords',
+			'meta_title',
+			'link_rewrite',
+			'content' => array('html' => true),
+		));
 	}
-	
+
+	public function add($autodate = true, $nullValues = false)
+	{
+		$this->position = CMS::getLastPosition((int)$this->id_cms_category);
+		return parent::add($autodate, true);
+	}
+
 	public function update($nullValues = false)
 	{
 		if (parent::update($nullValues))
 			return $this->cleanPositions($this->id_cms_category);
 		return false;
 	}
-	
+
 	public function delete()
 	{
 	 	if (parent::delete())
@@ -104,17 +92,21 @@ class CMSCore extends ObjectModel
 		return false;
 	}
 
-	public static function getLinks($id_lang, $selection = NULL, $active = true, $id_shop = false)
+	public static function getLinks($id_lang, $selection = null, $active = true, Link $link = null)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		if (!$link)
+			$link = Context::getContext()->link;
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT c.id_cms, cl.link_rewrite, cl.meta_title
 		FROM '._DB_PREFIX_.'cms c
 		LEFT JOIN '._DB_PREFIX_.'cms_lang cl ON (c.id_cms = cl.id_cms AND cl.id_lang = '.(int)($id_lang).')
+		'.Context::getContext()->shop->addSqlAssociation('cms', 'c').'
 		WHERE 1
-		'.(($selection !== NULL) ? ' AND c.id_cms IN ('.implode(',', array_map('intval', $selection)).')' : '').
+		'.(($selection !== null) ? ' AND c.id_cms IN ('.implode(',', array_map('intval', $selection)).')' : '').
 		($active ? ' AND c.`active` = 1 ' : '').
-		'ORDER BY c.`position`');
-		$link = new Link();
+		'GROUP BY c.id_cms
+		ORDER BY c.`position`');
+
 		$links = array();
 		if ($result)
 			foreach ($result as $row)
@@ -124,132 +116,102 @@ class CMSCore extends ObjectModel
 			}
 		return $links;
 	}
-	
-	public static function listCms($id_lang = NULL, $id_block = false, $active = true)
+
+	public static function listCms($id_lang = null, $id_block = false, $active = true)
 	{
 		if (empty($id_lang))
 			$id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
 
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS('
 		SELECT c.id_cms, l.meta_title
 		FROM  '._DB_PREFIX_.'cms c
 		JOIN '._DB_PREFIX_.'cms_lang l ON (c.id_cms = l.id_cms)
+		'.Context::getContext()->shop->addSqlAssociation('cms', 'c').'
 		'.(($id_block) ? 'JOIN '._DB_PREFIX_.'block_cms b ON (c.id_cms = b.id_cms)' : '').'
 		WHERE l.id_lang = '.(int)($id_lang).(($id_block) ? ' AND b.id_block = '.(int)($id_block) : '').($active ? ' AND c.`active` = 1 ' : '').'
+		GROUP BY c.id_cms
 		ORDER BY c.`position`');
 	}
-	
-	/**
-	 * @deprecated
-	 */
-	public static function isInBlock($id_cms, $id_block)
-	{
-		Tools::displayAsDeprecated();
-		Db::getInstance()->getRow('
-		SELECT id_cms FROM '._DB_PREFIX_.'block_cms
-		WHERE id_block = '.(int)($id_block).' AND id_cms = '.(int)($id_cms));
-		
-		return (Db::getInstance()->NumRows());
-	}
-	
-	/**
-	 * @deprecated
-	 */
-	public static function updateCmsToBlock($cms, $id_block)
-	{
-		Tools::displayAsDeprecated();
-		Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'block_cms` WHERE `id_block` = '.(int)($id_block));
 
-		$list = '';
-		foreach ($cms AS $id_cms)
-			$list .= '('.(int)($id_block).', '.(int)($id_cms).'),';
-		$list = rtrim($list, ',');
-		
-		if (!empty($list))
-			Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'block_cms (id_block, id_cms) VALUES '.pSQL($list));
-			
-		return true;
-	}
-	
 	public function updatePosition($way, $position)
 	{
-		if (!$res = Db::getInstance()->ExecuteS('
-			SELECT cp.`id_cms`, cp.`position`, cp.`id_cms_category` 
+		if (!$res = Db::getInstance()->executeS('
+			SELECT cp.`id_cms`, cp.`position`, cp.`id_cms_category`
 			FROM `'._DB_PREFIX_.'cms` cp
-			WHERE cp.`id_cms_category` = '.(int)$this->id_cms_category.' 
+			WHERE cp.`id_cms_category` = '.(int)$this->id_cms_category.'
 			ORDER BY cp.`position` ASC'
 		))
 			return false;
-		
-		foreach ($res AS $cms)
+
+		foreach ($res as $cms)
 			if ((int)($cms['id_cms']) == (int)($this->id))
 				$movedCms = $cms;
-		
+
 		if (!isset($movedCms) || !isset($position))
 			return false;
-		
+
 		// < and > statements rather than BETWEEN operator
 		// since BETWEEN is treated differently according to databases
-		return (Db::getInstance()->Execute('
+		return (Db::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'cms`
 			SET `position`= `position` '.($way ? '- 1' : '+ 1').'
-			WHERE `position` 
-			'.($way 
+			WHERE `position`
+			'.($way
 				? '> '.(int)($movedCms['position']).' AND `position` <= '.(int)($position)
 				: '< '.(int)($movedCms['position']).' AND `position` >= '.(int)($position)).'
 			AND `id_cms_category`='.(int)($movedCms['id_cms_category']))
-		AND Db::getInstance()->Execute('
+		&& Db::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'cms`
 			SET `position` = '.(int)($position).'
 			WHERE `id_cms` = '.(int)($movedCms['id_cms']).'
 			AND `id_cms_category`='.(int)($movedCms['id_cms_category'])));
 	}
-	
-	static public function cleanPositions($id_category)
+
+	public static function cleanPositions($id_category)
 	{
-		$result = Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->executeS('
 		SELECT `id_cms`
 		FROM `'._DB_PREFIX_.'cms`
 		WHERE `id_cms_category` = '.(int)($id_category).'
 		ORDER BY `position`');
-		$sizeof = sizeof($result);
-		for ($i = 0; $i < $sizeof; ++$i){
-				$sql = '
-				UPDATE `'._DB_PREFIX_.'cms`
-				SET `position` = '.(int)($i).'
-				WHERE `id_cms_category` = '.(int)($id_category).'
-				AND `id_cms` = '.(int)($result[$i]['id_cms']);
-				Db::getInstance()->Execute($sql);
-			}
+		for ($i = 0, $total = count($result); $i < $total; ++$i)
+		{
+			$sql = 'UPDATE `'._DB_PREFIX_.'cms`
+					SET `position` = '.(int)$i.'
+					WHERE `id_cms_category` = '.(int)$id_category.'
+						AND `id_cms` = '.(int)$result[$i]['id_cms'];
+			Db::getInstance()->execute($sql);
+		}
 		return true;
 	}
-	
-	static public function getLastPosition($id_category)
+
+	public static function getLastPosition($id_category)
 	{
 		return (Db::getInstance()->getValue('SELECT MAX(position)+1 FROM `'._DB_PREFIX_.'cms` WHERE `id_cms_category` = '.(int)($id_category)));
 	}
-	
-	static public function getCMSPages($id_lang = NULL, $id_cms_category = NULL, $active = true)
+
+	public static function getCMSPages($id_lang = null, $id_cms_category = null, $active = true)
 	{
-		return Db::getInstance()->ExecuteS('
-		SELECT *
-		FROM `'._DB_PREFIX_.'cms` c
-		JOIN `'._DB_PREFIX_.'cms_lang` l ON (c.id_cms = l.id_cms)'.
-		(isset($id_cms_category) ? 'WHERE `id_cms_category` = '.(int)($id_cms_category) : '').
-		($active ? ' AND c.`active` = 1 ' : '').'
-		AND l.id_lang = '.(int)($id_lang).'
-		ORDER BY `position`');
+		$sql = new DbQuery();
+		$sql->select('*');
+		$sql->from('cms c');
+		if ($id_lang)
+			$sql->innerJoin('cms_lang l ON c.id_cms = l.id_cms AND l.id_lang = '.(int)$id_lang);
+
+		if ($active)
+			$sql->where('c.active = 1');
+		$sql->orderBy('position');
+
+		return Db::getInstance()->executeS($sql);
 	}
-    public static function getUrlRewriteInformations($id_cms)
+
+	public static function getUrlRewriteInformations($id_cms)
 	{
-	    $sql = '
-		SELECT l.`id_lang`, c.`link_rewrite`
-		FROM `'._DB_PREFIX_.'cms_lang` AS c
-		LEFT JOIN  `'._DB_PREFIX_.'lang` AS l ON c.`id_lang` = l.`id_lang`
-		WHERE c.`id_cms` = '.(int)$id_cms.'
-		AND l.`active` = 1';
-		$arr_return = Db::getInstance()->ExecuteS($sql);
-		return $arr_return;
+	    $sql = 'SELECT l.`id_lang`, c.`link_rewrite`
+				FROM `'._DB_PREFIX_.'cms_lang` AS c
+				LEFT JOIN  `'._DB_PREFIX_.'lang` AS l ON c.`id_lang` = l.`id_lang`
+				WHERE c.`id_cms` = '.(int)$id_cms.'
+				AND l.`active` = 1';
+		return Db::getInstance()->executeS($sql);
 	}
 }
-

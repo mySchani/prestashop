@@ -5,8 +5,10 @@
   * DejalaCart class, dejalacart.php
   * Manage cart information related to dejala.fr carrier
  **/
-if (!defined('_CAN_LOAD_FILES_'))
+
+if (!defined('_PS_VERSION_'))
 	exit;
+
 class DejalaCart extends ObjectModel
 {
 	public 		$id;
@@ -27,7 +29,7 @@ class DejalaCart extends ObjectModel
 	private static $INSTANCES = array() ;
 	private $djlCart ;
 
-	static public function getInstance($id) 
+	public static function getInstance($id) 
 	{
 		if (!isset(self::$INSTANCES[$id]))
         	self::$INSTANCES[$id] = new DejalaCart($id);
@@ -47,7 +49,7 @@ class DejalaCart extends ObjectModel
 	
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		$fields['id_dejala_product'] = (int)($this->id_dejala_product);
 		$fields['shipping_date'] = pSQL($this->shipping_date);
 		$fields['id_delivery'] = (int)($this->id_delivery);
@@ -63,7 +65,7 @@ class DejalaCart extends ObjectModel
 		parent::save($nullValues, $autodate) ;
 		if (isset($this->wanted_cart_id)) 
 		{
-			Db::getInstance()->Execute('UPDATE ' . _DB_PREFIX_ . $this->table . ' SET ' . $this->identifier . ' = ' . (int)$this->wanted_cart_id . ' WHERE ' . $this->identifier . ' = ' . (int)$this->id);
+			Db::getInstance()->execute('UPDATE ' . _DB_PREFIX_ . $this->table . ' SET ' . $this->identifier . ' = ' . (int)$this->wanted_cart_id . ' WHERE ' . $this->identifier . ' = ' . (int)$this->id);
 			$this->id = (int)$this->wanted_cart_id ;
 			unset($this->wanted_cart_id) ;			
 		}		

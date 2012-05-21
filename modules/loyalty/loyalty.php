@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 /*
@@ -98,24 +98,24 @@ class Loyalty extends Module
 
 	function installDB()
 	{
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'loyalty` (
 			`id_loyalty` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			`id_loyalty_state` INT UNSIGNED NOT NULL DEFAULT 1,
 			`id_customer` INT UNSIGNED NOT NULL,
 			`id_order` INT UNSIGNED DEFAULT NULL,
-			`id_discount` INT UNSIGNED DEFAULT NULL,
+			`id_cart_rule` INT UNSIGNED DEFAULT NULL,
 			`points` INT NOT NULL DEFAULT 0,
 			`date_add` DATETIME NOT NULL,
 			`date_upd` DATETIME NOT NULL,
 			PRIMARY KEY (`id_loyalty`),
 			INDEX index_loyalty_loyalty_state (`id_loyalty_state`),
 			INDEX index_loyalty_order (`id_order`),
-			INDEX index_loyalty_discount (`id_discount`),
+			INDEX index_loyalty_discount (`id_cart_rule`),
 			INDEX index_loyalty_customer (`id_customer`)
 		) DEFAULT CHARSET=utf8 ;');
 
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'loyalty_history` (
 			`id_loyalty_history` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			`id_loyalty` INT UNSIGNED DEFAULT NULL,
@@ -127,7 +127,7 @@ class Loyalty extends Module
 			INDEX `index_loyalty_history_loyalty_state` (`id_loyalty_state`)
 		) DEFAULT CHARSET=utf8 ;');
 
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'loyalty_state` (
 			`id_loyalty_state` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			`id_order_state` INT UNSIGNED DEFAULT NULL,
@@ -135,7 +135,7 @@ class Loyalty extends Module
 			INDEX index_loyalty_state_order_state (`id_order_state`)
 		) DEFAULT CHARSET=utf8 ;');
 
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'loyalty_state_lang` (
 			`id_loyalty_state` INT UNSIGNED NOT NULL AUTO_INCREMENT,
 			`id_lang` INT UNSIGNED NOT NULL,
@@ -157,10 +157,10 @@ class Loyalty extends Module
 
 	function uninstallDB()
 	{
-		Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'loyalty`;');
-		Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'loyalty_state`;');
-		Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'loyalty_state_lang`;');
-		Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'loyalty_history`;');
+		Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'loyalty`;');
+		Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'loyalty_state`;');
+		Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'loyalty_state_lang`;');
+		Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'loyalty_history`;');
 
 		return true;
 	}
@@ -243,13 +243,11 @@ class Loyalty extends Module
 
 	public function getContent()
 	{
-		global $cookie;
-
 		$this->instanceDefaultStates();
 		$this->_postProcess();
 
-		$categories = Category::getCategories((int)($cookie->id_lang));
-		$order_states = OrderState::getOrderStates((int)$cookie->id_lang);
+		$categories = Category::getCategories($this->context->language->id);
+		$order_states = OrderState::getOrderStates($this->context->language->id);
 		$currency = new Currency((int)(Configuration::get('PS_CURRENCY_DEFAULT')));
 		$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
 		$languages = Language::getLanguages(false);
@@ -260,7 +258,7 @@ class Loyalty extends Module
 			id_language = Number('.$defaultLanguage.');
 		</script>
 		<h2>'.$this->l('Loyalty Program').'</h2>
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
 				<legend>'.$this->l('Settings').'</legend>
 				
@@ -324,20 +322,19 @@ class Loyalty extends Module
 				</div>
 				<div class="clear"></div>
 				<label>'.$this->l('Vouchers created by the loyalty system can be used in the following categories :').'</label>';
-
-		$html .=	'<table cellspacing="0" cellpadding="0" class="table">
-						<tr>
-							<th><input type="checkbox" name="checkme" class="noborder" onclick="checkDelBoxes(this.form, \'categoryBox[]\', this.checked)" /></th>						
-							<th>'.$this->l('ID').'</th>
-							<th style="width: 400px">'.$this->l('Name').'</th>
-						</tr>';
 		$index = explode(',', Configuration::get('PS_LOYALTY_VOUCHER_CATEGORY'));
-		$indexedCategories =  isset($_POST['categoryBox']) ? $_POST['categoryBox'] : array();
-		foreach ($indexedCategories AS $k => $row)
-			$index[] = (int)$row['id_category'];
-		
-		$html .= $this->recurseCategoryForInclude((int)(Tools::getValue($this->identifier)), $index, $categories, $categories[0][1], 1, NULL);
-		$html .= '				</table>
+		$indexedCategories =  isset($_POST['categoryBox']) ? $_POST['categoryBox'] : $index;
+		// Translations are not automatic for the moment ;)
+		$trads = array(
+			 'Home' => $this->l('Home'), 
+			 'selected' => $this->l('selected'), 
+			 'Collapse All' => $this->l('Collapse All'), 
+			 'Expand All' => $this->l('Expand All'), 
+			 'Check All' => $this->l('Check All'), 
+			 'Uncheck All'  => $this->l('Uncheck All')
+		);
+		$html .= '<div class="margin-form">'.Helper::renderAdminCategorieTree($trads, $indexedCategories).'</div>';
+		 $html .= '
 				<p style="padding-left:200px;">'.$this->l('Mark the box(es) of categories in which loyalty vouchers are usable.').'</p>
 				<div class="clear"></div>
 				<h3 style="margin-top:20px">'.$this->l('Loyalty points progression').'</h3>
@@ -443,8 +440,6 @@ class Loyalty extends Module
 	{
 		include_once(dirname(__FILE__).'/LoyaltyModule.php');
 		
-		global $smarty;
-
 		$product = new Product((int)Tools::getValue('id_product'));
 		if (Validate::isLoadedObject($product))
 		{
@@ -459,14 +454,14 @@ class Loyalty extends Module
 				if (!(int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND Product::isDiscounted((int)$product->id))
 				{
 					$points = 0;
-					$smarty->assign('no_pts_discounted', 1);
+					$this->context->smarty->assign('no_pts_discounted', 1);
 				}
 				else			
 					$points = (int)(LoyaltyModule::getNbPointsByPrice($product->getPrice(Product::getTaxCalculationMethod() == PS_TAX_EXC ? false : true, (int)($product->getIdProductAttributeMostExpensive()))));
 				$pointsAfter = $points;
 				$pointsBefore = 0;
 			}
-			$smarty->assign(array(
+			$this->context->smarty->assign(array(
 				'points' => (int)($points),
 				'total_points' => (int)($pointsAfter),
 				'point_rate' => Configuration::get('PS_LOYALTY_POINT_RATE'),
@@ -522,12 +517,16 @@ class Loyalty extends Module
 	{
 		include_once(dirname(__FILE__).'/LoyaltyModule.php');
 		
-		global $smarty;
-
 		if (Validate::isLoadedObject($params['cart']))
 		{
 			$points = LoyaltyModule::getCartNbPoints($params['cart']);
-			$smarty->assign(array('points' => (int)$points, 'voucher' => LoyaltyModule::getVoucherValue((int)$points)));
+			$this->context->smarty->assign(array(
+				 'points' => (int)$points, 
+				 'voucher' => LoyaltyModule::getVoucherValue((int)$points),
+				 'guest_checkout' => (int)Configuration::get('PS_GUEST_CHECKOUT_ENABLED')
+			));
+		} else {
+			$smarty->assign(array('points' => 0));
 		}
 		
 		return $this->display(__FILE__, 'shopping-cart.tpl');
@@ -545,7 +544,7 @@ class Loyalty extends Module
 		$loyalty->id_customer = (int)$params['customer']->id;
 		$loyalty->id_order = (int)$params['order']->id;
 		$loyalty->points = LoyaltyModule::getOrderNbPoints($params['order']);
-		if ((int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND (int)($loyalty->points) == 0)
+		if (!Configuration::get('PS_LOYALTY_NONE_AWARD') AND (int)$loyalty->points == 0)
 			$loyalty->id_loyalty_state = LoyaltyStateModule::getNoneAwardId();
 		else
 			$loyalty->id_loyalty_state = LoyaltyStateModule::getDefaultId();
@@ -570,7 +569,7 @@ class Loyalty extends Module
 		{
 			if (!Validate::isLoadedObject($loyalty = new LoyaltyModule(LoyaltyModule::getByOrderId($order->id))))
 				return false;
-			if ((int)(Configuration::get('PS_LOYALTY_NONE_AWARD')) AND $loyalty->id_loyalty_state == LoyaltyStateModule::getNoneAwardId())
+			if ((int)Configuration::get('PS_LOYALTY_NONE_AWARD') AND $loyalty->id_loyalty_state == LoyaltyStateModule::getNoneAwardId())
 				return true;
 
 			if ($newOrder->id == $this->loyaltyStateValidation->id_order_state)

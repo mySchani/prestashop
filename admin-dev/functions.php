@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-require_once(dirname(__FILE__).'/../images.inc.php'); 
+require_once(dirname(__FILE__).'/../images.inc.php');
 
 function bindDatepicker($id, $time)
 {
@@ -49,14 +49,20 @@ function bindDatepicker($id, $time)
 	});';
 }
 
-// id can be a identifier or an array of identifiers
+/**
+ * Deprecated since 1.5
+ * Use Controller::addJqueryUi('ui.datepicker') instead
+ *
+ * @param int|array $id id can be a identifier or an array of identifiers
+ * @param unknown_type $time
+ */
 function includeDatepicker($id, $time = false)
 {
-	global $cookie;
+	Tools::displayAsDeprecated();
 	echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery-ui-1.8.10.custom.min.js"></script>';
-	$iso = Db::getInstance()->getValue('SELECT iso_code FROM '._DB_PREFIX_.'lang WHERE `id_lang` = '.(int)($cookie->id_lang));
+	$iso = Db::getInstance()->getValue('SELECT iso_code FROM '._DB_PREFIX_.'lang WHERE `id_lang` = '.(int)Context::getContext()->language->id);
 	if ($iso != 'en')
-		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/datepicker/ui/i18n/ui.datepicker-'.$iso.'.js"></script>';
+		echo '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/ui/i18n/jquery.ui.datepicker-'.$iso.'.js"></script>';
 	echo '<script type="text/javascript">';
 		if (is_array($id))
 			foreach ($id as $id2)
@@ -76,14 +82,13 @@ function includeDatepicker($id, $time = false)
 function	rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 {
  	$defines = array();
-	$defines['_PS_DIRECTORY_'] = ($baseUrls AND $baseUrls['_PS_DIRECTORY_']) ? $baseUrls['_PS_DIRECTORY_'] : _PS_DIRECTORY_;
 	$defines['_MEDIA_SERVER_1_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_1_'])) ? $baseUrls['_MEDIA_SERVER_1_'] : _MEDIA_SERVER_1_;
 	$defines['_MEDIA_SERVER_2_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_2_'])) ? $baseUrls['_MEDIA_SERVER_2_'] : _MEDIA_SERVER_2_;
 	$defines['_MEDIA_SERVER_3_'] = ($baseUrls AND isset($baseUrls['_MEDIA_SERVER_3_'])) ? $baseUrls['_MEDIA_SERVER_3_'] : _MEDIA_SERVER_3_;
 	$defines['_PS_CACHING_SYSTEM_'] = _PS_CACHING_SYSTEM_;
 	$defines['_PS_CACHE_ENABLED_'] = _PS_CACHE_ENABLED_;
 	$defines['_DB_NAME_'] = (($arrayDB AND isset($arrayDB['_DB_NAME_'])) ? $arrayDB['_DB_NAME_'] : _DB_NAME_);
-	$defines['_MYSQL_ENGINE_'] = _MYSQL_ENGINE_;
+	$defines['_MYSQL_ENGINE_'] = (($arrayDB AND isset($arrayDB['_MYSQL_ENGINE_'])) ? $arrayDB['_MYSQL_ENGINE_'] : _MYSQL_ENGINE_);
 	$defines['_DB_SERVER_'] = (($arrayDB AND isset($arrayDB['_DB_SERVER_'])) ? $arrayDB['_DB_SERVER_'] : _DB_SERVER_);
 	$defines['_DB_USER_'] = (($arrayDB AND isset($arrayDB['_DB_USER_'])) ? $arrayDB['_DB_USER_'] : _DB_USER_);
 	$defines['_DB_PREFIX_'] = (($arrayDB AND isset($arrayDB['_DB_PREFIX_'])) ? $arrayDB['_DB_PREFIX_'] : _DB_PREFIX_);
@@ -100,7 +105,7 @@ function	rewriteSettingsFile($baseUrls = NULL, $theme = NULL, $arrayDB = NULL)
 	foreach ($defines as $k => $value)
 		$content .= 'define(\''.$k.'\', \''.addslashes($value).'\');'."\n";
 	$content .= "\n?>";
-	if ($fd = @fopen(PS_ADMIN_DIR.'/../config/settings.inc.php', 'w'))
+	if ($fd = @fopen(_PS_ADMIN_DIR_.'/../config/settings.inc.php', 'w'))
 	{
 		fwrite($fd, $content);
 		fclose($fd);
@@ -132,53 +137,55 @@ function	displayDate($sqlDate, $withTime = false)
   */
 function getPath($urlBase, $id_category, $path = '', $highlight = '', $categoryType = 'catalog', $home = false)
 {
-	global $cookie;
-	
+	$context = Context::getContext();
 	if ($categoryType == 'catalog')
-	{			
+	{
 		$category = Db::getInstance()->getRow('
 		SELECT id_category, level_depth, nleft, nright
 		FROM '._DB_PREFIX_.'category
 		WHERE id_category = '.(int)$id_category);
 		if (isset($category['id_category']))
 		{
-			$categories = Db::getInstance()->ExecuteS('
-			SELECT c.id_category, cl.name, cl.link_rewrite
-			FROM '._DB_PREFIX_.'category c
-			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category)
-			WHERE c.nleft <= '.(int)$category['nleft'].' AND c.nright >= '.(int)$category['nright'].' AND cl.id_lang = '.(int)$cookie->id_lang.($home ? ' AND c.id_category='.$id_category : '').'
-			GROUP BY c.id_category
-			ORDER BY c.level_depth ASC
-			LIMIT '.(!$home ? (int)($category['level_depth'] + 1) : 1));
+			$sql = 'SELECT c.id_category, cl.name, cl.link_rewrite
+					FROM '._DB_PREFIX_.'category c
+					LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = c.id_category'.$context->shop->addSqlRestrictionOnLang('cl').')
+					WHERE c.nleft <= '.(int)$category['nleft'].'
+						AND c.nright >= '.(int)$category['nright'].'
+						AND cl.id_lang = '.(int)$context->language->id.
+						($home ? ' AND c.id_category='.$id_category : '').'
+					GROUP BY c.id_category
+					ORDER BY c.level_depth ASC
+					LIMIT '.(!$home ? (int)($category['level_depth'] + 1) : 1);
+			$categories = Db::getInstance()->executeS($sql);
 			$fullPath = '';
 			$n = 1;
 			$nCategories = (int)sizeof($categories);
 			foreach ($categories AS $category)
 			{
-				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'addcategory').'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
+				$edit = '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&'.(($category['id_category'] == 1 || $home) ? 'viewcategory' : 'addcategory').'&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$context->employee->id).'" title="'.($category['id_category'] == 1 ? 'Home' : 'Modify').'"><img src="../img/admin/'.(($category['id_category'] == 1  || $home) ? 'home' : 'edit').'.gif" alt="" /></a> ';
 				$fullPath .= $edit.
-				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
+				($n < $nCategories ? '<a href="'.$urlBase.'&id_category='.(int)$category['id_category'].'&viewcategory&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)$context->employee->id).'" title="'.htmlentities($category['name'], ENT_NOQUOTES, 'UTF-8').'">' : '').
 				(!empty($highlight) ? str_ireplace($highlight, '<span class="highlight">'.htmlentities($highlight, ENT_NOQUOTES, 'UTF-8').'</span>', $category['name']) : $category['name']).
 				($n < $nCategories ? '</a>' : '').
 				(($n++ != $nCategories OR !empty($path)) ? ' > ' : '');
 			}
-				
+
 			return $fullPath.$path;
 		}
 	}
 	elseif ($categoryType == 'cms')
 	{
-		$category = new CMSCategory($id_category, (int)($cookie->id_lang));
+		$category = new CMSCategory($id_category, $context->language->id);
 		if (!$category->id)
 			return $path;
 
 		$name = ($highlight != NULL) ? str_ireplace($highlight, '<span class="highlight">'.$highlight.'</span>', CMSCategory::hideCMSCategoryPosition($category->name)) : CMSCategory::hideCMSCategoryPosition($category->name);
-		$edit = '<a href="'.$urlBase.'&id_cms_category='.$category->id.'&addcategory&token=' . Tools::getAdminToken('AdminCMSContent'.(int)(Tab::getIdFromClassName('AdminCMSContent')).(int)($cookie->id_employee)).'">
+		$edit = '<a href="'.$urlBase.'&id_cms_category='.$category->id.'&addcategory&token=' . Tools::getAdminToken('AdminCmsContent'.(int)(Tab::getIdFromClassName('AdminCmsContent')).(int)$context->employee->id).'">
 				<img src="../img/admin/edit.gif" alt="Modify" /></a> ';
 		if ($category->id == 1)
-			$edit = '<a href="'.$urlBase.'&id_cms_category='.$category->id.'&viewcategory&token=' . Tools::getAdminToken('AdminCMSContent'.(int)(Tab::getIdFromClassName('AdminCMSContent')).(int)($cookie->id_employee)).'">
+			$edit = '<a href="'.$urlBase.'&id_cms_category='.$category->id.'&viewcategory&token=' . Tools::getAdminToken('AdminCmsContent'.(int)(Tab::getIdFromClassName('AdminCmsContent')).(int)$context->employee->id).'">
 					<img src="../img/admin/home.gif" alt="Home" /></a> ';
-		$path = $edit.'<a href="'.$urlBase.'&id_cms_category='.$category->id.'&viewcategory&token=' . Tools::getAdminToken('AdminCMSContent'.(int)(Tab::getIdFromClassName('AdminCMSContent')).(int)($cookie->id_employee)).'">
+		$path = $edit.'<a href="'.$urlBase.'&id_cms_category='.$category->id.'&viewcategory&token=' . Tools::getAdminToken('AdminCmsContent'.(int)(Tab::getIdFromClassName('AdminCmsContent')).(int)$context->employee->id).'">
 		'.$name.'</a> > '.$path;
 		if ($category->id == 1)
 			return substr($path, 0, strlen($path) - 3);
@@ -209,10 +216,9 @@ function createDir($path, $rights)
 
 function checkPSVersion()
 {
-	libxml_set_streams_context(stream_context_create(array('http' => array('timeout' => 3))));
-	if ($feed = @simplexml_load_file('http://www.prestashop.com/xml/version.xml') AND _PS_VERSION_ < $feed->version->num)
-		return array('name' => $feed->version->name, 'link' => $feed->download->link);
-	return false;
+	$upgrader = new Upgrader();
+
+	return $upgrader->checkPSVersion();
 }
 
 function translate($string)
@@ -225,59 +231,54 @@ function translate($string)
 	return str_replace('"', '&quot;', stripslashes($str));
 }
 
-function recursiveTab($id_tab)
-{
-	global $cookie, $tabs;
-	
-	$adminTab = Tab::getTab((int)$cookie->id_lang, $id_tab);
-	$tabs[]= $adminTab;
-	if ($adminTab['id_parent'] > 0)
-		recursiveTab($adminTab['id_parent']);
-}
 
+/**
+ * Returns a new Tab object
+ *
+ * @param string $tab class name
+ * @return mixed(AdminTab, bool) tab object or false if failed
+ */
 function checkingTab($tab)
 {
-	global $adminObj, $cookie;
-
 	$tab = trim($tab);
+
+	$tab_lowercase = strtolower($tab);
 	if (!Validate::isTabName($tab))
 		return false;
-		
-	$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('SELECT id_tab, module FROM `'._DB_PREFIX_.'tab` WHERE class_name = \''.pSQL($tab).'\'');
+	$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('SELECT id_tab, module, class_name FROM `'._DB_PREFIX_.'tab` WHERE class_name = \''.pSQL($tab).'\'');
 	if (!$row['id_tab'])
 	{
 		if (isset(AdminTab::$tabParenting[$tab]))
 			Tools::redirectAdmin('?tab='.AdminTab::$tabParenting[$tab].'&token='.Tools::getAdminTokenLite(AdminTab::$tabParenting[$tab]));
-		echo Tools::displayError('Tab cannot be found.');
+		echo sprintf(Tools::displayError('Tab %s cannot be found.'),$tab);
 		return false;
 	}
-	if ($row['module'] AND file_exists(_PS_MODULE_DIR_.'/'.$row['module'].'/'.$tab.'.php'))
-		include_once(_PS_MODULE_DIR_.'/'.$row['module'].'/'.$tab.'.php');
-	elseif (file_exists(PS_ADMIN_DIR.'/tabs/'.$tab.'.php'))
-		include_once(PS_ADMIN_DIR.'/tabs/'.$tab.'.php');
 
+	// Class file is included in Dispatcher::dispatch() function
 	if (!class_exists($tab, false) OR !$row['id_tab'])
 	{
-		echo Tools::displayError('Tab file cannot be found.');
+		echo sprintf(Tools::displayError('Tab file %s cannot be found.'),$tab);
 		return false;
 	}
 	$adminObj = new $tab;
-	if (!$adminObj->viewAccess() AND ($adminObj->table != 'employee' OR $cookie->id_employee != Tools::getValue('id_employee') OR !Tools::isSubmit('updateemployee')))
+	if (!$adminObj->viewAccess() AND ($adminObj->table != 'employee' OR Context::getContext()->employee->id != Tools::getValue('id_employee') OR !Tools::isSubmit('updateemployee')))
 	{
 		$adminObj->_errors = array(Tools::displayError('Access denied'));
 		echo $adminObj->displayErrors();
 		return false;
 	}
-	return $row['id_tab'];
+	return $adminObj;
 }
 
+/**
+ * @TODO deprecate for Tab::checkTabRights()
+ */
 function checkTabRights($id_tab)
 {
-	global $cookie;
 	static $tabAccesses = NULL;
-	
+
 	if ($tabAccesses === NULL)
-		$tabAccesses =  Profile::getProfileAccesses($cookie->profile);
+		$tabAccesses =  Profile::getProfileAccesses(Context::getContext()->employee->id_profile);
 
 	if (isset($tabAccesses[(int)($id_tab)]['view']))
 		return ($tabAccesses[(int)($id_tab)]['view'] === '1');
@@ -386,4 +387,231 @@ function simpleXMLToArray ($xml, $flattenValues = true, $flattenAttributes = tru
 	}
 
 	return $return;
+}
+
+/**
+ * Generate a sweet HTML list for shop selection
+ *
+ * @todo move in adminTab
+ * @return string
+ */
+function generateShopList()
+{
+	$tree = Shop::getTree();
+	$context = Context::getContext();
+
+	// Get default value
+	list($shopID, $shopGroupID) = Shop::getContext();
+	if ($shopID)
+		$value = 's-'.$shopID;
+	else if ($shopGroupID)
+		$value = 'g-'.$shopGroupID;
+	else
+		$value = '';
+
+	// Generate HTML
+	$url = $_SERVER['REQUEST_URI'].(($_SERVER['QUERY_STRING']) ? '&' : '?').'setShopContext=';
+	$html = '<select class="shopList" onchange="location.href = \''.$url.'\'+$(this).val();">';
+
+	if ($context->employee->id_profile == _PS_ADMIN_PROFILE_ ||
+					$context->shop->getTotalShopsWhoExists() == Employee::getTotalEmployeeShopById($context->employee->id))
+		$html .= '<option value="" class="first">'.translate('All shops').'</option>';
+	/*$html .= (Context::getContext()->employee->id_profile == _PS_ADMIN_PROFILE_) ? '<option value="" class="first">'.translate('All shops').'</option>' : '';*/
+	foreach ($tree as $gID => $group_data)
+	{
+		$disabled = ($group_data['totalShops'] != count($group_data['shops'])) ? 'disabled="disabled"' : '';
+		$html .= '<option class="group" value="g-'.$gID.'" '.(($value == 'g-'.$gID) ? 'selected="selected"' : '').' '.$disabled.'>'.htmlspecialchars($group_data['name']).'</option>';
+		foreach ($group_data['shops'] as $sID => $shopData)
+			if ($shopData['active'])
+				$html .= '<option value="s-'.$sID.'" class="shop" '.(($value == 's-'.$sID || $context->shop->id == $sID) ? 'selected="selected"' : '').'>&raquo; '.$shopData['name'].'</option>';
+	}
+	$html .= '</select>';
+
+	return $html;
+}
+
+/**
+ * for retrocompatibility with old AdminTab, old index.php
+ *
+ * @return void
+ */
+function runAdminTab($tab, $ajaxMode = false)
+{
+	$ajaxMode = (bool)$ajaxMode;
+
+	require_once(_PS_ADMIN_DIR_.'/init.php');
+	$cookie = Context::getContext()->cookie;
+	if (empty($tab) and !sizeof($_POST))
+	{
+		$tab = 'AdminHome';
+		$_POST['tab'] = 'AdminHome';
+		$_POST['token'] = Tools::getAdminTokenLite($tab);
+	}
+	// $tab = $_REQUEST['tab'];
+	if ($adminObj = checkingTab($tab))
+	{
+		$noTabLink = $adminObj->noTabLink;
+		// init is different for new tabs (AdminController) and old tabs (AdminTab)
+		if ($adminObj instanceof AdminController)
+		{
+			if($ajaxMode)
+				$adminObj->ajax = true;
+			$adminObj->path = dirname($_SERVER["PHP_SELF"]);
+			$adminObj->run();
+		}
+		else
+		{
+			if (!$ajaxMode)
+				require_once(_PS_ADMIN_DIR_.'/header.inc.php');
+			$isoUser = Context::getContext()->language->id;
+			$tabs = array();
+			$tabs = Tab::recursiveTab($adminObj->id, $tabs);
+			$tabs = array_reverse($tabs);
+			$bread = '';
+			foreach ($tabs AS $key => $item)
+			{
+				$bread .= ' <img src="../img/admin/separator_breadcrum.png" style="margin-right:5px" alt="&gt;" />';
+				if (count($tabs) - 1 > $key)
+					$bread .= '<a href="?tab='.$item['class_name'].'&token='.Tools::getAdminToken($item['class_name'].intval($item['id_tab']).(int)Context::getContext()->employee->id).'">';
+
+				$bread .= $item['name'];
+				if (count($tabs) - 1 > $key)
+					$bread .= '</a>';
+			}
+
+			// @TODO : a way to desactivate this feature
+			if (!$ajaxMode)
+				echo'<script type="text/javascript">
+
+				$(function() {
+					$.ajax({
+						type: \'POST\',
+						url: \'ajax.php\',
+						data: \'helpAccess=1&item='.$item['class_name'].'&isoUser='.$isoUser.'&country='.Context::getContext()->country->iso_code.'&version='._PS_VERSION_.'\',
+						async : true,
+						success: function(msg) {
+							$("#help-button").html(msg);
+							$("#help-button").fadeIn("slow");
+						}
+					});
+				});</script>';
+
+			if (!$ajaxMode)
+				echo '<div class="path_bar">
+			<div id="help-button" class="floatr" style="display: none; font-family: Verdana; font-size: 10px; margin-right: 4px; margin-top: 4px;">
+			</div>
+				<a href="?token='.Tools::getAdminToken($tab.intval(Tab::getIdFromClassName($tab)).(int)Context::getContext()->employee->id).'">'.translate('Back Office').'</a>
+				'.$bread.'</div>';
+
+			if (!$ajaxMode && Shop::isFeatureActive() && Context::shop() != Shop::CONTEXT_ALL)
+			{
+				echo '<div class="multishop_info">';
+				if (Context::shop() == Shop::CONTEXT_GROUP)
+					printf(translate('You are configuring your store for group shop %s'), '<b>'.Context::getContext()->shop->getGroup()->name.'</b>');
+				elseif (Context::shop() == Shop::CONTEXT_SHOP)
+					printf(translate('You are configuring your store for shop %s'), '<b>'.Context::getContext()->shop->name.'</b>');
+				echo '</div>';
+			}
+			if (Validate::isLoadedObject($adminObj))
+			{
+				if ($adminObj->checkToken())
+				{
+					if($ajaxMode)
+					{
+						// the differences with index.php is here
+						$adminObj->ajaxPreProcess();
+						$action = Tools::getValue('action');
+						// no need to use displayConf() here
+
+						if (!empty($action) AND method_exists($adminObj, 'ajaxProcess'.Tools::toCamelCase($action)) )
+							$adminObj->{'ajaxProcess'.Tools::toCamelCase($action)}();
+						else
+							$adminObj->ajaxProcess();
+
+						// @TODO We should use a displayAjaxError
+						$adminObj->displayErrors();
+						if (!empty($action) AND method_exists($adminObj, 'displayAjax'.Tools::toCamelCase($action)) )
+							$adminObj->{'displayAjax'.$action}();
+						else
+							$adminObj->displayAjax();
+
+
+					}
+					else
+					{
+						/* Filter memorization */
+						if (isset($_POST) AND !empty($_POST) AND isset($adminObj->table))
+							foreach ($_POST AS $key => $value)
+								if (is_array($adminObj->table))
+								{
+									foreach ($adminObj->table AS $table)
+										if (strncmp($key, $table.'Filter_', 7) === 0 OR strncmp($key, 'submitFilter', 12) === 0)
+											$cookie->$key = !is_array($value) ? $value : serialize($value);
+								}
+								elseif (strncmp($key, $adminObj->table.'Filter_', 7) === 0 OR strncmp($key, 'submitFilter', 12) === 0)
+									$cookie->$key = !is_array($value) ? $value : serialize($value);
+
+						if (isset($_GET) AND !empty($_GET) AND isset($adminObj->table))
+							foreach ($_GET AS $key => $value)
+								if (is_array($adminObj->table))
+								{
+									foreach ($adminObj->table AS $table)
+										if (strncmp($key, $table.'OrderBy', 7) === 0 OR strncmp($key, $table.'Orderway', 8) === 0)
+											$cookie->$key = $value;
+								}
+								elseif (strncmp($key, $adminObj->table.'OrderBy', 7) === 0 OR strncmp($key, $adminObj->table.'Orderway', 12) === 0)
+									$cookie->$key = $value;
+						$adminObj->displayConf();
+						$adminObj->postProcess();
+						$adminObj->displayErrors();
+						$adminObj->display();
+						include(_PS_ADMIN_DIR_.'/footer.inc.php');
+					}
+				}
+				else
+				{
+					if($ajaxMode)
+					{
+						// If this is an XSS attempt, then we should only display a simple, secure page
+						ob_clean();
+
+						// ${1} in the replacement string of the regexp is required, because the token may begin with a number and mix up with it (e.g. $17)
+						$url = preg_replace('/([&?]token=)[^&]*(&.*)?$/', '${1}'.$adminObj->token.'$2', $_SERVER['REQUEST_URI']);
+						if (false === strpos($url, '?token=') AND false === strpos($url, '&token='))
+							$url .= '&token='.$adminObj->token;
+
+
+						// we can display the correct url
+						// die(Tools::jsonEncode(array(translate('Invalid security token'),$url)));
+						die(Tools::jsonEncode(translate('Invalid security token')));
+					}
+					else
+					{
+						// If this is an XSS attempt, then we should only display a simple, secure page
+						ob_clean();
+
+						// ${1} in the replacement string of the regexp is required, because the token may begin with a number and mix up with it (e.g. $17)
+						$url = preg_replace('/([&?]token=)[^&]*(&.*)?$/', '${1}'.$adminObj->token.'$2', $_SERVER['REQUEST_URI']);
+						if (false === strpos($url, '?token=') AND false === strpos($url, '&token='))
+							$url .= '&token='.$adminObj->token;
+
+						$message = translate('Invalid security token');
+						echo '<html><head><title>'.$message.'</title></head><body style="font-family:Arial,Verdana,Helvetica,sans-serif;background-color:#EC8686">
+							<div style="background-color:#FAE2E3;border:1px solid #000000;color:#383838;font-weight:700;line-height:20px;margin:0 0 10px;padding:10px 15px;width:500px">
+								<img src="../img/admin/error2.png" style="margin:-4px 5px 0 0;vertical-align:middle">
+								'.$message.'
+							</div>';
+						echo '<a href="'.htmlentities($url).'" method="get" style="float:left;margin:10px">
+								<input type="button" value="'.Tools::htmlentitiesUTF8(translate('I understand the risks and I really want to display this page')).'" style="height:30px;margin-top:5px" />
+							</a>
+							<a href="index.php" method="get" style="float:left;margin:10px">
+								<input type="button" value="'.Tools::htmlentitiesUTF8(translate('Take me out of here!')).'" style="height:40px" />
+							</a>
+						</body></html>';
+						die;
+					}
+				}
+			}
+		}
+	}
 }

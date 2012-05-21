@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Criteo extends Module
@@ -117,8 +117,8 @@ class Criteo extends Module
 
 	public static function buildCSV()
 	{
-		global $cookie, $country_infos;
-		$cookie = new Cookie('ps');
+		global $country_infos;
+		
 		$country_infos = array('id_group' => 0, 'id_tax' => 1);
 		$html = '';
 		/* First line, columns */
@@ -140,12 +140,8 @@ class Criteo extends Module
 			'PS_SHOP_NAME',
 			'PS_CURRENCY_DEFAULT',
 			'PS_CARRIER_DEFAULT'));
-		/* Language */
-		$language = new Language(intval($conf['PS_LANG_DEFAULT']));
 
-		/* Link instance for products links */
-		$link = new Link();
-		$result = Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->executeS('
 		SELECT DISTINCT p.`id_product`, i.`id_image`
 		FROM `'._DB_PREFIX_.'product` p
 		JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.id_product = p.id_product)
@@ -166,7 +162,7 @@ class Criteo extends Module
 				$line[] = $product->manufacturer_name.' - '.$product->name[intval($conf['PS_LANG_DEFAULT'])];
 				$line[] = Tools::getProtocol().$_SERVER['HTTP_HOST']._THEME_PROD_DIR_.$imageObj->getExistingImgPath().'-small.jpg';
 				$line[] = Tools::getProtocol().$_SERVER['HTTP_HOST']._THEME_PROD_DIR_.$imageObj->getExistingImgPath().'-thickbox.jpg';
-				$line[] = $link->getProductLink(intval($product->id), $product->link_rewrite[intval($conf['PS_LANG_DEFAULT'])], $product->ean13).'&utm_source=criteo&aff=criteo';
+				$line[] = $this->context->link->getProductLink(intval($product->id), $product->link_rewrite[intval($conf['PS_LANG_DEFAULT'])], $product->ean13).'&utm_source=criteo&aff=criteo';
 				$line[] = str_replace(array("\n", "\r", "\t", '|'), '', strip_tags(html_entity_decode($product->description_short[intval($conf['PS_LANG_DEFAULT'])], ENT_COMPAT, 'UTF-8')));
 
 				$price = $product->getPrice(true, intval(Product::getDefaultAttribute($product->id)));
@@ -187,9 +183,9 @@ class Criteo extends Module
 
 	public static function buildXML()
 	{
-		global $cookie, $country_infos;
-
-		$cookie = new Cookie('ps');
+		global $country_infos;
+		$context = Context::getContext();
+				
 		$country_infos = array('id_group' => 0, 'id_tax' => 1);
 		$html = '<products>'."\n";
 		/* First line, columns */
@@ -207,14 +203,9 @@ class Criteo extends Module
 			'PS_SHOP_NAME',
 			'PS_CURRENCY_DEFAULT',
 			'PS_CARRIER_DEFAULT'));
-		/* Language */
-		$language = new Language(intval($conf['PS_LANG_DEFAULT']));
-
-		/* Link instance for products links */
-		$link = new Link();
 
 		/* Searching for products */
-		$result = Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->executeS('
 		SELECT DISTINCT p.`id_product`, i.`id_image`
 		FROM `'._DB_PREFIX_.'product` p
 		JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.id_product = p.id_product)
@@ -237,7 +228,7 @@ class Criteo extends Module
 
 				$line[] = Tools::getProtocol().$_SERVER['HTTP_HOST']._THEME_PROD_DIR_.$imageObj->getExistingImgPath().'-small.jpg';
 				$line[] = Tools::getProtocol().$_SERVER['HTTP_HOST']._THEME_PROD_DIR_.$imageObj->getExistingImgPath().'-thickbox.jpg';
-				$line[] = $link->getProductLink(intval($product->id), $product->link_rewrite[intval($conf['PS_LANG_DEFAULT'])], $product->ean13).'&utm_source=criteo&aff=criteo';
+				$line[] = $context->link->getProductLink(intval($product->id), $product->link_rewrite[intval($conf['PS_LANG_DEFAULT'])], $product->ean13).'&utm_source=criteo&aff=criteo';
 				$line[] = str_replace(array("\n", "\r", "\t", '|'), '', strip_tags(html_entity_decode($product->description_short[intval($conf['PS_LANG_DEFAULT'])], ENT_COMPAT, 'UTF-8')));
 
 				$price = $product->getPrice(true, intval(Product::getDefaultAttribute($product->id)));
@@ -322,8 +313,8 @@ class Criteo extends Module
 	
 	public function hookOrderConfirmation($params)
 	{
-			global $cookie, $country_infos;
-			$cookie = new Cookie('ps');
+		global $country_infos;
+
 		$country_infos = array('id_group' => 0,
 								'id_tax' => 1);
 		$cart = new Cart(intval($params['objOrder']->id_cart));

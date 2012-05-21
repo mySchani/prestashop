@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -28,91 +28,91 @@
 class AddressCore extends ObjectModel
 {
 	/** @var integer Customer id which address belongs */
-	public		$id_customer = NULL;
+	public $id_customer = null;
 
 	/** @var integer Manufacturer id which address belongs */
-	public		$id_manufacturer = NULL;
+	public $id_manufacturer = null;
 
 	/** @var integer Supplier id which address belongs */
-	public		$id_supplier = NULL;
+	public $id_supplier = null;
 
 	/** @var integer Country id */
-	public		$id_country;
+	public $id_country;
 
 	/** @var integer State id */
-	public		$id_state;
+	public $id_state;
 
 	/** @var string Country name */
-	public		$country;
+	public $country;
 
 	/** @var string Alias (eg. Home, Work...) */
-	public		$alias;
+	public $alias;
 
 	/** @var string Company (optional) */
-	public 		$company;
+	public $company;
 
 	/** @var string Lastname */
-	public 		$lastname;
+	public $lastname;
 
 	/** @var string Firstname */
-	public 		$firstname;
+	public $firstname;
 
 	/** @var string Address first line */
-	public 		$address1;
+	public $address1;
 
 	/** @var string Address second line (optional) */
-	public 		$address2;
+	public $address2;
 
 	/** @var string Postal code */
-	public 		$postcode;
+	public $postcode;
 
 	/** @var string City */
-	public 		$city;
+	public $city;
 
 	/** @var string Any other useful information */
-	public 		$other;
+	public $other;
 
 	/** @var string Phone number */
-	public 		$phone;
+	public $phone;
 
 	/** @var string Mobile phone number */
-	public 		$phone_mobile;
+	public $phone_mobile;
 
 	/** @var string VAT number */
-	public 		$vat_number;
+	public $vat_number;
 
 	/** @var string DNI number */
-	public		$dni;
+	public $dni;
 
 	/** @var string Object creation date */
-	public 		$date_add;
+	public $date_add;
 
 	/** @var string Object last modification date */
-	public 		$date_upd;
+	public $date_upd;
 
 	/** @var boolean True if address has been deleted (staying in database as deleted) */
-	public 		$deleted = 0;
+	public $deleted = 0;
 
 	protected static $_idZones = array();
 	protected static $_idCountries = array();
 
-	protected	$fieldsRequired = array('id_country', 'alias', 'lastname', 'firstname', 'address1', 'city');
-	protected	$fieldsSize = array('alias' => 32, 'company' => 32, 'lastname' => 32, 'firstname' => 32,
+	protected $fieldsRequired = array('id_country', 'alias', 'lastname', 'firstname', 'address1', 'city');
+	protected $fieldsSize = array('alias' => 32, 'company' => 32, 'lastname' => 32, 'firstname' => 32,
 									'address1' => 128, 'address2' => 128, 'postcode' => 12, 'city' => 64,
 									'other' => 300, 'phone' => 16, 'phone_mobile' => 16, 'dni' => 16);
-	protected	$fieldsValidate = array('id_customer' => 'isNullOrUnsignedId', 'id_manufacturer' => 'isNullOrUnsignedId',
+	protected $fieldsValidate = array('id_customer' => 'isNullOrUnsignedId', 'id_manufacturer' => 'isNullOrUnsignedId',
 										'id_supplier' => 'isNullOrUnsignedId', 'id_country' => 'isUnsignedId', 'id_state' => 'isNullOrUnsignedId',
 										'alias' => 'isGenericName', 'company' => 'isGenericName', 'lastname' => 'isName','vat_number' => 'isGenericName',
 										'firstname' => 'isName', 'address1' => 'isAddress', 'address2' => 'isAddress', 'postcode'=>'isPostCode',
 										'city' => 'isCityName', 'other' => 'isMessage',
 										'phone' => 'isPhoneNumber', 'phone_mobile' => 'isPhoneNumber', 'deleted' => 'isBool', 'dni' => 'isDniLite');
 
-	protected 	$table = 'address';
-	protected 	$identifier = 'id_address';
-	protected	$_includeVars = array('addressType' => 'table');
-	protected	$_includeContainer = false;
+	protected $table = 'address';
+	protected $identifier = 'id_address';
+	protected $_includeVars = array('addressType' => 'table');
+	protected $_includeContainer = false;
 
-	protected	$webserviceParameters = array(
+	protected $webserviceParameters = array(
 		'objectsNodeName' => 'addresses',
 		'fields' => array(
 			'id_customer' => array('xlink_resource'=> 'customers'),
@@ -128,23 +128,24 @@ class AddressCore extends ObjectModel
 	 *
 	 * @param integer $id_address Existing address id in order to load object (optional)
 	 */
-	public	function __construct($id_address = NULL, $id_lang = NULL)
+	public	function __construct($id_address = null, $id_lang = null)
 	{
 		parent::__construct($id_address);
 
 		/* Get and cache address country name */
 		if ($this->id)
 		{
-			$result = Db::getInstance()->getRow('SELECT `name` FROM `'._DB_PREFIX_.'country_lang`
-												WHERE `id_country` = '.(int)($this->id_country).'
-												AND `id_lang` = '.($id_lang ? (int)($id_lang) : Configuration::get('PS_LANG_DEFAULT')));
+			$result = Db::getInstance()->getRow('
+			SELECT `name` FROM `'._DB_PREFIX_.'country_lang`
+												WHERE `id_country` = '.(int)$this->id_country.'
+												AND `id_lang` = '.($id_lang ? (int)$id_lang : Configuration::get('PS_LANG_DEFAULT')));
 			$this->country = $result['name'];
 		}
 	}
 
-	public function add($autodate = true, $nullValues = false)
+	public function add($autodate = true, $null_values = false)
 	{
-		if (!parent::add($autodate, $nullValues))
+		if (!parent::add($autodate, $null_values))
 			return false;
 
 		if (Validate::isUnsignedId($this->id_customer))
@@ -167,13 +168,13 @@ class AddressCore extends ObjectModel
 	}
 
 	/**
-	* Returns fields required for an address in an array hash 
-	* @return array hash values 
+	* Returns fields required for an address in an array hash
+	* @return array hash values
 	*/
 	public static function getFieldsValidate()
 	{
 		$tmp_addr = new Address();
-		$out = ($tmp_addr->fieldsValidate);
+		$out = $tmp_addr->fieldsValidate;
 
 		unset($tmp_addr);
 		return $out;
@@ -184,14 +185,14 @@ class AddressCore extends ObjectModel
 
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		if (isset($this->id))
-			$fields['id_address'] = (int)($this->id);
-		$fields['id_customer'] = is_null($this->id_customer) ? 0 : (int)($this->id_customer);
-		$fields['id_manufacturer'] = is_null($this->id_manufacturer) ? 0 : (int)($this->id_manufacturer);
-		$fields['id_supplier'] = is_null($this->id_supplier) ? 0 : (int)($this->id_supplier);
-		$fields['id_country'] = (int)($this->id_country);
-		$fields['id_state'] = (int)($this->id_state);
+			$fields['id_address'] = (int)$this->id;
+		$fields['id_customer'] = is_null($this->id_customer) ? 0 : (int)$this->id_customer;
+		$fields['id_manufacturer'] = is_null($this->id_manufacturer) ? 0 : (int)$this->id_manufacturer;
+		$fields['id_supplier'] = is_null($this->id_supplier) ? 0 : (int)$this->id_supplier;
+		$fields['id_country'] = (int)$this->id_country;
+		$fields['id_state'] = (int)$this->id_state;
 		$fields['alias'] = pSQL($this->alias);
 		$fields['company'] = pSQL($this->company);
 		$fields['lastname'] = pSQL($this->lastname);
@@ -205,7 +206,7 @@ class AddressCore extends ObjectModel
 		$fields['phone_mobile'] = pSQL($this->phone_mobile);
 		$fields['vat_number'] = pSQL($this->vat_number);
 		$fields['dni'] = pSQL($this->dni);
-		$fields['deleted'] = (int)($this->deleted);
+		$fields['deleted'] = (int)$this->deleted;
 		$fields['date_add'] = pSQL($this->date_add);
 		$fields['date_upd'] = pSQL($this->date_upd);
 		return $fields;
@@ -237,9 +238,9 @@ class AddressCore extends ObjectModel
 		FROM `'._DB_PREFIX_.'address` a
 		LEFT JOIN `'._DB_PREFIX_.'country` c ON c.`id_country` = a.`id_country`
 		LEFT JOIN `'._DB_PREFIX_.'state` s ON s.`id_state` = a.`id_state`
-		WHERE a.`id_address` = '.(int)($id_address));
+		WHERE a.`id_address` = '.(int)$id_address);
 
-		self::$_idZones[$id_address] = (int)((int)($result['id_zone_state']) ? $result['id_zone_state'] : $result['id_zone']);
+		self::$_idZones[$id_address] = (int)((int)$result['id_zone_state'] ? $result['id_zone_state'] : $result['id_zone']);
 		return self::$_idZones[$id_address];
 	}
 
@@ -255,7 +256,7 @@ class AddressCore extends ObjectModel
 		SELECT c.`active`
 		FROM `'._DB_PREFIX_.'address` a
 		LEFT JOIN `'._DB_PREFIX_.'country` c ON c.`id_country` = a.`id_country`
-		WHERE a.`id_address` = '.(int)($id_address)))
+		WHERE a.`id_address` = '.(int)$id_address))
 			return false;
 		return ($result['active']);
 	}
@@ -270,33 +271,19 @@ class AddressCore extends ObjectModel
 		$result = Db::getInstance()->getRow('
 		SELECT COUNT(`id_order`) AS used
 		FROM `'._DB_PREFIX_.'orders`
-		WHERE `id_address_delivery` = '.(int)($this->id).'
-		OR `id_address_invoice` = '.(int)($this->id));
+		WHERE `id_address_delivery` = '.(int)$this->id.'
+		OR `id_address_invoice` = '.(int)$this->id);
 
 		return isset($result['used']) ? $result['used'] : false;
 	}
 
-	/**
-	 * @param int $id_address
-	 * @return int
-	 * @deprecated
-	 */
-	static public function getManufacturerIdByAddress($id_address)
-	{
-		Tools::displayAsDeprecated();
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-			SELECT `id_manufacturer` FROM `'._DB_PREFIX_.'address`
-			WHERE `id_address` = '.(int)($id_address));
-		return isset($result['id_manufacturer']) ? $result['id_manufacturer'] : false;
-	}
-
-	static public function getCountryAndState($id_address)
+	public static function getCountryAndState($id_address)
 	{
 		if (isset(self::$_idCountries[$id_address]))
 			return self::$_idCountries[$id_address];
 		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
 		SELECT `id_country`, `id_state`, `vat_number`, `postcode` FROM `'._DB_PREFIX_.'address`
-		WHERE `id_address` = '.(int)($id_address));
+		WHERE `id_address` = '.(int)$id_address);
 		self::$_idCountries[$id_address] = $result;
 		return $result;
 	}
@@ -307,23 +294,50 @@ class AddressCore extends ObjectModel
 	* @param $id_address Address id
 	* @return boolean
 	*/
-	static public function addressExists($id_address)
+	public static function addressExists($id_address)
 	{
 		$row = Db::getInstance()->getRow('
 		SELECT `id_address`
 		FROM '._DB_PREFIX_.'address a
-		WHERE a.`id_address` = '.(int)($id_address));
+		WHERE a.`id_address` = '.(int)$id_address);
 
 		return isset($row['id_address']);
 	}
 
-	static public function getFirstCustomerAddressId($id_customer, $active = true)
+	public static function getFirstCustomerAddressId($id_customer, $active = true)
 	{
 		return Db::getInstance()->getValue('
 			SELECT `id_address`
 			FROM `'._DB_PREFIX_.'address`
-			WHERE `id_customer` = '.(int)($id_customer).' AND `deleted` = 0'.($active ? ' AND `active` = 1' : '')
+			WHERE `id_customer` = '.(int)$id_customer.' AND `deleted` = 0'.($active ? ' AND `active` = 1' : '')
 		);
+	}
+
+	/**
+	* Initiliaze an address corresponding to the specified id address or if empty to the
+	* default shop configuration
+	*
+	* @param int $id_address
+	* @return Address address
+	*/
+	public static function initialize($id_address = null)
+	{
+		// set the default address
+		$address = new Address();
+		$address->id_country = (int)Context::getContext()->country->id;
+		$address->id_state = 0;
+		$address->postcode = 0;
+
+		// if an id_address has been specified retrieve the address
+		if ($id_address)
+		{
+			$address = new Address((int)$id_address);
+
+			if (!Validate::isLoadedObject($address))
+				throw new PrestashopException('Invalid address');
+		}
+
+		return $address;
 	}
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class BlockSearch extends Module
@@ -39,21 +39,25 @@ class BlockSearch extends Module
 		$this->need_instance = 0;
 
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Quick Search block');
 		$this->description = $this->l('Adds a block with a quick search field.');
 	}
 
 	public function install()
 	{
-		if (!parent::install() OR !$this->registerHook('top') 
-				OR !$this->registerHook('leftColumn') 
-				OR !$this->registerHook('rightColumn')
-			)
+		if (!parent::install() || !$this->registerHook('top') || !$this->registerHook('header'))
 			return false;
 		return true;
 	}
 
+	public function hookHeader($params)
+	{
+		if (Configuration::get('PS_SEARCH_AJAX'))
+			$this->context->controller->addJqueryPlugin('autocomplete');
+		$this->context->controller->addCSS(_THEME_CSS_DIR_.'product_list.css');
+		$this->context->controller->addCSS(($this->_path).'blocksearch.css', 'all');
+	}
 
 	public function hookLeftColumn($params)
 	{
@@ -62,40 +66,30 @@ class BlockSearch extends Module
 
 	public function hookRightColumn($params)
 	{
-		$this->_hookCommon($params);
+		$this->calculHookCommon($params);
 		return $this->display(__FILE__, 'blocksearch.tpl');
 	}
 
 	public function hookTop($params)
 	{
-		$this->_hookCommon($params);
+		$this->calculHookCommon($params);
 		return $this->display(__FILE__, 'blocksearch-top.tpl');
 	}
 
 	/**
 	 * _hookAll has to be called in each hookXXX methods. This is made to avoid code duplication.
-	 * 
-	 * @param mixed $params 
+	 *
+	 * @param mixed $params
 	 * @return void
 	 */
-	private function _hookCommon($params)
+	private function calculHookCommon($params)
 	{
-		global $smarty;
-		$smarty->assign('ENT_QUOTES', ENT_QUOTES);
-		$smarty->assign('search_ssl', (int)(!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off'));
-		
-		$ajaxSearch=(int)(Configuration::get('PS_SEARCH_AJAX'));
-		$smarty->assign('ajaxsearch', $ajaxSearch);
+		$this->context->smarty->assign('ENT_QUOTES', ENT_QUOTES);
+		$this->context->smarty->assign('search_ssl', Tools::usingSecureMode());
+		$this->context->smarty->assign('ajaxsearch', Configuration::get('PS_SEARCH_AJAX'));
+		$this->context->smarty->assign('instantsearch', Configuration::get('PS_INSTANT_SEARCH'));
 
-		$instantSearch = (int)(Configuration::get('PS_INSTANT_SEARCH'));
-		$smarty->assign('instantsearch', $instantSearch);
-		if ($ajaxSearch)
-		{
-			Tools::addCSS(_PS_CSS_DIR_.'jquery.autocomplete.css');
-			Tools::addJS(_PS_JS_DIR_.'jquery/jquery.autocomplete.js');
-		}
-		Tools::addCSS(_THEME_CSS_DIR_.'product_list.css');
-		Tools::addCSS(($this->_path).'blocksearch.css', 'all');
 		return true;
 	}
 }
+

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,20 +25,20 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class StatsSearch extends ModuleGraph
 {
-    private $_html = '';
+	private $_html = '';
 	private $_query = '';
 	private $_query2 = '';
 
-    function __construct()
-    {
-        $this->name = 'statssearch';
-        $this->tab = 'analytics_stats';
-        $this->version = 1.0;
+	public function __construct()
+	{
+		$this->name = 'statssearch';
+		$this->tab = 'analytics_stats';
+		$this->version = 1.0;
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -48,21 +48,21 @@ class StatsSearch extends ModuleGraph
 				FROM `'._DB_PREFIX_.'statssearch`
 				WHERE 1
 					'.$this->sqlShopRestriction().'
-					`date_add` BETWEEN ';
+					AND `date_add` BETWEEN ';
 
 		$this->_query2 = 'GROUP BY `keywords`
 				HAVING occurences > 1
 				ORDER BY occurences DESC';
 
-        $this->displayName = $this->l('Shop search');
-        $this->description = $this->l('Display which keywords have been searched by your visitors.');
-    }
- 
-	function install()
+		$this->displayName = $this->l('Shop search');
+		$this->description = $this->l('Display which keywords have been searched by your visitors.');
+	}
+
+	public function install()
 	{
-		if (!parent::install() OR !$this->registerHook('search') OR !$this->registerHook('AdminStatsModules'))
+		if (!parent::install() || !$this->registerHook('search') || !$this->registerHook('AdminStatsModules'))
 			return false;
-		return Db::getInstance()->Execute('
+		return Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'statssearch` (
 			id_statssearch INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
 			id_shop INTEGER UNSIGNED NOT NULL DEFAULT \'1\',
@@ -74,31 +74,31 @@ class StatsSearch extends ModuleGraph
 		) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8');
 	}
 
-    function uninstall()
-    {
-        if (!parent::uninstall())
-			return false;
-		return (Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'statssearch`'));
-    }
-
-    /**
-     * Insert keywords in statssearch table when a search is launched on FO
-     */
-	function hookSearch($params)
+	public function uninstall()
 	{
-		$sql = 'INSERT INTO `'._DB_PREFIX_.'statssearch` (`id_shop`, `id_group_shop`, `keywords`, `results`, `date_add`)
-				VALUES ('.$this->shopID.', '.$this->shopGroupID.', \''.pSQL($params['expr']).'\', '.(int)($params['total']).', NOW())';
-		Db::getInstance()->Execute($sql);
+		if (!parent::uninstall())
+			return false;
+		return (Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'statssearch`'));
 	}
 
-	function hookAdminStatsModules()
+	/**
+	 * Insert keywords in statssearch table when a search is launched on FO
+	 */
+	public function hookSearch($params)
+	{
+		$sql = 'INSERT INTO `'._DB_PREFIX_.'statssearch` (`id_shop`, `id_group_shop`, `keywords`, `results`, `date_add`)
+				VALUES ('.$this->context->shop->getID(true).', '.$this->context->shop->getGroupID().', \''.pSQL($params['expr']).'\', '.(int)$params['total'].', NOW())';
+		Db::getInstance()->execute($sql);
+	}
+
+	public function hookAdminStatsModules()
 	{
 		if (Tools::getValue('export'))
 			$this->csvExport(array('type' => 'pie'));
 
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.ModuleGraph::getDateBetween().$this->_query2);
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.ModuleGraph::getDateBetween().$this->_query2);
 		$this->_html = '
-		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>';
+		<fieldset><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>';
 		$table = '<div style="overflow-y: scroll; height: 600px;">
 		<table class="table" border="0" cellspacing="0" cellspacing="0">
 		<thead>
@@ -119,10 +119,10 @@ class StatsSearch extends ModuleGraph
 				</tr>';
 		}
 		$table .= '</tbody></table></div>';
-		
-		if (sizeof($result))
-			$this->_html .= '<center>'.$this->engine(array('type' => 'pie')).'</center>
-									<p><a href="'.$_SERVER['REQUEST_URI'].'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
+
+		if (count($result))
+			$this->_html .= '<div>'.$this->engine(array('type' => 'pie')).'</div>
+									<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 									<br class="clear" />'.$table;
 		else
 			$this->_html .= '<p><strong>'.$this->l('No keywords searched more than once found.').'</strong></p>';
@@ -133,12 +133,12 @@ class StatsSearch extends ModuleGraph
 	protected function getData($layers)
 	{
 		$this->_titles['main'] = $this->l('First 10 keywords');
-		$totalResult = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate().$this->_query2);
+		$totalResult = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate().$this->_query2);
 		$total = 0;
 		$total2 = 0;
 		foreach ($totalResult as $totalRow)
 			$total += $totalRow['occurences'];
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate().$this->_query2.' LIMIT 9');
+		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($this->_query.$this->getDate().$this->_query2.' LIMIT 9');
 		foreach ($result as $row)
 		{
 			if (!$row['occurences'])

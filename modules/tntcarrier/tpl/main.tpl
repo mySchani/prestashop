@@ -10,7 +10,6 @@
 </div>
 <br clear="left" />
 <br />
-{literal}
 <style>
 	#menuTab { float: left; padding: 0; margin: 0; text-align: left; }
 	#menuTab li { text-align: left; float: left; display: inline; padding: 5px; padding-right: 10px; background: #EFEFEF; font-weight: bold; cursor: pointer; border-left: 1px solid #CCCCCC; border-right: 1px solid #CCCCCC; border-top: 1px solid #CCCCCC; }
@@ -27,4 +26,3 @@
 		$("#" + this.id + "Sheet").addClass("selected");
 	});
 </script>
-{/literal}

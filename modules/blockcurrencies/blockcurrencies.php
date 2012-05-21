@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,9 +25,9 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
-	
+
 class BlockCurrencies extends Module
 {
 	public function __construct()
@@ -39,7 +39,7 @@ class BlockCurrencies extends Module
 		$this->need_instance = 0;
 
 		parent::__construct();
-		
+
 		$this->displayName = $this->l('Currency block');
 		$this->description = $this->l('Adds a block for selecting a currency.');
 	}
@@ -59,22 +59,18 @@ class BlockCurrencies extends Module
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-	
-		global $smarty;
-		
-		$id_current_shop = $this->shopID;
-		$currencies = Currency::getCurrencies(false, 1, $id_current_shop);
-		if (!sizeof($currencies))
+
+		if (!count(Currency::getCurrencies()))
 			return '';
-		$smarty->assign('currencies', $currencies);
+
 		return $this->display(__FILE__, 'blockcurrencies.tpl');
 	}
-	
+
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-		Tools::addCSS(($this->_path).'blockcurrencies.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockcurrencies.css', 'all');
 	}
 }
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -49,7 +49,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'ModeLiv'				=>  array(
 						'required'				=> true,
 						'value'						=> '',
-						'regexValidation' => '#^(LCC|LDR|LDS|24R|ESP|DRI)$#'),
+						'regexValidation' => '#^(LCC|LD1|LDS|24R|ESP|DRI)$#'),
 			'NDossier' 			=>  array(
 						'required'				=> false,
 						'value'						=> '',
@@ -85,7 +85,8 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'Expe_CP'				=>  array(
 						'required'				=> true,
 						'value'						=> '',
-						'regexValidation' => '#^[0-9]{5}$#'),
+						'params'					=> array(),
+						'methodValidation' => 'checkZipcodeByCountry'),
 			'Expe_Pays'			=>  array(
 						'required'				=> true,
 						'value'						=> '',
@@ -93,11 +94,11 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'Expe_Tel1'			=>  array(
 						'required'				=> true,
 						'value'						=> '',
-						'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+						'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Expe_Tel2'			=>  array(
 						'required'				=> false,
 						'value'						=> '',
-						'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+						'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Expe_Mail'			=>  array(
 						'required'				=> false,
 						'value'						=> '',
@@ -129,7 +130,8 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'Dest_CP'				=>  array(
 						'required'				=> true,
 						'value'						=> '',
-						'regexValidation' => '#^[0-9]{5}$#'),
+						'params'					=> array(),
+						'methodValidation' => 'checkZipcodeByCountry'),
 			'Dest_Pays'			=>  array(
 						'required'				=> true,
 						'value'						=> '',
@@ -137,11 +139,11 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			'Dest_Tel1'			=>  array(
 						'required'				=> false,
 						'value'						=> '',
-						'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+						'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Dest_Tel2'			=>  array(
 						'required'				=> false,
 						'value'						=> '',
-						'regexValidation' => '#^((00|\+)33|0)[0-9][0-9]{8}$#'),
+						'regexValidation' => '#^((00|\+)[1-9]{2}|0)[0-9][0-9]{7,8}$#'),
 			'Dest_Mail'			=>  array(
 						'required'				=> false,
 						'value'						=> '',
@@ -226,7 +228,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 						'required'				=> false,
 						'value'						=> '',
 						'regexValidation' => '#^([^<>&\']{3,30})(\(cr\)[^<>&\']{0,30}){0,9}$#')));
-	
+
 	private $_orderListId = NULL;
 	private $_totalOrder = 0;
 	private $_weightList = NULL;
@@ -234,14 +236,14 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	private $_fieldsList = array();
 	private $_webServiceKey =	'';
 	private $_markCode = '';
-	
+
 	private $_resultList = array(
 		'error' => array(),
 		'success' => array());
-	
+
 	private $_webserviceURL = 'http://www.mondialrelay.fr/webservice/Web_Services.asmx?WSDL';
-	
-	public function __construct($params)	
+
+	public function __construct($params)
 	{
 		$this->_orderListId = $params['orderIdList'];
 		$this->_totalOrder = $params['totalOrder'];
@@ -249,12 +251,12 @@ class MRCreateTickets implements IMondialRelayWSMethod
 		$this->_webServiceKey = Configuration::get('MR_KEY_WEBSERVICE');
 		$this->_markCode = Configuration::get('MR_CODE_MARQUE');
 	}
-	
+
 	public function __destruct()
 	{
 		 unset($this->_mondialRelay);
 	}
-	
+
 	/*
 	 * Build a correct weight format (NNNNN)
 	 */
@@ -264,7 +266,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			$weight = '0'.$weight;
 		return $weight;
 	}
-	
+
 	/*
 	 * Set the default value to the order paramaters
 	 */
@@ -272,24 +274,26 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	{
 		$this->_fields['list']['Enseigne']['value'] = Configuration::get('MR_ENSEIGNE_WEBSERVICE');
 		$this->_fields['list']['Expe_Langage']['value'] = Configuration::get('MR_LANGUAGE');
-		$this->_fields['list']['Expe_Ad1']['value'] = Configuration::get('PS_MR_SHOP_NAME');
+		$this->_fields['list']['Expe_Ad1']['value'] = Configuration::get('PS_SHOP_NAME');
 		$this->_fields['list']['Expe_Ad3']['value'] = Configuration::get('PS_SHOP_ADDR1');
-		$this->_fields['list']['Expe_Ad4']['value'] = Configuration::get('PS_SHOP_ADDR2');
+		// Deleted, cause to many failed for the process
+		// $this->_fields['list']['Expe_Ad4']['value'] = Configuration::get('PS_SHOP_ADDR2');
 		$this->_fields['list']['Expe_Ville']['value'] = Configuration::get('PS_SHOP_CITY');
 		$this->_fields['list']['Expe_CP']['value'] = Configuration::get('PS_SHOP_CODE');
-		
+		$this->_fields['list']['Expe_CP']['params']['id_country'] = Configuration::get('PS_COUNTRY_DEFAULT');
+
 		if (_PS_VERSION_ >= '1.4')
 		$this->_fields['list']['Expe_Pays']['value'] = Country::getIsoById(Configuration::get('PS_SHOP_COUNTRY_ID'));
 		else
 			$this->_fields['list']['Expe_Pays']['value'] = substr(Configuration::get('PS_SHOP_COUNTRY'), 0, 2);
-			
-		$this->_fields['list']['Expe_Tel1']['value'] = Configuration::get('PS_SHOP_PHONE');
+
+		$this->_fields['list']['Expe_Tel1']['value'] = str_replace(array('.', ' ', '-'), '', Configuration::get('PS_SHOP_PHONE'));
 		$this->_fields['list']['Expe_Mail']['value'] = Configuration::get('PS_SHOP_EMAIL');
 		$this->_fields['list']['NbColis']['value'] = 1;
 		$this->_fields['list']['CRT_Valeur']['value'] = 0;
 		$this->_fields['list']['CRT_Devise']['value'] = 'EUR';
 	}
-	
+
 	/*
 	 * Initiate the data needed to be send properly
 	 * Can manage a list of data for multiple request
@@ -297,10 +301,10 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	public function init()
 	{
 		$this->_mondialRelay = new MondialRelay();
-		
+
 		if ($this->_totalOrder == 0)
 			throw new Exception($this->_mondialRelay->l('Please select at least one order'));
-		
+
 		$this->_setRequestDefaultValue();
 		if (count($orderListDetails = $this->_mondialRelay->getOrders($this->_orderListId)))
 		{
@@ -309,10 +313,10 @@ class MRCreateTickets implements IMondialRelayWSMethod
 				// Storage temporary
 				$base = $this->_fields;
 				$tmp = &$base['list'];
-				
+
 				$deliveriesAddress = new Address($orderDetail['id_address_delivery']);
 				$customer = new Customer($orderDetail['id_customer']);
-				
+
 				// Store the weight order set by the user
 				foreach($this->_weightList as $orderWeightInfos)
 				{
@@ -320,33 +324,33 @@ class MRCreateTickets implements IMondialRelayWSMethod
 					if (count($detail) == 2 && $detail[1] == $orderDetail['id_order'])
 						$tmp['Poids']['value'] = $this->_weightFormat($detail[0]);
 				}
-				
+
 				$destIsoCode = Country::getIsoById($deliveriesAddress->id_country);
 				$tmp['ModeCol']['value'] = $orderDetail['mr_ModeCol'];
 				$tmp['ModeLiv']['value'] = $orderDetail['mr_ModeLiv'];
 				$tmp['NDossier']['value'] = $orderDetail['id_order'];
 				$tmp['NClient']['value'] = $orderDetail['id_customer'];
-				$tmp['Dest_Langage']['value'] = $destIsoCode;
-				$tmp['Dest_Ad1']['value'] = $deliveriesAddress->lastname;
+				$tmp['Dest_Langage']['value'] = 'FR'; //Language::getIsoById($orderDetail['id_lang']);
+				$tmp['Dest_Ad1']['value'] = $deliveriesAddress->firstname.' '.$deliveriesAddress->lastname;
 				$tmp['Dest_Ad2']['value'] = $deliveriesAddress->address2;
 				$tmp['Dest_Ad3']['value'] = $deliveriesAddress->address1;
 				$tmp['Dest_Ville']['value'] = $deliveriesAddress->city;
 				$tmp['Dest_CP']['value'] = $deliveriesAddress->postcode;
+				$tmp['Dest_CP']['params']['id_country'] = $deliveriesAddress->id_country;
 				$tmp['Dest_Pays']['value'] = $destIsoCode;
 				$tmp['Dest_Tel1']['value'] = $deliveriesAddress->phone;
 				$tmp['Dest_Tel2']['value'] = $deliveriesAddress->phone_mobile;
 				$tmp['Dest_Mail']['value'] = $customer->email;
 				$tmp['Assurance']['value'] = $orderDetail['mr_ModeAss'];
-				
 				if ($orderDetail['MR_Selected_Num'] != 'LD1' && $orderDetail['MR_Selected_Num'] != 'LDS')
 				{
 					$tmp['LIV_Rel_Pays']['value'] = $orderDetail['MR_Selected_Pays'];
 					$tmp['LIV_Rel']['value'] = $orderDetail['MR_Selected_Num'];
 				}
-				
+
 				// Store the necessary information to the root case table
 				$base['id_mr_selected'] = $orderDetail['id_mr_selected'];
-				
+
 				// Add the temporary values to a field list for multiple request
 				$this->_fieldsList[] = $base;
 				unset($deliveriesAddress);
@@ -355,7 +359,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			$this->_generateMD5SecurityKey();
 		}
 	}
-	
+
 	/*
 	 * Generate the MD5 key for each param list
 	 */
@@ -369,15 +373,28 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			foreach($rootCase['list'] as $paramName => &$valueDetailed)
 				if ($paramName != 'Texte' && $paramName != 'Security')
 				{
-					$valueDetailed['value'] = strtoupper(MRManagement::replaceAccentedCharacters($valueDetailed['value']));
-					if (preg_match($valueDetailed['regexValidation'], $valueDetailed['value'], $matches))
+					// Mac server make an empty string instead of a cleaned string
+					// TODO : test on windows and linux server
+					$cleanedString = MRTools::replaceAccentedCharacters($valueDetailed['value']);
+					$valueDetailed['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($valueDetailed['value']);
+
+					// Call a pointer function if exist to do different test
+					if (isset($valueDetailed['methodValidation']) &&
+							method_exists('MRTools', $valueDetailed['methodValidation']) &&
+							isset($valueDetailed['params']) &&
+							MRTools::$valueDetailed['methodValidation']($valueDetailed['value'], $valueDetailed['params']))
 						$concatenationValue .= $valueDetailed['value'];
+					// Use simple Regex test given by MondialRelay
+					else if (isset($valueDetailed['regexValidation']) &&
+							preg_match($valueDetailed['regexValidation'], $valueDetailed['value'], $matches))
+						$concatenationValue .= $valueDetailed['value'];
+					// If the key is required, we set an error, else it's skipped
 					else if ((!strlen($valueDetailed['value']) && $valueDetailed['required']) || strlen($valueDetailed['value']))
 					{
 						if (empty($valueDetailed['value']))
 							$error = $this->_mondialRelay->l('This key').' ['.$paramName.'] '.$this->_mondialRelay->l('is empty and need to be filled');
 						else
-							$error = 'This key ['.$paramName.'] hasn\'t a valid value format : '.$valueDetailed['value']; 
+							$error = 'This key ['.$paramName.'] hasn\'t a valid value format : '.$valueDetailed['value'];
 						$this->_resultList['error'][$rootCase['list']['NDossier']['value']][] = $error;
 					}
 				}
@@ -385,41 +402,42 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			$rootCase['list']['Security']['value'	] = strtoupper(md5($concatenationValue));
 		}
 	}
-	
+
 	/*
 	 * Update the tables used and send mail with the order history
 	 */
 	private function _updateTable($params, $expeditionNum, $ticketURL, $trackingURL, $id_mr_selected)
 	{
-		global $cookie;
-			
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 			UPDATE `'._DB_PREFIX_.'mr_selected`
-			SET `MR_poids` = \''.$params['Poids'].'\',
-					`exp_number` = \''.$expeditionNum.'\',
-					`url_etiquette` = \''.$ticketURL.'\',
-					`url_suivi` = \''.$trackingURL.'\'
+			SET `MR_poids` = \''.pSQL($params['Poids']).'\',
+					`exp_number` = \''.pSQL($expeditionNum).'\',
+					`url_etiquette` = \''.pSQL($ticketURL).'\',
+					`url_suivi` = \''.pSQL($trackingURL).'\'
 			WHERE id_mr_selected = '.(int)$id_mr_selected);
-		
+
 		// NDossier contains the id_order
 		$order = new Order($params['NDossier']);
-	  
+
 	 	// Update the database for order and orderHistory
-		$order->shipping_number = $id_mr_selected;
+		$order->shipping_number = $expeditionNum;
 		$order->update();
-		
+
 		$templateVars = array('{followup}' => $trackingURL);
-					
+		$orderState = (Configuration::get('PS_OS_SHIPPING')) ?
+			Configuration::get('PS_OS_SHIPPING') :
+			_PS_OS_SHIPPING_;
+
 		$history = new OrderHistory();
-		$history->id_order = (int)($params['NDossier']);
-		$history->changeIdOrderState(_PS_OS_SHIPPING_, (int)($params['NDossier'])); 
-		$history->id_employee = (int)($cookie->id_employee);
+		$history->id_order = (int)$params['NDossier'];
+		$history->changeIdOrderState($orderState, (int)$params['NDossier']);
+		$history->id_employee = (int)Context::getContext()->employee->id;
 		$history->addWithemail(true, $templateVars);
 
 		unset($order);
 		unset($history);
 	}
-	
+
 	/*
 	 * Manage the return value of the webservice, handle the errors or build the
 	 * succeed message
@@ -428,11 +446,11 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	{
 		$errors = &$this->_resultList['error'][$params['NDossier']];
 		$success = &$this->_resultList['success'][$params['NDossier']];
-		
+
 		if ($client->fault)
 			$errors[] = $this->_mondialRelay->l('It seems the request isn\'t valid:').
 				$result;
-				
+
 		$result = $result['WSI2_CreationEtiquetteResult'];
 		if (($errorNumber = $result['STAT']) != 0)
 		{
@@ -450,16 +468,16 @@ class MRCreateTickets implements IMondialRelayWSMethod
 			$trackingURL = $baseURL.
 				'lg_fr/espaces/url/popup_exp_details.aspx?cmrq='.$params['Enseigne'].
 				$this->_markCode.'&nexp='.$expedition.'&crc='.$securityKey;
-				
+
 			$success['displayExpedition'] = $this->_mondialRelay->l('Expedition Number : ') . $expedition;
 			$success['displayTicketURL'] = $this->_mondialRelay->l('Ticket URL : ') . $ticketURL;
 			$success['displayTrackingURL'] = $this->_mondialRelay->l('Tracking URL: ') . $trackingURL;
 			$success['expeditionNumber'] = $expedition;
-			
-			$this->_updateTable($params, $expedition, $ticketURL, $trackingURL, $id_mr_selected);	
+
+			$this->_updateTable($params, $expedition, $ticketURL, $trackingURL, $id_mr_selected);
 		}
 	}
-	
+
 	/*
 	 * Send one or multiple request to the webservice
 	 */
@@ -469,22 +487,83 @@ class MRCreateTickets implements IMondialRelayWSMethod
 		{
 			$client->soap_defencoding = 'UTF-8';
 			$client->decode_utf8 = false;
-			
+
 			foreach($this->_fieldsList as $rootCase)
 			{
 				$params = $this->_getSimpleParamArray($rootCase['list']);
 				$result = $client->call(
-					'WSI2_CreationEtiquette', 
-					$params, 
-					'http://www.mondialrelay.fr/webservice/', 
+					'WSI2_CreationEtiquette',
+					$params,
+					'http://www.mondialrelay.fr/webservice/',
 					'http://www.mondialrelay.fr/webservice/WSI2_CreationEtiquette');
-				
+
 				$this->_parseResult($client, $result, $params, $rootCase['id_mr_selected']);
 			}
 			unset($client);
 		}
 		else
 			throw new Exception($this->_mondialRelay->l('The Mondial Relay webservice isn\'t currently reliable'));
+	}
+
+	/*
+	** Check if the shop parameter are currently well configured
+	*/
+	public function checkPreValidation()
+	{
+		$errorList = array('error' => array(), 'warn' => array());
+		
+		if (!$this->_mondialRelay)
+			$this->_mondialRelay = new MondialRelay();
+		
+		$list = array(
+			'Expe_Langage' => array(
+				'value' => Configuration::get('MR_LANGUAGE'),
+				'error' => $this->_mondialRelay->l('Please check your language configuration')),
+			'Expe_Ad1' => array(
+				'value' => Configuration::get('PS_SHOP_NAME'),
+				'error' => $this->_mondialRelay->l('Please check your shop name configuration')),
+			'Expe_Ad3' => array(
+				'value' => Configuration::get('PS_SHOP_ADDR1'),
+				'error' => $this->_mondialRelay->l('Please check your address 1 configuration')),
+			'Expe_Ville' =>	array(
+				'value' => Configuration::get('PS_SHOP_CITY'),
+				'error' => $this->_mondialRelay->l('Please check your city configuration')),
+			'Expe_CP' => array(
+				'value' => Configuration::get('PS_SHOP_CODE'),
+				'error' => $this->_mondialRelay->l('Please check your zipcode configuration'),
+				'warn' => $this->_mondialRelay->l('It seems the layout of your zipcode country is not configured or you didn\'t set a right zipcode')),
+			'Expe_Pays' => array(
+				'value' => ((_PS_VERSION_ >= '1.4') ? 
+					Country::getIsoById(Configuration::get('PS_SHOP_COUNTRY_ID')) : 
+					substr(Configuration::get('PS_SHOP_COUNTRY'), 0, 2)),
+				'error' => $this->_mondialRelay->l('Please check your country configuration')),
+			'Expe_Tel1' => array(
+				'value' => str_replace(array('.', ' ', '-'), '', Configuration::get('PS_SHOP_PHONE')),
+				'error' => $this->_mondialRelay->l('Please check your Phone configuration')),
+			'Expe_Mail' => array(
+				'value' => Configuration::get('PS_SHOP_EMAIL'),
+				'error' => $this->_mondialRelay->l('Please check your mail configuration')));
+		
+		foreach($list as $name => $tab)
+		{
+			// Mac server make an empty string instead of a cleaned string
+			// TODO : test on windows and linux server
+			$cleanedString = MRTools::replaceAccentedCharacters($tab['value']);
+			$tab['value'] = !empty($cleanedString) ? strtoupper($cleanedString) : strtoupper($tab['value']);
+				
+			if ($name == 'Expe_CP')
+			{
+				if (!($zipcodeError = MRTools::checkZipcodeByCountry($tab['value'], array(
+						'id_country' => Configuration::get('PS_COUNTRY_DEFAULT')))))
+					$errorList['error'][$name] = $tab['error'];
+				else if ($zipcodeError < 0)
+					$errorList['warn'][$name] = $tab['warn'];
+			}
+			else if (isset($this->_fields['list'][$name]['regexValidation']) && 
+					(!preg_match($this->_fields['list'][$name]['regexValidation'], $tab['value'], $matches)))
+				$errorList['error'][$name] = $tab['error'];
+		}
+		return $errorList;
 	}
 	
 	/*
@@ -494,12 +573,12 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	private function _getSimpleParamArray($fields)
 	{
 		$params = array();
-		
+
 		foreach($fields as $keyName => $valueDetailed)
 			$params[$keyName] = $valueDetailed['value'];
 		return $params;
 	}
-	
+
 	/*
 	 * Return the fields list
 	 */
@@ -507,7 +586,7 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	{
 		return $this->_fieldsList['list'];
 	}
-	
+
 	/*
 	 * Return the result of one or multiple sent requests
 	 */
@@ -515,11 +594,11 @@ class MRCreateTickets implements IMondialRelayWSMethod
 	{
 		return $this->_resultList;
 	}
-	
+
 	/*
 	 * Return which number order of the list is currently managed
 	 */
-	static public function getCurrentRequestUnderTraitment()
+	public static function getCurrentRequestUnderTraitment()
 	{
 		// TODO: Build a SQL Query to know how many request have been executed
 	}

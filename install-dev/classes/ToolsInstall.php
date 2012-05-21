@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -26,35 +26,58 @@
 */
 class ToolsInstall
 {
-	public static function checkDB ($srv, $login, $password, $name, $posted = true, $engine = false)
+	/**
+	 * checkDB will call to the
+	 *
+	 * @param string $srv
+	 * @param string $login
+	 * @param string $password
+	 * @param string $name
+	 * @param string $posted
+	 * @return void
+	 */
+	public static function checkDB ($srv, $login, $password, $name, $posted = true)
 	{
-		include_once(INSTALL_PATH.'/../classes/Validate.php');
-		include_once(INSTALL_PATH.'/../classes/Db.php');
-		include_once(INSTALL_PATH.'/../classes/MySQL.php');
-		
-		if($posted)
+		// Don't include theses files if classes are already defined
+		if (!class_exists('Validate', false))
+		{
+			include_once(INSTALL_PATH.'/../classes/Validate.php');
+			eval('class Validate extends ValidateCore{}');
+		}
+
+		if (!class_exists('Db', false))
+		{
+			include_once(INSTALL_PATH.'/../classes/db/Db.php');
+			eval('abstract class Db extends DbCore{}');
+		}
+
+		if (!class_exists('MySQL', false))
+		{
+			include_once(INSTALL_PATH.'/../classes/db/MySQL.php');
+			eval('class MySQL extends MySQLCore{}');
+		}
+
+		if ($posted)
 		{
 			// Check POST data...
 			$data_check = array(
-				!isset($_GET['server']) OR empty($_GET['server']),
-				!Validate::isMailName($_GET['server']),
-				!isset($_GET['type']) OR empty($_GET['type']),
-				!Validate::isMailName($_GET['type']),
-				!isset($_GET['name']) OR empty($_GET['name']),
-				!Validate::isMailName($_GET['name']),
-				!isset($_GET['login']) OR empty($_GET['login']),
-				!Validate::isMailName($_GET['login']),
-				!isset($_GET['password'])
+				!isset($_GET['server']) OR empty($_GET['server']) OR !Validate::isUrl($_GET['server']),
+				!isset($_GET['engine']) OR empty($_GET['engine']) OR !Validate::isMySQLEngine($_GET['engine']),
+				!isset($_GET['name']) OR empty($_GET['name']) OR !Validate::isUnixName($_GET['name']),
+				!isset($_GET['login']) OR empty($_GET['login']) OR !Validate::isUnixName($_GET['login']),
+				!isset($_GET['password']),
+				(!isset($_GET['tablePrefix']) OR !Validate::isTablePrefix($_GET['tablePrefix'])) && !empty($_GET['tablePrefix']),
 			);
+
 			foreach ($data_check AS $data)
 				if ($data)
 					return 8;
 		}
 
-		switch(MySQL::tryToConnect(trim($srv), trim($login), trim($password), trim($name), trim($engine)))
+		switch (Db::checkConnection(trim($srv), trim($login), trim($password), trim($name)))
 		{
 			case 0:
-				if (MySQL::tryUTF8(trim($srv), trim($login), trim($password)))
+				if (Db::checkEncoding(trim($srv), trim($login), trim($password)))
 					return true;
 				return 49;
 			break;
@@ -69,7 +92,7 @@ class ToolsInstall
 			break;
 		}
 	}
-	
+
 	public static function getHttpHost($http = false, $entities = false, $ignore_port = false)
 	{
 		$host = (isset($_SERVER['HTTP_X_FORWARDED_HOST']) ? $_SERVER['HTTP_X_FORWARDED_HOST'] : $_SERVER['HTTP_HOST']);
@@ -81,21 +104,20 @@ class ToolsInstall
 			$host = 'http://'.$host;
 		return $host;
 	}
-	
+
 	public static function sendMail($smtpChecked, $smtpServer, $content, $subject, $type, $to, $from, $smtpLogin, $smtpPassword, $smtpPort = 25, $smtpEncryption)
 	{
-		include(INSTALL_PATH.'/../tools/swift/Swift.php');
-		include(INSTALL_PATH.'/../tools/swift/Swift/Connection/SMTP.php');
-		include(INSTALL_PATH.'/../tools/swift/Swift/Connection/NativeMail.php');
-		
+		require_once(INSTALL_PATH.'/../tools/swift/Swift.php');
+		require_once(INSTALL_PATH.'/../tools/swift/Swift/Connection/SMTP.php');
+		require_once(INSTALL_PATH.'/../tools/swift/Swift/Connection/NativeMail.php');
+
 		$swift = NULL;
 		$result = NULL;
 		try
 		{
-			
 			if($smtpChecked)
 			{
-				
+
 				$smtp = new Swift_Connection_SMTP($smtpServer, $smtpPort, ($smtpEncryption == "off") ? Swift_Connection_SMTP::ENC_OFF : (($smtpEncryption == "tls") ? Swift_Connection_SMTP::ENC_TLS : Swift_Connection_SMTP::ENC_SSL));
 				$smtp->setUsername($smtpLogin);
 				$smtp->setpassword($smtpPassword);
@@ -103,20 +125,15 @@ class ToolsInstall
 				$swift = new Swift($smtp);
 			}
 			else
-			{
 				$swift = new Swift(new Swift_Connection_NativeMail());
-			}
-			
+
 			$message = new Swift_Message($subject, $content, $type);
-			
+
 			if ($swift->send($message, $to, $from))
-			{
 				$result = true;
-			}
 			else
-			{
 				$result = 999;
-			}
+
 			$swift->disconnect();
 		}
 		catch (Swift_Connection_Exception $e)
@@ -127,15 +144,15 @@ class ToolsInstall
 		{
 		 $result = $e->getCode();
 		}
-		return $result;	
+		return $result;
 	}
-	
+
 	public static function getNotificationMail($shopName, $shopUrl, $shopLogo, $firstname, $lastname, $password, $email)
 	{
 		$iso_code = $_GET['isoCodeLocalLanguage'];
 		$pathTpl = INSTALL_PATH.'/../mails/en/employee_password.html';
 		$pathTplLocal = INSTALL_PATH.'/../mails/'.$iso_code.'/employee_password.html';
-		
+
 		$content = (file_exists($pathTplLocal)) ? file_get_contents($pathTplLocal) : file_get_contents($pathTpl);
 		$content = str_replace('{shop_name}', $shopName, $content);
 		$content = str_replace('{shop_url}', $shopUrl, $content);
@@ -146,7 +163,7 @@ class ToolsInstall
 		$content = str_replace('{email}', $email, $content);
 		return $content;
 	}
-	
+
 	public static function getLangString($idLang)
 	{
 		switch ($idLang)
@@ -169,19 +186,19 @@ class ToolsInstall
 			return mb_strtoupper($str, 'utf-8');
 		return strtoupper($str);
 	}
-	
+
 	static function ucfirst($str)
 	{
 		return self::strtoupper(self::substr($str, 0, 1)).self::substr($str, 1);
 	}
-	
+
 	static function substr($str, $start, $length = false, $encoding = 'utf-8')
 	{
 		if (function_exists('mb_substr'))
 			return mb_substr($str, $start, ($length === false ? self::strlen($str) : $length), $encoding);
 		return substr($str, $start, $length);
 	}
-	
+
 	static function strlen($str)
 	{
 		if (function_exists('mb_strlen'))

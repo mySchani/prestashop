@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -38,13 +38,12 @@ if (!$paypal->active)
 
 $ppExpress = new PaypalExpress();
 $errors = array();
-
 // #####
 // Functions
 
 function getAuthorization()
 {
-	global $ppExpress, $cookie;
+	global $ppExpress;
 
 	$result = $ppExpress->getAuthorisation();
 	$logs = $ppExpress->getLogs();
@@ -54,9 +53,9 @@ function getAuthorization()
 		{
 			if (isset($result['TOKEN']))
 			{
-				$cookie->paypal_token = strval($result['TOKEN']);
-				$cookie->paypal_token_date = time();
-				header('Location: https://'.$ppExpress->getPayPalURL().'/webscr&cmd=_express-checkout&token='.urldecode(strval($cookie->paypal_token)));
+				Context::getContext()->cookie->paypal_token = strval($result['TOKEN']);
+				Context::getContext()->cookie->paypal_token_date = time();
+				header('Location: https://'.$ppExpress->getPayPalURL().'/webscr&cmd=_express-checkout&token='.urldecode(strval(Context::getContext()->cookie->paypal_token)));
 				exit;
 			}
 			else
@@ -70,7 +69,7 @@ function getAuthorization()
 
 function getInfos()
 {
-	global $ppExpress, $cookie;
+	global $ppExpress;
 
 	$result = $ppExpress->getCustomerInfos();
 	$logs = $ppExpress->getLogs();
@@ -80,7 +79,7 @@ function getInfos()
 		$logs[] = '<b>'.$ppExpress->l('Cannot retrieve PayPal account information', 'submit').'</b>';
 		$ppExpress->displayPayPalAPIError($ppExpress->l('PayPal returned error', 'submit'), $logs);
 	}
-	elseif (!isset($result['TOKEN']) OR $result['TOKEN'] != $cookie->paypal_token)
+	elseif (!isset($result['TOKEN']) OR $result['TOKEN'] != Context::getContext()->cookie->paypal_token)
 	{
 		$logs[] = '<b>'.$ppExpress->l('Token given by PayPal is not the same as the cookie token', 'submit').'</b>';
 		$ppExpress->displayPayPalAPIError($ppExpress->l('PayPal returned error', 'submit'), $logs);
@@ -90,18 +89,16 @@ function getInfos()
 
 function displayProcess($payerID)
 {
-	global $cookie;
-
-	$cookie->paypal_token = strval($cookie->paypal_token);
-	$cookie->paypal_payer_id = $payerID;
+	Context::getContext()->cookie->paypal_token = strval(Context::getContext()->cookie->paypal_token);
+	Context::getContext()->cookie->paypal_payer_id = $payerID;
 	Tools::redirect('index.php?controller=order&step=1&back=paypal');
 }
 
 function displayConfirm()
 {
-	global $cookie, $smarty, $ppExpress, $cart, $payerID;
+	global $ppExpress, $payerID;
 
-	if (!$cookie->isLogged(true))
+	if (!Context::getContext()->customer->isLogged(true))
 		die('Not logged');
 	if (!$payerID AND !$payerID = Tools::htmlentitiesUTF8(strval(Tools::getValue('payerID'))))
 		die('No payer ID');
@@ -109,13 +106,13 @@ function displayConfirm()
 	// Display all and exit
 	include(_PS_ROOT_DIR_.'/header.php');
 
-	$smarty->assign(array(
+	Context::getContext()->smarty->assign(array(
 		'back' => 'paypal',
 		'logo' => $ppExpress->getLogo(),
-		'ppToken' => strval($cookie->paypal_token),
-		'cust_currency' => $cart->id_currency,
-		'currencies' => $ppExpress->getCurrency((int)$cart->id_currency),
-		'total' => $cart->getOrderTotal(true, Cart::BOTH),
+		'ppToken' => strval(Context::getContext()->cookie->paypal_token),
+		'cust_currency' => Context::getContext()->cart->id_currency,
+		'currencies' => $ppExpress->getCurrency((int)Context::getContext()->cart->id_currency),
+		'total' => Context::getContext()->cart->getOrderTotal(true, PayPal::BOTH),
 		'this_path_ssl' => Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'. $ppExpress->name.'/',
 		'payerID' => $payerID,
 		'mode' => 'express/'
@@ -128,30 +125,32 @@ function displayConfirm()
 
 function submitConfirm()
 {
-	global $cookie, $smarty, $ppExpress, $cart;
+	global $ppExpress;
 
-	if (!$cookie->isLogged(true))
+	if (!Context::getContext()->customer->isLogged(true))
 		die('Not logged');
 	elseif (!$currency = (int)(Tools::getValue('currency_payement')))
 		die('No currency');
 	elseif (!$payerID = Tools::htmlentitiesUTF8(strval(Tools::getValue('payerID'))))
 		die('No payer ID');
-	elseif (!$cart->getOrderTotal(true, Cart::BOTH))
+	elseif (!Context::getContext()->cart->getOrderTotal(true, PayPal::BOTH))
 		die('Empty cart');
 
-	$ppExpress->makePayPalAPIValidation($cookie, $cart, $currency, $payerID, 'express');
+	$ppExpress->makePayPalAPIValidation(Context::getContext()->cookie, Context::getContext()->cart, $currency, $payerID, 'express');
 }
 
 function submitAccount()
 {
-	global $cookie, $errors, $smarty;
+	global $errors;
+
+	$context = Context::getContext();
 	$email = Tools::getValue('email');
 	if (empty($email) OR !Validate::isEmail($email))
 		$errors[] = Tools::displayError('e-mail not valid');
 	elseif (!Validate::isPasswd(Tools::getValue('passwd')))
 		$errors[] = Tools::displayError('invalid password');
-	elseif (Customer::customerExists($email, false, true, (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop()))
-		$errors[] = Tools::displayError('someone has already registered with this e-mail address');	
+	elseif (Customer::customerExists($email))
+		$errors[] = Tools::displayError('someone has already registered with this e-mail address');
 	elseif (!@checkdate(Tools::getValue('months'), Tools::getValue('days'), Tools::getValue('years')) AND !(Tools::getValue('months') == '' AND Tools::getValue('days') == '' AND Tools::getValue('years') == ''))
 		$errors[] = Tools::displayError('invalid birthday');
 	else
@@ -180,16 +179,17 @@ function submitAccount()
 					$errors[] = Tools::displayError('an error occurred while creating your address');
 				else
 				{
-					if (Mail::Send((int)($cookie->id_lang), 'account', Mail::l('Welcome!'), 
+					if (Mail::Send($context->language->id, 'account', Mail::l('Welcome!'),
 					array('{firstname}' => $customer->firstname, '{lastname}' => $customer->lastname, '{email}' => $customer->email, '{passwd}' => Tools::getValue('passwd')), $customer->email, $customer->firstname.' '.$customer->lastname))
-						$smarty->assign('confirmation', 1);
-					$cookie->id_customer = (int)($customer->id);
-					$cookie->customer_lastname = $customer->lastname;
-					$cookie->customer_firstname = $customer->firstname;
-					$cookie->passwd = $customer->passwd;
-					$cookie->logged = 1;
-					$cookie->email = $customer->email;
-					Module::hookExec('createAccount', array(
+						$context->smarty->assign('confirmation', 1);
+					$context->cookie->id_customer = (int)($customer->id);
+					$context->cookie->customer_lastname = $customer->lastname;
+					$context->cookie->customer_firstname = $customer->firstname;
+					$context->cookie->passwd = $customer->passwd;
+					$context->cookie->logged = 1;
+					$customer->logged = 1;
+					$context->cookie->email = $customer->email;
+					Hook::exec('createAccount', array(
 						'_POST' => $_POST,
 						'newCustomer' => $customer
 					));
@@ -205,7 +205,7 @@ function submitAccount()
 
 function submitLogin()
 {
-	global $cookie, $errors;
+	global $errors;
 
 	$passwd = trim(Tools::getValue('passwd'));
 	$email = trim(Tools::getValue('email'));
@@ -222,22 +222,23 @@ function submitLogin()
 	else
 	{
 		$customer = new Customer();
-		$authentication = $customer->getByemail(trim($email), trim($passwd), (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop());
+		$authentication = $customer->getByemail(trim($email), trim($passwd));
 		/* Handle brute force attacks */
 		sleep(1);
 		if (!$authentication OR !$customer->id)
 			$errors[] = Tools::displayError('authentication failed');
 		else
 		{
-			$cookie->id_customer = (int)($customer->id);
-			$cookie->customer_lastname = $customer->lastname;
-			$cookie->customer_firstname = $customer->firstname;
-			$cookie->logged = 1;
-			$cookie->passwd = $customer->passwd;
-			$cookie->email = $customer->email;
-			if (Configuration::get('PS_CART_FOLLOWING') AND (empty($cookie->id_cart) OR Cart::getNbProducts($cookie->id_cart) == 0))
-				$cookie->id_cart = Cart::lastNoneOrderedCart($customer->id);
-			Module::hookExec('authentication');
+			$context->cookie->id_customer = (int)($customer->id);
+			$context->cookie->customer_lastname = $customer->lastname;
+			$context->cookie->customer_firstname = $customer->firstname;
+			$context->cookie->logged = 1;
+			$customer->logged = 1;
+			$context->cookie->passwd = $customer->passwd;
+			$context->cookie->email = $customer->email;
+			if (Configuration::get('PS_CART_FOLLOWING') AND (empty($context->cookie->id_cart) OR Cart::getNbProducts($context->cookie->id_cart) == 0))
+				$context->cookie->id_cart = Cart::lastNoneOrderedCart($customer->id);
+			Hook::exec('authentication');
 
 			// Next !
 			$payerID = strval(Tools::getValue('payerID'));
@@ -248,20 +249,22 @@ function submitLogin()
 
 function displayLogin()
 {
-	global $cookie, $result, $email, $payerID, $errors, $ppExpress, $smarty;
+	global $result, $email, $payerID, $errors, $ppExpress;
 
 	// Customer exists, login form
 
 	// If customer already logged, check if same mail than PayPal, and go through, or unlog
-	if ($cookie->isLogged(true) AND isset($result['EMAIL']) AND $cookie->email == $result['EMAIL'])
+	if (Context::getContext()->customer->isLogged(true) AND isset($result['EMAIL']) AND Context::getContext()->customer->email == $result['EMAIL'])
 		displayProcess($payerID);
-	elseif ($cookie->isLogged(true))
-		$cookie->makeNewLog();
-
+	elseif (Context::getContext()->customer->isLogged(true))
+	{
+		Context::getContext()->cookie->makeNewLog();
+		Context::getContext()->customer = new Customer();
+	}
 	// Smarty assigns
-	$smarty->assign(array(
+	Context::getContext()->smarty->assign(array(
 		'email' => $email,
-		'ppToken' => strval($cookie->paypal_token),
+		'ppToken' => strval(Context::getContext()->cookie->paypal_token),
 		'errors'=> $errors,
 		'payerID' => $payerID
 	));
@@ -275,14 +278,16 @@ function displayLogin()
 
 function displayAccount()
 {
-	global $cookie, $result, $email, $payerID, $errors, $ppExpress, $smarty;
+	global $result, $email, $payerID, $errors, $ppExpress;
 
 	// Customer does not exists, signup form
 
 	// If customer already logged, unlog him
-	if ($cookie->isLogged(true))
-		$cookie->makeNewLog();
-
+	if (Context::getContext()->customer->isLogged(true))
+	{
+		Context::getContext()->cookie->makeNewLog();
+		Context::getContext()->customer = new Customer();
+	}
 	// Generate years, months and days
 	if (isset($_POST['years']) AND is_numeric($_POST['years']))
 		$selectedYears = (int)($_POST['years']);
@@ -297,12 +302,14 @@ function displayAccount()
 	// Select the most appropriate country
 	if (Tools::getValue('id_country'))
 		$selectedCountry = (int)(Tools::getValue('id_country'));
-	else
+	else if ((int)$result['COUNTRYCODE'])
+	{
 		$selectedCountry = Country::getByIso(strval($result['COUNTRYCODE']));
-	$countries = Country::getCountries((int)($cookie->id_lang), true);
+	}
+	$countries = Country::getCountries((int)(Context::getContext()->cookie->id_lang), true);
 
 	// Smarty assigns
-	$smarty->assign(array(
+	Context::getContext()->smarty->assign(array(
 		'years' => $years,
 		'sl_year' => (isset($selectedYears) ? $selectedYears : 0),
 		'months' => $months,
@@ -318,8 +325,9 @@ function displayAccount()
 		'city' => (Tools::getValue('city') ? Tools::htmlentitiesUTF8(strval(Tools::getValue('city'))) : (isset($result['SHIPTOCITY']) ? $result['SHIPTOCITY'] : '')),
 		'zip' => (Tools::getValue('postcode') ? Tools::htmlentitiesUTF8(strval(Tools::getValue('postcode'))) : (isset($result['SHIPTOZIP']) ? $result['SHIPTOZIP'] : '')),
 		'payerID' => $payerID,
-		'ppToken' => strval($cookie->paypal_token),
-		'errors'=> $errors
+		'ppToken' => strval(Context::getContext()->cookie->paypal_token),
+		'errors'=> $errors,
+		'genders' => Gender::getGenders(),
 	));
 
 	// Display all and exit
@@ -331,14 +339,17 @@ function displayAccount()
 
 // #####
 // Process !!
-
-if (!$cookie->isLogged(true))
+/*if (!Context::getContext()->customer->isLogged(true))
+{
+	displayAccount();
 	die('Not logged');
-elseif (!$cart->getOrderTotal(true, Cart::BOTH))
+}*/
+
+if (!Context::getContext()->cart->getOrderTotal(true, PayPal::BOTH))
 	die('Empty cart');
 
 // No token, we need to get one by making PayPal Authorisation
-if (!isset($cookie->paypal_token) OR !$cookie->paypal_token)
+if (!isset(Context::getContext()->cookie->paypal_token) OR !Context::getContext()->cookie->paypal_token)
 	getAuthorization();
 else
 {
@@ -355,10 +366,10 @@ else
 	// We got an error or we still not submit form
 	if ((!Tools::isSubmit('submitAccount') AND !Tools::isSubmit('submitLogin')) OR sizeof($errors))
 	{
-		if (isset($cookie->paypal_token) AND isset($cookie->paypal_token_date) AND (time() - 10800 > $cookie->paypal_token_date))
+		if (isset(Context::getContext()->cookie->paypal_token) AND isset(Context::getContext()->cookie->paypal_token_date) AND (time() - 10800 > Context::getContext()->cookie->paypal_token_date))
 		{
 			// Token expired, unset it
-			unset($cookie->paypal_token);
+			unset(Context::getContext()->cookie->paypal_token);
 			Tools::redirect('modules/paypal/express/submit.php');
 		}
 		//  We didn't submit form, getting PayPal informations
@@ -380,10 +391,10 @@ else
 		else
 		{
 			// Error in token, we need to make authorization again
-			unset($cookie->paypal_token);
+			unset(Context::getContext()->cookie->paypal_token);
 			Tools::redirect('modules/paypal/express/submit.php');
 		}
-		if (Customer::customerExists($email, false, true, (int)Shop::getCurrentGroupShop(), (int)Shop::getCurrentShop()) OR Tools::isSubmit('submitLogin'))
+		if (Customer::customerExists($email) OR Tools::isSubmit('submitLogin'))
 			displayLogin();
 		displayAccount();
 	}

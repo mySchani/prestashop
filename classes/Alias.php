@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -30,7 +30,7 @@ class AliasCore extends ObjectModel
 	public $alias;
 	public $search;
 	public $active = true;
-		
+
  	protected 	$fieldsRequired = array('alias', 'search');
  	protected 	$fieldsSize = array('alias' => 255, 'search' => 255);
  	protected 	$fieldsValidate = array('search' => 'isValidSearch', 'alias' => 'isValidSearch', 'active' => 'isBool');
@@ -44,36 +44,61 @@ class AliasCore extends ObjectModel
 			parent::__construct($id);
 		elseif ($alias AND Validate::isValidSearch($alias))
 		{
-			$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
-			SELECT a.id_alias, a.search, a.alias
-			FROM `'._DB_PREFIX_.'alias` a
-			WHERE `alias` LIKE \''.pSQL($alias).'\' AND `active` = 1');
-
-			if ($row)
-			{
-			 	$this->id = (int)($row['id_alias']);
-			 	$this->search = $search ? trim($search) : $row['search'];
-				$this->alias = $row['alias'];
-			}
-			else
+			if (!self::isFeatureActive())
 			{
 				$this->alias = trim($alias);
 				$this->search = trim($search);
 			}
+			else
+			{
+				$row = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
+				SELECT a.id_alias, a.search, a.alias
+				FROM `'._DB_PREFIX_.'alias` a
+				WHERE `alias` LIKE \''.pSQL($alias).'\' AND `active` = 1');
+
+				if ($row)
+				{
+				 	$this->id = (int)($row['id_alias']);
+				 	$this->search = $search ? trim($search) : $row['search'];
+					$this->alias = $row['alias'];
+				}
+				else
+				{
+					$this->alias = trim($alias);
+					$this->search = trim($search);
+				}
+			}
 		}
 	}
 
-	static public function deleteAliases($search)
+	public function add($autodate = true, $nullValues = false)
 	{
-		return Db::getInstance()->Execute('
-		DELETE
-		FROM `'._DB_PREFIX_.'alias`
-		WHERE `search` LIKE \''.pSQL($search).'\'');
+		if (parent::add($autodate, $nullValues))
+		{
+			// Set cache of feature detachable to true
+			Configuration::updateGlobalValue('PS_ALIAS_FEATURE_ACTIVE', '1');
+			return true;
+		}
+		return false;
 	}
-	
+
+	public function delete()
+	{
+		if (parent::delete())
+		{
+			// Refresh cache of feature detachable
+			Configuration::updateGlobalValue('PS_ALIAS_FEATURE_ACTIVE', self::isCurrentlyUsed($this->table, true));
+			return true;
+		}
+		return false;
+	}
+
 	public function getAliases()
 	{
-		$aliases = Db::getInstance()->ExecuteS('
+		if (!self::isFeatureActive())
+			return '';
+
+		$aliases = Db::getInstance()->executeS('
 		SELECT a.alias
 		FROM `'._DB_PREFIX_.'alias` a
 		WHERE `search` = \''.pSQL($this->search).'\'');
@@ -81,15 +106,25 @@ class AliasCore extends ObjectModel
 		$aliases = array_map('implode', $aliases);
 		return implode(', ', $aliases);
 	}
-	
+
 	public function getFields()
 	{
-		parent::validateFields();
-		
+		$this->validateFields();
+
 		$fields['alias'] = pSQL($this->alias);
 		$fields['search'] = pSQL($this->search);
 		$fields['active'] = (int)($this->active);
 		return $fields;
+	}
+
+	/**
+	 * This method is allow to know if a feature is used or active
+	 * @since 1.5.0.1
+	 * @return bool
+	 */
+	public static function isFeatureActive()
+	{
+		return Configuration::get('PS_ALIAS_FEATURE_ACTIVE');
 	}
 }
 

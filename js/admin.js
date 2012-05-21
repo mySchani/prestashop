@@ -1,5 +1,4 @@
 /*
-* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -101,6 +100,7 @@ function strToAltImgAttr(str,encoding,ucfirst)
 function copy2friendlyURL()
 {
 	$('#link_rewrite_' + id_language).val(str2url($('#name_' + id_language).val().replace(/^[0-9]+\./, ''), 'UTF-8'));
+	return;
 }
 
 function copyMeta2friendlyURL()
@@ -119,8 +119,12 @@ function updateFriendlyURLByName()
 }
 function updateFriendlyURL()
 {
-	$('#link_rewrite_' + id_language).val(str2url($('#link_rewrite_' + id_language).val(), 'UTF-8'));
-	$('#seo #friendly-url').text($('#link_rewrite_' + id_language).val());
+	var link = $('#link_rewrite_' + id_language);
+	if (link[0])
+	{
+		link.val(str2url($('#link_rewrite_' + id_language).val(), 'UTF-8'));
+		$('#seo #friendly-url').text(link.val());
+	}
 }
 
 function toggleLanguageFlags(elt)
@@ -134,11 +138,11 @@ function changeLanguage(field, fieldsString, id_language_new, iso_code)
 	var fields = fieldsString.split('¤');
 	for (var i = 0; i < fields.length; ++i)
 	{
-		getE(fields[i] + '_' + id_language).style.display = 'none';
-		getE(fields[i] + '_' + id_language_new).style.display = 'block';
-		getE('language_current_' + fields[i]).src = '../img/l/' + id_language_new + '.jpg';
+		$('#'+fields[i]+'_'+id_language).hide();
+		$('#'+fields[i]+'_'+id_language_new).show();
+		$('#'+'language_current_'+fields[i]).attr('src', '../img/l/' + id_language_new + '.jpg');
 	}
- 	getE('languages_' + field).style.display = 'none';
+	$('#languages_' + field).hide();
 	id_language = id_language_new;
 }
 
@@ -307,7 +311,7 @@ function delAccessory(id)
 	var inputCut = input.value.split('-');
 	var nameCut = name.value.split('¤');
 
-	if (inputCut.lenght != nameCut.lenght)
+	if (inputCut.length != nameCut.length)
 		return alert('Bad size');
 
 	// Reset all hidden fields
@@ -402,8 +406,64 @@ if (helpboxes)
 	{
 		if ($('input'))
 		{
-			$('input').focus(function() { $(this).parent().find('.hint:first').css('display', 'block'); });
-			$('input').blur(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
+			//Display by rollover
+			$('input').mouseover(function() { 
+			$(this).parent().find('.hint:first').css('display', 'block'); 
+			});
+			$('input').mouseout(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
+			
+			//display when you press the tab key
+			$('input').keydown(function (e) {
+				if ( e.keyCode === 9 ){
+					$('input').focus(function() { $(this).parent().find('.hint:first').css('display', 'block'); });
+					$('input').blur(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
+				}
+			});
+		}		
+		if ($('select'))
+		{
+			//Display by rollover
+			$('select').mouseover(function() { 
+			$(this).parent().find('.hint:first').css('display', 'block'); 
+			});
+			$('select').mouseout(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
+			
+			//display when you press the tab key
+			$('select').keydown(function (e) {
+				if ( e.keyCode === 9 ){
+					$('select').focus(function() { $(this).parent().find('.hint:first').css('display', 'block'); });
+					$('select').blur(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
+				}
+			});
+		}
+		if ($('span.title_box'))
+		{
+			//Display by rollover
+			$('span.title_box').mouseover(function() { 
+				//get reference to the hint box
+				var parent = $(this).parent();
+				var box = parent.find('.hint:first'); 
+
+				if (box.length > 0)
+				{
+					//gets parent position
+					var left_position = parent.offset().left;
+				
+					//gets width of the box
+					var box_width = box.width();
+				
+					//gets width of the screen
+					var document_width = $(document).width();
+			
+					//changes position of the box if needed
+					if (document_width < (left_position + box_width))
+						box.css('margin-left', '-' + box_width + 'px');
+				
+					//shows the box
+					box.css('display', 'block');
+				}
+			});
+			$('span.title_box').mouseout(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
 		}
 	});
 }
@@ -461,10 +521,9 @@ function openWin(url, title, width, height, top, left)
 	newWin.focus();
 }
 
-function	viewTemplates(id_select, id_lang, prefix, ext)
+function viewTemplates(id_select, prefix, ext)
 {
-	var id_list = document.getElementById(id_select);
-	var loc = id_list.options[id_list.selectedIndex].value;
+	var loc = $(id_select).val();
 	if (loc != 0)
 		openWin (prefix+loc+ext, 'tpl_viewing', '520', '400', '50', '300');
 	return ;
@@ -726,6 +785,8 @@ function stockManagementActivationAuthorization()
 		getE('PS_ORDER_OUT_OF_STOCK_off').disabled = false;
 		getE('PS_DISPLAY_QTIES_on').disabled = false;
 		getE('PS_DISPLAY_QTIES_off').disabled = false;
+		getE('PS_ADVANCED_STOCK_MANAGEMENT_on').disabled = false;
+		getE('PS_ADVANCED_STOCK_MANAGEMENT_off').disabled = false;
 	}
 	else
 	{
@@ -735,6 +796,9 @@ function stockManagementActivationAuthorization()
 		getE('PS_ORDER_OUT_OF_STOCK_on').checked = true;
 		getE('PS_ORDER_OUT_OF_STOCK_on').disabled = 'disabled';
 		getE('PS_ORDER_OUT_OF_STOCK_off').disabled = 'disabled';
+		getE('PS_ADVANCED_STOCK_MANAGEMENT_off').checked = true;
+		getE('PS_ADVANCED_STOCK_MANAGEMENT_on').disabled = 'disabled';
+		getE('PS_ADVANCED_STOCK_MANAGEMENT_off').disabled = 'disabled';
 	}
 }
 
@@ -801,7 +865,7 @@ function showOptions(show)
 function submitAddProductAndPreview()
 {
 	$('#fakeSubmitAddProductAndPreview').attr('name','submitAddProductAndPreview');
-	$('#product').submit();
+	$('#product_form').submit();
 }
 
 function submitAddcmsAndPreview()
@@ -829,18 +893,111 @@ function trackClickOnHelp(label, doc_version)
 
 $(document).ready(function()
 {
-	$('.multishop_config a').click(function(e)
+	$('.isInvisible input, .isInvisible select, .isInvisible textarea').attr('disabled', true);
+	$('.isInvisible label.conf_title').addClass('isDisabled');
+	
+	// Disable options fields for each row with a multishop default checkbox
+	$('.preference_default_multishop input[type=checkbox]').each(function(k, v)
 	{
-		var input = $(this).parent().find('input[type=checkbox]');
-		input.attr('checked', (!input.attr('checked')) ? true : false);
-		return false;
+		var key = $(v).attr('name');
+		var len = key.length;
+		checkMultishopDefaultValue(v, key.substr(17, len - 18));
+	});
+});
+
+function checkMultishopDefaultValue(obj, key)
+{
+	if ($(obj).attr('checked') || $('#'+key).hasClass('isInvisible'))
+	{
+		$('#conf_id_'+key+' input, #conf_id_'+key+' textarea, #conf_id_'+key+' select').attr('disabled', true);
+		$('#conf_id_'+key+' label.conf_title').addClass('isDisabled');
+	}
+	else
+	{
+		$('#conf_id_'+key+' input, #conf_id_'+key+' textarea, #conf_id_'+key+' select').attr('disabled', false);
+		$('#conf_id_'+key+' label.conf_title').removeClass('isDisabled');
+	}
+	$('#conf_id_'+key+' .preference_default_multishop input').attr('disabled', false);
+}
+/**
+ * Update the product image list position buttons
+ * 
+ * @param DOM table imageTable
+ */
+function refreshImagePositions(imageTable)
+{
+	var reg = /_[0-9]$/g;
+	var up_reg  = new RegExp("imgPosition=[0-9]+&");
+
+	imageTable.find("tbody tr").each(function(i) {
+		// Update link position
+		// Up links
+		$(this).find("td.dragHandle a:first").attr("href", $(this).find("td.dragHandle a:first").attr("href").replace(up_reg, "imgPosition="+ i +"&"));//, "imgPosition="+ (i - 1) +"&"));
+		// Down links
+		$(this).find("td.dragHandle a:last").attr("href", $(this).find("td.dragHandle a:last").attr("href").replace(up_reg, "imgPosition="+ (i + 2) +"&"));
+		// Position image cell
+		$(this).find("td.positionImage").html(i + 1);
+	});
+	imageTable.find("tr td.dragHandle a:hidden").show();
+	imageTable.find("tr td.dragHandle:first a:first").hide();
+	imageTable.find("tr td.dragHandle:last a:last").hide();
+}
+
+
+function doAdminAjax(data)
+{
+	$.ajax(
+	{
+		url : 'index.php',
+		data : data,
+		success : function(data){
+			data = $.parseJSON(data);
+			if(data.confirmations.length != 0)
+				showSuccessMessage(data.confirmations);
+			else
+				showErrorMessage(data.error);
+		},
+		error : function(data){
+			alert("[TECHNICAL ERROR]");
+		}
+	});
+}
+
+/** display a success message in a #ajax_confirmation container
+ * @param string msg string to display
+ */
+function showSuccessMessage(msg)
+{
+	$("#ajax_confirmation")
+		.html("<div class=\"conf\">"+msg+"</div>").show().delay(3000).fadeOut("slow");
+}
+			
+/** display a warning message in a #ajax_confirmation container
+ * @param string msg string to display
+ */
+function showErrorMessage(msg)
+{
+	$("#ajax_confirmation").show()
+		.html("<div class=\"error\">"+msg+"</div>").delay(3000).fadeOut("slow");
+}
+
+$(document).ready(function(){
+	$(".copy2friendlyUrl").live('keyup',function(e){
+		if(!isArrowKey(e))
+			return copy2friendlyURL()
+	});
+	
+	// on live will make this binded for dynamic content
+	$(".updateCurrentText").live('keyup change',function(e){
+		if(typeof e == KeyboardEvent)
+			if(isArrowKey(e))
+				return;
+
+		updateCurrentText()
 	});
 
-	$('.multishop_config').hover(function()
-	{
-		$(this).find('div').fadeIn('fast');
-	}, function()
-	{
-		$(this).find('div').fadeOut('fast');
+	$(".copyMeta2friendlyURL").live('keyup',function(e){
+		if(!isArrowKey(e))
+			return copyMeta2friendlyURL()
 	});
 });

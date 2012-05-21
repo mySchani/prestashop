@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class CarrierCompare extends Module
@@ -34,7 +34,7 @@ class CarrierCompare extends Module
 	{
 		$this->name = 'carriercompare';
 		$this->tab = 'shipping_logistics';
-		$this->version = '1.0';
+		$this->version = '1.1';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
 
@@ -53,11 +53,10 @@ class CarrierCompare extends Module
 
 	public function hookHeader($params)
 	{
-		$fileName = explode(DIRECTORY_SEPARATOR, $_SERVER['PHP_SELF']);
-		if ($fileName[(sizeof($fileName)-1)] != 'order.php')
+		if (!$this->isModuleAvailable())
 			return;
-		Tools::addCSS(($this->_path).'style.css', 'all');
-		Tools::addJS(($this->_path).'carriercompare.js');
+		$this->context->controller->addCSS(($this->_path).'style.css', 'all');
+		$this->context->controller->addJS(($this->_path).'carriercompare.js');
 	}
 
 	/*
@@ -65,21 +64,19 @@ class CarrierCompare extends Module
 	 */
 	public function hookShoppingCart($params)
 	{
-		global $cookie, $smarty, $currency;
-
-		if ($cookie->id_customer)
+		if (!$this->isModuleAvailable())
 			return;
 
-		$smarty->assign(array(
-			'countries' => Country::getCountries((int)$cookie->id_lang),
+		$this->context->smarty->assign(array(
+			'countries' => Country::getCountries($this->context->language->id),
 			'id_carrier' => ($params['cart']->id_carrier ? $params['cart']->id_carrier : Configuration::get('PS_CARRIER_DEFAULT')),
-			'id_country' => (isset($cookie->id_country) ? $cookie->id_country : Configuration::get('PS_COUNTRY_DEFAULT')),
-			'id_state' => (isset($cookie->id_state) ? $cookie->id_state : 0),
-			'zipcode' => (isset($cookie->postcode) ? $cookie->postcode : ''),
-			'currencySign' => $currency->sign,
-			'currencyRate' => $currency->conversion_rate,
-			'currencyFormat' => $currency->format,
-			'currencyBlank' => $currency->blank
+			'id_country' => (isset($this->context->customer->geoloc_id_country) ? $this->context->customer->geoloc_id_country : Configuration::get('PS_COUNTRY_DEFAULT')),
+			'id_state' => (isset($this->context->customer->geoloc_id_state) ? $this->context->customer->geoloc_id_state : 0),
+			'zipcode' => (isset($this->context->customer->geoloc_postcode) ? $this->context->customer->geoloc_postcode : ''),
+			'currencySign' => $this->context->currency->sign,
+			'currencyRate' => $this->context->currency->conversion_rate,
+			'currencyFormat' => $this->context->currency->format,
+			'currencyBlank' => $this->context->currency->blank
 		));
 
 		return $this->display(__FILE__, 'carriercompare.tpl');
@@ -99,9 +96,14 @@ class CarrierCompare extends Module
 	/*
 	** Get carriers by country id, called by the ajax process
 	*/
-	public function getCarriersListByIdZone($id_country, $id_state = 0)
+	public function getCarriersListByIdZone($id_country, $id_state = 0, $zipcode = 0)
 	{
-		global $cart, $smarty;
+		// cookie saving/updating
+		$this->context->cookie->id_country = $id_country;
+		if ($id_state != 0)
+			$this->context->cookie->id_state = $id_state;
+		if ($zipcode != 0)
+			$this->context->cookie->postcode = $zipcode;
 
 		$id_zone = 0;
 		if ($id_state != 0)
@@ -111,31 +113,32 @@ class CarrierCompare extends Module
 
 		$carriers = Carrier::getCarriersForOrder((int)$id_zone);
 
-		return (sizeof($carriers) ? $carriers : array());
+		return (count($carriers) ? $carriers : array());
 	}
 
+	/**
+	 * @todo this function must be modified - id_carrier is now delivery_option
+	 */
 	public function saveSelection($id_country, $id_state, $zipcode, $id_carrier)
 	{
-		global $cart, $cookie;
-
 		$errors = array();
 
 		if (!Validate::isInt($id_state))
 			$errors[] = $this->l('Invalid state ID');
 		if ($id_state != 0 && !Validate::isLoadedObject(new State($id_state)))
-			$errors[] = $this->l('Invalid state ID');
+			$errors[] = $this->l('Please select a state');
 		if (!Validate::isInt($id_country) || !Validate::isLoadedObject(new Country($id_country)))
-			$errors[] = $this->l('Invalid country ID');
+			$errors[] = $this->l('Please select a country');
 		if (!$this->checkZipcode($zipcode, $id_country))
 			$errors[] = $this->l('Please use a valid zip/postal code depending on your country selection');
 		if (!Validate::isInt($id_carrier) || !Validate::isLoadedObject(new Carrier($id_carrier)))
-			$errors[] = $this->l('Invalid carrier ID');
+			$errors[] = $this->l('Please select a carrier');
 
 		if (sizeof($errors))
 			return $errors;
 
 		$ids_carrier = array();
-		foreach (self::getCarriersListByIdZone($id_country, $id_state) as $carrier)
+		foreach (self::getCarriersListByIdZone($id_country, $id_state, $zipcode) as $carrier)
 			$ids_carrier[] = $carrier['id_carrier'];
 		if (!in_array($id_carrier, $ids_carrier))
 			$errors[] = $this->l('This carrier ID isn\'t available for your selection');
@@ -143,11 +146,11 @@ class CarrierCompare extends Module
 		if (sizeof($errors))
 			return $errors;
 
-		$cookie->id_country = $id_country;
-		$cookie->id_state = $id_state;
-		$cookie->postcode = $zipcode;
-		$cart->id_carrier = $id_carrier;
-		if (!$cart->update())
+		$this->context->cookie->id_country = $id_country;
+		$this->context->cookie->id_state = $id_state;
+		$this->context->cookie->postcode = $zipcode;
+		$this->context->cart->id_carrier = $id_carrier;
+		if (!$this->context->cart->update())
 			return array($this->l('Can\'t update the cart'));
 		return array();
 	}
@@ -176,5 +179,27 @@ class CarrierCompare extends Module
 			return true;
 		return false;
 	}
+
+	/**
+	 * This module is shown on front office, in only some conditions
+	 * @return bool
+	 */
+	private function isModuleAvailable()
+	{
+		$fileName = basename($_SERVER['SCRIPT_FILENAME']);
+		/**
+		 * This module is only available on standard order process because
+		 * on One Page Checkout the carrier list is already available.
+		 */
+		if ($fileName != 'order.php')
+			return false;
+		/**
+		 * If visitor is logged, the module isn't available on Front office,
+		 * we use the account informations for carrier selection and taxes.
+		 */
+		if (Context::getContext()->customer->id)
+			return false;
+		return true;
+}
 }
 

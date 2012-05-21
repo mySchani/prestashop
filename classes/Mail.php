@@ -32,7 +32,7 @@ include_once(_PS_SWIFT_DIR_.'Swift/Plugin/Decorator.php');
 
 class MailCore
 {
-	static public function Send($id_lang, $template, $subject, $templateVars, $to, $toName = NULL, $from = NULL, $fromName = NULL, $fileAttachment = NULL, $modeSMTP = NULL, $templatePath = _PS_MAIL_DIR_)
+	public static function Send($id_lang, $template, $subject, $templateVars, $to, $toName = NULL, $from = NULL, $fromName = NULL, $fileAttachment = NULL, $modeSMTP = NULL, $templatePath = _PS_MAIL_DIR_, $die = false)
 	{
 		$configuration = Configuration::getMultiple(array('PS_SHOP_EMAIL', 'PS_MAIL_METHOD', 'PS_MAIL_SERVER', 'PS_MAIL_USER', 'PS_MAIL_PASSWD', 'PS_SHOP_NAME', 'PS_MAIL_SMTP_ENCRYPTION', 'PS_MAIL_SMTP_PORT', 'PS_MAIL_METHOD', 'PS_MAIL_TYPE'));
 		if(!isset($configuration['PS_MAIL_SMTP_ENCRYPTION'])) $configuration['PS_MAIL_SMTP_ENCRYPTION'] = 'off';
@@ -42,29 +42,48 @@ class MailCore
 		if (!isset($fromName)) $fromName = $configuration['PS_SHOP_NAME'];
 
 		if (!empty($from) AND !Validate::isEmail($from))
-	 		die(Tools::displayError('Error: parameter "from" is corrupted'));
-			
+		{
+ 			Tools::dieOrLog(Tools::displayError('Error: parameter "from" is corrupted'), $die);
+ 			return false;
+		}
 		if (!empty($fromName) AND !Validate::isMailName($fromName))
-	 		die(Tools::displayError('Error: parameter "fromName" is corrupted'));
-			
+		{
+	 		Tools::dieOrLog(Tools::displayError('Error: parameter "fromName" is corrupted'), $die);
+	 		return false;
+		}
 		if (!is_array($to) AND !Validate::isEmail($to))
-	 		die(Tools::displayError('Error: parameter "to" is corrupted'));
+		{
+	 		Tools::dieOrLog(Tools::displayError('Error: parameter "to" is corrupted'), $die);
+	 		return false;
+		}
 			
 		if (!is_array($templateVars))
-	 		die(Tools::displayError('Error: parameter "templateVars" is not an array'));
+		{
+	 		Tools::dieOrLog(Tools::displayError('Error: parameter "templateVars" is not an array'), $die);
+	 		return false;
+		}
 		
 		// Do not crash for this error, that may be a complicated customer name
-		if (!empty($toName) AND !Validate::isMailName($toName))
-	 		$toName = NULL;
+		if(is_string($toName))
+		{
+			if (!empty($toName) AND !Validate::isMailName($toName))
+	 			$toName = NULL;
+		}
 			
 		if (!Validate::isTplName($template))
-	 		die(Tools::displayError('Error: invalid email template'));
+		{
+	 		Tools::dieOrLog(Tools::displayError('Error: invalid email template'), $die);
+	 		return false;
+		}
 			
 		if (!Validate::isMailSubject($subject))
-	 		die(Tools::displayError('Error: invalid email subject'));
+		{
+	 		Tools::dieOrLog(Tools::displayError('Error: invalid email subject'), $die);
+	 		return false;
+		}
 
 		/* Construct multiple recipients list if needed */
-		if (is_array($to))
+		if (is_array($to) and isset($to))
 		{
 			$to_list = new Swift_RecipientList();
 			foreach ($to AS $key => $addr)
@@ -72,9 +91,15 @@ class MailCore
 				$to_name = NULL;
 				$addr = trim($addr);
 				if (!Validate::isEmail($addr))
-					die(Tools::displayError('Error: invalid email address'));
-				if ($toName AND is_array($toName) AND Validate::isGenericName($toName[$key]))
-					$to_name = $toName[$key];
+				{
+					Tools::dieOrLog(Tools::displayError('Error: invalid email address'), $die);
+					return false;
+				}
+				if(is_array($toName))
+				{
+					if ($toName AND is_array($toName) AND Validate::isGenericName($toName[$key]))
+						$to_name = $toName[$key];
+				}
 				$to_list->addTo($addr, $to_name);
 			}
 			$to_plugin = $to[0];
@@ -89,8 +114,10 @@ class MailCore
 			if ($configuration['PS_MAIL_METHOD'] == 2)
 			{
 				if (empty($configuration['PS_MAIL_SERVER']) OR empty($configuration['PS_MAIL_SMTP_PORT']))
-					die(Tools::displayError('Error: invalid SMTP server or SMTP port'));
-
+				{
+					Tools::dieOrLog(Tools::displayError('Error: invalid SMTP server or SMTP port'), $die);
+					return false;
+				}
 				$connection = new Swift_Connection_SMTP($configuration['PS_MAIL_SERVER'], $configuration['PS_MAIL_SMTP_PORT'], ($configuration['PS_MAIL_SMTP_ENCRYPTION'] == "ssl") ? Swift_Connection_SMTP::ENC_SSL : (($configuration['PS_MAIL_SMTP_ENCRYPTION'] == "tls") ? Swift_Connection_SMTP::ENC_TLS : Swift_Connection_SMTP::ENC_OFF));
 				$connection->setTimeout(4);
 				if (!$connection)
@@ -109,7 +136,10 @@ class MailCore
 			/* Get templates content */
 			$iso = Language::getIsoById((int)($id_lang));
 			if (!$iso)
-				die (Tools::displayError('Error - No ISO code for email'));
+			{
+				Tools::dieOrLog(Tools::displayError('Error - No ISO code for email'), $die);
+				return false;
+			}
 			$template = $iso.'/'.$template;
 
 			$moduleName = false;
@@ -128,8 +158,10 @@ class MailCore
 				$overrideMail  = true;
 			}
 			elseif (!file_exists($templatePath.$template.'.txt') OR !file_exists($templatePath.$template.'.html'))
-				die(Tools::displayError('Error - The following email template is missing:').' '.$templatePath.$template.'.txt');
-
+			{
+				Tools::dieOrLog(Tools::displayError('Error - The following email template is missing:').' '.$templatePath.$template.'.txt', $die);
+				return false;
+			}
 			$templateHtml = file_get_contents($templatePath.$template.'.html');
 			$templateTxt = strip_tags(html_entity_decode(file_get_contents($templatePath.$template.'.txt'), NULL, 'utf-8'));
 
@@ -161,15 +193,14 @@ class MailCore
 		catch (Swift_ConnectionException $e) { return false; }
 	}
 
-	static public function sendMailTest($smtpChecked, $smtpServer, $content, $subject, $type, $to, $from, $smtpLogin, $smtpPassword, $smtpPort = 25, $smtpEncryption)
+	public static function sendMailTest($smtpChecked, $smtpServer, $content, $subject, $type, $to, $from, $smtpLogin, $smtpPassword, $smtpPort = 25, $smtpEncryption)
 	{
 		$swift = NULL;
-		$result = NULL;
+		$result = false;
 		try
 		{
 			if($smtpChecked)
 			{
-
 				$smtp = new Swift_Connection_SMTP($smtpServer, $smtpPort, ($smtpEncryption == "off") ? Swift_Connection_SMTP::ENC_OFF : (($smtpEncryption == "tls") ? Swift_Connection_SMTP::ENC_TLS : Swift_Connection_SMTP::ENC_SSL));
 				$smtp->setUsername($smtpLogin);
 				$smtp->setpassword($smtpPassword);
@@ -183,13 +214,17 @@ class MailCore
 
 			if ($swift->send($message, $to, $from))
 				$result = true;
-			else
-				$result = 999;
 
 			$swift->disconnect();
 		}
-		catch (Swift_Connection_Exception $e) { $result = $e->getCode(); }
-		catch (Swift_Message_MimeException $e) { $result = $e->getCode(); }
+		catch (Swift_ConnectionException $e)
+		{
+			$result = $e->getMessage();
+		}
+		catch (Swift_Message_MimeException $e)
+		{
+			$result = $e->getMessage();
+		}
 
 		return $result;
 	}
@@ -201,18 +236,21 @@ class MailCore
 	 * 
 	 * @param string $string raw sentence (write directly in file)
 	 */
-	static public function l($string)
+	static public function l($string, $id_lang = null, Context $context = null)
 	{
-		global $_LANGMAIL, $cookie;
-		
-		$key = str_replace('\'', '\\\'', $string);
-		$id_lang = (!isset($cookie) OR !is_object($cookie)) ? (int)Configuration::get('PS_LANG_DEFAULT') : (int)$cookie->id_lang;
+		global $_LANGMAIL;
+		if (!$context)
+			$context = Context::getContext();
 
-		$file_core = _PS_ROOT_DIR_.'/mails/'.Language::getIsoById((int)$id_lang).'/lang.php';
+		$key = str_replace('\'', '\\\'', $string);
+		if ($id_lang == null)
+			$id_lang = (!isset($context->language) OR !is_object($context->language)) ? (int)Configuration::get('PS_LANG_DEFAULT') : (int)$context->language->id;
+
+		$file_core = _PS_ROOT_DIR_.'/mails/'.$context->language->iso_code.'/lang.php';
 		if (Tools::file_exists_cache($file_core) && empty($_LANGMAIL))
 			include_once($file_core);
 
-		$file_theme = _PS_THEME_DIR_.'mails/'.Language::getIsoById((int)$id_lang).'/lang.php';
+		$file_theme = _PS_THEME_DIR_.'mails/'.$context->language->iso_code.'/lang.php';
 		if (Tools::file_exists_cache($file_theme))
 			include_once($file_theme);
 

@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -28,66 +28,72 @@
 ob_start();
 $timerStart = microtime(true);
 
-$currentFileName = array_reverse(explode("/", $_SERVER['SCRIPT_NAME']));
-$cookie = new Cookie('psAdmin', substr($_SERVER['SCRIPT_NAME'], strlen(__PS_BASE_URI__), -strlen($currentFileName['0'])));
+//	$_GET['tab'] = $_GET['controller'];
+//	$_POST['tab'] = $_POST['controller'];
+//	$_REQUEST['tab'] = $_REQUEST['controller'];
+
+$context = Context::getContext();
 if (isset($_GET['logout']))
-	$cookie->logout();
+	$context->employee->logout();
 
-if (!$cookie->isLoggedBack())
+if (!isset($context->employee) || !$context->employee->isLoggedBack())
+	Tools::redirectAdmin('index.php?controller=AdminLogin&redirect='.$_SERVER['REQUEST_URI']);
+
+// Set current index
+$currentIndex = $_SERVER['SCRIPT_NAME'].(($controller = Tools::getValue('controller')) ? '?controller='.$controller: '');
+
+if ($back = Tools::getValue('back'))
+	$currentIndex .= '&back='.urlencode($back);
+AdminTab::$currentIndex = $currentIndex;
+
+$iso = $context->language->iso_code;
+include(_PS_TRANSLATIONS_DIR_.$iso.'/errors.php');
+include(_PS_TRANSLATIONS_DIR_.$iso.'/fields.php');
+include(_PS_TRANSLATIONS_DIR_.$iso.'/admin.php');
+
+/* Server Params */
+$protocol_link = (Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
+$protocol_content = (isset($useSSL) AND $useSSL AND Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
+$link = new Link($protocol_link, $protocol_content);
+$context->link = $link;
+define('_PS_BASE_URL_', Tools::getShopDomain(true));
+define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
+
+$path = dirname(__FILE__).'/themes/';
+if (empty($context->employee->bo_theme) OR !file_exists($path.$context->employee->bo_theme.'/admin.css'))
 {
-	
-	$destination = substr($_SERVER['REQUEST_URI'], strlen(dirname($_SERVER['SCRIPT_NAME'])) + 1);
-	Tools::redirectAdmin('login.php'.(empty($destination) || ($destination == 'index.php?logout') ? '' : '?redirect='.$destination));
+	if (file_exists($path.'oldschool/admin.css'))
+		$context->employee->bo_theme = 'oldschool';
+	elseif (file_exists($path.'origins/admin.css'))
+		$context->employee->bo_theme = 'origins';
+	else
+		foreach (scandir($path) as $theme)
+			if ($theme[0] != '.' AND file_exists($path.$theme.'/admin.css'))
+			{
+				$employee->bo_theme = $theme;
+				break;
+			}
+	$context->employee->update();
 }
-else
+
+// Change shop context ?
+if (Shop::isFeatureActive() && Tools::getValue('setShopContext') !== false)
 {
-	$link = new Link();
-
-	$currentIndex = $_SERVER['SCRIPT_NAME'].(($tab = Tools::getValue('tab')) ? '?tab='.$tab : '');
-	if ($back = Tools::getValue('back'))
-		$currentIndex .= '&back='.urlencode($back);
-
-	/* Server Params */
-	$protocol_link = (Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
-	$protocol_content = (isset($useSSL) AND $useSSL AND Configuration::get('PS_SSL_ENABLED')) ? 'https://' : 'http://';
-	define('_PS_BASE_URL_', Tools::getShopDomain(true));
-	define('_PS_BASE_URL_SSL_', Tools::getShopDomainSsl(true));
-
-	$employee = new Employee((int)$cookie->id_employee);
-	$cookie->id_lang = (int)$employee->id_lang;
-	$iso = strtolower(Language::getIsoById($cookie->id_lang ? $cookie->id_lang : Configuration::get('PS_LANG_DEFAULT')));
-	include(_PS_TRANSLATIONS_DIR_.$iso.'/errors.php');
-	include(_PS_TRANSLATIONS_DIR_.$iso.'/fields.php');
-	include(_PS_TRANSLATIONS_DIR_.$iso.'/admin.php');
-
-	/* attribute id_lang is often needed, so we create a constant for performance reasons */
-	define('_USER_ID_LANG_', (int)$cookie->id_lang);
-
-	$path = dirname(__FILE__).'/themes/';
-	if (empty($employee->bo_theme) OR !file_exists($path.$employee->bo_theme.'/admin.css'))
-	{
-		if (file_exists($path.'oldschool/admin.css'))
-			$employee->bo_theme = 'oldschool';
-		elseif (file_exists($path.'origins/admin.css'))
-			$employee->bo_theme = 'origins';
-		else
-			foreach (scandir($path) as $theme)
-				if ($theme[0] != '.' AND file_exists($path.$theme.'/admin.css'))
-				{
-					$employee->bo_theme = $theme;
-					break;
-				}
-		$employee->update();
-	}
-	
-	// Change shop context ?
-	if (Tools::isMultiShopActivated() && Tools::getValue('setShopContext') !== false)
-	{
-		$cookie->shopContext = Tools::getValue('setShopContext');
-		$url = parse_url($_SERVER['REQUEST_URI']);
-		$query = (isset($url['query'])) ? $url['query'] : '';
-		parse_str($query, $parseQuery);
-		unset($parseQuery['setShopContext']);
-		Tools::redirectAdmin($url['path'] . '?' . http_build_query($parseQuery));
-	}
+	$context->cookie->shopContext = Tools::getValue('setShopContext');
+	$url = parse_url($_SERVER['REQUEST_URI']);
+	$query = (isset($url['query'])) ? $url['query'] : '';
+	parse_str($query, $parseQuery);
+	unset($parseQuery['setShopContext']);
+	Tools::redirectAdmin($url['path'] . '?' . http_build_query($parseQuery));
 }
+
+$context->currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+
+$shopID = '';
+if ($context->cookie->shopContext)
+{
+	$split = explode('-', $context->cookie->shopContext);
+	if (count($split) == 2 && $split[0] == 's')
+		$shopID = (int)$split[1];
+}
+$context->shop = new Shop($shopID);

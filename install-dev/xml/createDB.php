@@ -28,9 +28,6 @@
 if (!defined('_PS_MAGIC_QUOTES_GPC_'))
 	define('_PS_MAGIC_QUOTES_GPC_', get_magic_quotes_gpc());
 
-if (!defined('_PS_MYSQL_REAL_ESCAPE_STRING_'))
-	define('_PS_MYSQL_REAL_ESCAPE_STRING_', function_exists('mysql_real_escape_string'));
-
 if (function_exists('date_default_timezone_set'))
 	date_default_timezone_set('Europe/Paris');
 
@@ -39,44 +36,38 @@ if (file_exists(SETTINGS_FILE))
 	if (!unlink(SETTINGS_FILE))
 		die('<action result="fail" error="17" />'."\n");
 
-include(INSTALL_PATH.'/classes/AddConfToFile.php');
-include(INSTALL_PATH.'/../classes/Validate.php');
-include(INSTALL_PATH.'/../classes/Db.php');
-include(INSTALL_PATH.'/../classes/Tools.php');
+require_once(INSTALL_PATH.'/classes/AddConfToFile.php');
+require_once(INSTALL_PATH.'/../classes/Validate.php');
+require_once(INSTALL_PATH.'/../classes/db/Db.php');
+require_once(INSTALL_PATH.'/../classes/Tools.php');
 
 global $logger;
 
 //check db access
 include_once(INSTALL_PATH.'/classes/ToolsInstall.php');
-$resultDB = ToolsInstall::checkDB($_GET['server'], $_GET['login'], $_GET['password'], $_GET['name'], true, $_GET['engine']);
-if ($resultDB !== true){
+$resultDB = ToolsInstall::checkDB($_GET['server'], $_GET['login'], $_GET['password'], $_GET['name'], true);
+if ($resultDB !== true)
+{
 	$logger->logError('Invalid database configuration');
 	die("<action result='fail' error='".$resultDB."'/>\n");
 }
 
-
-// Check POST data...
-$data_check = array(
-	!isset($_GET['mode']) OR ( $_GET['mode'] != "full" AND $_GET['mode'] != "lite"),
-	!isset($_GET['tablePrefix']) OR !Validate::isMailName($_GET['tablePrefix']) OR !preg_match('/^[a-z0-9_]*$/i', $_GET['tablePrefix'])
-);
-foreach ($data_check AS $data)
-	if ($data)
+if (!isset($_GET['mode']) OR ($_GET['mode'] != "full" AND $_GET['mode'] != "lite"))
 		die('<action result="fail" error="8"/>'."\n");
 
 // Writing data in settings file
 $oldLevel = error_reporting(E_ALL);
-$_PS_DIRECTORY_ = str_replace(' ', '%20', INSTALLER__PS_BASE_URI);
+$_PS_DIRECTORY_ = trim(str_replace(' ', '%20', INSTALLER__PS_BASE_URI), '/');
+$_PS_DIRECTORY_ = ($_PS_DIRECTORY_) ? '/'.$_PS_DIRECTORY_.'/' : '/';
 $datas = array(
 	array('_DB_SERVER_', trim($_GET['server'])),
-	array('_DB_TYPE_', trim($_GET['type'])),
+	array('_DB_TYPE_', 'MySQL'),
 	array('_DB_NAME_', trim($_GET['name'])),
 	array('_DB_USER_', trim($_GET['login'])),
 	array('_DB_PASSWD_', trim($_GET['password'])),
 	array('_DB_PREFIX_', trim($_GET['tablePrefix'])),
-	array('_MYSQL_ENGINE_', $_GET['engine']),
-	array('_PS_DIRECTORY_', $_PS_DIRECTORY_),
-	array('_PS_CACHING_SYSTEM_', 'MCached'),
+	array('_MYSQL_ENGINE_', trim($_GET['engine'])),
+	array('_PS_CACHING_SYSTEM_', 'CacheMemcache'),
 	array('_PS_CACHE_ENABLED_', '0'),
 	array('_MEDIA_SERVER_1_', ''),
 	array('_MEDIA_SERVER_2_', ''),
@@ -106,25 +97,26 @@ foreach (array(INSTALL_PATH.'/../tools/smarty/cache/', INSTALL_PATH.'/../tools/s
 if ($confFile->error != false)
 	die('<action result="fail" error="'.$confFile->error.'" />'."\n");
 
-//load new settings
-include(SETTINGS_FILE);
+//load new settings, and fatal error if you can't
+require_once(SETTINGS_FILE);
 
 //-----------
 //import SQL data
 //-----------
-switch (_DB_TYPE_) {
-	case "MySQL" :
+switch (_DB_TYPE_)
+{
+	case 'MySQL':
 
 		$filePrefix = 'PREFIX_';
 		$engineType = 'ENGINE_TYPE';
 		//send the SQL structure file requests
-		$structureFile = dirname(__FILE__)."/../sql/db.sql";
+		$structureFile = dirname(__FILE__).'/../sql/db.sql';
 		if(!file_exists($structureFile))
 		{
 			$logger->logError('Impossible to access to a MySQL content file. ('.$structureFile.')');
 			die('<action result="fail" error="10" />'."\n");
 		}
-		$db_structure_settings ="";
+		$db_structure_settings = '';
 		if ( !$db_structure_settings .= file_get_contents($structureFile) )
 		{
 			$logger->logError('Impossible to read the content of a MySQL content file. ('.$structureFile.')');
@@ -138,14 +130,20 @@ switch (_DB_TYPE_) {
 			array_unshift($db_structure_settings, 'CREATE DATABASE `'.trim($_GET['name']).'`;');
 			array_unshift($db_structure_settings, 'DROP DATABASE `'.trim($_GET['name']).'`;');
 		}
-		foreach($db_structure_settings as $query){
+		foreach ($db_structure_settings as $query)
+		{
 			$query = trim($query);
-			if(!empty($query)){
-				if(!Db::getInstance()->Execute($query)){
-					if(Db::getInstance()->getNumberError() == 1050){
+			if (!empty($query))
+			{
+				if (!Db::getInstance()->Execute($query))
+				{
+					if (Db::getInstance()->getNumberError() == 1050)
+					{
 						$logger->logError('A Prestashop database already exists, please drop it or change the prefix.');
 						die('<action result="fail" error="14" />'."\n");
-					} else {
+					}
+					else
+					{
 						$logger->logError('SQL query: '."\r\n".$query);
 						$logger->logError('SQL error: '."\r\n".Db::getInstance()->getMsgError());
 						die(
@@ -163,17 +161,17 @@ switch (_DB_TYPE_) {
 		}
 
 		//send the SQL data file requests
+		$db_data_settings = '';
 
-		$db_data_settings = "";
-
-		$liteFile = dirname(__FILE__)."/../sql/db_settings_lite.sql";
+		$liteFile = dirname(__FILE__).'/../sql/db_settings_lite.sql';
 		if(!file_exists($liteFile))
 			die('<action result="fail" error="10" />'."\n");
 		if ( !$db_data_settings .= file_get_contents( $liteFile ) )
 			die('<action result="fail" error="9" />'."\n");
 
-		if($_GET['mode'] == "full"){
-			$fullFile = dirname(__FILE__)."/../sql/db_settings_extends.sql";
+		if ($_GET['mode'] == 'full')
+		{
+			$fullFile = dirname(__FILE__).'/../sql/db_settings_extends.sql';
 			if(!file_exists($fullFile))
 			{
 				$logger->logError('Impossible to access to a MySQL content file. ('.$fullFile.')');
@@ -185,20 +183,24 @@ switch (_DB_TYPE_) {
 				die('<action result="fail" error="9" />'."\n");
 			}
 		}
-		$db_data_settings .= "\n".'INSERT INTO `PREFIX_shop_url` (`id_shop`, `domain`, `domain_ssl`, `uri`, `main`,  `active`) VALUES(1, \''.pSQL(Tools::getHttpHost()).'\', \''.pSQL(Tools::getHttpHost()).'\', \'\', 1, 1);';
+		$db_data_settings .= "\n".'INSERT INTO `PREFIX_shop_url` (`id_shop`, `domain`, `domain_ssl`, `physical_uri`, `virtual_uri`, `main`,  `active`) VALUES(1, \''.pSQL(Tools::getHttpHost()).'\', \''.pSQL(Tools::getHttpHost()).'\', \''.pSQL($_PS_DIRECTORY_).'\', \'\', 1, 1);';
 		$db_data_settings .= "\n".'UPDATE `PREFIX_customer` SET `passwd` = \''.md5(_COOKIE_KEY_.'123456789').'\' WHERE `id_customer` =1;';
 		$db_data_settings .= "\n".'INSERT INTO `PREFIX_configuration` (name, value, date_add, date_upd) VALUES (\'PS_VERSION_DB\', \'' . INSTALL_VERSION . '\', NOW(), NOW());';
 		$db_data_settings = str_replace(array($filePrefix, $engineType), array($_GET['tablePrefix'], $_GET['engine']), $db_data_settings);
 		$db_data_settings = preg_split("/;\s*[\r\n]+/",$db_data_settings);
 		/* UTF-8 support */
 		array_unshift($db_data_settings, 'SET NAMES \'utf8\';');
-		foreach($db_data_settings as $query){
+		foreach ($db_data_settings as $query)
+		{
 			$query = trim($query);
-			if(!empty($query)){
-				if(!Db::getInstance()->Execute($query)){
-					if(Db::getInstance()->getNumberError() == 1050){
+			if (!empty($query))
+			{
+				if (!Db::getInstance()->Execute($query))
+				{
+					if (Db::getInstance()->getNumberError() == 1050)
 						die('<action result="fail" error="14" />'."\n");
-					} else {
+					else
+					{
 						$logger->logError('SQL query: '."\r\n".$query);
 						$logger->logError('SQL error: '."\r\n".Db::getInstance()->getMsgError());
 						die(
@@ -216,15 +218,16 @@ switch (_DB_TYPE_) {
 		}
 	break;
 }
+
 $xml = '<result><action result="ok" error="" />'."\n";
 
-$countries = Db::getInstance()->ExecuteS('
+$countries = Db::getInstance()->executeS('
 SELECT c.`id_country`, cl.`name`, c.`iso_code` FROM `'.$_GET['tablePrefix'].'country` c
 INNER JOIN `'.$_GET['tablePrefix'].'country_lang` cl ON (c.`id_country` = cl.`id_country`)
 WHERE cl.`id_lang` = '.(int)($_GET['language'] + 1).'
 ORDER BY cl.`name`');
 
-$timezones = Db::getInstance()->ExecuteS('
+$timezones = Db::getInstance()->executeS('
 SELECT * FROM `'.$_GET['tablePrefix'].'timezone`
 ORDER BY `name`');
 
@@ -237,4 +240,3 @@ foreach ($timezones as $timezone)
 $xml .= '</timezones></result>'."\n";
 
 die($xml);
-

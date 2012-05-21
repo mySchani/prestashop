@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -63,7 +63,7 @@ $timezones = array(
 	'BW' => 'Africa/Gaborone',
 	'BY' => 'Europe/Minsk',
 	'BZ' => 'America/Belize',
-	'CA' => 'America/St_Johns',
+	'CA' => 'America/Toronto',
 	'CC' => 'Indian/Cocos',
 	'CD' => 'Africa/Kinshasa',
 	'CF' => 'Africa/Bangui',

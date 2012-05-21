@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2012 PrestaShop
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -19,8 +19,8 @@
 * needs please refer to http://www.prestashop.com for more information.
 *
 *	@author PrestaShop SA <contact@prestashop.com>
-*	@copyright	2007-2012 PrestaShop SA
-*	@version	Release: $Revision: 14002 $
+*	@copyright	2007-2011 PrestaShop SA
+*	@version	Release: $Revision: 10333 $
 *	@license		http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 *	International Registered Trademark & Property of PrestaShop SA
 */
@@ -453,6 +453,7 @@ class AdminUpgrade extends AdminPreferences
 		$this->next = 'upgradeFiles';
 		if (!is_array($this->nextParams['filesToUpgrade']))
 		{
+			error($this->nextParams);
 			$this->next = 'error';
 			$this->nextDesc = $this->l('filesToUpgrade is not an array');
 			$this->nextQuickInfo[] = $this->l('filesToUpgrade is not an array');
@@ -1642,7 +1643,7 @@ function doAjaxRequest(action, nextParams){
 			{
 				if (textStatus == "timeout" && action == "download")
 				{
-					updateInfoStep("'.$this->l('Your server cannot download the file. Please upload it first by ftp in your admin/autoupgrade directory').'");
+					updateInfoStep("'.$this->l('Your server can\'t download the file. Please upload it first by ftp in your admin/autoupgrade directory').'");
 				}
 				else
 				{

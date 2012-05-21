@@ -72,7 +72,7 @@ class GuestCore extends ObjectModel
 	
 	public function getFields()
 	{
-		parent::validateFields();
+		$this->validateFields();
 		
 		$fields['id_operating_system'] = (int)($this->id_operating_system);
 		$fields['id_web_browser'] = (int)($this->id_web_browser);
@@ -179,7 +179,7 @@ class GuestCore extends ObjectModel
 	public function mergeWithCustomer($id_guest, $id_customer)
 	{
 		// Since the guests are merged, the guest id in the connections table must be changed too
-		Db::getInstance()->Execute('
+		Db::getInstance()->execute('
 		UPDATE `'._DB_PREFIX_.'connections` c
 		SET c.`id_guest` = '.(int)($id_guest).'
 		WHERE c.`id_guest` = '.(int)($this->id));

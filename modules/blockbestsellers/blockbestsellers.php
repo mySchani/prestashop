@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 	
 class BlockBestSellers extends Module
@@ -78,7 +78,7 @@ class BlockBestSellers extends Module
 	public function displayForm()
 	{
 		return '
-		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Always display block').'</label>
@@ -99,20 +99,25 @@ class BlockBestSellers extends Module
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
 
-		global $smarty;
 		$currency = new Currency((int)($params['cookie']->id_currency));
 		$bestsellers = ProductSale::getBestSalesLight((int)($params['cookie']->id_lang), 0, 5);
+		
 		if (!$bestsellers AND !Configuration::get('PS_BLOCK_BESTSELLERS_DISPLAY'))
 			return;
 		$best_sellers = array();
-		foreach ($bestsellers AS $bestseller)
-		{
-			$bestseller['price'] = Tools::displayPrice(Product::getPriceStatic((int)($bestseller['id_product'])), $currency);
-			$best_sellers[] = $bestseller;
-		}
-		$smarty->assign(array(
+
+		if($bestsellers)
+			foreach ($bestsellers AS $bestseller)
+			{
+				$bestseller['price'] = Tools::displayPrice(Product::getPriceStatic((int)($bestseller['id_product'])), $currency);
+				$best_sellers[] = $bestseller;
+			}
+
+		$this->context->smarty->assign(array(
 			'best_sellers' => $best_sellers,
-			'mediumSize' => Image::getSize('medium')));
+			'mediumSize' => Image::getSize('medium'),
+			'smallSize' => Image::getSize('small')
+		));
 		return $this->display(__FILE__, 'blockbestsellers.tpl');
 	}
 	
@@ -120,13 +125,36 @@ class BlockBestSellers extends Module
 	{
 		return $this->hookRightColumn($params);
 	}
-	
 
 	public function hookHeader($params)
 	{
 		if (Configuration::get('PS_CATALOG_MODE'))
 			return ;
-		Tools::addCSS(($this->_path).'blockbestsellers.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'blockbestsellers.css', 'all');
+	}
+	
+	public function hookHome($params)
+	{
+		if (Configuration::get('PS_CATALOG_MODE'))
+			return ;
+
+		$currency = new Currency((int)($params['cookie']->id_currency));
+		$bestsellers = ProductSale::getBestSalesLight((int)($params['cookie']->id_lang), 0, 4);
+		if (!$bestsellers AND !Configuration::get('PS_BLOCK_BESTSELLERS_DISPLAY'))
+			return;
+		$best_sellers = array();
+		
+		if($bestsellers)
+			foreach ($bestsellers AS $bestseller)
+			{
+				$bestseller['price'] = Tools::displayPrice(Product::getPriceStatic((int)($bestseller['id_product'])), $currency);
+				$best_sellers[] = $bestseller;
+}
+
+		$this->context->smarty->assign(array(
+			'best_sellers' => $best_sellers,
+			'homeSize' => Image::getSize('home')));
+		return $this->display(__FILE__, 'blockbestsellers-home.tpl');
 	}
 }
 

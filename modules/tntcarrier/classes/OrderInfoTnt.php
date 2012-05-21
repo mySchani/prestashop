@@ -11,22 +11,21 @@ class OrderInfoTnt
 	
 	public function getInfo()
 	{
-		$info = Db::getInstance()->ExecuteS('SELECT o.shipping_number, a.lastname, a.firstname, a.address1, a.address2, a.postcode, a.city, a.phone, a.phone_mobile, c.email, c.id_customer, a.company
+		$info = Db::getInstance()->ExecuteS('SELECT o.shipping_number, a.lastname, a.firstname, a.address1, a.address2, a.postcode, a.city, a.phone, c.email, c.id_customer, a.company
 														FROM `'._DB_PREFIX_.'orders` as o, `'._DB_PREFIX_.'address` as a, `'._DB_PREFIX_.'customer` as c
-														WHERE o.id_order = "'.(int)$this->_idOrder.'" AND a.id_address = o.id_address_delivery AND c.id_customer = o.id_customer');
+														WHERE o.id_order = "'.$this->_idOrder.'" AND a.id_address = o.id_address_delivery AND c.id_customer = o.id_customer');
 		if (!$info)
 			return false;
 		$weight = Db::getInstance()->ExecuteS('SELECT p.weight, o.product_quantity
 												FROM `'._DB_PREFIX_.'order_detail` as o, `'._DB_PREFIX_.'product` as p
-												WHERE o.id_order = "'.(int)$this->_idOrder.'" AND p.id_product = o.product_id');
-		$option = Db::getInstance()->getRow('SELECT t.option 
+												WHERE o.id_order = "'.$this->_idOrder.'" AND p.id_product = o.product_id');
+		$option = Db::getInstance()->ExecuteS('SELECT t.option 
 												FROM `'._DB_PREFIX_.'tnt_carrier_option` as t , `'._DB_PREFIX_.'orders` as o
-												WHERE t.id_carrier = o.id_carrier AND o.id_order = "'.(int)$this->_idOrder.'"');
-		if ($option != null && strpos($option['option'], "D") !== false)
-			$dropOff = Db::getInstance()->getRow('SELECT d.code, d.name, d.address, d.zipcode, d.city, d.due_date
+												WHERE t.id_carrier = o.id_carrier AND o.id_order = "'.$this->_idOrder.'"');
+		if ($option != null && strpos($option[0]['option'], "D") !== false)
+			$dropOff = Db::getInstance()->ExecuteS('SELECT d.code, d.name, d.address, d.zipcode, d.city
 												FROM `'._DB_PREFIX_.'tnt_carrier_drop_off` as d , `'._DB_PREFIX_.'orders` as o
-												WHERE d.id_cart = o.id_cart AND o.id_order = "'.(int)$this->_idOrder.'"');
-		$dropDate = Db::getInstance()->getValue('SELECT d.due_date FROM `'._DB_PREFIX_.'tnt_carrier_drop_off` as d, `'._DB_PREFIX_.'orders` as o WHERE o.id_order = "'.(int)$this->_idOrder.'" AND d.id_cart = o.id_cart');
+												WHERE d.id_cart = o.id_cart AND o.id_order = "'.$this->_idOrder.'"');
 		$w = 0;
 		$tooBig = false;
 		foreach ($weight as $key => $val)
@@ -45,44 +44,22 @@ class OrderInfoTnt
 				$val['product_quantity']--;
 			}
 		}
-
 		$info[1]['weight'][] = (string)($w);
-
-		$info[5] = array('saturday' => false);
-
-		if ($dropDate != null)
-		{
-			if (date("w", strtotime($dropDate)) == 6 && date('w', strtotime('now')) == 5)
-			{
-				$next_day = date("Y-m-d", strtotime('now'));
-				$info[5] = array('saturday' => true);
-			}
-			else if (date("w", strtotime($dropDate)) == 6)
-				$next_day = date("Y-m-d", strtotime($dropDate.' + 2 days'));
-			else if (date("w", strtotime($dropDate)) == 0)
-				$next_day = date("Y-m-d", strtotime($dropDate.' + 1 day'));
-			else
-				$next_day = date("Y-m-d", strtotime($dropDate));
-		}
+		
+		if (date("N") == 5)
+			$next_day = date("Y-m-d", mktime(0, 0, 0, date("m")  , date("d")+3, date("Y")));
+        elseif (date("N") == 6)
+            $next_day = date("Y-m-d", mktime(0, 0, 0, date("m")  , date("d")+2, date("Y")));
 		else
-			$next_day = '';
+			$next_day  = date("Y-m-d", mktime(0, 0, 0, date("m")  , date("d")+1, date("Y")));
 		$newDate = Tools::getValue('dateErrorOrder');
 		$info[2] = array('delivery_date' => ($newDate != '' ? $newDate : $next_day));
 		if ($option)
-		{
-			if (strpos($option['option'], 'S') !== false)
-				$info[3] = array('option' => str_replace('S', '', $option['option']));
-			else
-				$info[3] = array('option' => $option['option']);
-		}
-		if (isset($dropOff) && !empty($dropOff))
-			$info[4] = $dropOff;
+			$info[3] = array('option' => $option[0]['option']);
+		if (isset($dropOff))
+			$info[4] = $dropOff[0];
 		else
 			$info[4] = null;
-		//var_dump($info);
-		$info[0]['id_customer'] = $this->_idOrder;
-		$info[0]['phone'] = str_replace('.', '', $info[0]['phone']);
-		$info[0]['phone_mobile'] = str_replace('.', '', $info[0]['phone_mobile']);
 		return $info;
 	}
 	

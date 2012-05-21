@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Gsitemap extends Module
@@ -37,10 +37,10 @@ class Gsitemap extends Module
 	{
 		$this->name = 'gsitemap';
 		$this->tab = 'seo';
-		$this->version = '1.6';
+		$this->version = '1.7';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
+
 		parent::__construct();
 
 		$this->displayName = $this->l('Google sitemap');
@@ -55,7 +55,7 @@ class Gsitemap extends Module
 		file_put_contents(GSITEMAP_FILE, '');
 		return parent::uninstall();
 	}
-	
+
 	private function _postValidation()
 	{
 		file_put_contents(GSITEMAP_FILE, '');
@@ -64,7 +64,7 @@ class Gsitemap extends Module
 		else
 			fclose($fp);
 	}
-	
+
 	private function getUrlWith($url, $key, $value)
 	{
 		if (empty($value))
@@ -79,7 +79,7 @@ class Gsitemap extends Module
 		Configuration::updateValue('GSITEMAP_ALL_CMS', (int)Tools::getValue('GSITEMAP_ALL_CMS'));
 		Configuration::updateValue('GSITEMAP_ALL_PRODUCTS', (int)Tools::getValue('GSITEMAP_ALL_PRODUCTS'));
 
-		if (Tools::isMultiShopActivated())
+		if (Shop::isFeatureActive())
 			$res = $this->generateSitemapIndex();
 		else
 			$res = $this->generateSitemap(Configuration::get('PS_SHOP_DEFAULT'), GSITEMAP_FILE);
@@ -88,10 +88,10 @@ class Gsitemap extends Module
         $this->_html .= $res ? $this->l('Sitemap file generated') : $this->l('Error while creating sitemap file');
         $this->_html .= '</h3>';
     }
-    
+
     /**
      * Generate sitemap index to reference the sitemap of each shop
-     * 
+     *
      * @return bool
      */
     private function generateSitemapIndex()
@@ -104,15 +104,15 @@ xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 XML;
     	$xml = new SimpleXMLElement($xmlString);
 
-    	$sql = 'SELECT s.id_shop, su.domain, su.domain_ssl, su.uri
+    	$sql = 'SELECT s.id_shop, su.domain, su.domain_ssl, CONCAT(su.physical_uri, su.virtual_uri) as uri
     			FROM '._DB_PREFIX_.'shop s
     			INNER JOIN '._DB_PREFIX_.'shop_url su ON s.id_shop = su.id_shop AND su.main = 1
     			WHERE s.active = 1
     				AND s.deleted = 0
     				AND su.active = 1';
-    	if (!$result = Db::getInstance()->ExecuteS($sql))
+    	if (!$result = Db::getInstance()->executeS($sql))
     		return false;
-    	
+
     	$res = true;
     	foreach ($result as $row)
     	{
@@ -125,14 +125,14 @@ XML;
     			$this->_addSitemapIndexNode($xml, 'http://'.$row['domain'].(($row['uri']) ? $row['uri'] : '/').$filename, date('Y-m-d'));
     		$res &= $last;
     	}
-    	
+
 		$fp = fopen(GSITEMAP_FILE, 'w');
 		fwrite($fp, $xml->asXML());
 		fclose($fp);
-		
+
 		return $res && file_exists(GSITEMAP_FILE);
     }
-    
+
     /**
      * Generate a sitemap for a shop
      *
@@ -142,88 +142,27 @@ XML;
      */
     private function generateSitemap($shopID, $filename = '', $replaceUrl = array())
     {
-		$link = new Link();
 		$langs = Language::getLanguages();
 		$shop = new Shop($shopID);
 		if (!$shop->id)
 			return false;
-				
+
 		$xmlString = <<<XML
 <?xml version="1.0" encoding="UTF-8" ?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
 xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
 </urlset>
 XML;
-		
+
 		$xml = new SimpleXMLElement($xmlString);
 
-		if (Configuration::get('PS_REWRITING_SETTINGS') AND sizeof($langs) > 1)
+		if (Configuration::get('PS_REWRITING_SETTINGS') && count($langs) > 1)
 			foreach($langs as $lang)
 				$this->_addSitemapNode($xml, Tools::getShopDomain(true, true).__PS_BASE_URI__.$lang['iso_code'].'/', '1.00', 'daily', date('Y-m-d'));
 		else
 			$this->_addSitemapNode($xml, Tools::getShopDomain(true, true).__PS_BASE_URI__, '1.00', 'daily', date('Y-m-d'));
-		
-		/* CMS Generator */
-		if (Configuration::get('GSITEMAP_ALL_CMS') OR !Module::isInstalled('blockcms'))
-			$sql = 'SELECT DISTINCT '.(Configuration::get('PS_REWRITING_SETTINGS') ? 'cl.id_cms, cl.link_rewrite, cl.id_lang' : 'cl.id_cms').'
-					FROM '._DB_PREFIX_.'cms_lang cl
-					LEFT JOIN '._DB_PREFIX_.'lang l ON (cl.id_lang = l.id_lang)
-					LEFT JOIN '._DB_PREFIX_.'cms_shop cs ON cs.id_cms = cl.id_cms
-					WHERE l.`active` = 1
-						AND cs.id_shop = '.$shopID.'
-					ORDER BY cl.id_cms, cl.id_lang ASC';
-		else if (Module::isInstalled('blockcms'))
-			$sql = 'SELECT DISTINCT '.(Configuration::get('PS_REWRITING_SETTINGS') ? 'cl.id_cms, cl.link_rewrite, cl.id_lang' : 'cl.id_cms').'
-					FROM '._DB_PREFIX_.'cms_block_page b
-					LEFT JOIN '._DB_PREFIX_.'cms_lang cl ON (b.id_cms = cl.id_cms)
-					LEFT JOIN '._DB_PREFIX_.'lang l ON (cl.id_lang = l.id_lang)
-					LEFT JOIN '._DB_PREFIX_.'cms_shop cs ON cs.id_cms = cl.id_cms
-					WHERE l.`active` = 1
-						AND cs.id_shop = '.$shopID.'
-					ORDER BY cl.id_cms, cl.id_lang ASC';
-		
-		$cmss = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
-		foreach ($cmss AS $cms)
-		{
-			$tmpLink = Configuration::get('PS_REWRITING_SETTINGS') ? $link->getCMSLink((int)$cms['id_cms'], $cms['link_rewrite'], false, (int)$cms['id_lang']) : $link->getCMSLink((int)$cms['id_cms']);
-			$this->_addSitemapNode($xml, $tmpLink, '0.8', 'daily');				
-		}
-		
-		/* Categories Generator */
-		$limits = Category::getInterval($shop->id_category);
-		if (Configuration::get('PS_REWRITING_SETTINGS'))
-		{
-			$sql = 'SELECT c.id_category, c.level_depth, link_rewrite, DATE_FORMAT(IF(date_upd,date_upd,date_add), \'%Y-%m-%d\') AS date_upd, cl.id_lang
-					FROM '._DB_PREFIX_.'category c
-					LEFT JOIN '._DB_PREFIX_.'category_lang cl ON c.id_category = cl.id_category AND cl.id_shop = '.$shopID.'
-					LEFT JOIN '._DB_PREFIX_.'lang l ON cl.id_lang = l.id_lang
-					WHERE l.`active` = 1
-						AND c.`active` = 1
-						AND c.id_category != 1
-						AND nleft >= '.$limits['nleft'].'
-						AND nright <= '.$limits['nright'].'
-					ORDER BY cl.id_category, cl.id_lang ASC';
-			$categories = Db::getInstance()->ExecuteS($sql);
-		}
-		else
-		{
-			$sql = 'SELECT c.id_category, c.level_depth, DATE_FORMAT(IF(date_upd,date_upd,date_add), \'%Y-%m-%d\') AS date_upd
-					FROM '._DB_PREFIX_.'category c
-					WHERE nleft >= '.$limits['nleft'].'
-						AND nright <= '.$limits['nright'].'
-					ORDER BY c.id_category ASC';
-			$categories = Db::getInstance()->ExecuteS($sql);			
-		}
-		
-		foreach($categories as $category)
-		{
-			if (($priority = 0.9 - ($category['level_depth'] / 10)) < 0.1)
-				$priority = 0.1;
-			
-			$tmpLink = Configuration::get('PS_REWRITING_SETTINGS') ? $link->getCategoryLink((int)$category['id_category'], $category['link_rewrite'], (int)$category['id_lang']) : $link->getCategoryLink((int)$category['id_category']);	
-			$this->_addSitemapNode($xml, $tmpLink, $priority, 'weekly', substr($category['date_upd'], 0, 10));
-		}
 
+		/* Product Generator */
 		$sql = 'SELECT p.id_product, pl.link_rewrite, DATE_FORMAT(IF(date_upd,date_upd,date_add), \'%Y-%m-%d\') date_upd, pl.id_lang, cl.`link_rewrite` category, ean13, i.id_image, il.legend legend_image, (
 					SELECT MIN(level_depth)
 					FROM '._DB_PREFIX_.'product p2
@@ -235,56 +174,118 @@ XML;
 				LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_shop ='.$shopID.')
 				LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (p.id_category_default = cl.id_category AND pl.id_lang = cl.id_lang AND cl.id_shop = '.$shopID.')
 				LEFT JOIN '._DB_PREFIX_.'image i ON p.id_product = i.id_product
-				LEFT JOIN '._DB_PREFIX_.'image_lang il ON (i.id_image = il.id_image AND il.id_lang = pl.id_lang)
+				LEFT JOIN '._DB_PREFIX_.'image_lang il ON (i.id_image = il.id_image)
 				LEFT JOIN '._DB_PREFIX_.'lang l ON (pl.id_lang = l.id_lang)
 				WHERE l.`active` = 1
 					AND p.`active` = 1
 					AND ps.id_shop = '.$shopID.'
 				'.(Configuration::get('GSITEMAP_ALL_PRODUCTS') ? '' : 'HAVING level_depth IS NOT NULL').'
 				ORDER BY pl.id_product, pl.id_lang ASC';
-		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql);
-				
-		foreach($products AS $product)
+		$products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
+
+		$tmp = null;
+		$res = null;
+		foreach ($products as $product)
+		{
+			if ($tmp == $product['id_product'])
+				$res[$tmp]['images'] []= array('id_image' => $product['id_image'], 'legend_image' => $product['legend_image']);
+			else
+			{
+				$tmp = $product['id_product'];
+				$res[$tmp] = $product;
+				unset($res[$tmp]['id_image'], $res[$tmp]['legend_image']);
+				$res[$tmp]['images'] []= array('id_image' => $product['id_image'], 'legend_image' => $product['legend_image']);
+			}
+		}
+
+		foreach ($res as $product)
 		{
 			if (($priority = 0.7 - ($product['level_depth'] / 10)) < 0.1)
 				$priority = 0.1;
 
-			$tmpLink = $link->getProductLink((int)($product['id_product']), $product['link_rewrite'], $product['category'], $product['ean13'], (int)($product['id_lang']));
+			$tmpLink = $this->context->link->getProductLink((int)($product['id_product']), $product['link_rewrite'], $product['category'], $product['ean13'], (int)($product['id_lang']));
 			$sitemap = $this->_addSitemapNode($xml, $tmpLink, $priority, 'weekly', substr($product['date_upd'], 0, 10));
 			$sitemap = $this->_addSitemapNodeImage($sitemap, $product);
 		}
-		
+
+		/* Categories Generator */
+		if (Configuration::get('PS_REWRITING_SETTINGS'))
+			$categories = Db::getInstance()->ExecuteS('
+			SELECT c.id_category, c.level_depth, link_rewrite, DATE_FORMAT(IF(date_upd,date_upd,date_add), \'%Y-%m-%d\') AS date_upd, cl.id_lang
+			FROM '._DB_PREFIX_.'category c
+			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON c.id_category = cl.id_category
+			LEFT JOIN '._DB_PREFIX_.'lang l ON cl.id_lang = l.id_lang
+			WHERE l.`active` = 1 AND c.`active` = 1 AND c.id_category != 1
+			ORDER BY cl.id_category, cl.id_lang ASC');
+		else
+			$categories = Db::getInstance()->ExecuteS(
+			'SELECT c.id_category, c.level_depth, DATE_FORMAT(IF(date_upd,date_upd,date_add), \'%Y-%m-%d\') AS date_upd
+			FROM '._DB_PREFIX_.'category c
+			ORDER BY c.id_category ASC');
+
+
+		foreach($categories as $category)
+		{
+			if (($priority = 0.9 - ($category['level_depth'] / 10)) < 0.1)
+				$priority = 0.1;
+
+			$tmpLink = Configuration::get('PS_REWRITING_SETTINGS') ? $link->getCategoryLink((int)$category['id_category'], $category['link_rewrite'], (int)$category['id_lang']) : $link->getCategoryLink((int)$category['id_category']);
+			$this->_addSitemapNode($xml, htmlspecialchars($tmpLink), $priority, 'weekly', substr($category['date_upd'], 0, 10));
+		}
+
+		/* CMS Generator */
+		if (Configuration::get('GSITEMAP_ALL_CMS') || !Module::isInstalled('blockcms'))
+			$sql_cms = '
+			SELECT DISTINCT '.(Configuration::get('PS_REWRITING_SETTINGS') ? 'cl.id_cms, cl.link_rewrite, cl.id_lang' : 'cl.id_cms').
+			' FROM '._DB_PREFIX_.'cms_lang cl
+			LEFT JOIN '._DB_PREFIX_.'lang l ON (cl.id_lang = l.id_lang)
+			WHERE l.`active` = 1
+			ORDER BY cl.id_cms, cl.id_lang ASC';
+		else if (Module::isInstalled('blockcms'))
+			$sql_cms = '
+			SELECT DISTINCT '.(Configuration::get('PS_REWRITING_SETTINGS') ? 'cl.id_cms, cl.link_rewrite, cl.id_lang' : 'cl.id_cms').
+			' FROM '._DB_PREFIX_.'cms_block_page b
+			LEFT JOIN '._DB_PREFIX_.'cms_lang cl ON (b.id_cms = cl.id_cms)
+			LEFT JOIN '._DB_PREFIX_.'lang l ON (cl.id_lang = l.id_lang)
+			WHERE l.`active` = 1
+			ORDER BY cl.id_cms, cl.id_lang ASC';
+
+		$cmss = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($sql_cms);
+		foreach($cmss as $cms)
+		{
+			$tmpLink = Configuration::get('PS_REWRITING_SETTINGS') ? $link->getCMSLink((int)$cms['id_cms'], $cms['link_rewrite'], false, (int)$cms['id_lang']) : $link->getCMSLink((int)$cms['id_cms']);
+			$this->_addSitemapNode($xml, $tmpLink, '0.8', 'daily');
+		}
+
 		/* Add classic pages (contact, best sales, new products...) */
 		$pages = array(
-			'authentication' => true, 
-			'best-sales' => false, 
-			'contact' => true, 
-			'discount' => false, 
-			'index' => false, 
-			'manufacturer' => false, 
-			'new-products' => false, 
-			'prices-drop' => false, 
-			'supplier' => false, 
-			'store' => false);
-		
+			'supplier' => false,
+			'manufacturer' => false,
+			'new-products' => false,
+			'prices-drop' => false,
+			'stores' => false,
+			'authentication' => true,
+			'best-sales' => false,
+			'contact-form' => true);
+
 		// Don't show suppliers and manufacturers if they are disallowed
 		if (!Module::getInstanceByName('blockmanufacturer')->id && !Configuration::get('PS_DISPLAY_SUPPLIERS'))
 			unset($pages['manufacturer']);
-			
+
 		if (!Module::getInstanceByName('blocksupplier')->id && !Configuration::get('PS_DISPLAY_SUPPLIERS'))
 			unset($pages['supplier']);
 
 		// Generate nodes for pages
-		if(Configuration::get('PS_REWRITING_SETTINGS'))		
-			foreach ($pages AS $page => $ssl)		
+		if(Configuration::get('PS_REWRITING_SETTINGS'))
+			foreach ($pages as $page => $ssl)
 				foreach($langs as $lang)
-					$this->_addSitemapNode($xml, $link->getPageLink($page, $ssl, $lang['id_lang']), '0.5', 'monthly');
+					$this->_addSitemapNode($xml, $this->context->link->getPageLink($page, $ssl, $lang['id_lang']), '0.5', 'monthly');
 		else
-			foreach($pages AS $page => $ssl)
-				$this->_addSitemapNode($xml, $link->getPageLink($page, $ssl), '0.5', 'monthly');
+			foreach($pages as $page => $ssl)
+				$this->_addSitemapNode($xml, $this->context->link->getPageLink($page, $ssl), '0.5', 'monthly');
 
         $xmlString = $xml->asXML();
-        
+
         // Replace URL in XML strings by real shops URL
         if ($replaceUrl)
         	$xmlString = str_replace(array(Tools::getShopDomain(true), Tools::getShopDomainSsl(true)), $replaceUrl, $xmlString);
@@ -292,20 +293,20 @@ XML;
         $fp = fopen($filename, 'w');
         fwrite($fp, $xmlString);
         fclose($fp);
-        
+
         return file_exists($filename);
     }
-    
+
 	private function _addSitemapIndexNode($xml, $loc, $last_mod)
-	{		
+	{
 		$sitemap = $xml->addChild('sitemap');
 		$sitemap->addChild('loc', htmlspecialchars($loc));
 		$sitemap->addChild('lastmod', $last_mod);
 		return $sitemap;
 	}
-	
+
 	private function _addSitemapNode($xml, $loc, $priority, $change_freq, $last_mod = NULL)
-	{		
+	{
 		$sitemap = $xml->addChild('url');
 		$sitemap->addChild('loc', htmlspecialchars($loc));
 		$sitemap->addChild('priority',  $priority);
@@ -314,28 +315,30 @@ XML;
 		$sitemap->addChild('changefreq', $change_freq);
 		return $sitemap;
 	}
-	
+
 	private function _addSitemapNodeImage($xml, $product)
 	{
-		$link = new Link();	
-		$image = $xml->addChild('image', null, 'http://www.google.com/schemas/sitemap-image/1.1');
-		$image->addChild('loc', htmlspecialchars($link->getImageLink($product['link_rewrite'], (int)$product['id_product'].'-'.(int)$product['id_image'])), 'http://www.google.com/schemas/sitemap-image/1.1');
-		
-		$legend_image = preg_replace('/(&+)/i', '&amp;', $product['legend_image']);
-		$image->addChild('caption', $legend_image, 'http://www.google.com/schemas/sitemap-image/1.1');
-		$image->addChild('title', $legend_image, 'http://www.google.com/schemas/sitemap-image/1.1');
+		foreach ($product['images'] as $img)
+		{
+			$image = $xml->addChild('image', null, 'http://www.google.com/schemas/sitemap-image/1.1');
+			$image->addChild('loc', htmlspecialchars($this->context->link->getImageLink($product['link_rewrite'], (int)$product['id_product'].'-'.(int)$img['id_image'])), 'http://www.google.com/schemas/sitemap-image/1.1');
+
+			$legend_image = preg_replace('/(&+)/i', '&amp;', $img['legend_image']);
+			$image->addChild('caption', $legend_image, 'http://www.google.com/schemas/sitemap-image/1.1');
+			$image->addChild('title', $legend_image, 'http://www.google.com/schemas/sitemap-image/1.1');
+		}
 	}
 
     private function _displaySitemap()
     {
-        if (file_exists(GSITEMAP_FILE) AND filesize(GSITEMAP_FILE))
-        {			
+		if (file_exists(GSITEMAP_FILE) && filesize(GSITEMAP_FILE))
+        {
             $fp = fopen(GSITEMAP_FILE, 'r');
             $fstat = fstat($fp);
             fclose($fp);
             $xml = simplexml_load_file(GSITEMAP_FILE);
-			
-            $nbPages = sizeof($xml->url);
+
+			$nbPages = count($xml->url);
 
             $this->_html .= '<p>'.$this->l('Your Google sitemap file is online at the following address:').'<br />
             <a href="'.Tools::getShopDomain(true, true).__PS_BASE_URI__.'sitemap.xml" target="_blank"><b>'.Tools::getShopDomain(true, true).__PS_BASE_URI__.'sitemap.xml</b></a></p><br />';
@@ -360,19 +363,19 @@ XML;
 			value="'.((!file_exists(GSITEMAP_FILE)) ? $this->l('Generate sitemap file') : $this->l('Update sitemap file')).'" />
 		</form>';
 	}
-	
+
 	public function getContent()
 	{
 		$this->_html .= '<h2>'.$this->l('Search Engine Optimization').'</h2>
-		'.$this->l('See').' <a href="https://www.google.com/webmasters/tools/docs/en/about.html" style="font-weight:bold;text-decoration:underline;" target="_blank">
+		'.$this->l('See').' <a href="http://www.google.com/support/webmasters/bin/answer.py?hl=en&answer=156184&from=40318&rd=1" style="font-weight:bold;text-decoration:underline;" target="_blank">
 		'.$this->l('this page').'</a> '.$this->l('for more information').'<br /><br />';
 		if (Tools::isSubmit('btnSubmit'))
 		{
 			$this->_postValidation();
-			if (!sizeof($this->_postErrors))
+			if (!count($this->_postErrors))
 				$this->_postProcess();
 			else
-				foreach ($this->_postErrors AS $err)
+				foreach ($this->_postErrors as $err)
 					$this->_html .= '<div class="alert error">'.$err.'</div>';
 		}
 

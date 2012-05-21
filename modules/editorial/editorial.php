@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,14 +25,11 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Editorial extends Module
 {
-	/** @var max image size */
-	protected $maxImageSize = 307200;
-
 	public function __construct()
 	{
 		$this->name = 'editorial';
@@ -40,7 +37,7 @@ class Editorial extends Module
 		$this->version = '1.6';
 		$this->author = 'PrestaShop';
 		$this->need_instance = 0;
-		
+
 		parent::__construct();
 
 		$this->displayName = $this->l('Home text editor');
@@ -55,16 +52,16 @@ class Editorial extends Module
 	{
 		if (!parent::install() OR !$this->registerHook('home') OR !$this->registerHook('header'))
 			return false;
-		
-		if (!Db::getInstance()->Execute('
+
+		if (!Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'editorial` (
 		`id_editorial` int(10) unsigned NOT NULL auto_increment,
 		`body_home_logo_link` varchar(255) NOT NULL,
 		PRIMARY KEY (`id_editorial`))
 		ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8'))
 			return false;
-		
-		if (!Db::getInstance()->Execute('
+
+		if (!Db::getInstance()->execute('
 		CREATE TABLE `'._DB_PREFIX_.'editorial_lang` (
 		`id_editorial` int(10) unsigned NOT NULL,
 		`id_lang` int(10) unsigned NOT NULL,
@@ -75,30 +72,33 @@ class Editorial extends Module
 		PRIMARY KEY (`id_editorial`, `id_lang`))
 		ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8'))
 			return false;
-		
-		if (!Db::getInstance()->Execute('
-		INSERT INTO `'._DB_PREFIX_.'editorial`(`id_editorial`, `body_home_logo_link`) 
-		VALUES(1, "http://www.prestashop.com")'))
+
+		if (!Db::getInstance()->execute('
+		INSERT INTO `'._DB_PREFIX_.'editorial`(`body_home_logo_link`)
+		VALUES("http://www.prestashop.com")'))
 			return false;
-		
-		if (!Db::getInstance()->Execute('
-		INSERT INTO `'._DB_PREFIX_.'editorial_lang`(`id_editorial`, `id_lang`, `body_title`, `body_subheading`, `body_paragraph`, `body_logo_subheading`)
-		VALUES(1, 1, "Lorem ipsum dolor sit amet", "Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua", "&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum&lt;/p&gt;", "Excepteur sint prestashop cupidatat non proident")'))
-			return false;
-		
-		if (!Db::getInstance()->Execute('
-		INSERT INTO `'._DB_PREFIX_.'editorial_lang`(`id_editorial`, `id_lang`, `body_title`, `body_subheading`, `body_paragraph`, `body_logo_subheading`)
-		VALUES(1, 2, "Lorem ipsum dolor sit amet", "Excepteur sint occaecat cupidatat non proident", "&lt;p&gt;Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum&lt;/p&gt;", "Lorem ipsum presta shop amet")'))
-			return false;
-		return true;
+
+		$id_editorial = Db::getInstance()->Insert_ID();
+		$result = true;
+		foreach (Language::getLanguages(false) as $lang)
+			$result &= Db::getInstance()->autoExecute(_DB_PREFIX_.'editorial_lang', array(
+				'id_editorial' =>			$id_editorial,
+				'id_lang' =>				$lang['id_lang'],
+				'body_title' =>				'Lorem ipsum dolor sit amet',
+				'body_subheading' =>		'Excepteur sint occaecat cupidatat non proident',
+				'body_paragraph' =>			'<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>',
+				'body_logo_subheading' =>	'Lorem ipsum presta shop amet',
+			), 'INSERT');
+
+		return $result;
 	}
-	
+
 	public function uninstall()
 	{
 		if (!parent::uninstall())
 			return false;
-		return (Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'editorial`') AND
-				Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'editorial_lang`'));
+		return (Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'editorial`') AND
+				Db::getInstance()->execute('DROP TABLE `'._DB_PREFIX_.'editorial_lang`'));
 	}
 
 	public function putContent($xml_data, $key, $field, $forbidden, $section)
@@ -117,8 +117,7 @@ class Editorial extends Module
 
 	public function getContent()
 	{
-		global $cookie;
-		
+
 		/* display the module name */
 		$this->_html = '<h2>'.$this->displayName.'</h2>';
 		$errors = '';
@@ -132,7 +131,7 @@ class Editorial extends Module
 			{
 				unlink(dirname(__FILE__).'/homepage_logo.jpg');
 				Configuration::updateValue('EDITORIAL_IMAGE_DISABLE', 1);
-				Tools::redirectAdmin('index.php?tab=AdminModules&configure='.$this->name.'&token='.Tools::getAdminToken('AdminModules'.(int)(Tab::getIdFromClassName('AdminModules')).(int)($cookie->id_employee)));
+				Tools::redirectAdmin('index.php?tab=AdminModules&configure='.$this->name.'&token='.Tools::getAdminToken('AdminModules'.(int)(Tab::getIdFromClassName('AdminModules')).(int)$this->context->employee->id));
 			}
 			$this->_html .= $errors;
 		}
@@ -142,7 +141,7 @@ class Editorial extends Module
 		{
 			// Forbidden key
 			$forbidden = array('submitUpdate');
-			
+
 			$editorial = new EditorialClass(1);
 			$editorial->copyFromPost();
 			$editorial->update();
@@ -153,7 +152,7 @@ class Editorial extends Module
 				Configuration::set('PS_IMAGE_GENERATION_METHOD', 1);
 				if(file_exists(dirname(__FILE__).'/homepage_logo.jpg'))
 					unlink(dirname(__FILE__).'/homepage_logo.jpg');
-				if ($error = checkImage($_FILES['body_homepage_logo'], $this->maxImageSize))
+				if ($error = checkImage($_FILES['body_homepage_logo']))
 					$errors .= $error;
 				elseif (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($_FILES['body_homepage_logo']['tmp_name'], $tmpName))
 					return false;
@@ -174,27 +173,24 @@ class Editorial extends Module
 
 		/* display the editorial's form */
 		$this->_displayForm();
-	
+
 		return $this->_html;
 	}
 
 	private function _displayForm()
 	{
-		global $cookie;
 		/* Languages preliminaries */
 		$defaultLanguage = (int)(Configuration::get('PS_LANG_DEFAULT'));
 		$languages = Language::getLanguages(false);
-		$iso = Language::getIsoById((int)($cookie->id_lang));
+		$iso = $this->context->language->iso_code;
 		$divLangName = 'title¤subheading¤cpara¤logo_subheading';
 
 		$editorial = new EditorialClass(1);
 		// TinyMCE
-		global $cookie;
-		$iso = Language::getIsoById((int)($cookie->id_lang));
 		$isoTinyMCE = (file_exists(_PS_ROOT_DIR_.'/js/tiny_mce/langs/'.$iso.'.js') ? $iso : 'en');
 		$ad = dirname($_SERVER["PHP_SELF"]);
 		$this->_html .=  '
-			<script type="text/javascript">	
+			<script type="text/javascript">
 			var iso = \''.$isoTinyMCE.'\' ;
 			var pathCSS = \''._THEME_CSS_DIR_.'\' ;
 			var ad = \''.$ad.'\' ;
@@ -203,12 +199,12 @@ class Editorial extends Module
 			<script type="text/javascript" src="'.__PS_BASE_URI__.'js/tinymce.inc.js"></script>';
 		$this->_html .= '
 		<script type="text/javascript">id_language = Number('.$defaultLanguage.');</script>
-		<form method="post" action="'.$_SERVER['REQUEST_URI'].'" enctype="multipart/form-data">
+		<form method="post" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" enctype="multipart/form-data">
 			<fieldset style="width: 905px;">
 				<legend><img src="'.$this->_path.'logo.gif" alt="" title="" /> '.$this->displayName.'</legend>
 				<label>'.$this->l('Main title').'</label>
 				<div class="margin-form">';
-				
+
 				foreach ($languages as $language)
 				{
 					$this->_html .= '
@@ -217,14 +213,14 @@ class Editorial extends Module
 					</div>';
 				}
 				$this->_html .= $this->displayFlags($languages, $defaultLanguage, $divLangName, 'title', true);
-				
-				
+
+
 		$this->_html .= '
 					<p class="clear">'.$this->l('Appears along top of homepage').'</p>
 				</div>
 				<label>'.$this->l('Subheading').'</label>
 				<div class="margin-form">';
-				
+
 				foreach ($languages as $language)
 				{
 					$this->_html .= '
@@ -233,7 +229,7 @@ class Editorial extends Module
 					</div>';
 				 }
 				$this->_html .= $this->displayFlags($languages, $defaultLanguage, $divLangName, 'subheading', true);
-				
+
 		$this->_html .= '
 					<div class="clear"></div>
 				</div>
@@ -247,9 +243,9 @@ class Editorial extends Module
 						<textarea class="rte" cols="70" rows="30" id="body_paragraph_'.$language['id_lang'].'" name="body_paragraph_'.$language['id_lang'].'">'.(isset($editorial->body_paragraph[$language['id_lang']]) ? $editorial->body_paragraph[$language['id_lang']] : '').'</textarea>
 					</div>';
 				 }
-				
+
 				$this->_html .= $this->displayFlags($languages, $defaultLanguage, $divLangName, 'cpara', true);
-				
+
 				$this->_html .= '
 					<p class="clear">'.$this->l('Text of your choice; for example, explain your mission, highlight a new product, or describe a recent event.').'</p>
 				</div>
@@ -259,13 +255,13 @@ class Editorial extends Module
 						$this->_html .= '<div id="image" >
 							<img src="'.$this->_path.'homepage_logo.jpg?t='.time().'" />
 							<p align="center">'.$this->l('Filesize').' '.(filesize(dirname(__FILE__).'/homepage_logo.jpg') / 1000).'kb</p>
-							<a href="'.$_SERVER['REQUEST_URI'].'&deleteImage" onclick="return confirm(\''.$this->l('Are you sure?', __CLASS__, true, false).'\');">
+							<a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&deleteImage" onclick="return confirm(\''.$this->l('Are you sure?', __CLASS__, true, false).'\');">
 							<img src="../img/admin/delete.gif" alt="'.$this->l('Delete').'" /> '.$this->l('Delete').'</a>
 						</div>';
-						
+
 				$this->_html .= '<input type="file" name="body_homepage_logo" />
 					<p style="clear: both">'.$this->l('Will appear next to the Introductory Text above').'</p>
-					
+
 				</div>
 				<label>'.$this->l('Homepage logo link').'</label>
 				<div class="margin-form">
@@ -274,7 +270,7 @@ class Editorial extends Module
 				</div>
 				<label>'.$this->l('Homepage logo subheading').'</label>
 				<div class="margin-form">';
-				
+
 				foreach ($languages as $language)
 				{
 					$this->_html .= '
@@ -282,9 +278,9 @@ class Editorial extends Module
 						<input type="text" name="body_logo_subheading_'.$language['id_lang'].'" id="logo_subheading_'.$language['id_lang'].'" size="64" value="'.(isset($editorial->body_logo_subheading[$language['id_lang']]) ? $editorial->body_logo_subheading[$language['id_lang']] : '').'" />
 					</div>';
 				 }
-				
+
 				$this->_html .= $this->displayFlags($languages, $defaultLanguage, $divLangName, 'logo_subheading', true);
-				
+
 				$this->_html .= '
 					<div class="clear"></div>
 				</div>
@@ -296,23 +292,22 @@ class Editorial extends Module
 
 	public function hookHome($params)
 	{
-		global $cookie, $smarty;
-		
-		$editorial = new EditorialClass(1, (int)$cookie->id_lang);
-		$smarty->assign(array(
+
+		$editorial = new EditorialClass(1, $this->context->language->id);
+		$this->context->smarty->assign(array(
 			'editorial' => $editorial,
-			'default_lang' => (int)$cookie->id_lang,
+			'default_lang' => (int)$this->context->language->id,
 			'image_width' => Configuration::get('EDITORIAL_IMAGE_WIDTH'),
 			'image_height' => Configuration::get('EDITORIAL_IMAGE_HEIGHT'),
-			'id_lang' => $cookie->id_lang,
+			'id_lang' => $this->context->language->id,
 			'homepage_logo' => !Configuration::get('EDITORIAL_IMAGE_DISABLE') && file_exists('modules/editorial/homepage_logo.jpg'),
 			'image_path' => $this->_path.'homepage_logo.jpg'
 		));
 		return $this->display(__FILE__, 'editorial.tpl');
 	}
-	
+
 	public function hookHeader()
 	{
-		Tools::addCSS(($this->_path).'editorial.css', 'all');
+		$this->context->controller->addCSS(($this->_path).'editorial.css', 'all');
 	}
 }

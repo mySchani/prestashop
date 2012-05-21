@@ -1,4 +1,4 @@
-2007-2012 PrestaShop
+2007-2011 PrestaShop 
 
 NOTICE OF LICENSE
 
@@ -17,12 +17,12 @@ versions in the future. If you wish to customize PrestaShop for your
 needs please refer to http://www.prestashop.com for more information.
 
 @author PrestaShop SA <contact@prestashop.com>
-@copyright 2007-2012 PrestaShop SA
+@copyright 2007-2011 PrestaShop SA
 @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
 International Registered Trademark & Property of PrestaShop SA
 
-NAME: Prestashop 1.4.7.2
-VERSION: 1.4.7.2
+NAME: Prestashop 1.5.0.1
+VERSION: 1.5.0.1
 
 PREPARATION
 ===========
@@ -59,6 +59,6 @@ FORUMS
 ======
 
 You can also discuss, help and contribute with PrestaShop community on our forums :
-http://www.prestashop.com/forums/
+	http://www.prestashop.com/forums/
 
 Thanks for downloading and using PrestaShop e-commerce Open-source solution !

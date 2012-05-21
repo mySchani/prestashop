@@ -47,7 +47,6 @@
 				<a href="{$product->getLink()}" title="{$product->name|escape:html:'UTF-8'}" class="product_image" >
 					<img src="{$link->getImageLink($product->link_rewrite, $product->id_image, 'home')}" alt="{$product->name|escape:html:'UTF-8'}" width="{$homeSize.width}" height="{$homeSize.height}" />
 				</a>
-
 				{if isset($product->show_price) && $product->show_price && !isset($restricted_country_mode) && !$PS_CATALOG_MODE}
 					<p class="price_container"><span class="price">{convertPrice price=$product->getPrice($taxes_behavior)}</span></p>
 					<div class="product_discount">
@@ -82,7 +81,7 @@
 						</span>
 					{/if}
 				</p>
-					<a class="cmp_remove" href="{$request_uri|replace:$replace_id:''}">{l s='Remove'}</a>
+					<a class="cmp_remove" href="{$link->getPageLink('products-comparison.php')}" rel="ajax_id_product_{$product->id}">{l s='Remove'}</a>
 					<a class="button" href="{$product->getLink()}" title="{l s='View'}">{l s='View'}</a>
 					{if (!$product->hasAttributes() OR (isset($add_prod_display) AND ($add_prod_display == 1))) AND $product->minimal_quantity == 1 AND $product->customizable != 2 AND !$PS_CATALOG_MODE}
 						{if ($product->quantity > 0 OR $product->allow_oosp)}

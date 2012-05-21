@@ -25,7 +25,7 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-if (!defined('_CAN_LOAD_FILES_'))
+if (!defined('_PS_VERSION_'))
 	exit;
 
 class Reverso extends Module
@@ -57,7 +57,7 @@ class Reverso extends Module
 		WHERE `name` = \'createAccountTop\'
 		');
 		if (!$result)
-			if(!Db::getInstance()->Execute('
+			if(!Db::getInstance()->execute('
 			INSERT INTO `'._DB_PREFIX_.'hook` (`name`, `title`, `description`, `position`) 
 			VALUES (\'createAccountTop\', \'Block above the form for create an account\', NULL , \'1\');
 			'))
@@ -84,9 +84,8 @@ class Reverso extends Module
 	
 	public function hookCreateAccountTop($params)
 	{
-		global $smarty;
 		$tag = '<img src='.(Configuration::get('PS_SSL_ENABLED') ? 'https://' : 'http://').'api.reversoform.com/includes/'.(Configuration::get('PS_SSL_ENABLED') ? 'www.reversoform.com/' : '').'js/trans.giff?d='.date('U').' with="0" height="0" />';
-		$smarty->assign(array('reverso_tag' => $tag));
+		$this->context->smarty->assign(array('reverso_tag' => $tag));
 		return $this->display(__FILE__, 'reverso.tpl');
 	}
 	
@@ -96,7 +95,7 @@ class Reverso extends Module
 
 		$this->_html .=
 			'<br /><fieldset><legend>'.$this->l('Configuration').'</legend>
-			<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
+			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
 			<label for="serial">'.$this->l('Serial number').' :</label>
 			<div class="margin-form">
 				<input type="text" name="reverso_serial" value="'.$conf['REVERSO_SERIAL'].'" />

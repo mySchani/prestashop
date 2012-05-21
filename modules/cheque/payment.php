@@ -1,6 +1,6 @@
 <?php
 /*
-* 2007-2011 PrestaShop 
+* 2007-2011 PrestaShop
 *
 * NOTICE OF LICENSE
 *
@@ -25,16 +25,22 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
+/**
+ * @deprecated This file is deprecated, use moduleController instead
+ */
+
 /* SSL Management */
 $useSSL = true;
 
 include(dirname(__FILE__).'/../../config/config.inc.php');
+Tools::displayFileAsDeprecated();
+
 include(dirname(__FILE__).'/../../header.php');
 include(dirname(__FILE__).'/cheque.php');
 
-if (!$cookie->isLogged(true))
+if (!Context::getContext()->customer->isLogged(true))
     Tools::redirect('index.php?controller=authentication&back=order.php');
-	
+
 $cheque = new Cheque();
 echo $cheque->execPayment($cart);
 
