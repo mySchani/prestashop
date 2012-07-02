@@ -1,49 +1,19 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
 
 class Blocknewsletter extends Module
 {
  	public function __construct()
  	{
  	 	$this->name = 'blocknewsletter';
- 	 	$this->tab = 'front_office_features';
-		$this->need_instance = 0;
+ 	 	$this->tab = 'Blocks';
 
 	 	parent::__construct();
 
  	 	$this->displayName = $this->l('Newsletter block');
- 	 	$this->description = $this->l('Adds a block for newsletter subscription.');
+ 	 	$this->description = $this->l('Adds a block for newsletter subscription');
 		$this->confirmUninstall = $this->l('Are you sure you want to delete all your contacts ?');
 
 		$this->version = '1.4';
-		$this->author = 'PrestaShop';
 		$this->error = false;
 		$this->valid = false;
 		$this->_files = array(
@@ -57,17 +27,17 @@ class Blocknewsletter extends Module
  	
  	public function install()
  	{
- 	 	if (parent::install() == false OR $this->registerHook('leftColumn') == false OR $this->registerHook('header') == false)
+ 	 	if (parent::install() == false OR $this->registerHook('leftColumn') == false)
  	 		return false;
  	 	return Db::getInstance()->Execute('
-		CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'newsletter` (
+		CREATE TABLE '._DB_PREFIX_.'newsletter (
 			`id` int(6) NOT NULL AUTO_INCREMENT,
 			`email` varchar(255) NOT NULL,
 			`newsletter_date_add` DATETIME NULL,
 			`ip_registration_newsletter` varchar(15) NOT NULL,
 			`http_referer` VARCHAR(255) NULL,
 			PRIMARY KEY(`id`)
-		) ENGINE='._MYSQL_ENGINE_.' default CHARSET=utf8');
+		) ENGINE=MyISAM default CHARSET=utf8');
  	}
  	
  	public function uninstall()
@@ -83,16 +53,16 @@ class Blocknewsletter extends Module
 
 		if (Tools::isSubmit('submitUpdate'))
 		{
-			if (isset($_POST['new_page']) AND Validate::isBool((int)($_POST['new_page'])))
+			if (isset($_POST['new_page']) AND Validate::isBool(intval($_POST['new_page'])))
 				Configuration::updateValue('NW_CONFIRMATION_NEW_PAGE', $_POST['new_page']);
-			if (isset($_POST['conf_email']) AND VAlidate::isBool((int)($_POST['conf_email'])))
+			if (isset($_POST['conf_email']) AND VAlidate::isBool(intval($_POST['conf_email'])))
 				Configuration::updateValue('NW_CONFIRMATION_EMAIL', pSQL($_POST['conf_email']));
 			if (!empty($_POST['voucher']) AND !Validate::isDiscountName($_POST['voucher']))
 				$this->_html .= '<div class="alert">'.$this->l('Voucher code is invalid').'</div>';
 			else
 			{
 				Configuration::updateValue('NW_VOUCHER_CODE', pSQL($_POST['voucher']));
-				$this->_html .= '<div class="conf ok">'.$this->l('Updated').'</div>';
+				$this->_html .= '<div class="conf ok">'.$this->l('Updated successfully').'</div>';
 			}
 		}
 		return $this->_displayForm();
@@ -101,16 +71,16 @@ class Blocknewsletter extends Module
 	private function _displayForm()
 	{
 		$this->_html .= '
-		<form method="post" action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'">
+		<form method="post" action="'.$_SERVER['REQUEST_URI'].'">
 			<fieldset>
 				<legend><img src="'.$this->_path.'logo.gif" />'.$this->l('Settings').'</legend>
-				<label>'.$this->l('Display configuration in a new page?').'</label>
+				<label>'.$this->l('Displaying configuration in a new page?').'</label>
 				<div class="margin-form">
 					<input type="radio" name="new_page" value="1" '.(Configuration::get('NW_CONFIRMATION_NEW_PAGE') ? 'checked="checked" ' : '').'/>'.$this->l('yes').'
 					<input type="radio" name="new_page" value="0" '.(!Configuration::get('NW_CONFIRMATION_NEW_PAGE') ? 'checked="checked" ' : '').'/>'.$this->l('no').'
 				</div>
 				<div class="clear"></div>
-				<label>'.$this->l('Send confirmation e-mail after subscription?').'</label>
+				<label>'.$this->l('Sending confirmation email after subscription?').'</label>
 				<div class="margin-form">
 					<input type="radio" name="conf_email" value="1" '.(Configuration::get('NW_CONFIRMATION_EMAIL') ? 'checked="checked" ' : '').'/>'.$this->l('yes').'
 					<input type="radio" name="conf_email" value="0" '.(!Configuration::get('NW_CONFIRMATION_EMAIL') ? 'checked="checked" ' : '').'/>'.$this->l('no').'
@@ -141,7 +111,7 @@ class Blocknewsletter extends Module
  	
  	private function newsletterRegistration()
  	{
-	 	if (empty($_POST['email']) OR !Validate::isEmail($_POST['email']))
+	 	if (!Validate::isEmail(pSQL($_POST['email'])))
 			return $this->error = $this->l('Invalid e-mail address');
 	 	/* Unsubscription */
 	 	elseif ($_POST['action'] == '1')
@@ -174,21 +144,18 @@ class Blocknewsletter extends Module
 			elseif ($registerStatus == -1)
 			{
 				global $cookie;
-				
-				if (!Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'newsletter (email, newsletter_date_add, ip_registration_newsletter, http_referer) VALUES (\''.pSQL($_POST['email']).'\', NOW(), \''.pSQL(Tools::getRemoteAddr()).'\', 
-					(SELECT c.http_referer FROM '._DB_PREFIX_.'connections c WHERE c.id_guest = '.(int)($cookie->id_guest).' ORDER BY c.date_add DESC LIMIT 1))'))
+				if (!Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'newsletter VALUES (\'\', \''.pSQL($_POST['email']).'\', NOW(), \''.pSQL($_SERVER['REMOTE_ADDR']).'\', 
+					(SELECT c.http_referer FROM '._DB_PREFIX_.'connections c WHERE c.id_guest = '.intval($cookie->id_guest).' ORDER BY c.date_add DESC LIMIT 1))'))
 					return $this->error = $this->l('Error during subscription');
 				$this->sendVoucher(pSQL($_POST['email']));
-
 				return $this->valid = $this->l('Subscription successful');
 			}
 			/* If the user is a customer */
 			elseif ($registerStatus == 0)
 			{
-			 	if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 1, newsletter_date_add = NOW(), `ip_registration_newsletter` = \''.pSQL(Tools::getRemoteAddr()).'\' WHERE `email` = \''.pSQL($_POST['email']).'\''))
+			 	if (!Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'customer SET `newsletter` = 1, newsletter_date_add = NOW(), `ip_registration_newsletter` = \''.pSQL($_SERVER['REMOTE_ADDR']).'\' WHERE `email` = \''.pSQL($_POST['email']).'\''))
 	 	 			return $this->error = $this->l('Error during subscription');
 				$this->sendVoucher(pSQL($_POST['email']));
-
 				return $this->valid = $this->l('Subscription successful');
 			}
 		}
@@ -199,7 +166,7 @@ class Blocknewsletter extends Module
 		global $cookie;
 
 		if ($discount = Configuration::get('NW_VOUCHER_CODE'))
-			return Mail::Send((int)$cookie->id_lang, 'newsletter_voucher', Mail::l('Newsletter voucher', (int)$cookie->id_lang), array('{discount}' => $discount), $email, NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+			return Mail::send(intval($cookie->id_lang), 'newsletter_voucher', $this->l('Newsletter voucher'), array('{discount}' => $discount), $email, NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 		return false;
 	}
 
@@ -225,8 +192,8 @@ class Blocknewsletter extends Module
 			}
 			elseif ($this->valid)
 			{
-				if (Configuration::get('NW_CONFIRMATION_EMAIL') AND isset($_POST['action']) AND (int)($_POST['action']) == 0)
-					Mail::Send((int)$params['cookie']->id_lang, 'newsletter_conf', Mail::l('Newsletter confirmation', (int)$params['cookie']->id_lang), array(), pSQL($_POST['email']), NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
+				if (Configuration::get('NW_CONFIRMATION_EMAIL') AND isset($_POST['action']) AND intval($_POST['action']) == 0)
+					Mail::Send(intval($params['cookie']->id_lang), 'newsletter_conf', $this->l('Newsletter confirmation'), array(), pSQL($_POST['email']), NULL, NULL, NULL, NULL, NULL, dirname(__FILE__).'/mails/');
 				$smarty->assign(array('color' => 'green',
 										'msg' => $this->valid,
 										'nw_error' => false));
@@ -247,11 +214,6 @@ class Blocknewsletter extends Module
 	{
 		return $this->hookLeftColumn($params);
 	}
-	
-	function hookHeader($params)
-	{
-		Tools::addCSS(($this->_path).'blocknewsletter.css', 'all');
-	}
 }
 
-
+?>

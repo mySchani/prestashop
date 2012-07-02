@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: RSS2.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: RSS2.php,v 1.11 2006/07/27 13:52:05 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -25,7 +25,7 @@
  * This class handles RSS2 feeds.
  * 
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  */
 class XML_Feed_Parser_RSS2 extends XML_Feed_Parser_Type
@@ -34,7 +34,7 @@ class XML_Feed_Parser_RSS2 extends XML_Feed_Parser_Type
      * The URI of the RelaxNG schema used to (optionally) validate the feed
      * @var string
      */
-    protected $relax = 'rss20.rng';
+    private $relax = 'rss20.rnc';
 
     /**
      * We're likely to use XPath, so let's keep it global
@@ -116,7 +116,7 @@ class XML_Feed_Parser_RSS2 extends XML_Feed_Parser_Type
         $this->model = $model;
 
         if ($strict) {
-            if (! $this->relaxNGValidate()) {
+            if (! $this->model->relaxNGValidate($this->relax)) {
                 throw new XML_Feed_Parser_Exception('Failed required validation');
             }
         }
@@ -194,7 +194,7 @@ class XML_Feed_Parser_RSS2 extends XML_Feed_Parser_Type
      */
     protected function getImage()
     {
-        $images = $this->xpath->query("//image");
+        $images = $this->model->getElementsByTagName('image');
         if ($images->length > 0) {
             $image = $images->item(0);
             $desc = $image->getElementsByTagName('description');

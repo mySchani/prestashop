@@ -1,47 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
 
 class BlockSupplier extends Module
 {
     function __construct()
     {
         $this->name = 'blocksupplier';
-        $this->tab = 'front_office_features';
+        $this->tab = 'Blocks';
         $this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 
         parent::__construct();
 
 		$this->displayName = $this->l('Suppliers block');
-        $this->description = $this->l('Adds a block displaying suppliers.');
+        $this->description = $this->l('Add a block displaying suppliers');
     }
 
 	function install()
@@ -49,8 +19,6 @@ class BlockSupplier extends Module
 		if (!parent::install())
 			return false;
 		if (!$this->registerHook('leftColumn'))
-			return false;
-		if (!$this->registerHook('header'))
 			return false;
 		Configuration::updateValue('SUPPLIER_DISPLAY_TEXT', true);
 		Configuration::updateValue('SUPPLIER_DISPLAY_TEXT_NB', 5);
@@ -67,7 +35,6 @@ class BlockSupplier extends Module
 			'text_list' => Configuration::get('SUPPLIER_DISPLAY_TEXT'),
 			'text_list_nb' => Configuration::get('SUPPLIER_DISPLAY_TEXT_NB'),
 			'form_list' => Configuration::get('SUPPLIER_DISPLAY_FORM'),
-			'display_link_supplier' => Configuration::get('PS_DISPLAY_SUPPLIERS')
 		));
 		return $this->display(__FILE__, 'blocksupplier.tpl');
 	}
@@ -77,13 +44,13 @@ class BlockSupplier extends Module
 		$output = '<h2>'.$this->displayName.'</h2>';
 		if (Tools::isSubmit('submitBlockSuppliers'))
 		{
-			$text_list = (int)(Tools::getValue('text_list'));
-			$text_nb = (int)(Tools::getValue('text_nb'));
-			$form_list = (int)(Tools::getValue('form_list'));
+			$text_list = intval(Tools::getValue('text_list'));
+			$text_nb = intval(Tools::getValue('text_nb'));
+			$form_list = intval(Tools::getValue('form_list'));
 			if ($text_list AND !Validate::isUnsignedInt($text_nb))
 				$errors[] = $this->l('Invalid number of elements');
 			elseif (!$text_list AND !$form_list)
-				$errors[] = $this->l('Please activate at least one system list.');
+				$errors[] = $this->l('Please activate at least one system list');
 			else
 			{
 				Configuration::updateValue('SUPPLIER_DISPLAY_TEXT', $text_list);
@@ -101,7 +68,7 @@ class BlockSupplier extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Use a plain-text list').'</label>
 				<div class="margin-form">
@@ -130,11 +97,6 @@ class BlockSupplier extends Module
 	{
 		return $this->hookLeftColumn($params);
 	}
-	
-	function hookHeader($params)
-	{
-		Tools::addCSS(($this->_path).'blocksupplier.css', 'all');
-	}
 }
 
-
+?>

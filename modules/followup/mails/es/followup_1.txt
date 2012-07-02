@@ -1,19 +1,13 @@
-{shop_name}
- 
 Hola {firstname} {lastname},
  
-Su cesta de {shop_name}
- 
-Nos dimos cuenta de que durante su Ãºltima visita en {shop_name}, que no ha validado la orden que habÃ­a comenzado.
+Nos dimos cuenta de que durante su última visita en {shop_name}, que no ha validado la orden que había comenzado.
 
 Su carrito ha sido guardado, puede reanudar su solicitud por visitar nuestra tienda:
 
 {shop_url}
 
-Como excepciÃ³n, le ofrecemos un descuento del {amount}% de descuento en su prÃ³ximo pedido! Esta oferta es vÃ¡lida para {days} dÃ­as, asÃ­ que no pierdas un instante!
+Como excepción, le concedemos un descuento de {amount}% de descuento en su próximo pedido! Esta oferta es válida para {days} días, así que no pierdas un instante!
  
-AquÃ­ estÃ¡ tu cupÃ³n: {voucher_num}
+Aquí está tu cupón: {voucher_num}
 
-Introduzca este cÃ³digo en tu carrito de compras para obtener el descuento.
- 
-{shop_name} desarrollado por PrestaShopâ„¢
+Introduzca este código en tu carrito de compras para obtener el descuento.

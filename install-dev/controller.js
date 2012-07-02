@@ -1,34 +1,6 @@
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14012 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
 //constant
 verifMailREGEX = /^([\w-]+(?:\.[\w-]+)*)@((?:[\w-]+\.)*\w[\w-]{0,66})\.([a-z]{2,6}(?:\.[a-z]{2})?)$/;
 verifNameREGEX = /^[^0-9!<>,;?=+()@#"°{}_$%:]*$/;
-
-var errorOccured = false;
 
 //params
 configIsOk = false;
@@ -37,46 +9,46 @@ mailIsOk = false;
 smtpChecked = false;
 validShopInfos = false;
 upgradeCertify = false;
-dropdb=false;
 application="install";
-customModule="desactivate";
 
 function nextTab()
 {
 	if(verifyThisStep())
 	{
-		showStep(step+1, 'next');
+		showStep(step+1);
 	}
 }
 function backTab()
 {
 	if (step != 6) {
-		showStep(step - 1, 'back');
+		showStep(step - 1);
 	}
 	else {
 		constructInstallerTabs();
-		showStep(1, 'back');
+		showStep(1);
 	} 
 }
 
-function showStep(aStep, way)
+function showStep(aStep)
 {
 	step = aStep;
 	
 	//show the sheet
-	$('div.sheet.shown').fadeOut('fast', function() {
-		$($('div.sheet')[(step-1)]).fadeIn('slow').addClass('shown');
-	}).removeClass('shown');
-
+	$('div.sheet.shown').fadeOut('fast',
+		function()
+		{
+			$($('div.sheet')[(step-1)]).fadeIn('slow').addClass('shown');
+		}
+	).removeClass('shown');
+	
+	
+	
 	//upgrade the tab
 	$('#tabs li')
 		.removeClass("selected")
 		.removeClass("finished");
 		if (step < 6) {
-			if (step == 5)
-				$('#tabs li:nth-child(' + step + ')').addClass("finished");
-			else
-				$('#tabs li:nth-child(' + step + ')').addClass("selected");
+			$('#tabs li:nth-child(' + step + ')').addClass("selected");
 			$('#tabs li:lt(' + (step - 1) + ')').addClass("finished");
 		}
 		else
@@ -109,7 +81,7 @@ function showStep(aStep, way)
 				$('#tabs li:nth-child(1)').removeClass("selected").addClass("finished");
 				$('#tabs li:nth-child(2)').removeClass("selected").addClass("finished");
 				$('#tabs li:nth-child(3)').removeClass("selected").addClass("finished");
-				$('#tabs li:nth-child(4)').addClass("finished");
+				$('#tabs li:nth-child(4)').addClass("selected").removeClass("finished");
 				break;
 				
 			}
@@ -133,10 +105,7 @@ function showStep(aStep, way)
 		case 2:
 		document.title = step2title;
 		application = "install";
-		if (way == 'next')
-			verifyAndSetRequire(1);
-		else
-			verifyAndSetRequire(0);
+		verifyAndSetRequire();
 		$("#btBack")
 			.removeAttr("disabled")
 			.removeClass("disabled")
@@ -188,7 +157,7 @@ function showStep(aStep, way)
 		
 		case 7:
 		document.title = step7title;
-		verifyAndSetRequire(0);
+		verifyAndSetRequire();
 		$("#btBack")
 			.removeAttr("disabled")
 			.removeClass("disabled")
@@ -220,12 +189,12 @@ function verifyThisStep()
 	{
 		case 1 :
 		if($("#formSetMethod input[type=radio]:checked").val() == "install" ){
-			showStep(2, 'next');
+			showStep(2);
 		}
 		else
 		{
 			constructUpdaterTabs();
-			showStep(6, 'next');
+			showStep(6);
 		}
 		return false;
 		break;
@@ -258,16 +227,16 @@ function verifyThisStep()
 
 function setInstallerLanguage ()
 {
-	$('#formSetInstallerLanguage').submit();
+	$("#formSetInstallerLanguage").submit();
 }
 
-function verifyAndSetRequire(firsttime)
+function verifyAndSetRequire()
 {
 	$("div#"+(application == "install" ? "sheet_require" : "sheet_require_update")+" > ul").slideUp("1500");
 	$.ajax(
 	{
 		url: "model.php",
-		data: "method=checkConfig&firsttime="+firsttime,
+		data: "method=checkConfig",
 		success: function(ret)
 		{
 			isUpdate = application == "install" ? "" : "_update";
@@ -283,38 +252,31 @@ function verifyAndSetRequire(firsttime)
 				.addClass(result);
 				if (result == "fail") configIsOk = false;
 			}
-
+			
+			
 			testListOptional = testLists[1].getElementsByTagName('test');
-			optionalIsOk = true
 			
 			for (i = 0; i < testListOptional.length; i++){
 				result = testListOptional[i].getAttribute("result");
 				$($("div#sheet_require"+isUpdate+" > ul#optional"+isUpdate+" li.optional")[i])
 					.removeClass( (result == "fail") ? "ok" : "fail" )
 					.addClass(result);
-				if (result == "fail") optionalIsOk = false;
 			}
 			
+			if(configIsOk)
+				$('h3#resultConfig'+isUpdate).html(txtConfigIsOk).slideDown('slow');
+			else
+				$('h3#resultConfig'+isUpdate).html(txtConfigIsNotOk).slideDown('slow');
+			
+			$("div#sheet_require"+isUpdate+" > ul").slideDown("1500");
+			
 			if (!configIsOk) {
-				$('#btNext').attr({'disabled':'disabled','class':'button little disabled'});
-				$('h3#resultConfig'+isUpdate).html(txtConfigIsNotOk).removeClass('okBlock').addClass('errorBlock').slideDown('slow');
-				$('h3#resultConfigHelper').show();
-				$("div#sheet_require"+isUpdate+" > ul").slideDown("1500");
-				$('#stepList_2 li:contains("Etape 2")').addClass('ko');
+				$('#btNext').attr('disabled', 'disabled');
+				$('#btNext').addClass('disabled');
 			} else {
 				$("#btNext").removeAttr('disabled');
 				$('#btNext').removeClass('disabled');
 				$("input#btNext").focus();
-				var firsttime = ret.getElementsByTagName('firsttime');
-				if (firsttime && firsttime[0].getAttribute("value") == 1 && optionalIsOk)
-					$("input#btNext").click();
-				else
-				{
-					$('h3#resultConfig'+isUpdate).html(txtConfigIsOk).removeClass('errorBlock').addClass('okBlock').slideDown('slow');
-					$('h3#resultConfigHelper').hide();
-					$("div#sheet_require"+isUpdate+" > ul").slideDown("1500");
-					$('#stepList_2 li:contains("Etape 2")').removeClass('ko');
-				}
 			}
 		}
 	}
@@ -326,38 +288,32 @@ function verifyDbAccess ()
 	//local verifications
 	if($("#dbServer[value=]").length > 0)
 	{
-		$("#dbResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtDbServerEmpty).slideDown('slow');
-		$('#stepList_3 li:contains("Etape 3")').addClass('ko');
+		$("#dbResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtDbServerEmpty).show('slow');
 		return false;
 	}
 	else
 	{
-		$("#dbResultCheck").removeClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html('');
-		$('#stepList_3 li:contains("Etape 3")').removeClass('ko');
+		$("#dbResultCheck").removeClass("fail").removeClass("ok").removeClass('userInfos').html('');
 	}
 	
 	if($("#dbLogin[value=]").length > 0)
 	{
-		$("#dbResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtDbLoginEmpty).slideDown('slow');
-		$('#stepList_3 li:contains("Etape 3")').addClass('ko');
+		$("#dbResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtDbLoginEmpty).show('slow');
 		return false;
 	}
 	else
 	{
-		$("#dbResultCheck").removeClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html('');
-		$('#stepList_3 li:contains("Etape 3")').removeClass('ko');
+		$("#dbResultCheck").removeClass("fail").removeClass("ok").removeClass('userInfos').html('');
 	}
 	
 	if($("#dbName[value=]").length > 0)
 	{
-		$("#dbResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtDbNameEmpty).slideDown('slow');
-		$('#stepList_3 li:contains("Etape 3")').addClass('ko');
+		$("#dbResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtDbNameEmpty).show('slow');
 		return false;
 	}
 	else
 	{
-		$("#dbResultCheck").removeClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html('');
-		$('#stepList_3 li:contains("Etape 3")').removeClass('ko');
+		$("#dbResultCheck").removeClass("fail").removeClass("ok").removeClass('userInfos').html('');
 	}
 	
 	//external verifications and sets
@@ -367,35 +323,33 @@ function verifyDbAccess ()
 		url: "model.php",
 		data: 
 			"method=checkDB"
-			+ "&server=" + $("#dbServer").val()
-			+ "&login=" + $("#dbLogin").val()
-			+ "&password=" + encodeURIComponent($("#dbPassword").val())
-			+ "&engine=" +$("#dbEngine option:selected").val()
-			+ "&name=" + $("#dbName").val()
-			+ "&tablePrefix=" + encodeURIComponent($("#db_prefix").val()),
+			+"&type=MySQL"
+			+"&server="+ $("#dbServer").val()
+			+"&login="+ $("#dbLogin").val()
+			+"&password="+encodeURIComponent($("#dbPassword").val())
+			+"&name="+ $("#dbName").val()
+		,
 		success: function(ret)
 		{
 			ret = ret.getElementsByTagName('action')[0];
 			if (ret.getAttribute("result") == "ok")
 			{
 				$("#dbResultCheck")
-					.addClass("okBlock")
-					.removeClass("errorBlock")
+					.addClass("ok")
+					.removeClass("fail")
 					.html(txtError[23])
-					.slideDown('slow');
+					.show('slow');
 				$("#dbCreateResultCheck")
-					.slideUp('slow');
-				$('#stepList_3 li:contains("Etape 3")').removeClass('ko');
+					.hide('slow');
 			} else
 			{
 				$("#dbResultCheck")
-					.addClass("errorBlock")
-					.removeClass("okBlock")
+					.addClass("fail")
+					.removeClass("ok")
 					.html(txtError[parseInt(ret.getAttribute("error"))])
-					.slideDown('slow');
+					.show('slow');
 				$("#dbCreateResultCheck")
-					.slideUp('slow');
-				$('#stepList_3 li:contains("Etape 3")').addClass('ko');
+					.hide('slow');
 			}
 		}
 	 }
@@ -418,94 +372,43 @@ function createDB()
 		"&server="+ $("#dbServer").val()+
 		"&login="+ $("#dbLogin").val()+
 		"&password="+encodeURIComponent($("#dbPassword").val())+
-		"&engine="+$("#dbEngine option:selected").val()+
-		"&name="+ $("#dbName").val()+
-		"&language="+ id_lang+
-		(dropdb ? "&dropAndCreate=true" : '')
+		"&name="+ $("#dbName").val()
 	   ,
 	   success: function(ret)
 	   {
-			var action_ret;
-			try {
-				action_ret = ret.getElementsByTagName('action')[0];
-			} catch (e) {
-				$("#dbCreateResultCheck")
-					.addClass("errorBlock")
-					.removeClass("okBlock")
-					.removeClass('infosBlock')
-					.html(ret)
-					.show();
-				$('#stepList_3 li:contains("Etape 3")').addClass('ko');
-				return;
-			}
-			if (action_ret.getAttribute("result") == "ok")
+			ret = ret.getElementsByTagName('action')[0];
+			if (ret.getAttribute("result") == "ok")
 			{
-				var countries_ret = ret.getElementsByTagName('country');
-				var timezone_ret = ret.getElementsByTagName('timezone');
-				var html = '';
-				for (i = 0; countries_ret[i]; i=i+1)
-				{
-					html = html + '<option rel="'+countries_ret[i].getAttribute('iso')+'" value="'+countries_ret[i].getAttribute("value")+'" ';				
-					if (id_lang == 0)
-						$('#infosCountry').find('option[disabled=disabled]').attr('selected', 'selected');
-					else if (id_lang == 1 && countries_ret[i].getAttribute('value') == 8) /* France */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 2 && countries_ret[i].getAttribute('value') == 6) /* Spain */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 3 && countries_ret[i].getAttribute('value') == 1) /* Germany */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 4 && countries_ret[i].getAttribute('value') == 10) /* Italy */
-						html = html + ' selected="selected" ';
-					html = html + ' >'+countries_ret[i].getAttribute('name')+'</option>';
-				}
-				$('#infosCountry').append(html);
-				html = '';
-				for (i = 0; timezone_ret[i]; i=i+1)
-				{
-					html = html + '<option value="'+timezone_ret[i].getAttribute("value")+'" ';
-					if (id_lang == 0)
-						$('#infosTimezone').find('option[disabled=disabled]').attr('selected', 'selected');
-					else if (id_lang == 1 && timezone_ret[i].getAttribute('value') == 'Europe/Paris') /* France */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 2 && timezone_ret[i].getAttribute('value') == 'Europe/Madrid') /* Spain */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 3 && timezone_ret[i].getAttribute('value') == 'Europe/Berlin') /* Germany */
-						html = html + ' selected="selected" ';
-					else if (id_lang == 4 && timezone_ret[i].getAttribute('value') == 'Europe/Rome') /* Italy */
-						html = html + ' selected="selected" ';					
-					html = html + ' >'+timezone_ret[i].getAttribute("name")+'</option>';
-				}
-				$('#infosTimezone').append(html);
-				showStep(step+1, 'next');
+				showStep(step+1);
 			}
 			else
 			{
-				if (action_ret.getAttribute("error") == "11")
+				if(ret.getAttribute("error") == "11")
 				{
 					$("#dbCreateResultCheck")
-						.addClass("errorBlock")
-						.removeClass("okBlock")
-						.removeClass('infosBlock')
+						.addClass("fail")
+						.removeClass("ok")
+						.removeClass('userInfos')
 						.html(
 							txtError[11]+ "<br />\'"+
-							action_ret.getAttribute("sqlQuery") + "\'<br/>"+
-							action_ret.getAttribute("sqlMsgError") + "(" + txtError[18] + " : " + action_ret.getAttribute("sqlNumberError") +")"
+							ret.getAttribute("sqlQuery") + "\'<br/>"+
+							ret.getAttribute("sqlMsgError") + "(" + txtError[18] + " : " + ret.getAttribute("sqlNumberError") +")"
 						)
 						.show();
 				}
 				else
 				{
 					$("#dbCreateResultCheck")
-						.addClass("errorBlock")
-						.removeClass("okBlock")
-						.removeClass('infosBlock')
-						.html(txtError[parseInt(action_ret.getAttribute("error"))])
+						.addClass("fail")
+						.removeClass("ok")
+						.removeClass('userInfos')
+						.html(txtError[parseInt(ret.getAttribute("error"))])
 						.show();
 				}
-				$('#stepList_3 li:contains("Etape 3")').addClass('ko');
 			}
 	   }
-	});
+	}
+	);
 }
 
 
@@ -514,27 +417,29 @@ function verifyMail()
 	//local verifications
 	if ($("#testEmail[value=]").length > 0)
 	{
-		$("#mailResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtError[0]);
+		$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtError[0]);
 		return false;
 	}
 	else if (!verifMailREGEX.test( $("#testEmail").val() ))
 	{ 
-		$("#mailResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtError[3]);
+		$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtError[3]);
 		return false;
 	}
 	else
 	{
+		
 		if (smtpChecked)
 		{
 			//local verifications
 			if($("#smtpSrv[value=]").length > 0)
 			{
-				$("#mailResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtSmtpSrvEmpty);
+				$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtSmtpSrvEmpty);
 				smtpIsOk = false;
 				return false;
 			}
 		}
-
+		
+		
 		//external verifications and sets
 		$.ajax(
 		{
@@ -558,15 +463,13 @@ function verifyMail()
 				
 				if (ret.getAttribute("result") == "ok")
 				{
-					$('#mailResultCheck').addClass("okBlock").removeClass("errorBlock").removeClass('infosBlock').html(mailSended+' '+$('#testEmail').val());
-					$('#mailResultCheck').css('margin-top', '10px');
+					$("#mailResultCheck").addClass("ok").removeClass("fail").removeClass('userInfos').html(mailSended);
 					mailIsOk = true;
 				}
 				else
 				{
 					mailIsOk = false;
-					$("#mailResultCheck").addClass("errorBlock").removeClass("okBlock").removeClass('infosBlock').html(txtError[26]);
-					$('#mailResultCheck').css('margin-top', '10px');
+					$("#mailResultCheck").addClass("fail").removeClass("ok").removeClass('userInfos').html(txtError[26]);
 				}
 		   }
 		 }
@@ -591,13 +494,13 @@ function uploadLogo ()
 						{
 							if(data.error != '')
 							{
-								$("#resultInfosLogo").html( txtError[parseInt(data.error)] ).addClass("errorBlock").show();
+								$("#resultInfosLogo").html( txtError[parseInt(data.error)] ).addClass("fail").show();
 							}
 							else
 							{
 								$(this).attr('src', ps_base_uri + 'img/logo.jpg?' + (new Date()))
 								$(this).show('slow');
-								$("#resultInfosLogo").html("").removeClass("errorBlock").hide();
+								$("#resultInfosLogo").html("").removeClass("fail").hide();
 							}
 						});
 					}
@@ -605,7 +508,7 @@ function uploadLogo ()
 				error: function (data, status, e)
 				{
 					$("#uploadedImage").attr('src', ps_base_uri + 'img/logo.jpg?' + (new Date()));
-					$("#resultInfosLogo").html("").addClass("errorBlock");
+					$("#resultInfosLogo").html("").addClass("fail");
 				}
 			}
 		)
@@ -646,25 +549,25 @@ function moveLanguage(direction)
 	}
 }
 
-function ajaxRefreshField(ret, idResultField, fieldMsg)
+function ajaxRefreshField(nthField, idResultField, fieldsList, inputId)
 {
-	var pattern = 'field[id='+idResultField+']';
-	var result = $(ret).children().find(pattern).attr('result');
-	var error = $(ret).children().find(pattern).attr('error');
-	
-	if (error === undefined || result === undefined)
-		return true;
-		
-	if (result != 'ok')
+	var result = fieldsList[nthField].getAttribute("result");
+	if (result != "ok")
 	{
-		$('#'+fieldMsg).html(txtError[parseInt(error)]).addClass('errorBlock').show('slow');
+		$("#"+idResultField)
+			.html( txtError[parseInt(fieldsList[nthField].getAttribute("error"))] )
+			.addClass("fail")
+			.show("slow");
 		if (validShopInfos)
-			$('#'+idResultField).focus();
+			$("#"+inputId).focus();
 		return false;
 	}
 	else
 	{
-		$('#'+fieldMsg).html('').removeClass('errorBlock').show('slow');
+		$("#"+idResultField)
+			.html("")
+			.removeClass("fail")
+			.show("slow");
 		return true;
 	}
 }
@@ -682,15 +585,13 @@ function verifyShopInfos()
 	
 	$.ajax(
 	{
-	   url: 'model.php',
-	   async: true,
+	   url: "model.php",
+	   async: false,
 	   cache: false,
 	   data:
 		"method=checkShopInfos"+
 		"&isoCode="+isoCodeLocalLanguage+
-		"&infosActivity="+ encodeURIComponent($("select#infosActivity").val())+
 		"&infosCountry="+ encodeURIComponent($("select#infosCountry").val())+
-		"&infosTimezone="+ encodeURIComponent($("select#infosTimezone").val())+
 		"&infosShop="+ encodeURIComponent($("input#infosShop").val())+
 		"&infosFirstname="+ encodeURIComponent($("input#infosFirstname").val())+
 		"&infosName="+ encodeURIComponent($("input#infosName").val())+
@@ -698,9 +599,7 @@ function verifyShopInfos()
 		"&infosPassword="+ encodeURIComponent($("input#infosPassword").val())+
 		"&infosPasswordRepeat="+ encodeURIComponent($("input#infosPasswordRepeat").val())+
 		"&infosNotification="+ ( ($("#infosNotification:checked").length > 0) ? "on" : "off" )+
-		"&countryName="+encodeURIComponent($("select#infosCountry option:selected").attr('rel'))+
 		urlLanguages+
-		"&catalogMode="+ encodeURIComponent($("input[name=catalogMode]:checked").val())+
 		"&infosMailMethod=" + ((smtpChecked) ? "smtp" : "native")+
 		"&smtpSrv="+ encodeURIComponent($("input#smtpSrv").val())+
 		"&smtpLogin="+ encodeURIComponent($("input#smtpLogin").val())+
@@ -708,54 +607,34 @@ function verifyShopInfos()
 		"&smtpPort="+ encodeURIComponent($("input#smtpPort").val())+
 		"&smtpEnc="+ encodeURIComponent($("select#smtpEnc option:selected").val())+
 		"&mailSubject="+ encodeURIComponent(mailSubject)+
-		"&isoCodeLocalLanguage="+isoCodeLocalLanguage,
+		"&isoCodeLocalLanguage="+isoCodeLocalLanguage
+	   ,
+	   
 	   success: function(ret)
-	   {	   
+	   {
+			fieldsList = ret.getElementsByTagName('shopConfig')[0].getElementsByTagName('field');
 			validShopInfos = true;
-			if (!ajaxRefreshField(ret, 'infosShop', 'resultInfosShop')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosCountry', 'resultInfosCountry')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosTimezone', 'resultInfosTimezone')) validShopInfos = false;	
-			else if (!ajaxRefreshField(ret, 'validateShop', 'resultInfosShop')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosFirstname', 'resultInfosFirstname')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosName', 'resultInfosName')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosEmail', 'resultInfosEmail')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosPassword', 'resultInfosPassword')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosPasswordRepeat', 'resultInfosPasswordRepeat')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosLanguages', 'resultInfosLanguages')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosSQL', 'resultInfosSQL')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'infosNotification', 'resultInfosNotification')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'validateFirstname', 'resultInfosFirstname')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'validateName', 'resultInfosName')) validShopInfos = false;
-			else if (!ajaxRefreshField(ret, 'validateCatalogMode', 'resultCatalogMode')) validCatalogMode = false;
+			if (!ajaxRefreshField(0, "resultInfosShop", fieldsList, "infosShop")) validShopInfos = false;
+			else if (!ajaxRefreshField(1, "resultInfosFirstname", fieldsList, "infosFirstname")) validShopInfos = false;
+			else if (!ajaxRefreshField(2, "resultInfosName", fieldsList, "infosName")) validShopInfos = false;
+			else if (!ajaxRefreshField(3, "resultInfosEmail", fieldsList, "infosEmail")) validShopInfos = false;
+			else if (!ajaxRefreshField(7, "resultInfosPassword", fieldsList, "infosPassword")) validShopInfos = false;
+			else if (!ajaxRefreshField(8, "resultInfosPasswordRepeat", fieldsList, "infosPasswordRepeat")) validShopInfos = false;
+			else if (!ajaxRefreshField(9, "resultInfosLanguages", fieldsList, "infosLanguages")) validShopInfos = false;
+			else if (!ajaxRefreshField(11, "resultInfosSQL", fieldsList, "infosSQL")) validShopInfos = false;
+			else if (!ajaxRefreshField(10, "resultInfosNotification", fieldsList, "infosNotification")) validShopInfos = false;
+			else if (!ajaxRefreshField(5, "resultInfosFirstname", fieldsList, "validateFirstname")) validShopInfos = false;
+			else if (!ajaxRefreshField(6, "resultInfosName", fieldsList, "validateName")) validShopInfos = false;
 			else
 			{
 				$('#endShopName').html($('input#infosShop').val());
 				$('#endFirstName').html($('input#infosFirstname').val());
 				$('#endName').html($('input#infosName').val());
 				$('#endEmail').html($('input#infosEmail').val());
-				showStep(5);
-			}			
+			}
 	   }
 	 }
 	 );
-}
-
-function checkRequired(idResultSpan, resValue)
-{
-	if(resValue == "")
-	{
-		$(idResultSpan)
-			.show("slow")
-			.addClass("errorBlock")
-			.html(txtError[0]);
-	}
-	else
-	{
-		$(idResultSpan)
-			.hide("slow")
-			.removeClass("errorBlock")
-			.html("");
-	}
 }
 
 function autoCheckField(idField, idResultSpan, typeVerif)
@@ -763,9 +642,24 @@ function autoCheckField(idField, idResultSpan, typeVerif)
 	switch (typeVerif)
 	{
 		case "required" :
-			$(idField).blur(function() { checkRequired(idResultSpan, $(this).val()); });
-			if (idField == '#infosCountry' || idField == '#infosTimezone')
-				$(idField).change(function() { checkRequired(idResultSpan, $(this).val()); });
+			$(idField).blur(function()
+			{
+				if($(this).val() == "")
+				{
+					$(idResultSpan)
+						.show("slow")
+						.addClass("fail")
+						.html(txtError[0]);
+				}
+				else
+				{
+					$(idResultSpan)
+						.hide("slow")
+						.removeClass("fail")
+						.html("");
+				}
+			}
+			);
 		break;
 		
 		case "mailFormat" :
@@ -776,14 +670,14 @@ function autoCheckField(idField, idResultSpan, typeVerif)
 					{
 						$(idResultSpan)
 							.show("slow")
-							.addClass("errorBlock")
+							.addClass("fail")
 							.html(txtError[3]);
 					}
 					else
 					{
 						$(idResultSpan)
 							.hide("slow")
-							.removeClass("errorBlock")
+							.removeClass("fail")
 							.html("");
 					}
 				}
@@ -798,14 +692,14 @@ function autoCheckField(idField, idResultSpan, typeVerif)
 					{
 						$(idResultSpan)
 							.show("slow")
-							.addClass("errorBlock")
+							.addClass("fail")
 							.html(txtError[47]);
 					}
 					else
 					{
 						$(idResultSpan)
 							.hide("slow")
-							.removeClass("errorBlock")
+							.removeClass("fail")
 							.html("");
 					}
 				}
@@ -820,14 +714,14 @@ function autoCheckField(idField, idResultSpan, typeVerif)
 					{
 						$(idResultSpan)
 							.show("slow")
-							.addClass("errorBlock")
+							.addClass("fail")
 							.html(txtError[48]);
 					}
 					else
 					{
 						$(idResultSpan)
 							.hide("slow")
-							.removeClass("errorBlock")
+							.removeClass("fail")
 							.html("");
 					}
 				}
@@ -876,36 +770,27 @@ function doUpgrade()
 	   url: "model.php",
 	   cache: false,
 	   data:
-	   	"method=doUpgrade&customModule=" + customModule+ "",
+	   	"method=doUpgrade"
+	   ,
 	   success: function(ret)
 	   {
-	   	var ret;
-			try {
-				ret = ret.getElementsByTagName('action')[0];
-			} catch (e) {
-				$("#resultUpdate").html(ret);
-				showStep(8);
-				return;
-			}
-
+			ret = ret.getElementsByTagName('action')[0];
 			var countSqlError = 0;
 			if (ret.getAttribute("result") == "ok" || (ret.getAttribute("result") == "fail" && (ret.getAttribute("error") == "34")))
 			{
 				requests = ret.getElementsByTagName('request');
 				$("#updateLog").empty();
-				$("#updateLog").hide();
+				
 				$(requests).each(function()
 				{
-					var html = "<div class='request'>" + $(this).children("sqlQuery").text();
+					$("#updateLog").append("<div class='request'>" + $(this).children("sqlQuery").text() + "</div><br/>");
 					if($(this).attr("result") == "fail")
 					{
 						countSqlError++;
-						html += "<br /><span class='fail'>(" + $(this).children("sqlNumberError").text() + ") " + $(this).children("sqlMsgError").text() + "</span><br style='clear:both;'/>";
+						$("#updateLog").append("<span class='fail'>(" + $(this).children("sqlNumberError").text() + ") " + $(this).children("sqlMsgError").text() + "</span><br/>");
 					}
-					$("#updateLog").append(html+"</div><br/>");
 				});
-				if (ret.getAttribute("error") == "34")
-					$("#txtErrorUpdateSQL").html(txtError[35]+" "+countSqlError+" "+txtError[36]).show();
+				if (ret.getAttribute("error") == "34") $("#txtErrorUpdateSQL").html(txtError[35]+" "+countSqlError+" "+txtError[36]);
 				showStep(9);
 			}
 			else
@@ -913,14 +798,15 @@ function doUpgrade()
 				$("#resultUpdate").html(txtError[parseInt(ret.getAttribute("error"))]);
 				showStep(8);
 			}
-		},
-		error: function (data, status, e)
+	   },
+	   error: function (data, status, e)
 		{
-			$('#resultUpdate').html('<p>Error during install/upgrade: <b style="color: #D41958; font-weight: bold;">'+data.responseText.replace(/<\/?[^>]+>/gi, '')+'</b><br /><br />You may have to:<br /><ol><li>Fix the error(s) displayed</li><li>Put your database backup</li><li>Modify the file settings.inc.php to put the old version for the line with _PS_VERSION_</li><li>Restart the upgrade process from the begining</li></ol></p>');
-			$('#detailsError').html(data);
+			$("#resultUpdate").html("ajax error : "+status);
+			$("#detailsError").html(data);
 			showStep(8);
 		}
-	});
+	}
+	);
 }
 
 function showUpdateLog(){
@@ -940,19 +826,18 @@ $(document).ready(
 		$("#container").show();
 		
 		//ajax animation
-		$("#loaderSpace").ajaxStart(
+		$("#loader").ajaxStart(
 			function()
 			{
-				$(this).fadeIn('slow');
-				$(this).children('div').fadeIn('slow');
+				$(this).fadeIn();
+				$("#btNext[disabled!=1], #btBack[disabled!=1]").attr("disabled", "disabled").addClass("disabled").addClass("lockedForAjax");
 			}
 		);
-		$("#loaderSpace").ajaxComplete(
-			function(e, xhr, settings)
+		$("#loader").ajaxComplete(
+			function()
 			{
-				$(this).fadeOut('slow');
-				$(this).children('div').fadeOut('slow');
-				errorOccured = false;
+				$(this).fadeOut();
+				$(".lockedForAjax").removeAttr("disabled").removeClass("disabled").removeClass("lockedForAjax");
 			}
 		);
 		//set actions on clicks
@@ -969,25 +854,27 @@ $(document).ready(
 		$('#req_bt_refresh, #req_bt_refresh_update').click(
 			function()
 			{
-				verifyAndSetRequire(0);
+				verifyAndSetRequire();
 			}
 		);
-
+		
 		//set SMTP pannels states
-		$("div#mailSMTPParam").hide();
 		$("#set_stmp").bind("click",
 			function()
 			{
 				switch ($("input#set_stmp:checked").length)
 				{
 					case 0 :
-						$("div#mailSMTPParam").slideUp('slow');
-						smtpChecked = false;
-						break;
+					$("div#mailSMTPParam").slideUp('slow');
+					smtpChecked = false;
+					$("#mailResultCheck").addClass("userInfos").removeClass("ok").removeClass('fail').html("");
+					break;
+					
 					case 1 :
-						$("div#mailSMTPParam").slideDown('slow');
-						smtpChecked = true;
-						break;
+					$("div#mailSMTPParam").slideDown('slow');
+					smtpChecked = true;
+					$("#mailResultCheck").addClass("userInfos").removeClass("ok").removeClass('fail').html("");
+					break;
 				}
 			}
 		);
@@ -1001,70 +888,34 @@ $(document).ready(
 		);
 		
 		//certification needed for upgrade
-		$('#btDisclaimerOk').click(function()
+		$("#btDisclaimerOk").click(function ()
 		{
-		    if ($(this).attr('checked'))
-		    {
-		    	upgradeCertify = true;
-		    	$('#btNext').removeAttr('disabled').removeClass('disabled');
-		    	$('#upgradeProcess').slideDown(500);
-		    }
-		    else
-		    {
-		    	upgradeCertify = false;
-		    	$('#btNext').attr('disabled', 'disabled').addClass('disabled');
-		    	$('#upgradeProcess').slideUp(500);
-		    }
+			upgradeCertify = true;
+			$("#btNext")
+				.removeAttr("disabled")
+				.removeClass("disabled");
 		});
 		
 		//autocheck fields
 		autoCheckField("#infosShop", "#resultInfosShop", "required");
 		autoCheckField("#infosFirstname", "#resultInfosFirstname", "firstnameFormat");
-		autoCheckField("#infosCountry", "#resultInfosCountry", "required");
-		autoCheckField("#infosTimezone", "#resultInfosTimezone", "required");
 		autoCheckField("#infosName", "#resultInfosName", "nameFormat");
 		autoCheckField("#infosEmail", "#resultInfosEmail", "mailFormat");
 		autoCheckField("#infosPassword", "#resultInfosPassword", "required");
 		autoCheckField("#infosPasswordRepeat", "#resultInfosPasswordRepeat", "required");
 		autoCheckField("#infosPasswordRepeat", "#resultInfosPassword", "required");
 		
+		//fix PNG for IE < IE7
+		/*
+		$(document).ready(function(){ 
+	        $("#dfdsf").pngFix(); 
+	    });*/
+	    
+		
 		constructInstallerTabs();
 		
 		//show 1st step
 		step=1;
 		$("input#btNext").focus();
-		
-		// hide next button for licence validation
-		$("#btNext")
-		.attr("disabled", "disabled")
-		.addClass("disabled");
-			
-		function checkLicenseButton(elt)
-		{
-			if ($(elt).is(':checked'))
-			{
-				$("#btNext")
-				.removeAttr('disabled')
-				.removeClass('disabled');
-			}
-			else
-			{
-				$("#btNext")
-				.attr("disabled", "disabled")
-				.addClass("disabled");
-			}
-		}
-			
-		$('#set_license').click(function() {
-			checkLicenseButton(this);
-		});
-		$("#customModuleDesactivation").bind('click',
-			function(){
-				if($("#customModuleDesactivation")[0].checked)
-					customModule = 'desactivate';
-				else
-					customModule = 'take the risk';
-			}
-		)
 	}
 );

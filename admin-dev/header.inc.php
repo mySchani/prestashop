@@ -1,180 +1,177 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-/*
-* P3P Policies (http://www.w3.org/TR/2002/REC-P3P-20020416/#compact_policies)
-*/
+/**
+  * Admin panel header, header.inc.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+// P3P Policies (http://www.w3.org/TR/2002/REC-P3P-20020416/#compact_policies)
 header('P3P: CP="IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA"');
-header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+
+header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0'); // HTTP/1.1
 header('Pragma: no-cache');
 header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
 
 require_once(dirname(__FILE__).'/init.php');
 
-echo '
+?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'.$iso.'" lang="'.$iso.'">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php echo $iso; ?>" lang="<?php echo $iso; ?>">
 	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=utf-8" />
-		<meta name="robots" content="NOFOLLOW, NOINDEX" />
-		<link type="text/css" rel="stylesheet" href="'._PS_JS_DIR_.'jquery/datepicker/datepicker.css" />
-		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'admin.css" />
-		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'jquery.cluetip.css" />
-		<link type="text/css" rel="stylesheet" href="themes/'.$employee->bo_theme.'/admin.css" />
-		<title>PrestaShop&trade; - '.translate('Administration panel').'</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+		<link type="text/css" rel="stylesheet" href="../js/jquery/datepicker/datepicker.css" />
+		<link type="text/css" rel="stylesheet" href="../modules/gridextjs/extjs/resources/css/ext-all.css" />
+		<link type="text/css" rel="stylesheet" href="../css/admin.css" />
+		<title>PrestaShop&trade; - <?php echo translate('Administration panel') ?></title>
 		<script type="text/javascript">
-			var helpboxes = '.Configuration::get('PS_HELPBOX').';
-			var roundMode = '.Configuration::get('PS_PRICE_ROUND_MODE').';
+			var search_texts = Array('<?php echo translate('product, customer, id...'); ?>','<?php echo translate('product, category...'); ?>', '<?php echo translate('customer id, name, e-mail...'); ?>', '<?php echo translate('order id'); ?>', '<?php echo translate('invoice id'); ?>', '<?php echo translate('cart id'); ?>');
+			var helpboxes = <?php echo Configuration::get('PS_HELPBOX'); ?>;
 		</script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'jquery/jquery-1.4.4.min.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'jquery/jquery.hoverIntent.minified.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'jquery/jquery.cluetip.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'admin.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'toggle.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'tools.js"></script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'ajax.js"></script>
-		<link rel="shortcut icon" href="'._PS_IMG_.'favicon.ico" />
-		'.Module::hookExec('backOfficeHeader').'
+		<script type="text/javascript" src="<?php echo _PS_JS_DIR_ ?>jquery/jquery-1.2.6.pack.js"></script>
+		<script type="text/javascript" src="../js/admin.js"></script>
+		<script type="text/javascript" src="../js/toggle.js"></script>
+		<script type="text/javascript" src="../js/tools.js"></script>
+		<script type="text/javascript" src="../js/ajax.js"></script>
+		<link rel="shortcut icon" href="../img/favicon.ico" />
+		<?php echo Module::hookExec('backOfficeHeader'); ?>
 		<!--[if IE]>
-		<link type="text/css" rel="stylesheet" href="'._PS_CSS_DIR_.'admin-ie.css" />
-		<![endif]-->
 		<style type="text/css">
-			div#header_infos, div#header_infos a#header_shopname, div#header_infos a#header_logout, div#header_infos a#header_foaccess {
-				color:'.(Tools::getBrightness(empty($employee->bo_color) ? '#FFFFFF' : $employee->bo_color) < 128 ? 'white' : '#383838').'
-			}
+		fieldset {
+			position: relative;
+			padding-top: 25px;
+		}
+		legend {
+			position: absolute;
+			top: -0.5em;
+			left: 1.1em;
+		}
 		</style>
+		<![endif]--> 
 	</head>
-	<body '.((!empty($employee->bo_color)) ? 'style="background:'.Tools::htmlentitiesUTF8($employee->bo_color).'"' : '').'>
-	<script>
-		var choose_language_trad = "'.translate('Choose language:').'";
-	</script>
-	<div id="top_container">
+	<body>
 		<div id="container">
-			<div id="header_infos"><span>
-				<a id="header_shopname" href="index.php"><span>'.Configuration::get('PS_SHOP_NAME').'</span></a><br />
-				'.Tools::substr($employee->firstname, 0, 1).'.&nbsp;'.htmlentities($employee->lastname, ENT_COMPAT, 'UTF-8').'
-				[ <a href="index.php?logout" id="header_logout"><span>'.translate('logout').'</span></a> ]
-				- <a href="'.__PS_BASE_URI__.'" id="header_foaccess" target="_blank" title="'.translate('View my shop').'"><span>'.translate('View my shop').'</span></a>
-				- <a href="index.php?tab=AdminEmployees&id_employee='.(int)$cookie->id_employee.'&updateemployee&token='.Tools::getAdminTokenLite('AdminEmployees').'" style="font-size: 10px;"><img src="../img/admin/employee.gif" alt="" /> '.translate('My preferences').'</a>
-			</span></div>
-			<div id="header_search">
-				<form method="post" action="index.php?tab=AdminSearch&token='.Tools::getAdminTokenLite('AdminSearch').'">
-					<input type="text" name="bo_query" id="bo_query"
-						value="'.Tools::safeOutput(Tools::stripslashes(Tools::getValue('bo_query'))).'"
-					/>
-					<select name="bo_search_type" id="bo_search_type">
-						<option value="0">'.translate('everywhere').'</option>
-						<option value="1" '.(Tools::getValue('bo_search_type') == 1 ? 'selected="selected"' : '').'>'.translate('catalog').'</option>
-						<option value="2" '.(Tools::getValue('bo_search_type') == 2 ? 'selected="selected"' : '').'>'.translate('customers').'</option>
-						<option value="6" '.(Tools::getValue('bo_search_type') == 6 ? 'selected="selected"' : '').'>'.translate('ip address').'</option>
-						<option value="3" '.(Tools::getValue('bo_search_type') == 3 ? 'selected="selected"' : '').'>'.translate('orders').'</option>
-						<option value="4" '.(Tools::getValue('bo_search_type') == 4 ? 'selected="selected"' : '').'>'.translate('invoices').'</option>
-						<option value="5" '.(Tools::getValue('bo_search_type') == 5 ? 'selected="selected"' : '').'>'.translate('carts').'</option>
-					</select>
-					<input type="submit" id="bo_search_submit" class="button" value="'.translate('Search').'"/>
+			<div style="float: left; margin-top: 11px;">
+				<form action="index.php?tab=AdminSearch&token=<?php echo Tools::getAdminToken('AdminSearch'.intval(Tab::getIdFromClassName('AdminSearch')).intval($cookie->id_employee)) ?>" method="post">
+					<input type="text" name="bo_query" id="bo_query" style="width: 140px;" value="<?php echo (isset($_POST['bo_query']) ? Tools::safeOutput(Tools::stripslashes($_POST['bo_query'])) : ''); ?>" /> <?php translate('in') ?>
+					<select name="bo_search_type" id="bo_search_type" onchange="queryType();" style="font-size: 1em;">
+						<option value="0"><?php echo translate('everywhere') ?></option>
+						<option value="1"<?php echo (isset($_POST['bo_search_type']) AND
+						($_POST['bo_search_type'] == 1)) ? ' selected="selected"' : '' ?>><?php echo translate('catalog') ?></option>
+						<option value="2"<?php echo (isset($_POST['bo_search_type']) AND
+						($_POST['bo_search_type'] == 2)) ? ' selected="selected"' : '' ?>><?php echo translate('customers') ?></option>
+						<option value="3"<?php echo (isset($_POST['bo_search_type']) AND (
+						$_POST['bo_search_type'] == 3)) ? ' selected="selected"' : '' ?>><?php echo translate('orders') ?></option>
+						<option value="4"<?php echo (isset($_POST['bo_search_type']) AND (
+						$_POST['bo_search_type'] == 4)) ? ' selected="selected"' : '' ?>><?php echo translate('invoices') ?></option>
+						<option value="5"<?php echo (isset($_POST['bo_search_type']) AND (
+						$_POST['bo_search_type'] == 5)) ? ' selected="selected"' : '' ?>><?php echo translate('carts') ?></option>
+					</select>&nbsp;
+					<input type="submit" name="bo_search" value="<?php echo translate('Search') ?>" class="button" />
+					<script type="text/javascript">queryType();</script>
 				</form>
 			</div>
-			<div id="header_quick">
+			<div style="float: left;margin: 11px 0px 0px 50px;" id="flagsLanguage">
+				<div>
+				<?php
+				$link = new Link();
+				$languages = Language::getLanguages();
+				$i = 0;
+				if (sizeof($languages) != 1)
+					foreach ($languages AS $language)
+					{
+						echo '<a href="'.$link->getLanguageLinkAdmin($language['id_lang'], $language['name']).'&adminlang=1"><img src="'._PS_IMG_.'l/'.$language['id_lang'].'.jpg" alt="'.strtoupper($language['iso_code']).'" title="'.$language['name'].'" '.($language['id_lang'] == $cookie->id_lang ? 'class="selected_language"' : '').' /></a> ';
+						if ($i == 4)
+							echo '</div><div style="margin-top:5px;">';
+						$i++;
+					}
+				?>
+				</div>
+			</div>
+			<script type="text/javascript">$('#flagsLanguage img[class!=selected_language]').css('opacity', '0.3')</script>
+			<div style="float: right; margin: 11px 0px 0px 20px; text-align:right;">
+				<img src="../img/admin/quick.gif" style="margin-top:5px;" />&nbsp;
 				<script type="text/javascript">
 				function quickSelect(elt)
 				{
 					var eltVal = $(elt).val();
-					if (eltVal == "0") return false;
-					else if (eltVal.substr(eltVal.length - 6) == "_blank") window.open(eltVal.substr(0, eltVal.length - 6), "_blank");
+					if (eltVal == '0') return false;
+					else if (eltVal.substr(eltVal.length - 6) == '_blank')
+						window.open(eltVal.substr(0, eltVal.length - 6), '_blank');
 					else location.href = eltVal;
 				}
 				</script>
-				<select onchange="quickSelect(this);" id="quick_select">
-					<option value="0">'.translate('Quick Access').'</option>';
-foreach (QuickAccess::getQuickAccesses((int)($cookie->id_lang)) as $quick)
-{
-	preg_match('/tab=(.+)(&.+)?$/', $quick['link'], $adminTab);
-	if (isset($adminTab[1]))
-	{
-		if (strpos($adminTab[1], '&'))
-			$adminTab[1] = substr($adminTab[1], 0, strpos($adminTab[1], '&'));
-		$quick['link'] .= '&token='.Tools::getAdminToken($adminTab[1].(int)(Tab::getIdFromClassName($adminTab[1])).(int)($cookie->id_employee));
-	}
-	echo '<option value="'.$quick['link'].($quick['new_window'] ? '_blank' : '').'">&gt; '.$quick['name'].'</option>';
-}
-echo '			</select>
+				<select onchange="quickSelect(this);" style="font-size: 1em; margin:5px 20px 0px 0px;">
+					<?php
+						$quicks = QuickAccess::getQuickAccesses(intval($cookie->id_lang)); 
+						echo '<option value="0">'.translate('Quick access').'</option>';
+						foreach ($quicks AS &$quick)
+						{
+							preg_match('/tab=(.+)(&.+)?$/', $quick['link'], $adminTab);
+							if (isset($adminTab[1]))
+							{
+								if (strpos($adminTab[1], '&'))
+									$adminTab[1] = substr($adminTab[1], 0, strpos($adminTab[1], '&'));
+								$quick['link'] .= '&token='.Tools::getAdminToken($adminTab[1].intval(Tab::getIdFromClassName($adminTab[1])).intval($cookie->id_employee));
+							}
+							echo '<option value="'.$quick['link'].($quick['new_window'] ? '_blank' : '').'">&gt; '.Category::hideCategoryPosition($quick['name']).'</option>';
+						}
+					?>
+				</select>
+				<img src="../img/admin/nav-user.gif" alt="<?php echo translate('user') ?>" />&nbsp;
+				<a href="index.php?logout" title="<?php echo translate('logout') ?>">
+					<b><?php echo Tools::substr($cookie->firstname, 0, 1).'.&nbsp;'.htmlentities($cookie->lastname, ENT_COMPAT, 'UTF-8'); ?></b>
+					<img src="../img/admin/nav-logout.gif" alt="<?php echo translate('logout') ?>" />
+				</a>
 			</div>
-			<div class="flatclear">&nbsp;</div>';
-			echo Module::hookExec('backOfficeTop');
-			echo '<ul id="menu">';
-if (empty($tab))
-	echo '<div class="mainsubtablist" style="display:none"></div>';
+			<br style="clear:both;" />
+			<?php echo Module::hookExec('backOfficeTop'); ?>
+			<ul id="menu" style="margin-top:20px">
+				<?php
+					global $cookie;
 
-$id_parent_tab_current = (int)(Tab::getCurrentParentId());
-$tabs = Tab::getTabs((int)$cookie->id_lang, 0);
-$echoLis = '';
-$mainsubtablist = '';
-foreach ($tabs as $t)
-	if (checkTabRights($t['id_tab']) === true)
-	{
-		$img = (Tools::file_exists_cache(_PS_ADMIN_DIR_.'/themes/'.$employee->bo_theme.'/img/t/'.$t['class_name'].'.gif') ? 'themes/'.$employee->bo_theme.'/img/' : _PS_IMG_).'t/'.$t['class_name'].'.gif';
-		if (trim($t['module']) != '')
-			$img = _MODULE_DIR_.$t['module'].'/'.$t['class_name'].'.gif';
-		$current = (($t['class_name'] == $tab) || ($id_parent_tab_current == $t['id_tab']));
-		echo '<li class="submenu_size '.($current ? 'active' : '').'" id="maintab'.$t['id_tab'].'">
-			<a href="index.php?tab='.$t['class_name'].'&token='.Tools::getAdminToken($t['class_name'].(int)($t['id_tab']).(int)($cookie->id_employee)).'">
-				<img src="'.$img.'" alt="" /> '.$t['name'].'
-			</a>
-		</li>';
-		$echoLi = '';
-		$subTabs = Tab::getTabs((int)$cookie->id_lang, (int)$t['id_tab']);
-		foreach ($subTabs as $t2)
-			if (checkTabRights($t2['id_tab']) === true)
-				$echoLi .= '<li><a href="index.php?tab='.$t2['class_name'].'&token='.Tools::getAdminTokenLite($t2['class_name']).'">'.$t2['name'].'</a></li>';
-		if ($current)
-			$mainsubtablist = $echoLi;
-		$echoLis .= '<div id="tab'.(int)($t['id_tab']).'_subtabs" style="display:none">'.$echoLi.'</div>';
-	}
-echo '		</ul>'.$echoLis;
-if ($employee->bo_uimode == 'hover')
-	echo '	<script type="text/javascript">
-				$("#menu li").hoverIntent({over:hoverTabs,timeout:100,out:outTabs});
-				function outTabs(){}
-				function hoverTabs() {
-					var content = $("#tab"+parseInt(this.id.substr(7, 3))+"_subtabs").html();
-					$("#submenu").html(content);
-					if (content.length == 0)
-						$("#submenu").removeClass("withLeftBorder");
-					else
-						$("#submenu").addClass("withLeftBorder");
-					$("#menu li").removeClass("active");
-					$(this).addClass("active");
-				}
-			</script>';
-echo '		<ul id="submenu" '.(strlen($mainsubtablist) ? 'class="withLeftBorder clearfix"' : '').'>'.$mainsubtablist.'</ul>
+					/* Get current tab informations */
+					$id_parent_tab_current = intval(Tab::getCurrentParentId());
+					$tabs = Tab::getTabs(intval($cookie->id_lang), 0);
+					foreach ($tabs AS $t)
+					{
+						if ($t['class_name'] == $tab)
+							$id_parent = $t['id_tab'];
+						if (checkTabRights($t['id_tab']) === true)
+						{
+							$img = '../img/t/'.$t['class_name'].'.gif';
+							if (trim($t['module']) != '')
+								$img = _MODULE_DIR_.$t['module'].'/'.$t['class_name'].'.gif';
+							echo '
+							<li'.((($t['class_name'] == $tab) OR ($id_parent_tab_current == $t['id_tab'])) ? ' class="active"' : '').'>
+								<a href="index.php?tab='.$t['class_name'].'&token='.Tools::getAdminToken($t['class_name'].intval($t['id_tab']).intval($cookie->id_employee)).'"><img src="'.$img.'" alt="" style="width:16px;height:16px" /> '.$t['name'].'</a>
+							</li>';
+						}
+					}
+				?>
+			</ul>
 			<div id="main">
-				<div id="content">'
-			.(file_exists(PS_ADMIN_DIR.'/../install') ? '<div style="background-color: #FFEBCC;border: 1px solid #F90;line-height: 20px;margin: 0px 0px 10px;padding: 10px 20px;">'
-				.translate('For security reasons, you must also:').' '.
-				translate('delete the /install folder').
-				'</div>' : '').'
-				';
+				<ul id="submenu">
+				<?php
+					global $cookie;
+
+					/* Display tabs belonging to opened tab */
+					$id_parent = isset($id_parent) ? $id_parent : $id_parent_tab_current;
+					if (isset($id_parent) AND $id_parent != -1)
+					{
+					 	$subTabs = Tab::getTabs(intval($cookie->id_lang), intval($id_parent));
+						foreach ($subTabs AS $t)
+							if (checkTabRights($t['id_tab']) === true)
+								echo '
+								<li>
+									<a href="index.php?tab='.$t['class_name'].'&token='.Tools::getAdminToken($t['class_name'].intval($t['id_tab']).intval($cookie->id_employee)).'"><img src="../img/t/'.$t['class_name'].'.gif" alt="" style="width:16px;height:16px" /></a> <a href="index.php?tab='.$t['class_name'].'&token='.Tools::getAdminToken($t['class_name'].intval($t['id_tab']).intval($cookie->id_employee)).'">'.$t['name'].'</a>
+								</li>';
+					}
+				?>
+				</ul>
+				<div id="content">

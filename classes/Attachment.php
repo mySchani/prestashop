@@ -1,34 +1,20 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class AttachmentCore extends ObjectModel
+/**
+  * Attachment class, Attachment.php
+  * Attachment management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class Attachment extends ObjectModel
 {
 	public		$file;
-	public		$file_name;
 	public		$name;
 	public		$mime;
 	public		$description;
@@ -37,8 +23,8 @@ class AttachmentCore extends ObjectModel
 	public		$position;
 
 	protected	$fieldsRequired = array('file', 'mime');
-	protected	$fieldsSize = array('file' => 40, 'mime' => 128, 'file_name' => 128);
-	protected	$fieldsValidate = array('file' => 'isGenericName', 'mime' => 'isCleanHtml', 'file_name' => 'isGenericName');
+	protected	$fieldsSize = array('file' => 40, 'mime' => 32);
+	protected	$fieldsValidate = array('file' => 'isGenericName', 'mime' => 'isCleanHtml');
 
 	protected	$fieldsRequiredLang = array('name');
 	protected	$fieldsSizeLang = array('name' => 32);
@@ -50,7 +36,6 @@ class AttachmentCore extends ObjectModel
 	public function getFields()
 	{
 		parent::validateFields();
-		$fields['file_name'] = pSQL($this->file_name);
 		$fields['file'] = pSQL($this->file);
 		$fields['mime'] = pSQL($this->mime);
 		return $fields;
@@ -65,7 +50,7 @@ class AttachmentCore extends ObjectModel
 	public function delete()
 	{
 		@unlink(_PS_DOWNLOAD_DIR_.$this->file);
-		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_attachment WHERE id_attachment = '.(int)($this->id));
+		Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_attachment WHERE id_attachment = '.intval($this->id));
 		return parent::delete();
 	}
 	
@@ -74,7 +59,7 @@ class AttachmentCore extends ObjectModel
 		$return = 1;
 		foreach ($attachments AS $id_attachment)
 		{
-			$attachment = new Attachment((int)($id_attachment));
+			$attachment = new Attachment(intval($id_attachment));
 			$return &= $attachment->delete();
 		}
 		return $return;
@@ -85,41 +70,22 @@ class AttachmentCore extends ObjectModel
 		return Db::getInstance()->ExecuteS('
 		SELECT *
 		FROM '._DB_PREFIX_.'attachment a
-		LEFT JOIN '._DB_PREFIX_.'attachment_lang al ON (a.id_attachment = al.id_attachment AND al.id_lang = '.(int)($id_lang).')
-		WHERE a.id_attachment '.($include ? 'IN' : 'NOT IN').' (SELECT pa.id_attachment FROM '._DB_PREFIX_.'product_attachment pa WHERE id_product = '.(int)($id_product).')');
+		LEFT JOIN '._DB_PREFIX_.'attachment_lang al ON (a.id_attachment = al.id_attachment AND al.id_lang = '.intval($id_lang).')
+		WHERE a.id_attachment '.($include ? 'IN' : 'NOT IN').' (SELECT pa.id_attachment FROM '._DB_PREFIX_.'product_attachment pa WHERE id_product = '.intval($id_product).')');
 	}
 	
 	public static function attachToProduct($id_product, $array)
 	{
-		$result1 = Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_attachment WHERE id_product = '.(int)($id_product));
+		$result1 = Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_attachment WHERE id_product = '.intval($id_product));
 		if (is_array($array))
 		{
 			$ids = array();
 			foreach ($array as $id_attachment)
-				$ids[] = '('.(int)($id_product).','.(int)($id_attachment).')';
-			Db::getInstance()->Execute('UPDATE '._DB_PREFIX_.'product SET cache_has_attachments = '.(count($ids) ? '1' : '0').' WHERE id_product = '.(int)($id_product).' LIMIT 1');
-			return ($result1 && Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'product_attachment (id_product, id_attachment) VALUES '.implode(',', $ids)));
+				$ids[] = '('.intval($id_product).','.intval($id_attachment).')';
+			return $result1 & Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'product_attachment (id_product, id_attachment) VALUES '.implode(',',$ids));
 		}
 		return $result1;
 	}
-	
-	public static function getProductAttached($id_lang, $list)
-	{
-		$ids_attachements = array();
-		if (is_array($list))
-		{
-			foreach($list as $attachement)
-				$ids_attachements[] = $attachement['id_attachment'];
-			$tmp = Db::getInstance()->executeS('SELECT * FROM `'._DB_PREFIX_.'product_attachment` pa
-												LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pa.`id_product` = pl.`id_product`)
-												WHERE `id_attachment` IN ('.implode(',', array_map('intval', $ids_attachements)).') AND pl.`id_lang` = '.(int)$id_lang.';');
-			$productAttachements = array();
-			foreach($tmp as $t)
-				$productAttachements[$t['id_attachment']][] =  $t['name'];
-			return $productAttachements;
-		}
-		else
-			return false;
-	}
 }
 
+?>

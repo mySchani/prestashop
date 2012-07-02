@@ -1,29 +1,16 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Catalog tab for admin panel, AdminCatalog.php
+  * Tab has been separated in 3 files : this one, AdminCategories.php and AdminProducts.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 include(PS_ADMIN_DIR.'/tabs/AdminCategories.php');
@@ -40,7 +27,7 @@ class AdminCatalog extends AdminTab
 	/** @var object AttributeGenerator() instance */
 	private $attributeGenerator;
 
-	/** @var object imageResize() instance */
+	/** @var object AttributeGenerator() instance */
 	private $imageResize;
 
 	/** @var object Category() instance for navigation*/
@@ -49,7 +36,7 @@ class AdminCatalog extends AdminTab
 	public function __construct()
 	{
 		/* Get current category */
-		$id_category = abs((int)(Tools::getValue('id_category')));
+		$id_category = abs(intval(Tools::getValue('id_category')));
 		if (!$id_category) $id_category = 1;
 		self::$_category = new Category($id_category);
 		if (!Validate::isLoadedObject(self::$_category))
@@ -93,18 +80,22 @@ class AdminCatalog extends AdminTab
 			}
 			$this->attributeGenerator->postProcess();
 		}
+		elseif (isset($_GET['imageresize']))
+		{
+			if (!isset($this->imageResize))
+			{
+				include_once(PS_ADMIN_DIR.'/tabs/AdminImageResize.php');
+				$this->imageResize = new AdminImageResize();
+			}
+			$this->imageResize->postProcess();
+		}
 		$this->adminProducts->postProcess($this->token);
 	}
 
 	public function displayErrors()
 	{
-		parent::displayErrors();
 		$this->adminProducts->displayErrors();
 		$this->adminCategories->displayErrors();
-		if (Validate::isLoadedObject($this->attributeGenerator))
-			$this->attributeGenerator->displayErrors();
-		if (Validate::isLoadedObject($this->imageResize))
-			$this->imageResize->displayErrors();
 	}
 
 	public function display()
@@ -116,13 +107,10 @@ class AdminCatalog extends AdminTab
 			$this->adminCategories->displayForm($this->token);
 			echo '<br /><br /><a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to list').'</a><br />';
 		}
-		elseif (((Tools::isSubmit('submitAddproduct') OR Tools::isSubmit('submitAddproductAndPreview') OR Tools::isSubmit('submitAddproductAndStay') OR Tools::isSubmit('submitSpecificPricePriorities') OR Tools::isSubmit('submitPriceAddition') OR Tools::isSubmit('submitPricesModification')) AND sizeof($this->adminProducts->_errors)) OR Tools::isSubmit('updateproduct') OR Tools::isSubmit('addproduct'))
+		elseif (((Tools::isSubmit('submitAddproduct') OR Tools::isSubmit('submitAddproductAndStay')) AND sizeof($this->adminProducts->_errors)) OR Tools::isSubmit('updateproduct') OR Tools::isSubmit('addproduct'))
 		{
 			$this->adminProducts->displayForm($this->token);
-			if (Tools::getValue('id_category') > 1)
-				echo '<br /><br /><a href="index.php?tab='.Tools::getValue('tab').'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to home').'</a><br />';
-			else
-				echo '<br /><br /><a href="index.php?tab='.Tools::getValue('tab').'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to catalog').'</a><br />';
+			echo '<br /><br /><a href="index.php?tab='.Tools::getValue('tab').'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to catalog').'</a><br />';
 		}
 		elseif (isset($_GET['attributegenerator']))
 		{
@@ -133,9 +121,18 @@ class AdminCatalog extends AdminTab
 			}
 			$this->attributeGenerator->displayForm();
 		}
+		elseif (isset($_GET['imageresize']))
+		{
+			if (!isset($this->imageResize))
+			{
+				include_once(PS_ADMIN_DIR.'/tabs/AdminImageResize.php');
+				$this->imageResize = new AdminImageResize();
+			}
+			$this->imageResize->displayForm();
+		}
 		elseif (!isset($_GET['editImage']))
 		{
-			$id_category = (int)(Tools::getValue('id_category'));
+			$id_category = intval(Tools::getValue('id_category'));
 			if (!$id_category)
 				$id_category = 1;
 			$catalog_tabs = array('category', 'product');
@@ -155,4 +152,4 @@ class AdminCatalog extends AdminTab
 	}
 }
 
-
+?>

@@ -63,32 +63,20 @@
     function SetLogFiles($errorLogFile, $messageLogFile, $logLevel=L_ERR_RQST) {
       $this->log = new GoogleLog($errorLogFile, $messageLogFile, $logLevel);
     }
-
-	  /**
-	   * Verifies that the authentication sent by Google Checkout matches the
-	   * merchant id and key
-	   *
-	   * @param null $headers param from the header request
-	   * @param bool $die
-	   * @return bool
-	   */
+    
+    /**
+     * Verifies that the authentication sent by Google Checkout matches the 
+     * merchant id and key
+     * 
+     * @param string $headers the headers from the request
+     */
     function HttpAuthentication($headers=null, $die=true) {
-      if (!is_null($headers))
+      if(!is_null($headers)) {
         $_SERVER = $headers;
-
-			if (!isset($_SERVER['HTTP_AUTHORIZATION']))
-				$_SERVER['HTTP_AUTHORIZATION'] = $_GET['login'];
-
-			// GET['HTTP_AUTHORIZATION'] is set in the .htaccess
-			list($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']) = explode(':', 
-					base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)));
-      
-			if (isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
+      }
+      if(isset($_SERVER['PHP_AUTH_USER']) && isset($_SERVER['PHP_AUTH_PW'])) {
         $compare_mer_id = $_SERVER['PHP_AUTH_USER']; 
         $compare_mer_key = $_SERVER['PHP_AUTH_PW'];
-
-				unset($_SERVER['PHP_AUTH_USER']); 
-				unset($_SERVER['PHP_AUTH_PW']);
       }
   //  IIS Note::  For HTTP Authentication to work with IIS, 
   // the PHP directive cgi.rfc2616_headers must be set to 0 (the default value). 
@@ -105,7 +93,7 @@
               "Failed to Get Basic Authentication Headers",$die);
         return false;
       }
-      if ($compare_mer_id != $this->merchant_id 
+      if($compare_mer_id != $this->merchant_id 
          || $compare_mer_key != $this->merchant_key) {
         $this->SendFailAuthenticationStatus("Invalid Merchant Id/Key Pair",$die);
         return false;
@@ -158,7 +146,7 @@
       $this->log->logError($msg);
       header('WWW-Authenticate: Basic realm="GoogleCheckout PHPSample Code"');
       header('HTTP/1.0 401 Unauthorized');
-      if ($die) {
+      if($die) {
        die($msg); 
       } else {
       echo $msg;
@@ -174,7 +162,7 @@
     function SendBadRequestStatus($msg="400 Bad Request", $die=true) {
       $this->log->logError($msg);
       header('HTTP/1.0 400 Bad Request');
-      if ($die) {
+      if($die) {
        die($msg); 
       } else {
       echo $msg;
@@ -191,7 +179,7 @@
                                                                    $die=true) {
       $this->log->logError($msg);
       header('HTTP/1.0 500 Internal Server Error');
-      if ($die) {
+      if($die) {
        die($msg); 
       } else {
         echo $msg;
@@ -207,7 +195,7 @@
                         "<notification-acknowledgment xmlns=\"" . 
                         $this->schema_url . "\"/>";
       $this->log->LogResponse($acknowledgment);
-      if ($die) {
+      if($die) {
         die($acknowledgment);    
       } else {
         echo $acknowledgment;    
@@ -218,7 +206,7 @@
      * @access private
      */
     function GetParsedXML($request=null){
-      if (!is_null($request)) {
+      if(!is_null($request)) {
         $this->log->LogRequest($request);
         $this->response = $request;
         ini_set('include_path', ini_get('include_path').PATH_SEPARATOR.'.');
@@ -231,3 +219,4 @@
       return array($this->root, $this->data);
     }
   }
+?>

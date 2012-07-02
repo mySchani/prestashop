@@ -1,53 +1,31 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-if (!defined('_PS_VERSION_'))
-	exit;
-
+/**
+  * Statistics
+  * @category stats
+  *
+  * @author Damien Metzger / Epitech
+  * @copyright Epitech / PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.2
+  */
+  
 class StatsBestVouchers extends ModuleGrid
 {
-	private $_html;
-	private $_query;
-	private $_columns;
-	private $_defaultSortColumn;
-	private $_defaultSortDirection;
-	private $_emptyMessage;
-	private $_pagingMessage;
+	private $_html = null;
+	private $_query =  null;
+	private $_columns = null;
+	private $_defaultSortColumn = null;
+	private $_emptyMessage = null;
+	private $_pagingMessage = null;
 	
 	function __construct()
 	{
 		$this->name = 'statsbestvouchers';
-		$this->tab = 'analytics_stats';
+		$this->tab = 'Stats';
 		$this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 		
 		$this->_defaultSortColumn = 'ca';
-		$this->_defaultSortDirection = 'DESC';
 		$this->_emptyMessage = $this->l('Empty recordset returned');
 		$this->_pagingMessage = $this->l('Displaying').' {0} - {1} '.$this->l('of').' {2}';
 		
@@ -93,28 +71,31 @@ class StatsBestVouchers extends ModuleGrid
 			'title' => $this->displayName,
 			'columns' => $this->_columns,
 			'defaultSortColumn' => $this->_defaultSortColumn,
-			'defaultSortDirection' => $this->_defaultSortDirection,
 			'emptyMessage' => $this->_emptyMessage,
 			'pagingMessage' => $this->_pagingMessage
 		);
-		
-		if (Tools::getValue('export'))
-				$this->csvExport($engineParams);
-				
+	
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			'.ModuleGrid::engine($engineParams).'
-			<br /><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a>
 		</fieldset>';
 		return $this->_html;
+	}
+	
+	public function getTotalCount()
+	{
+		$result = Db::getInstance()->GetRow('SELECT COUNT(`id_order_discount`) total FROM `'._DB_PREFIX_.'order_discount`');
+		return $result['total'];
 	}
 
 	public function getData()
 	{	
+		$this->_totalCount = $this->getTotalCount();
 		$this->_query = '
-		SELECT SQL_CALC_FOUND_ROWS od.name, COUNT(od.id_discount) as total, SUM(o.total_paid_real) / o.conversion_rate as ca
+		SELECT od.name, COUNT(od.id_discount) as total, SUM(o.total_paid_real) / c.conversion_rate as ca
 		FROM '._DB_PREFIX_.'order_discount od
 		LEFT JOIN '._DB_PREFIX_.'orders o ON o.id_order = od.id_order
+		LEFT JOIN `'._DB_PREFIX_.'currency` c ON o.id_currency = c.id_currency
 		WHERE o.valid = 1
 		AND o.invoice_date BETWEEN '.$this->getDate().'
 		GROUP BY od.id_discount';
@@ -122,12 +103,11 @@ class StatsBestVouchers extends ModuleGrid
 		if (Validate::IsName($this->_sort))
 		{
 			$this->_query .= ' ORDER BY `'.$this->_sort.'`';
-			if (isset($this->_direction) && (strtoupper($this->_direction) == 'ASC' || strtoupper($this->_direction) == 'DESC'))
-				$this->_query .= ' '.pSQL($this->_direction);
+			if (isset($this->_direction))
+				$this->_query .= ' '.$this->_direction;
 		}
 		if (($this->_start === 0 OR Validate::IsUnsignedInt($this->_start)) AND Validate::IsUnsignedInt($this->_limit))
 			$this->_query .= ' LIMIT '.$this->_start.', '.($this->_limit);
-		$this->_values = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query);
-		$this->_totalCount = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('SELECT FOUND_ROWS()');
+		$this->_values = Db::getInstance()->ExecuteS($this->_query);
 	}
 }

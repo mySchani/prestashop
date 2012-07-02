@@ -1,13 +1,7 @@
 .tab-pane {
 	float: 			left;
 	position:		relative;
-	width:			928px;
-}
-
-.tab-pane-tax {
-	float: 			left;
-	position:		relative;
-	width:			900px;
+	width:			796px
 }
 
 .tab-row .tab {
@@ -64,4 +58,3 @@
 	z-index:		1;
 	white-space:	nowrap;
 }
-

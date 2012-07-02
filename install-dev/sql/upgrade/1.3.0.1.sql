@@ -45,7 +45,7 @@ ALTER TABLE `PREFIX_orders` ADD `total_products_wt` DECIMAL(10, 2) NOT NULL AFTE
 /* 					CONTENTS			 */
 /* ##################################### */
 
-UPDATE IGNORE `PREFIX_group` SET `price_display_method` = IFNULL((SELECT `value` FROM `PREFIX_configuration` WHERE `name` = 'PS_PRICE_DISPLAY'), 0);
+UPDATE `PREFIX_group` SET `price_display_method` = (SELECT `value` FROM `PREFIX_configuration` WHERE `name` = 'PS_PRICE_DISPLAY');
 
 UPDATE `PREFIX_configuration` 
 SET `value` = ROUND(value / (1 + (
@@ -86,7 +86,7 @@ INSERT INTO `PREFIX_hook` (`name`, `title`, `description`, `position`) VALUES
 ('backOfficeTop', 'Administration panel top hover the tabs', NULL , '1'),
 ('backOfficeFooter', 'Administration panel footer', NULL , '1');
 
-INSERT INTO `PREFIX_carrier_group` (id_carrier, id_group) (SELECT id_carrier, id_group FROM `PREFIX_carrier` c, `PREFIX_group` g WHERE c.active = 1);
+INSERT INTO `PREFIX_carrier_group` (id_carrier, id_group) (SELECT id_carrier, id_group FROM PREFIX_carrier c, PREFIX_group g WHERE c.active = 1);
 
 /* PHP */
 /* PHP:convert_product_price(); */;

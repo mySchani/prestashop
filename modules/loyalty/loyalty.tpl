@@ -1,31 +1,11 @@
-{*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14489 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*}
+<script type="text/javascript">
+<!--
+	var baseDir = '{$base_dir_ssl}';
+-->
+</script>
 
-{capture name=path}<a href="{$link->getPageLink('my-account.php', true)}">{l s='My account' mod='loyalty'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='My loyalty points' mod='loyalty'}{/capture}
-{include file="$tpl_dir./breadcrumb.tpl"}
+{capture name=path}<a href="{$base_dir_ssl}my-account.php">{l s='My account' mod='loyalty'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='My loyalty points' mod='loyalty'}{/capture}
+{include file=$tpl_dir./breadcrumb.tpl}
 
 <h2>{l s='My loyalty points' mod='loyalty'}</h2>
 
@@ -49,7 +29,7 @@
 			</tr>
 		</tfoot>
 		<tbody>
-		{foreach from=$displayorders item='order'}
+		{foreach from=$orders item='order'}
 			<tr class="alternate_item">
 				<td class="history_link bold">{l s='#' mod='loyalty'}{$order.id|string_format:"%06d"}</td>
 				<td class="history_date">{dateFormat date=$order.date full=1}</td>
@@ -64,72 +44,17 @@
 		<p class="warning">{l s='You have not placed any orders.'}</p>
 	{/if}
 </div>
-<div id="pagination" class="pagination">
-	{if $nbpagination < $orders|@count}
-		<ul class="pagination">
-		{if $page != 1}
-			{assign var='p_previous' value=$page-1}
-			<li id="pagination_previous"><a href="{$pagination_link}?p={$p_previous}&n={$nbpagination}">
-			&laquo;&nbsp;{l s='Previous' mod='loyalty'}</a></li>
-		{else}
-			<li id="pagination_previous" class="disabled"><span>&laquo;&nbsp;{l s='Previous' mod='loyalty'}</span></li>
-		{/if}
-		{if $page > 2}
-			<li><a href="{$pagination_link}?p=1&n={$nbpagination}">1</a></li>
-			{if $page > 3}
-				<li class="truncate">...</li>
-			{/if}
-		{/if}
-		{section name=pagination start=$page-1 loop=$page+2 step=1}
-			{if $page == $smarty.section.pagination.index}
-				<li class="current"><span>{$page|escape:'htmlall':'UTF-8'}</span></li>
-			{elseif $smarty.section.pagination.index > 0 && $orders|@count+$nbpagination > ($smarty.section.pagination.index)*($nbpagination)}
-				<li><a href="{$pagination_link}?p={$smarty.section.pagination.index}&n={$nbpagination}">{$smarty.section.pagination.index|escape:'htmlall':'UTF-8'}</a></li>
-			{/if}
-		{/section}
-		{if $max_page-$page > 1}
-			{if $max_page-$page > 2}
-				<li class="truncate">...</li>
-			{/if}
-			<li><a href="{$pagination_link}?p={$max_page}&n={$nbpagination}">{$max_page}</a></li>
-		{/if}
-		{if $orders|@count > $page * $nbpagination}
-			{assign var='p_next' value=$page+1}
-			<li id="pagination_next"><a href="{$pagination_link}?p={$p_next}&n={$nbpagination}">{l s='Next' mod='loyalty'}&nbsp;&raquo;</a></li>
-		{else}
-			<li id="pagination_next" class="disabled"><span>{l s='Next' mod='loyalty'}&nbsp;&raquo;</span></li>
-		{/if}
-		</ul>
-	{/if}
-	{if $orders|@count > 10}
-		<form action="{$pagination_link}" method="get" class="pagination">
-			<p>
-				<input type="submit" class="button_mini" value="{l s='OK'}" />
-				<label for="nb_item">{l s='items:' mod='loyalty'}</label>
-				<select name="n" id="nb_item">
-				{foreach from=$nArray item=nValue}
-					{if $nValue <= $orders|@count}
-						<option value="{$nValue|escape:'htmlall':'UTF-8'}" {if $nbpagination == $nValue}selected="selected"{/if}>{$nValue|escape:'htmlall':'UTF-8'}</option>
-					{/if}
-				{/foreach}
-				</select>
-				<input type="hidden" name="p" value="1" />
-			</p>
-		</form>
-	{/if}
-	</div>
 
-<br />{l s='Vouchers generated here are usable in the following categories : ' mod='loyalty'}
-{if $categories}{$categories}{else}{l s='All' mod='loyalty'}{/if}
 
 {if $transformation_allowed}
 <p style="text-align:center; margin-top:20px">
-	<a href="{$base_dir}modules/loyalty/loyalty-program.php?transform-points=true" onclick="return confirm('{l s='Are you sure you want to transform your points into vouchers?' mod='loyalty' js=1}');">{l s='Transform my points into a voucher of' mod='loyalty'} <span class="price">{convertPrice price=$voucher}</span>.</a>
+	<a href="{$base_dir}modules/loyalty/loyalty-program.php?transform-points=true" onclick="return confirm('{l s='Are you sure to want to transform your points into vouchers ?' mod='loyalty' js=1}');">{l s='Transform my points into a voucher of' mod='loyalty'} <span class="price">{convertPrice price=$voucher}</span>.</a>
 </p>
 {/if}
 
 <br />
 <h2>{l s='My vouchers from loyalty points' mod='loyalty'}</h2>
+
 
 {if $nbDiscounts}
 <div class="block-center" id="block-history">
@@ -167,9 +92,6 @@
 	</table>
 	<div id="block-order-detail" class="hidden">&nbsp;</div>
 </div>
-
-{if $minimalLoyalty > 0}<p>{l s='The minimum order amount in order to use these vouchers is:' mod='loyalty'} {convertPrice price=$minimalLoyalty}</p>{/if}
-
 <script type="text/javascript">
 {literal}
 $(document).ready(function()
@@ -194,6 +116,6 @@ $(document).ready(function()
 {/if}
 
 <ul class="footer_links">
-	<li><a href="{$link->getPageLink('my-account.php', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account.php', true)}">{l s='Back to Your Account' mod='loyalty'}</a></li>
+	<li><a href="{$base_dir_ssl}my-account.php"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$base_dir_ssl}my-account.php">{l s='Back to Your Account' mod='loyalty'}</a></li>
 	<li><a href="{$base_dir}"><img src="{$img_dir}icon/home.gif" alt="" class="icon" /></a><a href="{$base_dir}">{l s='Home' mod='loyalty'}</a></li>
 </ul>

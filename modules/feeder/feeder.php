@@ -1,32 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
 
 class Feeder extends Module
 {
@@ -35,10 +7,8 @@ class Feeder extends Module
 	public function __construct()
 	{
 		$this->name = 'feeder';
-		$this->tab = 'front_office_features';
+		$this->tab = 'Products';
 		$this->version = 0.2;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 		
 		$this->_directory = dirname(__FILE__).'/../../';
 		parent::__construct();
@@ -60,42 +30,35 @@ class Feeder extends Module
 	{
 		global $smarty, $cookie;
 		
-		$id_category = (int)(Tools::getValue('id_category'));
+		$id_category = intval(Tools::getValue('id_category'));
 		if (!$id_category)
 		{
 			if (isset($_SERVER['HTTP_REFERER']) AND preg_match('!^(.*)\/([0-9]+)\-(.*[^\.])|(.*)id_category=([0-9]+)(.*)$!', $_SERVER['HTTP_REFERER'], $regs) AND !strstr($_SERVER['HTTP_REFERER'], '.html'))
 			{
 				if (isset($regs[2]) AND is_numeric($regs[2]))
-					$id_category = (int)($regs[2]);
+					$id_category = intval($regs[2]);
 				elseif (isset($regs[5]) AND is_numeric($regs[5]))
-					$id_category = (int)($regs[5]);
+					$id_category = intval($regs[5]);
 			}
-			elseif ($id_product = (int)(Tools::getValue('id_product')))
+			elseif ($id_product = intval(Tools::getValue('id_product')))
 			{
 				$product = new Product($id_product);
 				$id_category = $product->id_category_default;
 			}
 		}
 		$category = new Category($id_category);
-		$orderBy = Tools::getProductsOrder('by', Tools::getValue('orderby'));
-		$orderWay = Tools::getProductsOrder('way', Tools::getValue('orderway'));
+		$orderByValues = array(0 => 'name', 1 => 'price', 2 => 'date_add', 3 => 'date_upd', 4 => 'position');
+		$orderWayValues = array(0 => 'ASC', 1 => 'DESC');
+		$orderBy = Tools::strtolower(Tools::getValue('orderby', $orderByValues[intval(Configuration::get('PS_PRODUCTS_ORDER_BY'))]));
+		$orderWay = Tools::strtoupper(Tools::getValue('orderway', $orderWayValues[intval(Configuration::get('PS_PRODUCTS_ORDER_WAY'))]));
+		if (!in_array($orderBy, $orderByValues))
+			$orderBy = $orderByValues[0];
+		if (!in_array($orderWay, $orderWayValues))
+			$orderWay = $orderWayValues[0];
 		$smarty->assign(array(
-			'feedUrl' => Tools::getShopDomain(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/rss.php?id_category='.$id_category.'&amp;orderby='.$orderBy.'&amp;orderway='.$orderWay,
+			'feedUrl' => 'http://'.Tools::getHttpHost(false, true).__PS_BASE_URI__.'modules/'.$this->name.'/rss.php?id_category='.$id_category.'&amp;orderby='.$orderBy.'&amp;orderway='.$orderWay,
 		));
 		return $this->display(__FILE__, 'feederHeader.tpl');
 	}
-
-	public function getContent()
-	{
-		/* display the module name */
-		$this->_html = '<h2>'.$this->displayName.'</h2><br />';
-		$this->_html .= $this->l('Url for example:').'<br />';
-
-		$orderBy = Tools::getProductsOrder('by');
-		$orderWay = Tools::getProductsOrder('way');
-		$this->_html .= Tools::getShopDomain(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/rss.php?id_category=<span style="color:red;">{id_category}</span>&amp;orderby='.$orderBy.'&amp;orderway='.$orderWay;
-		$this->_html .= '<br /><br />'.$this->l('Replace').' <span style="color:red;">{id_category}</span> '.$this->l('by the id category current or "0"');
-
-		return $this->_html;
-	}
 }
+?>

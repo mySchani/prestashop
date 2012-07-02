@@ -1,29 +1,15 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14915 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Carriers tab for admin panel, AdminCarriers.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
@@ -48,60 +34,28 @@ class AdminCarriers extends AdminTab
 		'name' => array('title' => $this->l('Name'), 'width' => 100),
 		'logo' => array('title' => $this->l('Logo'), 'align' => 'center', 'image' => 's', 'orderby' => false, 'search' => false),
 		'delay' => array('title' => $this->l('Delay'), 'width' => 300, 'orderby' => false),
-		'active' => array('title' => $this->l('Status'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false),
-		'is_free' => array('title' => $this->l('Is Free'), 'align' => 'center', 'icon' => array(0 => 'disabled.gif', 1 => 'enabled.gif', 'default' => 'disabled.gif'), 'type' => 'bool', 'orderby' => false));
-		
+		'active' => array('title' => $this->l('Status'), 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false));
+
 		$this->optionTitle = $this->l('Carrier options');
 		$this->_fieldsOptions = array(
-			'PS_CARRIER_DEFAULT' => array('title' => $this->l('Default carrier:'), 'desc' => $this->l('The default carrier used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_carrier', 'list' => Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::ALL_CARRIERS)),
+			'PS_CARRIER_DEFAULT' => array('title' => $this->l('Default carrier:'), 'desc' => $this->l('The default carrier used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_carrier', 'list' => Carrier::getCarriers(intval($cookie->id_lang), true)),
 		);
 
 		parent::__construct();
 	}
 
-	public function displayTop()
-	{
-		echo 
-		'<div class="hint clear" style="display:block;">'.
-			'&nbsp;<b>'.$this->l('How to create a new carrier?').'</b>'.
-			'<br />'.
-			'<ul>'.'
-				<li>'.$this->l('Click "Add new".').'<br />'.'</li>
-				<li>'.$this->l('Fill in the fields and click "Save".').'</li>
-				<li>'.$this->l('You need to decide a price range or a weight range for which the new carrier will be available. Under the "Shipping" tab, click either "Price Ranges" or "Weight Ranges".').'</li>
-				<li>'.$this->l('Click "Add new".').'</li>
-				<li>'.$this->l('Select the name of the carrier and define the price range or the weight range. For example the carrier can be made available for a weight range between 0 and 5kgs. Another carrier will have a range between 5 and 10kgs.').'</li>
-				<li>'.$this->l('When you are done, click "Save".').'</li>
-				<li>'.$this->l('Click on the "Shipping" tab.').'</li>
-				<li>'.$this->l('You need to choose the fees that will be applied for this carrier. At the bottom on the page, in the "Fees" section, select the name of the carrier.').'</li>
-				<li>'.$this->l('For each zone, enter a price. Click "Save".').'</li>
-				<li>'.$this->l('You\'re set! The new carrier will be displayed to your customers.').'</li>
-			</ul>
-		</div><br />';
-	}
-	
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex, $cookie;
 		parent::displayForm();
 
-		if (!($obj = $this->loadObject(true)))
-			return;
-		$currentLanguage = (int)($cookie->id_lang);
+		$obj = $this->loadObject(true);
+		$currentLanguage = intval($cookie->id_lang);
 
-		echo '<script type="text/javascript">
-			$(document).ready(function(){
-				// At the loading
-				($("input[name=\'is_free\']:checked").val() == 0) ? $("#shipping_costs_div").show(): $("#shipping_costs_div").hide();
-			
-				$("input[name=\'is_free\']").live("change", function(){
-					($("input[name=\'is_free\']:checked").val() == 0) ? $("#shipping_costs_div").show(): $("#shipping_costs_div").hide();			
-				});
-			});
-		</script>
+		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset><legend><img src="../img/admin/delivery.gif" />'.$this->l('Carriers').'</legend>
+			<fieldset class="width3"><legend><img src="../img/admin/delivery.gif" />'.$this->l('Carriers').'</legend>
 				<label>'.$this->l('Company:').' </label>
 				<div class="margin-form">
 					<input type="text" size="25" name="name" value="'.htmlentities($this->getFieldValue($obj, 'name'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
@@ -118,7 +72,7 @@ class AdminCarriers extends AdminTab
 				foreach ($this->_languages as $language)
 					echo '
 					<div id="delay_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input type="text" size="41" maxlength="128" name="delay_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'delay', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
+						<input type="text" size="41" maxlength="128" name="delay_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'delay', intval($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					</div>';
 				$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'delay', 'delay');
 				echo '
@@ -129,25 +83,27 @@ class AdminCarriers extends AdminTab
 					<input type="text" size="40" name="url" value="'.htmlentities($this->getFieldValue($obj, 'url'), ENT_COMPAT, 'UTF-8').'" />
 					<p class="clear">'.$this->l('URL for the tracking number; type \'@\' where the tracking number will appear').'</p>
 				</div>
-				<label>'.$this->l('Zone').'</label>
+				<label>'.$this->l('Tax:').'</label>
+				<div class="margin-form">
+					<select name="id_tax">
+						<option value="0"'.(($obj->id AND $obj->id_tax == 0) ? ' selected="selected"' : '').'>'.$this->l('No tax').'</option>';
+						$tvaList = Tax::getTaxes($currentLanguage);
+						foreach ($tvaList AS $line)
+							echo '<option value="'.$line['id_tax'].'"'.(($obj->id AND $obj->id_tax == $line['id_tax']) ? ' selected="selected"' : '').'>'.$line['name'].'</option>';
+					echo '</select>
+					<p>'.$this->l('Include tax on carrier, e.g., VAT').'</p>
+				</div>
+				<label>'.$this->l('Zone:').'</label>
 				<div class="margin-form">';
 					$carrier_zones = $obj->getZones();
-					$carrier_zones_ids = array();
-					if (is_array($carrier_zones))
-						foreach($carrier_zones as $carrier_zone)
-							$carrier_zones_ids[] = $carrier_zone['id_zone'];
-					
-					$zones = Zone::getZones(false);
+					$zones = Zone::getZones(true);
 					foreach ($zones AS $zone)
-						echo '<input type="checkbox" id="zone_'.$zone['id_zone'].'" name="zone_'.$zone['id_zone'].'" value="true" '.
-							Tools::getValue('zone_'.$zone['id_zone'], (in_array($zone['id_zone'], $carrier_zones_ids) ? ' checked="checked"' : '')).'>
-							<label class="t" for="zone_'.$zone['id_zone'].'"> <b>'.$zone['name'].'</b></label><br />';
-					
-					echo '<p>'.$this->l('The zone in which this carrier is to be used').'</p>
-				</div>
-				<label>'.$this->l('Group access').'</label>
+						echo '<input type="checkbox" id="zone_'.$zone['id_zone'].'" name="zone_'.$zone['id_zone'].'" value="true" '.(Tools::getValue('zone_'.$zone['id_zone'], (is_array($carrier_zones) AND in_array(array('id_carrier' => $obj->id, 'id_zone' => $zone['id_zone']), $carrier_zones))) ? ' checked="checked"' : '').'><label class="t" for="zone_'.$zone['id_zone'].'">&nbsp;<b>'.$zone['name'].'</b></label><br />';
+				echo '<p>'.$this->l('The zone in which this carrier is to be used').'</p>
+	</div>
+				<label>'.$this->l('Group access:').'</label>
 				<div class="margin-form">';
-					$groups = Group::getGroups((int)($cookie->id_lang));
+					$groups = Group::getGroups(intval($cookie->id_lang));
 					if (sizeof($groups))
 					{
 						echo '
@@ -161,7 +117,7 @@ class AdminCarriers extends AdminTab
 						foreach ($groups as $group)
 							echo '
 							<tr class="'.($irow++ % 2 ? 'alt_row' : '').'">
-								<td><input type="checkbox" name="groupBox[]" class="groupBox" id="groupBox_'.$group['id_group'].'" value="'.$group['id_group'].'" '.((Db::getInstance()->getValue('SELECT id_group FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.(int)($obj->id).' AND id_group='.(int)($group['id_group'])) OR (!isset($obj->id))) ? 'checked="checked" ' : '').'/></td>
+								<td><input type="checkbox" name="groupBox[]" class="groupBox" id="groupBox_'.$group['id_group'].'" value="'.$group['id_group'].'" '.((Db::getInstance()->getValue('SELECT id_group FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.intval($obj->id).' AND id_group='.intval($group['id_group'])) OR (!isset($obj->id))) ? 'checked="checked" ' : '').'/></td>
 								<td>'.$group['id_group'].'</td>
 								<td><label for="groupBox_'.$group['id_group'].'" class="t">'.$group['name'].'</label></td>
 							</tr>';
@@ -181,23 +137,6 @@ class AdminCarriers extends AdminTab
 					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p>'.$this->l('Include or exclude carrier from list of carriers on Front Office').'</p>
 				</div>
-				<label>'.$this->l('Apply shipping cost:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="is_free" id="is_free_on" value="0" '.(!$this->getFieldValue($obj, 'is_free') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" /></label>
-					<input type="radio" name="is_free" id="is_free_off" value="1" '.($this->getFieldValue($obj, 'is_free') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('No').'" title="'.$this->l('No').'" /></label>
-					<p>'.$this->l('Apply shipping costs and additional shipping costs by products in carrier price').'</p>
-				</div>
-				<div id="shipping_costs_div">
-				<label>'.$this->l('Tax').'</label>
-				<div class="margin-form">
-					 <select name="id_tax_rules_group" id="id_tax_rules_group" '.(Tax::excludeTaxeOption() ? 'disabled="disabled"' : '' ).'>
-					    <option value="0">'.$this->l('No Tax').'</option>';
-						foreach (TaxRulesGroup::getTaxRulesGroups(true) AS $tax_rules_group)
-							echo '<option value="'.$tax_rules_group['id_tax_rules_group'].'" '.(($this->getFieldValue($obj, 'id_tax_rules_group') == $tax_rules_group['id_tax_rules_group']) ? ' selected="selected"' : '').'>'.$tax_rules_group['name'].'</option>';
-				echo '</select>
-				</div>
 				<label>'.$this->l('Shipping & handling:').' </label>
 				<div class="margin-form">
 					<input type="radio" name="shipping_handling" id="shipping_handling_on" value="1" '.($this->getFieldValue($obj, 'shipping_handling') ? 'checked="checked" ' : '').'/>
@@ -206,45 +145,22 @@ class AdminCarriers extends AdminTab
 					<label class="t" for="shipping_handling_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p>'.$this->l('Include the shipping & handling costs in carrier price').'</p>
 				</div>
-				<label>'.$this->l('Billing:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="shipping_method" id="billing_default" value="'.Carrier::SHIPPING_METHOD_DEFAULT.'" '.($this->getFieldValue($obj, 'shipping_method') == Carrier::SHIPPING_METHOD_DEFAULT ? 'checked="checked" ' : '').'/>
-					<label class="t" for="billing_default">'.$this->l('Default behavior').'</label><br />
-					<input type="radio" name="shipping_method" id="billing_price" value="'.Carrier::SHIPPING_METHOD_PRICE.'" '.($this->getFieldValue($obj, 'shipping_method') == Carrier::SHIPPING_METHOD_PRICE ? 'checked="checked" ' : '').'/>
-					<label class="t" for="billing_price">'.$this->l('According to total price').'</label><br />
-					<input type="radio" name="shipping_method" id="billing_weight" value="'.Carrier::SHIPPING_METHOD_WEIGHT.'" '.($this->getFieldValue($obj, 'shipping_method') == Carrier::SHIPPING_METHOD_WEIGHT ? 'checked="checked" ' : '').'/>
-					<label class="t" for="billing_weight">'.$this->l('According to total weight').'</label><br />
-				</div>
 				<label>'.$this->l('Out-of-range behavior:').' </label>
 				<div class="margin-form">
 					<select name="range_behavior">
 						<option value="0"'.(!$this->getFieldValue($obj, 'range_behavior') ? ' selected="selected"' : '').'>'.$this->l('Apply the cost of the highest defined range').'</option>
 						<option value="1"'.($this->getFieldValue($obj, 'range_behavior') ? ' selected="selected"' : '').'>'.$this->l('Disable carrier').'</option>
 					</select>
-					<p>'.$this->l('Out-of-range behavior when none is defined (e.g., when a customer\'s cart weight is greater than the highest range limit)').'</p>
-				</div>';
-				if ($this->getFieldValue($obj, 'is_module'))
-				{
-					echo '<label>'.$this->l('Module:').' </label>
-						  <div class="margin-form"><p> - '.
-						  $this->l('This carrier is bound to this module ').' => '.$this->getFieldValue($obj, 'external_module_name').'</p>
-						  <input type="hidden" name="is_module" value="1">
-						  <input type="hidden" name="external_module_name" value="'.$this->getFieldValue($obj, 'external_module_name').'">';
-
-					if ($this->getFieldValue($obj, 'shipping_external'))
-					{
-						echo '<p> - '.$this->l('The shipping costs are calculated outside of your shop').'</p>
-						<input type="hidden" name="shipping_external" value="1">';
-					}
-					if ($this->getFieldValue($obj, 'need_range'))
-					{
-						echo '<p> - '.$this->l('This carrier uses PrestaShop range to calculate shipping costs').'</p>
-						<input type="hidden" name="need_range" value="1">';
-					}
-
-					echo '</div>';
-				}
-				echo '</div>
+					<p>'.$this->l('Out-of-range behavior when none is defined (e.g., when a customer\'s cart weight is superior to the highest range limit)').'</p>
+				</div>
+				<label>'.$this->l('Module:').' </label>
+				<div class="margin-form">
+					<input type="radio" name="is_module" id="active_on" value="1" '.($this->getFieldValue($obj, 'is_module') ? 'checked="checked" ' : '').'/>
+					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
+					<input type="radio" name="is_module" id="active_off" value="0" '.(!$this->getFieldValue($obj, 'is_module') ? 'checked="checked" ' : '').'/>
+					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
+					<p>'.$this->l('Mark this carrier as linked to a module').'</p>
+				</div>
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -260,21 +176,17 @@ class AdminCarriers extends AdminTab
 
 	public function afterDelete($object, $oldId)
 	{
-		$object->copyCarrierData((int)($oldId));
+		$object->copyCarrierData(intval($oldId));
 	}
 
 	private function changeGroups($id_carrier, $delete = true)
 	{
 		if ($delete)
-			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id_carrier);
-		$groups = Db::getInstance()->ExecuteS('SELECT id_group FROM `'._DB_PREFIX_.'group`');
-		if (Tools::isSubmit('groupBox') && Tools::getValue('groupBox'))
-			foreach ($groups as $group)
-				if (in_array($group['id_group'], Tools::getValue('groupBox')))
-					Db::getInstance()->Execute('
-						INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier)
-						VALUES('.(int)$group['id_group'].','.(int)$id_carrier.')
-					');
+			Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.intval($id_carrier));
+		$groups = Db::getInstance()->ExecuteS('SELECT id_group FROM '._DB_PREFIX_.'group');
+		foreach ($groups as $group)
+			if (in_array($group['id_group'], $_POST['groupBox']))
+				Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'carrier_group (id_group, id_carrier) VALUES('.intval($group['id_group']).','.intval($id_carrier).')');
 	}
 
 	public function postProcess()
@@ -287,7 +199,7 @@ class AdminCarriers extends AdminTab
 			$this->validateRules();
 			if (!sizeof($this->_errors))
 			{
-				$id = (int)(Tools::getValue('id_'.$this->table));
+				$id = intval(Tools::getValue('id_'.$this->table));
 
 				/* Object update */
 				if (isset($id) AND !empty($id))
@@ -297,7 +209,7 @@ class AdminCarriers extends AdminTab
 						$object = new $this->className($id);
 						if (Validate::isLoadedObject($object))
 						{
-							Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier = '.(int)$id);
+							Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'carrier_group WHERE id_carrier='.intval($id));
 							$object->deleted = 1;
 							$object->update();
 							$objectNew = new $this->className();
@@ -306,11 +218,11 @@ class AdminCarriers extends AdminTab
 							if (Validate::isLoadedObject($objectNew))
 							{
 								$this->afterDelete($objectNew, $object->id);
-								Hook::updateCarrier((int)($object->id), $objectNew);
+								Hook::updateCarrier(intval($object->id), $objectNew);
 							}
 							$this->changeGroups($objectNew->id);
 							if (!$result)
-								$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b>';
+								$this->_errors[] = Tools::displayError('an error occurred while updating object').' <b>'.$this->table.'</b>';
 							elseif ($this->postImage($objectNew->id))
 								{
 									$this->changeZones($objectNew->id);
@@ -318,10 +230,10 @@ class AdminCarriers extends AdminTab
 								}
 						}
 						else
-							$this->_errors[] = Tools::displayError('An error occurred while updating object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+							$this->_errors[] = Tools::displayError('an error occurred while updating object').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 					}
 					else
-						$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+						$this->_errors[] = Tools::displayError('You do not have permission to edit anything here.');
 				}
 
 				/* Object creation */
@@ -332,7 +244,7 @@ class AdminCarriers extends AdminTab
 						$object = new $this->className();
 						$this->copyFromPost($object, $this->table);
 						if (!$object->add())
-							$this->_errors[] = Tools::displayError('An error occurred while creating object.').' <b>'.$this->table.'</b>';
+							$this->_errors[] = Tools::displayError('an error occurred while creating object').' <b>'.$this->table.'</b>';
 						elseif (($_POST['id_'.$this->table] = $object->id /* voluntary */) AND $this->postImage($object->id) AND $this->_redirect)
 						{
 							$this->changeZones($object->id);
@@ -341,27 +253,14 @@ class AdminCarriers extends AdminTab
 						}
 					}
 					else
-						$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+						$this->_errors[] = Tools::displayError('You do not have permission to add anything here.');
 				}
 			}
 		}
-		elseif ((isset($_GET['status'.$this->table]) OR isset($_GET['status'])) AND Tools::getValue($this->identifier))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT'))
-					$this->_errors[] = Tools::displayError('You cannot disable the default carrier, please change your default carrier first.');
-				else
-					parent::postProcess();
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
 		else
 		{
-			if ((Tools::isSubmit('submitDel'.$this->table) && in_array(Configuration::get('PS_CARRIER_DEFAULT'), Tools::getValue('carrierBox')))
-				OR (isset($_GET['delete'.$this->table]) AND Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT')))
-					$this->_errors[] = $this->l('Please set another carrier as default before deleting');
+			if (isset($_GET['delete'.$this->table]) AND Tools::getValue('id_carrier') == Configuration::get('PS_CARRIER_DEFAULT'))
+				$this->_errors[] = $this->l('Please set another carrier as default before deleting');
 			else
 				parent::postProcess();
 		}
@@ -372,8 +271,8 @@ class AdminCarriers extends AdminTab
 	{
 		$carrier = new $this->className($id);
 		if (!Validate::isLoadedObject($carrier))
-			die (Tools::displayError('Object cannot be loaded'));
-		$zones = Zone::getZones(false);
+			die (Tools::displayError('object cannot be loaded'));
+		$zones = Zone::getZones(true);
 		foreach ($zones as $zone)
 			if (sizeof($carrier->getZone($zone['id_zone'])))
 			{
@@ -393,3 +292,5 @@ class AdminCarriers extends AdminTab
 		parent::displayListContent($token);
 	}
 }
+
+?>

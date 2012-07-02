@@ -1,14 +1,9 @@
-{shop_name}
- 
-Hola {firstname} {lastname},
+Hello {firstname} {lastname},
  
 Gracias por su orden en {shop_name}
  
-Con car√°cter excepcional, le concedemos un descuento de {amount}% fuera de su pr√≥ximo pedido! Esta oferta es v√°lida para {days} d√≠as, as√≠ que no pierdas un instante!
-
+Con car·cter excepcional, le concedemos un descuento de {amount}% fuera de su prÛximo pedido! Esta oferta es v·lida para {days} dÌas, asÌ que no pierdas un instante!
  
-Aqu√≠ est√° tu cup√≥n: {voucher_num}
+AquÌ est· tu cupÛn: {voucher_num}
 
-Introduzca este c√≥digo en tu carrito de compras para obtener el descuento.
- 
-{shop_name} desarrollado por PrestaShop‚Ñ¢
+Introduzca este cÛdigo en tu carrito de compras para obtener el descuento.

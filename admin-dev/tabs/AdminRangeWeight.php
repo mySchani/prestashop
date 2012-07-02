@@ -1,29 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Weight ranges tab for admin panel, AdminRangeWeight.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
 class AdminRangeWeight extends AdminTab
 {
@@ -59,7 +47,7 @@ class AdminRangeWeight extends AdminTab
 	public function postProcess()
 	{
 		if (isset($_POST['submitAdd'.$this->table]) AND Tools::getValue('delimiter1') >= Tools::getValue('delimiter2'))
-			$this->_errors[] = Tools::displayError('Invalid range');
+			$this->_errors[] = Tools::displayError('invalid range');
 		else
 			parent::postProcess();
 	}
@@ -69,33 +57,22 @@ class AdminRangeWeight extends AdminTab
 		global $currentIndex;
 		parent::displayForm();
 		
-		if (!($obj = $this->loadObject(true)))
-			return;
-		
-		$carrierArray = array();
-		$carriers = Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
-		$id_carrier = Tools::getValue('id_carrier', $obj->id_carrier);
-		foreach ($carriers AS $carrier)
-			if (!$carrier['is_free'])
-				$carrierArray[] = '<option value="'.(int)($carrier['id_carrier']).'"'.(($carrier['id_carrier'] == $id_carrier) ? ' selected="selected"' : '').'>'.$carrier['name'].'</option><sup>*</sup>';
+		$obj = $this->loadObject(true);
 
 		echo '
-		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post">
+		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" class="width2">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
 			<fieldset><legend><img src="../img/t/AdminRangeWeight.gif" />'.$this->l('Weight ranges').'</legend>
-				<label>'.$this->l('Carrier').'</label>
-				<div class="margin-form">';
-			if (count($carrierArray))
-			{
-				echo '<select name="id_carrier">';
-				foreach ($carrierArray AS $carrierOption)
-					echo $carrierOption;
-				echo '</select>
-				<p class="clear">'.$this->l('Carrier to which this range will be applied').'</p>';
-			}
-			else
-				echo '<div style="margin:5px 0 10px 0">'.$this->l('There isn\'t any carrier available for a weight range.').'</div>';
+				<label>'.$this->l('Carrier:').'</label>
+				<div class="margin-form">
+					<select name="id_carrier">';
+			$carriers = Carrier::getCarriers(intval(Configuration::get('PS_LANG_DEFAULT')));
+			$id_carrier = Tools::getValue('id_carrier', $obj->id_carrier);
+			foreach ($carriers AS $carrier)
+				echo '<option value="'.intval($carrier['id_carrier']).'"'.(($carrier['id_carrier'] == $id_carrier) ? ' selected="selected"' : '').'>'.$carrier['name'].'</option><sup>*</sup>';
 			echo '
+					</select>
+					<p class="clear">'.$this->l('Carrier to which this range will be applied').'</p>
 				</div>
 				<label>'.$this->l('From:').' </label>
 				<div class="margin-form">
@@ -116,4 +93,4 @@ class AdminRangeWeight extends AdminTab
 	}
 }
 
-
+?>

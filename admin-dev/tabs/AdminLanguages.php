@@ -1,55 +1,40 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Languages tab for admin panel, AdminLanguages.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
 class AdminLanguages extends AdminTab
 {
 	public function __construct()
 	{
-		$this->table = 'lang';
-		$this->className = 'Language';
-		$this->lang = false;
-		$this->edit = true;
-		$this->delete = true;
-		
-		$this->fieldImageSettings = array(array('name' => 'flag', 'dir' => 'l'), array('name' => 'no-picture', 'dir' => 'p'));
+	 	$this->table = 'lang';
+	 	$this->className = 'Language';
+	 	$this->lang = false;
+	 	$this->edit = true;
+	 	$this->delete = true;
+ 		
+ 		$this->fieldImageSettings = array(array('name' => 'flag', 'dir' => 'l'), array('name' => 'no-picture', 'dir' => 'p'));
 		
 		$this->fieldsDisplay = array(
 		'id_lang' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'flag' => array('title' => $this->l('Logo'), 'align' => 'center', 'image' => 'l', 'orderby' => false, 'search' => false),
 		'name' => array('title' => $this->l('Name'), 'width' => 120),
 		'iso_code' => array('title' => $this->l('ISO code'), 'width' => 70, 'align' => 'center'),
-		'language_code' => array('title' => $this->l('Language code'), 'width' => 70, 'align' => 'center'),
-		'date_format_lite' => array('title' => $this->l('Date format')),
-		'date_format_full' => array('title' => $this->l('Date format (full)')),
 		'active' => array('title' => $this->l('Enabled'), 'align' => 'center', 'active' => 'status', 'type' => 'bool'));
 	
 		$this->optionTitle = $this->l('Languages options');
 		$this->_fieldsOptions = array(
-		'PS_LANG_DEFAULT' => array('title' => $this->l('Default language:'), 'desc' => $this->l('The default language used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_lang', 'list' => Language::getlanguages(false)),
+		'PS_LANG_DEFAULT' => array('title' => $this->l('Default language:'), 'desc' => $this->l('The default language used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_lang', 'list' => Language::getlanguages()),
 		);
 		
 		parent::__construct();
@@ -62,70 +47,54 @@ class AdminLanguages extends AdminTab
 	 */
 	public function copyNoPictureImage($language)
 	{
-		if (isset($_FILES['no-picture']) and $_FILES['no-picture']['error'] === 0)
-			if ($error = checkImage($_FILES['no-picture'], $this->maxImageSize))
-				$this->_errors[] = $error;
+		if ($error = checkImage($_FILES['no-picture'], $this->maxImageSize))
+			$this->_errors[] = $error;
+		else
+		{
+			if (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($_FILES['no-picture']['tmp_name'], $tmpName))
+				return false;
+			if (!imageResize($tmpName, _PS_IMG_DIR_.'p/'.$language.'.jpg'))
+				$this->_errors[] = Tools::displayError('an error occurred while copying no-picture image to your product folder');
+			if (!imageResize($tmpName, _PS_IMG_DIR_.'c/'.$language.'.jpg'))
+				$this->_errors[] = Tools::displayError('an error occurred while copying no-picture image to your category folder');
+			if (!imageResize($tmpName, _PS_IMG_DIR_.'m/'.$language.'.jpg'))
+				$this->_errors[] = Tools::displayError('an error occurred while copying no-picture image to your manufacturer folder');
 			else
-			{
-				if (!$tmpName = tempnam(_PS_TMP_IMG_DIR_, 'PS') OR !move_uploaded_file($_FILES['no-picture']['tmp_name'], $tmpName))
-					return false;
-				if (!imageResize($tmpName, _PS_IMG_DIR_.'p/'.$language.'.jpg'))
-					$this->_errors[] = Tools::displayError('An error occurred while copying no-picture image to your product folder.');
-				if (!imageResize($tmpName, _PS_IMG_DIR_.'c/'.$language.'.jpg'))
-					$this->_errors[] = Tools::displayError('An error occurred while copying no-picture image to your category folder.');
-				if (!imageResize($tmpName, _PS_IMG_DIR_.'m/'.$language.'.jpg'))
-					$this->_errors[] = Tools::displayError('An error occurred while copying no-picture image to your manufacturer folder');
-				else
-				{	
-					$imagesTypes = ImageType::getImagesTypes('products');
-					foreach ($imagesTypes AS $k => $imageType)
-					{
-						if (!imageResize($tmpName, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
-							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your product directory.');
-						if (!imageResize($tmpName, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
-							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your category directory.');
-						if (!imageResize($tmpName, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
-							$this->_errors[] = Tools::displayError('An error occurred while resizing no-picture image to your manufacturer directory.');
-					}
+			{	
+				$imagesTypes = ImageType::getImagesTypes('products');
+				foreach ($imagesTypes AS $k => $imageType)
+				{
+					if (!imageResize($tmpName, _PS_IMG_DIR_.'p/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
+						$this->_errors[] = Tools::displayError('an error occurred while resizing no-picture image to your product directory');
+					if (!imageResize($tmpName, _PS_IMG_DIR_.'c/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
+						$this->_errors[] = Tools::displayError('an error occurred while resizing no-picture image to your category directory');
+					if (!imageResize($tmpName, _PS_IMG_DIR_.'m/'.$language.'-default-'.stripslashes($imageType['name']).'.jpg', $imageType['width'], $imageType['height']))
+						$this->_errors[] = Tools::displayError('an error occurred while resizing no-picture image to your manufacturer directory');
 				}
-				unlink($tmpName);
 			}
+			unlink($tmpName);
+		}
 	}
 	
-	/**
-	 * deleteNoPictureImages will delete all default image created for the language id_language
-	 * 
-	 * @param string $id_language 
-	 * @return boolean true if no error
-	 */
 	private function deleteNoPictureImages($id_language)
 	{
-		$language = Language::getIsoById($id_language);
+	 	$language = Language::getIsoById($id_language);
 		$imagesTypes = ImageType::getImagesTypes('products');
-		$dirs = array(_PS_PROD_IMG_DIR_, _PS_CAT_IMG_DIR_, _PS_MANU_IMG_DIR_, _PS_SUPP_IMG_DIR_, _PS_MANU_IMG_DIR_);
+		$dirs = array(_PS_PROD_IMG_DIR_, _PS_CAT_IMG_DIR_, _PS_MANU_IMG_DIR_);
 		foreach ($dirs AS $dir)
 		{
 			foreach ($imagesTypes AS $k => $imageType)
 				if (file_exists($dir.$language.'-default-'.stripslashes($imageType['name']).'.jpg'))
 					if (!unlink($dir.$language.'-default-'.stripslashes($imageType['name']).'.jpg'))
-						$this->_errors[] = Tools::displayError('An error occurred during image deletion.');
-
+						$this->_errors[] = Tools::displayError('an error occurred during the image deletion');
 			if (file_exists($dir.$language.'.jpg'))
 				if (!unlink($dir.$language.'.jpg'))
-					$this->_errors[] = Tools::displayError('An error occurred during image deletion.');
+					$this->_errors[] = Tools::displayError('an error occurred during the image deletion');
 		}
-
 		return !sizeof($this->_errors) ? true : false;
 	}
 
-	protected function copyFromPost(&$object, $table)
-	{
-		if($object->id AND  ($object->iso_code != $_POST['iso_code']))
-			if(Validate::isLanguageIsoCode($_POST['iso_code']))
-				$object->moveToIso($_POST['iso_code']);
-		parent::copyFromPost($object, $table);
-	}
-	
+
 	public function postProcess()
 	{
 		global $currentIndex, $cookie;
@@ -133,28 +102,25 @@ class AdminLanguages extends AdminTab
 		if (isset($_GET['delete'.$this->table]))
 		{
 			if ($this->tabAccess['delete'] === '1') 	
-			{
+		 	{
 				if (Validate::isLoadedObject($object = $this->loadObject()) AND isset($this->fieldImageSettings))
 				{
-					// English is needed by the system (ex. translations)
-					if ($object->id == Language::getIdByIso('en'))
-						$this->_errors[] = $this->l('You cannot delete the English language as it is a system requirement, you can only deactivate it.');
 					if ($object->id == Configuration::get('PS_LANG_DEFAULT'))
 						$this->_errors[] = $this->l('you cannot delete the default language');
 					elseif ($object->id == $cookie->id_lang)
-						$this->_errors[] = $this->l('You cannot delete the language currently in use. Please change languages before deleting.');
-					elseif ($this->deleteNoPictureImages((int)(Tools::getValue('id_lang'))) AND $object->delete())
-						Tools::redirectAdmin($currentIndex.'&conf=1'.'&token='.$this->token);
+						$this->_errors[] = $this->l('you cannot delete the language currently in use, please change languages before deleting');
+					elseif ($this->deleteNoPictureImages(intval(Tools::getValue('id_lang'))) AND $object->delete())
+						Tools::redirectLink($currentIndex.'&conf=1'.'&token='.$this->token);
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+					$this->_errors[] = Tools::displayError('an error occurred while deleting object').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			}
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
 		}
-		elseif (Tools::getValue('submitDel'.$this->table) AND isset($_POST[$this->table.'Box']))
+		elseif(Tools::getValue('submitDel'.$this->table) AND isset($_POST[$this->table.'Box']))
 		{
-			if ($this->tabAccess['delete'] === '1')
+		 	if ($this->tabAccess['delete'] === '1')
 			{
 				if (in_array(Configuration::get('PS_LANG_DEFAULT'), $_POST[$this->table.'Box']))
 					$this->_errors[] = $this->l('you cannot delete the default language');
@@ -173,55 +139,43 @@ class AdminLanguages extends AdminTab
 		elseif (Tools::isSubmit('submitAddlang'))
 		{
 			/* New language */
-			if ((int)(Tools::getValue('id_'.$this->table)) == 0)
+			if (intval(Tools::getValue('id_'.$this->table)) == 0)
 			{
 				if ($this->tabAccess['add'] === '1')
 				{
 					if (isset($_POST['iso_code']) AND !empty($_POST['iso_code']) AND Validate::isLanguageIsoCode(Tools::getValue('iso_code')) AND Language::getIdByIso($_POST['iso_code']))
-						$this->_errors[] = Tools::displayError('This ISO code is already linked to another language.');
-					if ((!empty($_FILES['no-picture']['tmp_name']) OR !empty($_FILES['flag']['tmp_name'])) AND Validate::isLanguageIsoCode(Tools::getValue('iso_code')))
+						$this->_errors[] = Tools::displayError('this ISO code is already linked to another language');
+					if (!empty($_FILES['no-picture']['tmp_name']) AND !empty($_FILES['flag']['tmp_name']) AND Validate::isLanguageIsoCode(Tools::getValue('iso_code')))
 					{
-						if ($_FILES['no-picture']['error'] == UPLOAD_ERR_OK)
-							$this->copyNoPictureImage(strtolower(Tools::getValue('iso_code')));
-						// class AdminTab deal with every $_FILES content, don't do that for no-picture
-						unset($_FILES['no-picture']);
+						$this->copyNoPictureImage(strtolower(Tools::getValue('iso_code')));
 						parent::postProcess();
 					}
 					else
 					{
 						$this->validateRules();
-						$this->_errors[] = Tools::displayError('Flag and No-Picture image fields are required.');
+						$this->_errors[] = Tools::displayError('the Flag and No-Picture image fields are required');
 					}
 				}
 				else
-					$this->_errors[] = Tools::displayError('You do not have permission to add here.');
+					$this->_errors[] = Tools::displayError('You do not have permission to add anything here.');
 			}
 			/* Language edition */
 			else
 			{
 				if ($this->tabAccess['edit'] === '1')
 				{
-					if (( isset($_FILES['no-picture']) AND !$_FILES['no-picture']['error'] OR isset($_FILES['flag']) AND !$_FILES['flag']['error'])
-						AND Validate::isLanguageIsoCode(Tools::getValue('iso_code')))
-					{
-						if ($_FILES['no-picture']['error'] == UPLOAD_ERR_OK)
-							$this->copyNoPictureImage(strtolower(Tools::getValue('iso_code')));
-						// class AdminTab deal with every $_FILES content, don't do that for no-picture
-						unset($_FILES['no-picture']);
-						parent::postProcess();
-					}
-
+					if (!empty($_FILES['no-picture']['tmp_name']) AND Validate::isLanguageIsoCode(Tools::getValue('iso_code')))
+						$this->copyNoPictureImage(strtolower(Tools::getValue('iso_code')));
 					if (!Validate::isLoadedObject($object = $this->loadObject()))
 						die(Tools::displayError());
-					if ((int)($object->id) == (int)(Configuration::get('PS_LANG_DEFAULT')) AND (int)($_POST['active']) != (int)($object->active))
+					if (intval($object->id) == intval(Configuration::get('PS_LANG_DEFAULT')) AND intval($_POST['active']) != intval($object->active))
 						$this->_errors[] = Tools::displayError('You cannot change the status of the default language.');
 					else
 						parent::postProcess();
-
 					$this->validateRules();
 				}
 				else
-					$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+					$this->_errors[] = Tools::displayError('You do not have permission to edit anything here.');
 			}
 		}
 		elseif (isset($_GET['status']) AND isset($_GET['id_lang']))
@@ -230,24 +184,16 @@ class AdminLanguages extends AdminTab
 			{
 				if (!Validate::isLoadedObject($object = $this->loadObject()))
 					die(Tools::displayError());
-				if ((int)($object->id) == (int)(Configuration::get('PS_LANG_DEFAULT')))
+				if (intval($object->id) == intval(Configuration::get('PS_LANG_DEFAULT')))
 					$this->_errors[] = Tools::displayError('You cannot change the status of the default language.');
 				else
 					return parent::postProcess();
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
-		}
-		elseif (Tools::isSubmit('submitOptions'.$this->table))
-		{
-			$lang = new Language((int)Tools::getValue('PS_LANG_DEFAULT'));
-			if (!$lang->active)
-				$this->_errors[] = Tools::displayError('You cannot set this language as default language because it\'s disabled');
-			else
-				return parent::postProcess();
+				$this->_errors[] = Tools::displayError('You do not have permission to edit anything here.');
 		}
 		else
-			return parent::postProcess();
+			parent::postProcess();
 	}
 	
 	public function displayList()
@@ -275,7 +221,7 @@ class AdminLanguages extends AdminTab
 					$active['img'] = "enabled";
 					if (!Language::checkFilesWithIsoCode($tr['iso_code']))
 					{
-						$active['title'] = "Warning, some translations files are missing for that iso-code";
+						$active['title'] = "Warning";
 						$active['img'] = "warning";
 					}
 				}
@@ -295,7 +241,7 @@ class AdminLanguages extends AdminTab
 					if (isset($params['active']) AND isset($tr[$key]))
 						echo '<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&'.$params['active'].'&token='.($token != NULL ? $token : $this->token).'"><img src="../img/admin/'.$active['img'].'.gif" alt="active" title="'.$active['title'].'" /></a>';
 					elseif (isset($params['image']))
-						echo cacheImage(_PS_IMG_DIR_.$params['image'].'/'.$id.(isset($tr['id_image']) ? '-'.(int)($tr['id_image']) : '').'.'.$this->imageType, $this->table.'_mini_'.$id.'.'.$this->imageType, 45, $this->imageType);
+						echo cacheImage(_PS_IMG_DIR_.$params['image'].'/'.$id.(isset($tr['id_image']) ? '-'.intval($tr['id_image']) : '').'.'.$this->imageType, $this->table.'_mini_'.$id.'.'.$this->imageType, 45, $this->imageType);
 					elseif (isset($tr[$key]))
 						echo $tr[$key];
 					else
@@ -311,7 +257,7 @@ class AdminLanguages extends AdminTab
 						<img src="../img/admin/edit.gif" border="0" alt="'.$this->l('Edit').'" title="'.$this->l('Edit').'" /></a>';
 					if ($this->delete)
 						echo '
-						<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&delete'.$this->table.'&token='.($token != NULL ? $token : $this->token).'" onclick="return confirm(\''.$this->l('When you delete a language, ALL RELATED TRANSLATIONS IN THE DATABASE WILL BE DELETED, are you sure you want to delete this language?', __CLASS__, true, false).'\');">
+						<a href="'.$currentIndex.'&'.$this->identifier.'='.$id.'&delete'.$this->table.'&token='.($token != NULL ? $token : $this->token).'" onclick="return confirm(\''.$this->l('When you delete a language, ALL RELATED TRANSLATIONS IN THE DATABASE WILL BE DELETED, are you sure to delete this langauge ?', __CLASS__, true, false).'\');">
 						<img src="../img/admin/delete.gif" border="0" alt="'.$this->l('Delete').'" title="'.$this->l('Delete').'" /></a>';
 					echo '</td>';
 				}
@@ -324,45 +270,27 @@ class AdminLanguages extends AdminTab
 		global $currentIndex;
 		parent::displayForm();
 		
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 
 		echo '
 		<script type="text/javascript">
-		var langPackOk = "<img src=\"'._PS_IMG_.'admin/information.png\" alt=\"\" /> '.$this->l('A language pack is available for this ISO (name is').'";
-		var langPackVersion = "'.$this->l('The compatible Prestashop version for this language and your system is: ').'";
-		var langPackInfo = "'.$this->l('After creating the language, you can import the content of the language pack, which you can download above under "Tools - Translations"').'";
-		var noLangPack = "<img src=\"'._PS_IMG_.'admin/information.png\" alt=\"\" /> '.$this->l('No language pack available on prestashop.com for this ISO code').'";
+		var langPackOk = "<img src=\"'._PS_IMG_.'admin/information.png\" alt=\"\" /> '.$this->l('A langage pack is available for this iso code:').'";
+		var langPackInfo = "'.$this->l('After creation of the language you can import the content of language pack, that you can download above, on the "Tools> Translations"').'";
+		var noLangPack = "<img src=\"'._PS_IMG_.'admin/information.png\" alt=\"\" /> '.$this->l('No langage pack available on prestashop.com for this iso code').'";
 		var download = "'.$this->l('Download').'";
 		</script>
-		<script type="text/javascript" src="'._PS_JS_DIR_.'checkLangPack.js"></script>
-		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data">
+		<script type="text/javascript" src="'._PS_JS_DIR_.'/checkLangPack.js"></script>
+		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data" class="width3">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
 			<fieldset><legend><img src="../img/admin/world.gif" />'.$this->l('Languages').'</legend>
-				<input type="hidden" value="'._PS_VERSION_.'" name="ps_version" id="ps_version" />
 				<label>'.$this->l('Name:').' </label>
 				<div class="margin-form">
-					<input type="text" size="8" maxlength="32" name="name" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'name')).'" /> <sup>*</sup>
+					<input type="text" size="8" maxlength="32" name="name" value="'.htmlentities($this->getFieldValue($obj, 'name'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 				</div>
 				<label>'.$this->l('ISO code:').' </label>
 				<div class="margin-form">
-					<input type="text" size="4" maxlength="2" name="iso_code" id="iso_code" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'iso_code')).'" onKeyUp="checkLangPack();" /> <sup>*</sup>
+					<input type="text" size="4" maxlength="2" name="iso_code" id="iso_code" value="'.htmlentities($this->getFieldValue($obj, 'iso_code'), ENT_COMPAT, 'UTF-8').'" onKeyUp="checkLangPack();" /> <sup>*</sup>
 					<p>'.$this->l('2-letter ISO code (e.g., fr, en, de)').'</p>
-				</div>
-				<label>'.$this->l('Language code:').' </label>
-				<div class="margin-form">
-					<input type="text" size="10" maxlength="5" name="language_code" id="language_code" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'language_code')).'"/> <sup>*</sup>
-					<p>'.$this->l('Full language code (e.g., en-us, pt-br)').'</p>
-				</div>
-				<label>'.$this->l('Date format:').' </label>
-				<div class="margin-form">
-					<input type="text" size="15" name="date_format_lite" id="date_format_lite" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'date_format_lite')).'"/> <sup>*</sup>
-					<p>'.$this->l('Date format, lite (e.g., Y-m-d, d/m/Y)').'</p>
-				</div>
-				<label>'.$this->l('Date format (full):').' </label>
-				<div class="margin-form">
-					<input type="text" size="25" name="date_format_full" id="date_format_full" value="'.Tools::htmlentitiesUTF8($this->getFieldValue($obj, 'date_format_full')).'"/> <sup>*</sup>
-					<p>'.$this->l('Date format, full (e.g., Y-m-d H:i:s, d/m/Y H:i)').'</p>
 				</div>
 				<label>'.$this->l('Flag:').' </label>
 				<div class="margin-form">
@@ -374,14 +302,6 @@ class AdminLanguages extends AdminTab
 					<input type="file" name="no-picture" /> <sup>*</sup>
 					<p>'.$this->l('Image displayed when "no picture found"').'</p>
 				</div>
-				<label>'.$this->l('Is RTL language:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="is_rtl" id="is_rtl_on" value="1" '.(($this->getFieldValue($obj, 'is_rtl')) ? 'checked="checked" ' : '').'/>
-					<label class="t" for="is_rtl_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Yes').'" /></label>
-					<input type="radio" name="is_rtl" id="active_off" value="0" '.((!$this->getFieldValue($obj, 'is_rtl')) ? 'checked="checked" ' : '').'/>
-					<label class="t" for="is_rtl_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('No').'" /></label>
-					<p>'.$this->l('To active if this language is a right to left language').' '.$this->l('(Experimental: your theme must be compliant with RTL language)').'</p>
-				</div>
 				<label>'.$this->l('Status:').' </label>
 				<div class="margin-form">
 					<input type="radio" name="active" id="active_on" value="1" '.((!$obj->id OR $this->getFieldValue($obj, 'active')) ? 'checked="checked" ' : '').'/>
@@ -390,7 +310,7 @@ class AdminLanguages extends AdminTab
 					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p>'.$this->l('Allow or disallow this language to be selected by the customer').'</p>
 				</div>
-				<p id="resultCheckLangPack"><img src="'._PS_IMG_.'admin/ajax-loader.gif" alt="" /> '.$this->l('Check if a language pack is available for this ISO code...').'</p>
+				<p id="resultCheckLangPack"><img src="'._PS_IMG_.'admin/ajax-loader.gif" alt="" /> '.$this->l('Check if a language pack is available for this iso code...').'</p>
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -443,4 +363,4 @@ class AdminLanguages extends AdminTab
 	}
 }
 
-
+?>

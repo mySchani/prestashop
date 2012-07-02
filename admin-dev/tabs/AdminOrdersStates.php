@@ -1,29 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Order statues tab for admin panel, AdminOrdersStates.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
 class AdminOrdersStates extends AdminTab
 {
@@ -34,7 +22,6 @@ class AdminOrdersStates extends AdminTab
 	 	$this->lang = true;
 	 	$this->edit = true;
 	 	$this->delete = true;
-	 	$this->deleted = true;
 		$this->colorOnBackground = true;
  
 		$this->fieldImageSettings = array('name' => 'icon', 'dir' => 'os');
@@ -53,18 +40,15 @@ class AdminOrdersStates extends AdminTab
 	
 	public function postProcess()
 	{
-		global $cookie;
-		
 		if (Tools::isSubmit('submitAdd'.$this->table))
 		{
-			$this->deleted = false; // Don't want to historise on saving
 			$_POST['invoice'] = Tools::getValue('invoice');
 			$_POST['logable'] = Tools::getValue('logable');
 			$_POST['send_email'] = Tools::getValue('send_email');
 			$_POST['hidden'] = Tools::getValue('hidden');
 			if (!$_POST['send_email'])
 			{
-				$languages = Language::getLanguages(false);
+				$languages = Language::getLanguages();
 				foreach ($languages AS $language)
 					$_POST['template_'.$language['id_lang']] = '';
 			}
@@ -72,22 +56,22 @@ class AdminOrdersStates extends AdminTab
 		}
 		elseif (isset($_GET['delete'.$this->table]))
 		{
-			$orderState = new OrderState((int)($_GET['id_order_state']), $cookie->id_lang);
-			if (!$orderState->isRemovable())
-				$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
-			else
-				parent::postProcess();
+		 	$orderState = new OrderState(intval($_GET['id_order_state']));
+		 	if (!$orderState->isRemovable())
+		 		$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
+		 	else
+		 		parent::postProcess();
 		}
 		elseif (isset($_POST['submitDelorder_state']))
 		{
-			foreach ($_POST[$this->table.'Box'] AS $selection)
-			{
-				$orderState = new OrderState((int)($selection), $cookie->id_lang);
-				if (!$orderState->isRemovable())
-				{
-					$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
-					break;
-				}
+		 	foreach ($_POST[$this->table.'Box'] AS $selection)
+		 	{
+			 	$orderState = new OrderState(intval($selection));
+			 	if (!$orderState->isRemovable())
+			 	{
+			 		$this->_errors[] = $this->l('For security reasons, you cannot delete default order statuses.');
+			 		break;
+			 	}
 			}
 			if (empty($this->_errors))
 				parent::postProcess();
@@ -113,20 +97,19 @@ class AdminOrdersStates extends AdminTab
 		global $currentIndex;
 		parent::displayForm();
 		
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 
-		echo '<script type="text/javascript" src="../js/jquery/jquery-colorpicker.js"></script>
+		echo '
 		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset><legend><img src="../img/admin/time.gif" />'.$this->l('Order statuses').'</legend>
+			<fieldset class="width3"><legend><img src="../img/admin/time.gif" />'.$this->l('Order statues').'</legend>
 				<label>'.$this->l('Status name:').' </label>
 				<div class="margin-form">';
 
 				foreach ($this->_languages as $language)
 					echo '
 					<div id="name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input size="40" type="text" name="name_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'name', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" style="width: 150px;" /><sup> *</sup>
+						<input size="40" type="text" name="name_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($obj, 'name', intval($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" style="width: 150px;" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters: numbers and').' !<>,;?=+()@#"�{}_$%:<span class="hint-pointer">&nbsp;</span></span>
 						</div>';							
 				$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤template', 'name');
@@ -141,7 +124,7 @@ class AdminOrdersStates extends AdminTab
 				</div>
 				<label>'.$this->l('Color:').' </label>
 				<div class="margin-form">
-					<input width="20px" type="color" data-hex="true" class="color mColorPickerInput" name="color" value="'.htmlentities($this->getFieldValue($obj, 'color'), ENT_COMPAT, 'UTF-8').'" />
+					<input type="text" name="color" value="'.htmlentities($this->getFieldValue($obj, 'color'), ENT_COMPAT, 'UTF-8').'" />
 					<p>'.$this->l('Status will be highlighted in this color. HTML colors only (e.g.,').' "lightblue", "#CC6600")</p>
 				</div>
 				<div class="margin-form">
@@ -164,13 +147,13 @@ class AdminOrdersStates extends AdminTab
 				</div>
 				<div class="margin-form">
 					<p>
-						<input type="checkbox" style="vertical-align: text-bottom;" id="send_email" name="send_email" onclick="$(\'#tpl\').slideToggle();"'.
+						<input type="checkbox" style="vertical-align: text-bottom;" id="send_email" name="send_email" onclick="javascript:openCloseLayer(\'tpl\');"'.
 					(($this->getFieldValue($obj, 'send_email')) ? 'checked="checked"' : '').' value="1" />
 						<label class="t" for="send_email"> '.$this->l('Send e-mail to customer when order is changed to this status').'</label>
 					</p>
 				</div>				
 				<div id="tpl" style="display: '.($this->getFieldValue($obj, 'send_email') ? 'block' : 'none').';">
-					<label>'.$this->l('Template').'</label>
+					<label>'.$this->l('Template:').'</label>
 					<div class="margin-form">';
 			foreach ($this->_languages as $language)
 			{
@@ -182,7 +165,7 @@ class AdminOrdersStates extends AdminTab
 				{
 					echo '		<select	name="template_'.$language['id_lang'].'" id="template_select_'.$language['id_lang'].'">';
 					foreach ($templates AS $template)
-						echo '		<option value="'.$template.'" '.(($this->getFieldValue($obj, 'template', (int)($language['id_lang'])) == $template) ? 'selected="selected"' : '').'>'.$template.'</option>';
+						echo '		<option value="'.$template.'" '.(($this->getFieldValue($obj, 'template', intval($language['id_lang'])) == $template) ? 'selected="selected"' : '').'>'.$template.'</option>';
 					echo '		</select>';
 				}
 				echo '			<span class="hint" name="help_box">'.$this->l('Only letters, number and -_ are allowed').'<span class="hint-pointer">&nbsp;</span></span>
@@ -203,4 +186,4 @@ class AdminOrdersStates extends AdminTab
 	}
 }
 
-
+?>

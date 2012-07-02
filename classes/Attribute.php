@@ -1,31 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class AttributeCore extends ObjectModel
+/**
+  * Attributes class, Attribute.php
+  * Attributes management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class		Attribute extends ObjectModel
 {	
 	/** @var integer Group id which attribute belongs */
 	public		$id_attribute_group;
@@ -44,21 +31,12 @@ class AttributeCore extends ObjectModel
 		
 	protected 	$table = 'attribute';
 	protected 	$identifier = 'id_attribute';
-	protected	$image_dir = _PS_COL_IMG_DIR_;
-	
-	protected	$webserviceParameters = array(
-		'objectsNodeName' => 'product_option_values',
-		'objectNodeName' => 'product_option_value',
-		'fields' => array(
-			'id_attribute_group' => array('xlink_resource'=> 'product_options'),
-		),
-	);
 
 	public function getFields()
 	{
 		parent::validateFields();
 
-		$fields['id_attribute_group'] = (int)($this->id_attribute_group);
+		$fields['id_attribute_group'] = intval($this->id_attribute_group);
 		$fields['color'] = pSQL($this->color);
 
 		return $fields;
@@ -77,38 +55,19 @@ class AttributeCore extends ObjectModel
 
 	public function delete()
 	{
-		if (($result = Db::getInstance()->ExecuteS('SELECT `id_product_attribute` FROM `'._DB_PREFIX_.'product_attribute_combination` WHERE `'.$this->identifier.'` = '.(int)($this->id))) === false)
+		if (($result = Db::getInstance()->ExecuteS('SELECT `id_product_attribute` FROM `'._DB_PREFIX_.'product_attribute_combination` WHERE `'.$this->identifier.'` = '.intval($this->id))) === false)
 			return false;
 		$combinationIds = array();
 		if (Db::getInstance()->numRows())
 		{
 			foreach ($result AS $row)
-				$combinationIds[] = (int)($row['id_product_attribute']);
-			if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_attribute_combination` WHERE `'.$this->identifier.'` = '.(int)($this->id)) === false)
+				$combinationIds[] = intval($row['id_product_attribute']);
+			if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_attribute_combination` WHERE `'.$this->identifier.'` = '.intval($this->id)) === false)
 				return false;
 			if (Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_attribute` WHERE `id_product_attribute` IN ('.implode(', ', $combinationIds).')') === false)
 				return false;
 		}
-		$return = parent::delete();
-		if ($return)
-			Module::hookExec('afterDeleteAttribute', array('id_attribute' => $this->id));
-		return $return;
-	}
-	
-	public function update($nullValues = false)
-	{
-		$return = parent::update($nullValues);
-		if ($return)
-			Module::hookExec('afterSaveAttribute', array('id_attribute' => $this->id));
-		return $return;
-	}
-	
-	public function add($autodate = true, $nullValues = false)
-	{
-		$return = parent::add($autodate, $nullValues);
-		if ($return)
-			Module::hookExec('afterSaveAttribute', array('id_attribute' => $this->id));
-		return $return;
+		return parent::delete();
 	}
 
 	/**
@@ -118,14 +77,14 @@ class AttributeCore extends ObjectModel
 	 * @param boolean $notNull Get only not null fields if true
 	 * @return array Attributes
 	 */
-	public static function getAttributes($id_lang, $notNull = false)
+	static public function getAttributes($id_lang, $notNull = false)
 	{
 		return Db::getInstance()->ExecuteS('
 		SELECT ag.*, agl.*, a.`id_attribute`, al.`name`, agl.`name` AS `attribute_group`
 		FROM `'._DB_PREFIX_.'attribute_group` ag
-		LEFT JOIN `'._DB_PREFIX_.'attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = '.(int)($id_lang).')
+		LEFT JOIN `'._DB_PREFIX_.'attribute_group_lang` agl ON (ag.`id_attribute_group` = agl.`id_attribute_group` AND agl.`id_lang` = '.intval($id_lang).')
 		LEFT JOIN `'._DB_PREFIX_.'attribute` a ON a.`id_attribute_group` = ag.`id_attribute_group`
-		LEFT JOIN `'._DB_PREFIX_.'attribute_lang` al ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = '.(int)($id_lang).')
+		LEFT JOIN `'._DB_PREFIX_.'attribute_lang` al ON (a.`id_attribute` = al.`id_attribute` AND al.`id_lang` = '.intval($id_lang).')
 		'.($notNull ? 'WHERE a.`id_attribute` IS NOT NULL AND al.`name` IS NOT NULL' : '').'
 		ORDER BY agl.`name` ASC, al.`name` ASC');
 	}
@@ -138,12 +97,12 @@ class AttributeCore extends ObjectModel
 	 * @param integer $qty Quantity needed
 	 * @return boolean Quantity is available or not
 	 */
-	public static function checkAttributeQty($id_product_attribute, $qty)
+	static public function checkAttributeQty($id_product_attribute, $qty)
 	{ 		
 		$result = Db::getInstance()->getRow('
 		SELECT `quantity`
 		FROM `'._DB_PREFIX_.'product_attribute`
-		WHERE `id_product_attribute` = '.(int)($id_product_attribute));
+		WHERE `id_product_attribute` = '.intval($id_product_attribute));
 
 		return ($result AND ($qty <= $result['quantity']));
 	}
@@ -155,15 +114,15 @@ class AttributeCore extends ObjectModel
 	 * @param integer $id_product
 	 * @return mixed Quantity or false
 	 */
-	public static function getAttributeQty($id_product)
+	static public function getAttributeQty($id_product)
 	{
 		$row = Db::getInstance()->getRow('
 		SELECT SUM(quantity) as quantity
 		FROM `'._DB_PREFIX_.'product_attribute` 
-		WHERE `id_product` = '.(int)($id_product));
+		WHERE `id_product` = '.intval($id_product));
 		
 		if ($row['quantity'] !== NULL)
-			return (int)($row['quantity']);
+			return intval($row['quantity']);
 		return false;
 	}
 
@@ -174,14 +133,14 @@ class AttributeCore extends ObjectModel
 	 * @param array &$arr
 	 * return bool
 	 */
-	public static function updateQtyProduct(&$arr)
+	static public function updateQtyProduct(&$arr)
 	{
-		$id_product = (int)($arr['id_product']);
+		$id_product = intval($arr['id_product']);
 		$qty = self::getAttributeQty($id_product);
 		
 		if ($qty !== false)
 		{
-			$arr['quantity'] = (int)($qty);
+			$arr['quantity'] = intval($qty);
 			return true;
 		}
 		return false;
@@ -191,30 +150,11 @@ class AttributeCore extends ObjectModel
 	{
 		if (!Db::getInstance()->getRow('
 			SELECT `is_color_group` FROM `'._DB_PREFIX_.'attribute_group` WHERE `id_attribute_group` = (
-				SELECT `id_attribute_group` FROM `'._DB_PREFIX_.'attribute` WHERE `id_attribute` = '.(int)($this->id).')
+				SELECT `id_attribute_group` FROM `'._DB_PREFIX_.'attribute` WHERE `id_attribute` = '.intval($this->id).')
 				AND is_color_group = 1'))
 			return false;
 		return Db::getInstance()->NumRows();
 	}
-	
-	/**
-	 * Get minimal quantity for product with attributes quantity
-	 *
-	 * @acces public static
-	 * @param integer $id_product_attribute
-	 * @return mixed Minimal Quantity or false
-	 */
-	public static function getAttributeMinimalQty($id_product_attribute)
-	{
-		$minimal_quantity = Db::getInstance()->getValue('
-		SELECT `minimal_quantity`
-		FROM `'._DB_PREFIX_.'product_attribute` 
-		WHERE `id_product_attribute` = '.(int)($id_product_attribute));
-		
-		if ($minimal_quantity > 1)
-			return (int)$minimal_quantity;
-		return false;
-	}
-	
 }
 
+?>

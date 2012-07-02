@@ -1,29 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14424 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
 include(dirname(__FILE__).'/config/config.inc.php');
 include(dirname(__FILE__).'/init.php');
@@ -31,20 +6,19 @@ include(dirname(__FILE__).'/init.php');
 function displayError($msg)
 {
 	$translations = array(
-	'Invalid key.' => Tools::displayError('Invalid key.'),
-	'This product does not exist in our store.' => Tools::displayError('This product does not exist in our store.'),
-	'This product has been deleted.' => Tools::displayError('This product has been deleted.'),
-	'This file no longer exists.'	=> Tools::displayError('This file no longer exists.'),
-    'This product has been refunded.' => Tools::displayError('This product has been refunded.'),
-	'The product deadline is in the past.' => Tools::displayError('The product deadline is in the past.'),
-	'Expiration date exceeded' => Tools::displayError('Expiration date exceeded'),
-	'You have reached the maximum number of allowed downloads.' => Tools::displayError('You have reached the maximum number of allowed downloads.'));
+		'Invalid key.' => Tools::displayError('Invalid key.'),
+		'This product doesn\'t exists in our store.' => Tools::displayError('This product doesn\'t exists in our store.'),
+		'This product has been deleted.' => Tools::displayError('This product has been deleted.'),
+		'This file no more exists.'	=> Tools::displayError('This file no more exists.'),
+		'The product deadline is in the past.' => Tools::displayError('The product deadline is in the past.'),
+		'Dear customer, you exceed the expiration date.' => Tools::displayError('Dear customer, you exceed the expiration date.'),
+		'You reach the maximum number of allowed downloads.' => Tools::displayError('You reach the maximum number of allowed downloads.'));
 ?>
 <script type="text/javascript">
-//<![CDATA[
+<!--
 alert("<?php echo html_entity_decode($translations[$msg], ENT_QUOTES, 'utf-8'); ?>");
 window.location.href = '<?php echo __PS_BASE_URI__ ?>';
-//]]>
+-->
 </script>
 <?php
 	exit();
@@ -78,17 +52,9 @@ else
 
 	$cookie = new Cookie('ps');
 	Tools::setCookieLanguage();
-	if (!$cookie->isLogged() AND !Tools::getValue('secure_key') AND !Tools::getValue('id_order'))
+	if (!$cookie->isLogged())
 		Tools::redirect('authentication.php?back=get-file.php&key='.$key);
-	elseif (!$cookie->isLogged() AND Tools::getValue('secure_key') AND Tools::getValue('id_order'))
-	{
-		$order = new Order((int)Tools::getValue('id_order'));
-		if (!Validate::isLoadedObject($order))
-			displayError('Invalid key.');
-		if ($order->secure_key != Tools::getValue('secure_key'))
-			displayError('Invalid key.');
-	}
-		
+
 	/* Key format: <sha1-filename>-<hashOrder> */
 	$tmp = explode('-', $key);
 	if (sizeof($tmp) != 2)
@@ -98,18 +64,14 @@ else
 	$hash = $tmp[1];
 
 	if (!($info = OrderDetail::getDownloadFromHash($hash)))
-		displayError('This product does not exist in our store.');
+		displayError('This product doesn\'t exists in our store.');
 
 	/* Product no more present in catalog */
 	if (!isset($info['id_product_download']) OR empty($info['id_product_download']))
 		displayError('This product has been deleted.');
 
 	if (!file_exists(_PS_DOWNLOAD_DIR_.$filename))
-		displayError('This file no longer exists.');
-
-    if (isset($info['product_quantity_refunded']) && isset($info['product_quantity_return']) &&
-        ($info['product_quantity_refunded'] > 0 || $info['product_quantity_return'] > 0))
-        displayError('This product has been refunded.');
+		displayError('This file no more exists.');
 
 	$now = time();
 
@@ -119,10 +81,10 @@ else
 
 	$customer_deadline = strtotime($info['date_expiration']);
 	if ($now > $customer_deadline AND $info['date_expiration'] != '0000-00-00 00:00:00')
-		displayError('Expiration date exceeded');
+		displayError('Dear customer, you exceed the expiration date.');
 
 	if ($info['download_nb'] >= $info['nb_downloadable'] AND $info['nb_downloadable'])
-		displayError('You have reached the maximum number of allowed downloads.');
+		displayError('You reach the maximum number of allowed downloads.');
 
 	/* Access is authorized -> increment download value for the customer */
 	OrderDetail::incrementDownload($info['id_order_detail']);
@@ -132,25 +94,19 @@ else
 }
 
 /* Detect mime content type */
-$mimeType = false;
+$mime_type = false;
 if (function_exists('finfo_open'))
 {
 	$finfo = @finfo_open(FILEINFO_MIME);
-	$mimeType = @finfo_file($finfo, $file);
+	$mime_type = @finfo_file($finfo, $file);
 	@finfo_close($finfo);
 }
 elseif (function_exists('mime_content_type'))
-	$mimeType = @mime_content_type($file);
+	$mime_type = @mime_content_type($file);
 elseif (function_exists('exec'))
-{	
-	$mimeType = trim(@exec('file -b --mime-type '.escapeshellarg($file)));
-	if (!$mimeType)
-		$mimeType = trim(@exec('file --mime '.escapeshellarg($file)));
-	if (!$mimeType)
-		$mimeType = trim(@exec('file -bi '.escapeshellarg($file)));
-}
+	$mime_type = trim(@exec('file -bi '.escapeshellarg($file)));
 
-if (empty($mimeType))
+if (empty($mime_type))
 {
 	$bName = basename($filename);
 	$bName = explode('.', $bName);
@@ -161,6 +117,14 @@ if (empty($mimeType))
 	'hqx' => 'application/mac-binhex40',
 	'cpt' => 'application/mac-compactpro',
 	'doc' => 'application/msword',
+	'bin' => 'application/octet-stream',
+	'dms' => 'application/octet-stream',
+	'lha' => 'application/octet-stream',
+	'lzh' => 'application/octet-stream',
+	'exe' => 'application/octet-stream',
+	'class' => 'application/octet-stream',
+	'so' => 'application/octet-stream',
+	'dll' => 'application/octet-stream',
 	'oda' => 'application/oda',
 	'pdf' => 'application/pdf',
 	'ai' => 'application/postscript',
@@ -286,20 +250,19 @@ if (empty($mimeType))
 	'ice' => 'x-conference-xcooltalk');
 	
 	if (isset($mimeTypes[$bName]))
-		$mimeType = $mimeTypes[$bName];
+		$mime_type = $mimeTypes[$bName];
 	else
-		$mimeType = 'application/octet-stream';
+		$mime_type = 'application/octet-stream';
 }
-
 
 /* Set headers for download */
 header('Content-Transfer-Encoding: binary');
-header('Content-Type: '.$mimeType);
+if ($mime_type)
+	header('Content-Type: '.$mime_type);
 header('Content-Length: '.filesize($file));
 header('Content-Disposition: attachment; filename="'.$filename.'"');
-ob_end_flush();
-$fp = fopen($file, 'rb');
-while (!feof($fp))
-	echo fgets($fp, 16384);
-	
+readfile($file);
+
 exit;
+
+?>

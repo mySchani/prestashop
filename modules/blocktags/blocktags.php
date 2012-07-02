@@ -1,56 +1,23 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
-
-define('BLOCKTAGS_MAX_LEVEL', 3);
 
 class BlockTags extends Module
 {
 	function __construct()
 	{
 		$this->name = 'blocktags';
-		$this->tab = 'front_office_features';
+		$this->tab = 'Blocks';
 		$this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 
 		parent::__construct();
 		
 		$this->displayName = $this->l('Tags block');
-		$this->description = $this->l('Adds a block containing a tag cloud.');
+		$this->description = $this->l('Adds a block containing a tag cloud');
 	}
 
 	function install()
 	{
 		if (parent::install() == false 
 				OR $this->registerHook('leftColumn') == false
-				OR $this->registerHook('header') == false
 				OR Configuration::updateValue('BLOCKTAGS_NBR', 10) == false)
 			return false;
 		return true;
@@ -62,12 +29,12 @@ class BlockTags extends Module
 		if (Tools::isSubmit('submitBlockTags'))
 		{
 			if (!$tagsNbr = Tools::getValue('tagsNbr') OR empty($tagsNbr))
-				$output .= '<div class="alert error">'.$this->l('Please fill in the "tags displayed" field.').'</div>';
-			elseif ((int)($tagsNbr) == 0)
+				$output .= '<div class="alert error">'.$this->l('You should fill the "tags displayed" field').'</div>';
+			elseif (intval($tagsNbr) == 0)
 				$output .= '<div class="alert error">'.$this->l('Invalid number.').'</div>';
 			else
 			{
-				Configuration::updateValue('BLOCKTAGS_NBR', (int)($tagsNbr));
+				Configuration::updateValue('BLOCKTAGS_NBR', intval($tagsNbr));
 				$output .= '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Settings updated').'</div>';
 			}
 		}
@@ -77,11 +44,11 @@ class BlockTags extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Tags displayed').'</label>
 				<div class="margin-form">
-					<input type="text" name="tagsNbr" value="'.(int)(Configuration::get('BLOCKTAGS_NBR')).'" />
+					<input type="text" name="tagsNbr" value="'.intval(Configuration::get('BLOCKTAGS_NBR')).'" />
 					<p class="clear">'.$this->l('Set the number of tags to be displayed in this block').'</p>
 				</div>
 				<center><input type="submit" name="submitBlockTags" value="'.$this->l('Save').'" class="button" /></center>
@@ -102,24 +69,30 @@ class BlockTags extends Module
 	{
 		global $smarty;
 
-		$tags = Tag::getMainTags((int)($params['cookie']->id_lang), (int)(Configuration::get('BLOCKTAGS_NBR')));
+		$tags = Tag::getMainTags(intval($params['cookie']->id_lang), intval(Configuration::get('BLOCKTAGS_NBR')));
 		if (!sizeof($tags))
-			return false;
-		foreach ($tags AS &$tag)
-			$tag['class'] = 'tag_level'.($tag['times'] > BLOCKTAGS_MAX_LEVEL ? BLOCKTAGS_MAX_LEVEL : $tag['times']);
+			return '';
+		$maxFontSize = 18;
+		$minFontSize = 10;
+		$maxNumber = intval($tags[0]['times']);
+		$classPrefix = 'tag_level';
+		for ($i = 0; $i < sizeof($tags); ++$i)
+		{
+			$tags[$i]['fontSize'] = floor(($maxFontSize * $tags[$i]['times']) / $maxNumber);
+			if ($tags[$i]['fontSize'] < $minFontSize)
+				$tags[$i]['fontSize'] = $minFontSize;
+			// 2nd version: use CSS class
+			$tags[$i]['class'] = $classPrefix.$tags[$i]['times'];
+			if ($tags[$i]['times'] > 3)
+				$tags[$i]['class'] = $classPrefix;
+		}
 		$smarty->assign('tags', $tags);
-		
 		return $this->display(__FILE__, 'blocktags.tpl');
 	}
 
 	function hookRightColumn($params)
 	{
 		return $this->hookLeftColumn($params);
-	}
-	
-	function hookHeader($params)
-	{
-		Tools::addCSS(($this->_path).'blocktags.css', 'all');
 	}
 
 }

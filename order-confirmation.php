@@ -1,29 +1,27 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14007 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-require(dirname(__FILE__).'/config/config.inc.php');
-ControllerFactory::getController('OrderConfirmationController')->run();
+/* SSL Management */
+$useSSL = true;
+
+include(dirname(__FILE__).'/config/config.inc.php');
+include(dirname(__FILE__).'/header.php');
+
+$id_cart = intval(Tools::getValue('id_cart', 0));
+$id_module = intval(Tools::getValue('id_module', 0));
+$id_order = Order::getOrderByCartId(intval($id_cart));
+$secure_key = isset($_GET['key']) ? $_GET['key'] : false;
+if (!$id_order OR !$id_module OR !$secure_key OR empty($secure_key))
+	Tools::redirect('history.php'.(Tools::isSubmit('slowvalidation') ? '?slowvalidation' : ''));
+$order = new Order(intval($id_order));
+if (!Validate::isLoadedObject($order) OR $order->id_customer != $cookie->id_customer OR $secure_key != $order->secure_key)
+	Tools::redirect('history.php');
+$module = Module::getInstanceById(intval($id_module));
+if ($order->payment != $module->displayName)
+	Tools::redirect('history.php');
+$smarty->assign(array(
+	'HOOK_ORDER_CONFIRMATION' => Hook::orderConfirmation(intval($id_order)),
+	'HOOK_PAYMENT_RETURN' => Hook::paymentReturn(intval($id_order), intval($id_module))));
+
+$smarty->display(_PS_THEME_DIR_.'order-confirmation.tpl');
+
+include(dirname(__FILE__).'/footer.php');

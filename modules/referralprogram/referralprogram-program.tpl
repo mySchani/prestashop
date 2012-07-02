@@ -1,28 +1,8 @@
-{*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*}
+<script type="text/javascript">
+<!--
+	var baseDir = '{$base_dir_ssl}';
+-->
+</script>
 
 <script type="text/javascript">
 // <![CDATA[
@@ -32,8 +12,8 @@
 	//]]>
 </script>
 
-{capture name=path}<a href="{$link->getPageLink('my-account.php', true)}">{l s='My account' mod='referralprogram'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='Referral Program' mod='referralprogram'}{/capture}
-{include file="$tpl_dir./breadcrumb.tpl"}
+{capture name=path}<a href="{$base_dir_ssl}my-account.php">{l s='My account' mod='referralprogram'}</a><span class="navigation-pipe">{$navigationPipe}</span>{l s='ReferralProgram' mod='referralprogram'}{/capture}
+{include file=$tpl_dir./breadcrumb.tpl}
 
 <h2>{l s='Referral program' mod='referralprogram'}</h2>
 
@@ -58,9 +38,9 @@
 {if $invitation_sent}
 	<p class="success">
 	{if $nbInvitation > 1}
-		{l s='E-mails have been sent to your friends!' mod='referralprogram'}
+		{l s='Emails have been sent to your friends !' mod='referralprogram'}
 	{else}
-		{l s='An e-mail has been sent to your friend!' mod='referralprogram'}
+		{l s='Email have been sent to your friend !' mod='referralprogram'}
 	{/if}
 	</p>
 {/if}
@@ -68,9 +48,9 @@
 {if $revive_sent}
 	<p class="success">
 	{if $nbRevive > 1}
-		{l s='Reminder e-mails have been sent to your friends!' mod='referralprogram'}
+		{l s='Revive emails have been sent to your friends !' mod='referralprogram'}
 	{else}
-		{l s='A reminder e-mail has been sent to your friend!' mod='referralprogram'}
+		{l s='Revive email have been sent to your friend !' mod='referralprogram'}
 	{/if}
 	</p>
 {/if}
@@ -106,9 +86,9 @@
 					{section name=friends start=0 loop=$nbFriends step=1}
 					<tr class="{if $smarty.section.friends.index % 2}item{else}alternate_item{/if}">
 						<td class="align_right">{$smarty.section.friends.iteration}</td>
-						<td><input type="text" class="text" name="friendsLastName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsLastName[$smarty.section.friends.index])}{$smarty.post.friendsLastName[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
-						<td><input type="text" class="text" name="friendsFirstName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsFirstName[$smarty.section.friends.index])}{$smarty.post.friendsFirstName[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
-						<td><input type="text" class="text" name="friendsEmail[{$smarty.section.friends.index}]" size="20" value="{if isset($smarty.post.friendsEmail[$smarty.section.friends.index])}{$smarty.post.friendsEmail[$smarty.section.friends.index]|escape:'htmlall':'UTF-8'}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsLastName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsLastName[$smarty.section.friends.index])}{$smarty.post.friendsLastName[$smarty.section.friends.index]}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsFirstName[{$smarty.section.friends.index}]" size="14" value="{if isset($smarty.post.friendsFirstName[$smarty.section.friends.index])}{$smarty.post.friendsFirstName[$smarty.section.friends.index]}{/if}" /></td>
+						<td><input type="text" class="text" name="friendsEmail[{$smarty.section.friends.index}]" size="20" value="{if isset($smarty.post.friendsEmail[$smarty.section.friends.index])}{$smarty.post.friendsEmail[$smarty.section.friends.index]}{/if}" /></td>
 					</tr>
 					{/section}
 				</tbody>
@@ -118,11 +98,13 @@
 				</p>
 				<p class="checkbox">
 					<input type="checkbox" name="conditionsValided" id="conditionsValided" value="1" {if isset($smarty.post.conditionsValided) AND $smarty.post.conditionsValided eq 1}checked="checked"{/if} />
-					<label for="conditionsValided">{l s='I agree to the terms of service and adhere to them unconditionally.' mod='referralprogram'}</label>
+					<label for="conditionsValided">
+						{l s='I have read the conditions of the referral program and accept them in their entirety. I also agree to have my friend reminded again in two weeks (if he or she still has not made a purchase on conditions).' mod='referralprogram'}
+					</label>
 					<a href="{$base_dir_ssl}modules/referralprogram/referralprogram-rules.php?height=500&amp;width=400" class="thickbox" title="{l s='Conditions of the referral program' mod='referralprogram'}">{l s='Read conditions.' mod='referralprogram'}</a>
 				</p>
 				<p>
-					{l s='Preview' mod='referralprogram'} <a href="{$base_dir_ssl}modules/referralprogram/preview-email.php?height=500&amp;width=600&amp;mail={$lang_iso}/referralprogram-invitation.html" class="thickbox" title="{l s='Invitation e-mail' mod='referralprogram'}">{l s='the default e-mail' mod='referralprogram'}</a> {l s='that will be sent to your friend(s).' mod='referralprogram'}
+					{l s='Preview' mod='referralprogram'} <a href="{$base_dir_ssl}modules/referralprogram/preview-email.php?height=500&amp;width=600&amp;mail={$lang_iso}/referralprogram-invitation.html" class="thickbox" title="{l s='Invitation e-mail' mod='referralprogram'}">{l s='the default e-mail' mod='referralprogram'}</a> {l s='that will be sent to your(s) friend(s).' mod='referralprogram'}
 				</p>
 				<p class="submit">
 					<input type="submit" id="submitSponsorFriends" name="submitSponsorFriends" class="button_large" value="{l s='Validate' mod='referralprogram'}" />
@@ -155,7 +137,7 @@
 			{foreach from=$pendingFriends item=pendingFriend name=myLoop}
 				<tr>
 					<td>
-						<input type="checkbox" name="friendChecked[{$pendingFriend.id_referralprogram}]" id="friendChecked[{$pendingFriend.id_referralprogram}]" value="{$pendingFriend.id_referralprogram}" />
+						<input type="checkbox" name="friendChecked[{$pendingFriend.id_referralprogram}]" id="friendChecked[{$pendingFriend.id_referralprogram}]" value="1" />
 					</td>
 					<td>
 						<label for="friendChecked[{$pendingFriend.id_referralprogram}]">{$pendingFriend.lastname|substr:0:22}</label>
@@ -212,6 +194,6 @@
 </div>
 
 <ul class="footer_links">
-	<li><a href="{$link->getPageLink('my-account.php', true)}"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$link->getPageLink('my-account.php', true)}">{l s='Back to Your Account' mod='referralprogram'}</a></li>
+	<li><a href="{$base_dir_ssl}my-account.php"><img src="{$img_dir}icon/my-account.gif" alt="" class="icon" /></a><a href="{$base_dir_ssl}my-account.php">{l s='Back to Your Account' mod='referralprogram'}</a></li>
 	<li><a href="{$base_dir}"><img src="{$img_dir}icon/home.gif" alt="" class="icon" /></a><a href="{$base_dir_ssl}">{l s='Home' mod='referralprogram'}</a></li>
 </ul>

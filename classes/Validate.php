@@ -1,72 +1,49 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14902 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class ValidateCore
+/**
+  * Validation class, Validate.php
+  * Check fields and data validity
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class Validate
 {
-	public static function isIp2Long($ip)
-	{
-		return preg_match('#^-?[0-9]+$#', (string)$ip);
-	}
-
-	public static function isAnything($data)
-	{
-		return true;
-	}
-	
  	/**
 	* Check for e-mail validity
 	*
 	* @param string $email e-mail address to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isEmail($email)
-	{
-		return !empty($email) && preg_match('/^[a-z\p{L}0-9!#$%&\'*+\/=?^`{}|~_-]+[.a-z\p{L}0-9!#$%&\'*+\/=?^`{}|~_-]*@[a-z\p{L}0-9]+[._a-z\p{L}0-9-]*\.[a-z0-9]+$/ui', $email);
-	}
+	static public function isEmail($email)
+    {
+    	return preg_match('/^[a-z0-9!#$%&\'*+\/=?^`{}|~_-]+[.a-z0-9!#$%&\'*+\/=?^`{}|~_-]*@[a-z0-9]+[._a-z0-9-]*\.[a-z0-9]+$/ui', $email);
+    }
 
-	/**
+    /**
 	* Check for module URL validity
 	*
 	* @param string $url module URL to validate
 	* @param array $errors Reference array for catching errors
 	* @return boolean Validity is ok or not
 	*/
-	public static function isModuleUrl($url, &$errors)
+	static public function isModuleUrl($url, &$errors)
 	{
 		if (!$url OR $url == 'http://')
-			$errors[] = Tools::displayError('Please specify module URL');
+			$errors[] = Tools::displayError('please specify module URL');
 		elseif (substr($url, -4) != '.tar' AND substr($url, -4) != '.zip' AND substr($url, -4) != '.tgz' AND substr($url, -7) != '.tar.gz')
-			$errors[] = Tools::displayError('Unknown archive type');
+			$errors[] = Tools::displayError('unknown archive type');
 		else
 		{
 			if ((strpos($url, 'http')) === false)
 				$url = 'http://'.$url;
 			if (!is_array(@get_headers($url)))
-				$errors[] = Tools::displayError('Invalid URL');
+				$errors[] = Tools::displayError('invalid URL');
 		}
 		if (!sizeof($errors))
 			return true;
@@ -80,9 +57,9 @@ class ValidateCore
 	* @param string $md5 MD5 string to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isMd5($md5)
+	static public function isMd5($md5)
 	{
-		return preg_match('/^[a-f0-9A-F]{32}$/', $md5);
+		return preg_match('/^[a-z0-9]{32}$/ui', $md5);
 	}
 
 	/**
@@ -91,9 +68,9 @@ class ValidateCore
 	* @param string $sha1 SHA1 string to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isSha1($sha1)
+	static public function isSha1($sha1)
 	{
-		return preg_match('/^[a-fA-F0-9]{40}$/', $sha1);
+		return preg_match('/^[a-z0-9]{40}$/ui', $sha1);
 	}
 
 	/**
@@ -102,14 +79,14 @@ class ValidateCore
 	* @param float $float Float number to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isFloat($float)
-	{
-		return strval((float)($float)) == strval($float);
+    static public function isFloat($float)
+    {
+		return strval(floatval($float)) == strval($float);
 	}
 	
-	public static function isUnsignedFloat($float)
-	{
-			return strval((float)($float)) == strval($float) AND $float >= 0;
+    static public function isUnsignedFloat($float)
+    {
+			return strval(floatval($float)) == strval($float) AND $float >= 0;
 	}
 
 	/**
@@ -118,8 +95,8 @@ class ValidateCore
 	* @param float $float Float number to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isOptFloat($float)
-	{
+    static public function isOptFloat($float)
+    {
 		return empty($float) OR self::isFloat($float);
 	}
 
@@ -129,9 +106,9 @@ class ValidateCore
 	* @param string $name Carrier name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isCarrierName($name)
+	static public function isCarrierName($name)
 	{
-		return empty($name) OR preg_match('/^[^<>;=#{}]*$/u', $name);
+		return empty($name) OR preg_match('/^[^<>;=#{}]*$/ui', $name);
 	}
 
 	/**
@@ -140,18 +117,13 @@ class ValidateCore
 	* @param string $size Image size to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isImageSize($size)
+	static public function isImageSize($size)
 	{
-		return preg_match('/^[0-9]{1,4}$/', $size);
+		return preg_match('/^[0-9]{1,4}$/ui', $size);
 	}
 
-	/**
-	 * @deprecated
-	 * @param int $id
-	 */
-	public static function isOptId($id)
+	static public function isOptId($id)
 	{
-		Tools::displayAsDeprecated();
 		return empty($id) OR self::isUnsignedId($id);
 	}
 
@@ -161,9 +133,9 @@ class ValidateCore
 	* @param string $name Name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isName($name)
+	static public function isName($name)
 	{
-		return preg_match('/^[^0-9!<>,;?=+()@#"°{}_$%:]*$/u', stripslashes($name));
+		return preg_match('/^[^0-9!<>,;?=+()@#"°{}_$%:]*$/ui', stripslashes($name));
 	}
 
 	/**
@@ -172,9 +144,9 @@ class ValidateCore
 	* @param string $hook Hook name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isHookName($hook)
+	static public function isHookName($hook)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]+$/', $hook);
+		return preg_match('/^[a-z0-9_-]+$/ui', $hook);
 	}
 
 	/**
@@ -183,9 +155,9 @@ class ValidateCore
 	* @param string $mailName Sender name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isMailName($mailName)
+	static public function isMailName($mailName)
 	{
-		return preg_match('/^[^<>;=#{}]*$/u', $mailName);
+		return preg_match('/^[^<>;=#{}]*$/ui', $mailName);
 	}
 
 	/**
@@ -194,9 +166,9 @@ class ValidateCore
 	* @param string $mailSubject e-mail subject to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isMailSubject($mailSubject)
+	static public function isMailSubject($mailSubject)
 	{
-		return preg_match('/^[^<>]*$/u', $mailSubject);
+		return preg_match('/^[^<>;{}]*$/ui', $mailSubject);
 	}
 
 	/**
@@ -205,9 +177,9 @@ class ValidateCore
 	* @param string $moduleName Module name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isModuleName($moduleName)
+	static public function isModuleName($moduleName)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]+$/', $moduleName);
+		return preg_match('/^[a-z0-9_-]+$/ui', $moduleName);
 	}
 
 	/**
@@ -216,20 +188,14 @@ class ValidateCore
 	* @param string $tplName Template name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isTplName($tplName)
+	static public function isTplName($tplName)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]+$/', $tplName);
+		return preg_match('/^[a-z0-9_-]+$/ui', $tplName);
 	}
 
-	/**
-	 * @deprecated
-	 * @param string $tplFileName
-	 * @return bool
-	 */
-	public static function isTplFileName($tplFileName)
+	static public function isTplFileName($tplFileName)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^[a-zA-Z0-9\/_.-]+/', $tplFileName);
+		return preg_match('/^[a-zA-Z0-9\/_.-]+/ui', $tplFileName);
 	}
 
 	/**
@@ -237,12 +203,10 @@ class ValidateCore
 	*
 	* @param string $icon Icon filename to validate
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isIconFile($icon)
+	static public function isIconFile($icon)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^[a-z0-9_-]+\.(gif|jpg|jpeg|png)$/i', $icon);
+		return preg_match('/^[a-z0-9_-]+\.[gif|jpg|jpeg|png]$/ui', $icon);
 	}
 
 	/**
@@ -250,12 +214,10 @@ class ValidateCore
 	*
 	* @param string $icon Icon filename to validate
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isIcoFile($icon)
+	static public function isIcoFile($icon)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^[a-z0-9_-]+\.ico$/i', $icon);
+		return preg_match('/^[a-z0-9_-]+\.ico$/ui', $icon);
 	}
 
 	/**
@@ -264,9 +226,9 @@ class ValidateCore
 	* @param string $type Image type name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isImageTypeName($type)
+	static public function isImageTypeName($type)
 	{
-		return preg_match('/^[a-zA-Z0-9_ -]+$/', $type);
+		return preg_match('/^[a-z0-9_ -]+$/ui', $type);
 	}
 
 	/**
@@ -275,20 +237,9 @@ class ValidateCore
 	* @param string $price Price to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isPrice($price)
+	static public function isPrice($price)
 	{
-		return preg_match('/^[0-9]{1,10}(\.[0-9]{1,9})?$/', $price);
-	}
-
-	/**
-	 * Check for price validity (including negative price)
-	 *
-	 * @param string $price Price to validate
-	 * @return boolean Validity is ok or not
-	 */
-	public static function isNegativePrice($price)
-	{
-		return preg_match('/^[-]?[0-9]{1,10}(\.[0-9]{1,9})?$/', $price);
+		return preg_match('/^[0-9]{1,10}(\.[0-9]{1,9})?$/ui', $price);
 	}
 
 	/**
@@ -297,24 +248,14 @@ class ValidateCore
 	* @param string $isoCode Language code (ISO) to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isLanguageIsoCode($isoCode)
+	static public function isLanguageIsoCode($isoCode)
 	{
-		return preg_match('/^[a-zA-Z]{2,3}$/', $isoCode);
+		return preg_match('/^[a-z]{2,3}$/ui', $isoCode);
 	}
 	
-	public static function isLanguageCode($s)
+	static public function isStateIsoCode($isoCode)
 	{
-		return preg_match('/^[a-zA-Z]{2}(-[a-zA-Z]{2})?$/', $s);
-	}
-	
-	public static function isStateIsoCode($isoCode)
-	{
-		return preg_match('/^[a-zA-Z0-9]{2,3}((-)[a-zA-Z0-9]{1,3})?$/', $isoCode);
-	}
-	
-	public static function isNumericIsoCode($isoCode)
-	{
-		return preg_match('/^[0-9]{2,3}$/', $isoCode);
+		return preg_match('/^[a-z]{1,4}$/ui', $isoCode);
 	}
 
 	/**
@@ -322,12 +263,10 @@ class ValidateCore
 	*
 	* @param string $isoCode Gender code (ISO) to validate
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isGenderIsoCode($isoCode)
+	static public function isGenderIsoCode($isoCode)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^0|1|2|9$/', $isoCode);
+		return preg_match('/^[0|1|2|9]$/ui', $isoCode);
 	}
 
 	/**
@@ -335,12 +274,10 @@ class ValidateCore
 	*
 	* @param string $isoCode Gender code (ISO) to validate
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isGenderName($genderName)
+	static public function isGenderName($genderName)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^[a-zA-Z.]+$/', $genderName);
+		return preg_match('/^[a-z.]+$/ui', $genderName);
 	}
 
 	/**
@@ -349,9 +286,9 @@ class ValidateCore
 	* @param string $discountName Discount coupon name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isDiscountName($discountName)
+	static public function isDiscountName($discountName)
 	{
-		return preg_match('/^[^!<>,;?=+()@"°{}_$%:]{3,32}$/u', $discountName);
+		return preg_match('/^[^!<>,;?=+()@"°{}_$%:]{3,32}$/ui', $discountName);
 	}
 
 	/**
@@ -360,9 +297,9 @@ class ValidateCore
 	* @param string $name Product or category name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isCatalogName($name)
+	static public function isCatalogName($name)
 	{
-		return preg_match('/^[^<>;=#{}]*$/u', $name);
+		return preg_match('/^[^<>;=#{}]*$/ui', $name);
 	}
 
 	/**
@@ -371,9 +308,9 @@ class ValidateCore
 	* @param string $message Message to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isMessage($message)
+	static public function isMessage($message)
 	{
-		return !preg_match('/[<>{}]/i', $message);
+		return preg_match('/^([^<>{}]|<br \/>)*$/ui', $message);
 	}
 
 	/**
@@ -382,9 +319,9 @@ class ValidateCore
 	* @param string $name Country name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isCountryName($name)
+	static public function isCountryName($name)
 	{
-		return preg_match('/^[a-zA-Z -]+$/', $name);
+		return preg_match('/^[a-z -]+$/ui', $name);
 	}
 
 	/**
@@ -393,9 +330,9 @@ class ValidateCore
 	* @param string $link Link to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isLinkRewrite($link)
+	static public function isLinkRewrite($link)
 	{
-		return (boolean)preg_match('/^[_a-zA-Z0-9-]+$/', $link);
+		return empty($link) OR preg_match('/^[_a-z0-9-]+$/ui', $link);
 	}
 
 	/**
@@ -403,12 +340,10 @@ class ValidateCore
 	*
 	* @param string $name Zone name to validate
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isZoneName($name)
+	static public function isZoneName($name)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^[a-zA-Z -()]+$/', $name);
+		return preg_match('/^[a-z -()]+$/ui', $name);
 	}
 
 	/**
@@ -417,9 +352,9 @@ class ValidateCore
 	* @param string $address Address to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isAddress($address)
+	static public function isAddress($address)
 	{
-		return empty($address) OR preg_match('/^[^!<>?=+@{}_$%]*$/u', $address);
+		return empty($address) OR preg_match('/^[^!<>?=+@{}_$%]*$/ui', $address);
 	}
 
 	/**
@@ -428,9 +363,9 @@ class ValidateCore
 	* @param string $city City name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isCityName($city)
+	static public function isCityName($city)
 	{
-		return preg_match('/^[^!<>;?=+@#"°{}_$%]*$/u', $city);
+		return preg_match('/^[^!<>;?=+@#"°{}_$%]*$/ui', $city);
 	}
 
 	/**
@@ -439,9 +374,9 @@ class ValidateCore
 	* @param string $search Query to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isValidSearch($search)
+	static public function isValidSearch($search)
 	{
-		return preg_match('/^[^<>;=#{}]{0,64}$/u', $search);
+		return preg_match('/^[^<>;=#{}]{0,64}$/ui', $search);
 	}
 
 	/**
@@ -450,9 +385,9 @@ class ValidateCore
 	* @param string $name Name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isGenericName($name)
+	static public function isGenericName($name)
 	{
-		return empty($name) OR preg_match('/^[^<>;=#{}]*$/u', $name);
+		return empty($name) OR preg_match('/^[^<>;=#{}]*$/ui', $name);
 	}
 
 	/**
@@ -461,16 +396,10 @@ class ValidateCore
 	* @param string $html HTML field to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isCleanHtml($html)
+	static public function isCleanHtml($html)
 	{
-		$events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange
-						|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend
-						|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove
-						|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel
-						|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart
-						|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange
-						|onselectstart|onstart|onstop';
-		return (!preg_match('/<[ \t\n]*script/i', $html) && !preg_match('/<?.*('.$events.')[ \t\n]*=/i', $html) && !preg_match('/.*script\:/i', $html));
+		$jsEvent = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave';
+		return (!preg_match('/<[ \t\n]*script/ui', $html) && !preg_match('/<.*('.$jsEvent.')[ \t\n]*=/ui', $html)  && !preg_match('/.*script\:/ui', $html));
 	}
 
 	/**
@@ -479,9 +408,9 @@ class ValidateCore
 	* @param string $reference Product reference to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isReference($reference)
+	static public function isReference($reference)
 	{
-		return preg_match('/^[^<>;={}]*$/u', $reference);
+		return preg_match('/^[^<>;={}]*$/ui', $reference);
 	}
 
 	/**
@@ -490,12 +419,12 @@ class ValidateCore
 	* @param string $passwd Password to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isPasswd($passwd, $size = 5)
+	static public function isPasswd($passwd, $size = 5)
 	{
-		return preg_match('/^[.a-zA-Z_0-9-!@#$%\^&*()]{'.(int)$size.',32}$/', $passwd);
+		return preg_match('/^[.a-z_0-9-!@#$%\^&*()]{'.$size.',32}$/ui', $passwd);
 	}
 
-	public static function isPasswdAdmin($passwd)
+	static public function isPasswdAdmin($passwd)
 	{
 		return self::isPasswd($passwd, 8);
 	}
@@ -506,45 +435,22 @@ class ValidateCore
 	* @param string $configName Configuration key to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isConfigName($configName)
+	static public function isConfigName($configName)
 	{
-		return preg_match('/^[a-zA-Z_0-9-]+$/', $configName);
-	}
-	
-	/**
-	* Check date formats like http://php.net/manual/en/function.date.php
-	*
-	* @param string $date_format date format to check
-	* @return boolean Validity is ok or not
-	*/
-	public static function isPhpDateFormat($date_format)
-	{
-		// We can't really check if this is valid or not, because this is a string and you can write whatever you want in it. That's why only < et > are forbidden (HTML)
-		return preg_match('/^[^<>]+$/', $date_format);
+		return preg_match('/^[a-z_0-9-]+$/ui', $configName);
 	}
 
-	/**
-	* Check for date format
-	*
-	* @param string $date Date to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isDateFormat($date)
-	{
-		return (bool)preg_match('/^([0-9]{4})-((0?[0-9])|(1[0-2]))-((0?[1-9])|([0-2][0-9])|(3[01]))( [0-9]{2}:[0-9]{2}:[0-9]{2})?$/', $date);
-	}
-	
 	/**
 	* Check for date validity
 	*
 	* @param string $date Date to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isDate($date)
+	static public function isDate($date)
 	{
-		if (!preg_match('/^([0-9]{4})-((0?[1-9])|(1[0-2]))-((0?[1-9])|([1-2][0-9])|(3[01]))( [0-9]{2}:[0-9]{2}:[0-9]{2})?$/', $date, $matches))
+		if (!preg_match('/^([0-9]{4})-((0?[1-9])|(1[0-2]))-((0?[1-9])|([1-2][0-9])|(3[01]))( [0-9]{2}:[0-9]{2}:[0-9]{2})?$/ui', $date, $matches))
 			return false;
-		return checkdate((int)$matches[2], (int)$matches[5], (int)$matches[0]);
+		return checkdate(intval($matches[2]), intval($matches[5]), intval($matches[0]));
 	}
 
 	/**
@@ -553,11 +459,11 @@ class ValidateCore
 	* @param string $date birthdate to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isBirthDate($date)
+	static public function isBirthDate($date)
 	{
 	 	if (empty($date) || $date == '0000-00-00')
 	 		return true;
-	 	if (preg_match('/^([0-9]{4})-((0?[1-9])|(1[0-2]))-((0?[1-9])|([1-2][0-9])|(3[01]))( [0-9]{2}:[0-9]{2}:[0-9]{2})?$/', $date, $birthDate)) {
+	 	if (preg_match('/^([0-9]{4})-((0?[1-9])|(1[0-2]))-((0?[1-9])|([1-2][0-9])|(3[01]))( [0-9]{2}:[0-9]{2}:[0-9]{2})?$/ui', $date, $birthDate)) {
 			 if ($birthDate[1] >= date('Y') - 9)
 	 			return false;
 	 		return true;
@@ -571,9 +477,9 @@ class ValidateCore
 	* @param boolean $bool Boolean to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isBool($bool)
+	static public function isBool($bool)
 	{
-		return is_null($bool) OR is_bool($bool) OR preg_match('/^0|1$/', $bool);
+		return is_null($bool) OR is_bool($bool) OR preg_match('/^[0|1]{1}$/ui', $bool);
 	}
 
 	/**
@@ -582,9 +488,9 @@ class ValidateCore
 	* @param string $phoneNumber Phone number to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isPhoneNumber($phoneNumber)
+	static public function isPhoneNumber($phoneNumber)
 	{
-		return preg_match('/^[+0-9. ()-]*$/', $phoneNumber);
+		return preg_match('/^[+0-9. ()-]*$/ui', $phoneNumber);
 	}
 
 	/**
@@ -593,20 +499,9 @@ class ValidateCore
 	* @param string $ean13 Barcode to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isEan13($ean13)
+	static public function isEan13($ean13)
 	{
-		return !$ean13 OR preg_match('/^[0-9]{0,13}$/', $ean13);
-	}
-	
-	/**
-	* Check for barcode validity (UPC)
-	*
-	* @param string $upc Barcode to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isUpc($upc)
-	{
-		return !$upc OR preg_match('/^[0-9]{0,12}$/', $upc);
+		return !$ean13 OR preg_match('/^[0-9]{0,13}$/ui', $ean13);
 	}
 
 	/**
@@ -615,22 +510,9 @@ class ValidateCore
 	* @param string $postcode Postal code to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isPostCode($postcode)
+	static public function isPostCode($postcode)
 	{
-		return empty($postcode) OR preg_match('/^[a-zA-Z 0-9-]+$/', $postcode);
-	}
-	
-	/**
-	* Check for zip code format validity
-	*
-	* @param string $zip_code zip code format to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isZipCodeFormat($zip_code)
-	{
-		if (!empty($zip_code))
-			return preg_match('/^[NLCnlc -]+$/', $zip_code);
-		return true;
+		return preg_match('/^[a-z 0-9-]+$/ui', $postcode);
 	}
 
 	/**
@@ -640,7 +522,7 @@ class ValidateCore
 	* @param string $orderWay Keyword to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isOrderWay($orderWay)
+	static public function isOrderWay($orderWay)
 	{
 		return ($orderWay === 'ASC' | $orderWay === 'DESC' | $orderWay === 'asc' | $orderWay === 'desc');
 	}
@@ -652,9 +534,9 @@ class ValidateCore
 	* @param string $orderBy Field to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isOrderBy($orderBy)
+	static public function isOrderBy($orderBy)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]+$/', $orderBy);
+		return preg_match('/^[a-z0-9_-]+$/ui', $orderBy);
 	}
 
 	/**
@@ -664,9 +546,9 @@ class ValidateCore
 	* @param string $table Table/identifier to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isTableOrIdentifier($table)
+	static public function isTableOrIdentifier($table)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]+$/', $table);
+		return preg_match('/^[a-z0-9_-]+$/ui', $table);
 	}
 
 	/**
@@ -676,11 +558,10 @@ class ValidateCore
 	* @param string $list List to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isValuesList($list)
+	static public function isValuesList($list)
 	{
 		return true;
-		/* For history reason, we keep this line */
-		// return preg_match('/^[0-9,\'(). NULL]+$/', $list);
+		return preg_match('/^[0-9,\'(). NULL]+$/ui', $list);
 	}
 
 	/**
@@ -689,9 +570,9 @@ class ValidateCore
 	* @param string $list List to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isTagsList($list)
+	static public function isTagsList($list)
 	{
-		return preg_match('/^[^!<>;?=+#"°{}_$%]*$/u', $list);
+		return preg_match('/^[^!<>;?=+#"°{}_$%]*$/ui', $list);
 	}
 
 	/**
@@ -700,7 +581,7 @@ class ValidateCore
 	* @param integer $id Integer to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isInt($value)
+	static public function isInt($value)
 	{
 		return ((string)(int)$value === (string)$value OR $value === false);
 	}
@@ -711,9 +592,9 @@ class ValidateCore
 	* @param integer $id Integer to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isUnsignedInt($value)
+	static public function isUnsignedInt($value)
 	{
-		return (preg_match('#^[0-9]+$#', (string)$value) AND $value < 4294967296 AND $value >= 0);
+		return (self::isInt($value) AND $value < 4294967296 AND $value >= 0);
 	}
 
 	/**
@@ -723,12 +604,12 @@ class ValidateCore
 	* @param integer $id Integer to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isUnsignedId($id)
+	static public function isUnsignedId($id)
 	{
 		return self::isUnsignedInt($id); /* Because an id could be equal to zero when there is no association */
 	}
 
-	public static function isNullOrUnsignedId($id)
+	static public function isNullOrUnsignedId($id)
 	{
 		return is_null($id) OR self::isUnsignedId($id);
 	}
@@ -739,7 +620,7 @@ class ValidateCore
 	* @param integer $object Object to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isLoadedObject($object)
+	static public function isLoadedObject($object)
 	{
 		return is_object($object) AND $object->id;
 	}
@@ -750,31 +631,9 @@ class ValidateCore
 	* @param integer $object Object to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isColor($color)
+	static public function isColor($color)
 	{
-		return preg_match('/^(#[0-9a-fA-F]{6}|[a-zA-Z0-9-]*)$/', $color);
-	}
-
-	/**
-	* Check url valdity (disallowed empty string)
-	*
-	* @param string $url Url to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isUrl($url)
-	{
-		return preg_match('/^[~:#,%&_=\(\)\.\? \+\-@\/a-zA-Z0-9]+$/', $url);
-	}
-
-	/**
-	* Check url validity (allowed empty string)
-	*
-	* @param string $url Url to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isUrlOrEmpty($url)
-	{
-		return empty($url) || self::isUrl($url);
+		return preg_match('/^(#[0-9A-Fa-f]{6}|[[:alnum:]]*)$/ui', $color);
 	}
 
 	/**
@@ -783,27 +642,22 @@ class ValidateCore
 	* @param integer $object Object to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isAbsoluteUrl($url)
+	static public function isUrl($url)
+	{
+		return preg_match('/^([[:alnum:]]|[:#%&_=\(\)\.\? \+\-@\/])+$/ui', $url);
+	}
+
+	/**
+	* Check object validity
+	*
+	* @param integer $object Object to validate
+	* @return boolean Validity is ok or not
+	*/
+	static public function isAbsoluteUrl($url)
 	{
 		if (!empty($url))
-			return preg_match('/^https?:\/\/[:#%&_=\(\)\.\? \+\-@\/a-zA-Z0-9]+$/', $url);
+			return preg_match('/^https?:\/\/([[:alnum:]]|[:#%&_=\(\)\.\? \+\-@\/])+$/ui', $url);
 		return true;
-	}
-	
-	public static function isMySQLEngine($engine)
-	{
-		return (in_array($engine, array('InnoDB', 'MyISAM')));
-	}
-	
-	public static function isUnixName($data)
-	{
-		return preg_match('/^[a-z0-9\._-]+$/ui', $data);
-	}
-	
-	public static function isTablePrefix($data)
-	{
-		// Even if "-" is theorically allowed, it will be considered a syntax error if you do not add backquotes (`) around the table name
-		return preg_match('/^[a-z0-9_]+$/ui', $data);
 	}
 
 	/**
@@ -812,9 +666,9 @@ class ValidateCore
 	* @param string $name Name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isFileName($name)
+	static public function isFileName($name)
 	{
-		return preg_match('/^[a-zA-Z0-9_.-]*$/', $name);
+		return preg_match('/^[a-z0-9_.-]*$/ui', $name);
 	}
 
 	/**
@@ -823,40 +677,30 @@ class ValidateCore
 	* @param string $name Name to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isTabName($name)
+	static public function isTabName($name)
 	{
-		return preg_match('/^[a-zA-Z0-9_-]*$/', $name);
+		return preg_match('/^[a-z0-9_-]*$/ui', $name);
 	}
 
-	public static function isWeightUnit($unit)
+	static public function isWeightUnit($unit)
 	{
-		return preg_match('/^[a-zA-Z]{1,3}$/', $unit);
-	}
-	
-	public static function isDistanceUnit($unit)
-	{
-		return preg_match('/^[a-zA-Z]{1,2}$/', $unit);
+		return preg_match('/^[[:alpha:]]{1,3}$/ui', $unit);
 	}
 
-	/**
-	 * @deprecated
-	 * @param string $protocol
-	 */
-	public static function isProtocol($protocol)
+	static public function isProtocol($protocol)
 	{
-		Tools::displayAsDeprecated();
-		return preg_match('/^http(s?):\/\/$/i', $protocol);
+		return preg_match('/^http(s?):\/\/$/ui', $protocol);
 	}
 
 
-	public static function isSubDomainName($subDomainName)
+	static public function isSubDomainName($subDomainName)
 	{
-		return preg_match('/^[a-zA-Z0-9-_]*$/', $subDomainName);
+		return preg_match('/^[[:alnum:]]*$/ui', $subDomainName);
 	}
 
-	public static function isVoucherDescription($text)
+	static public function isVoucherDescription($text)
 	{
-		return preg_match('/^([^<>{}]|<br \/>)*$/i', $text);
+		return preg_match('/^([^<>{}]|<br \/>)*$/ui', $text);
 	}
 	
 	/**
@@ -864,11 +708,9 @@ class ValidateCore
 	*
 	* @param char $value
 	* @return boolean Validity is ok or not
-	* @deprecated
 	*/
-	public static function isGranularityValue($value)
+	static public function isGranularityValue($value)
 	{
-		Tools::displayAsDeprecated();
 		return (!is_null($value) AND ($value === 'd' OR $value === 'm' OR $value === 'y'));
 	}
 	
@@ -878,7 +720,7 @@ class ValidateCore
 	* @param char $value
 	* @return boolean Validity is ok or not
 	*/
-	public static function IsSortDirection($value)
+	static public function IsSortDirection($value)
 	{
 		return (!is_null($value) AND ($value === 'ASC' OR $value === 'DESC'));
 	}
@@ -889,9 +731,9 @@ class ValidateCore
 	* @param integer $object Object to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isLabel($label)
+	static public function isLabel($label)
 	{
-		return (preg_match('/^[^{}<>]*$/u', $label));
+		return (preg_match('/^[^{}<>]*$/ui', $label));
 	}
 
 	/**
@@ -900,18 +742,9 @@ class ValidateCore
 	* @param integer $data Data to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isPriceDisplayMethod($data)
+	static public function isPriceDisplayMethod($data)
 	{
 		return ($data == PS_TAX_EXC OR $data == PS_TAX_INC);
-	}
-	
-	/**
-	 * @param string $dni to validate
-	 * @return bool
-	 */
-	public static function isDniLite($dni)
-	{
-		return empty($dni) OR (bool)preg_match('/^[0-9A-Za-z-.]{1,16}$/U', $dni);
 	}
 	
 	/**
@@ -919,9 +752,8 @@ class ValidateCore
 	*
 	* @param string $dni to validate
 	* @return int
-	* @deprecated
 	*/
-	public static function isDni($dni)
+	static public function isDni($dni)
 	{
 		/*
 		Return code:
@@ -932,8 +764,6 @@ class ValidateCore
 		-3 : CIF error
 		-4 : NIE error
 		*/
-
-		Tools::displayAsDeprecated();
 		
 		if (!$dni)
 			return 1;
@@ -942,11 +772,12 @@ class ValidateCore
 		if (!preg_match('/((^[A-Z]{1}[0-9]{7}[A-Z0-9]{1}$|^[T]{1}[A-Z0-9]{8}$)|^[0-9]{8}[A-Z]{1}$)/', $dni)) 
 			return 0;
 		
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getValue('
-		SELECT `id_address`
-		FROM `'._DB_PREFIX_.'address` 
-		WHERE `dni` = \''.pSQL($dni).'\'');
-		if ($result)
+		$result = Db::getInstance()->getValue('
+		SELECT COUNT(`id_customer`) AS total 
+		FROM `'._DB_PREFIX_.'customer` 
+		WHERE `dni` = \''.pSQL($dni).'\'
+		');
+		if($result)
 			return -1;
 		
 		for ($i=0;$i<9;$i++)
@@ -990,19 +821,6 @@ class ValidateCore
 		
 		return 0;
 	}
-	
-	/**
-	* Check for Dni validity
-	*
-	* @param string $dni to validate
-	* @return bool
-	* @deprecated
-	*/
-	public static function isDniBool($dni)
-	{
-		Tools::displayAsDeprecated();
-		return (self::isDni($dni) > 0 ? 1 : 0); 
-	}
 
 	/**
 	* Check if $data is a PrestaShop cookie object
@@ -1010,7 +828,7 @@ class ValidateCore
 	* @param mixed $data to validate
 	* @return bool
 	*/
-	public static function isCookie($data)
+	static public function isCookie($data)
 	{
 		return (is_object($data) AND get_class($data) == 'Cookie');
 	}
@@ -1021,123 +839,10 @@ class ValidateCore
 	* @param string $data Data to validate
 	* @return boolean Validity is ok or not
 	*/
-	public static function isString($data)
+	static public function isString($data)
 	{
 		return is_string($data);
 	}
-
-	/**
-	* Check if the data is a reduction type (amout or percentage)
-	*
-	* @param string $data Data to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isReductionType($data)
-	{
-		return ($data === 'amount' || $data === 'percentage');
-	}
-	
-	/**
-	* Check for bool_id
-	*
-	* @param string $ids
-	* @return boolean Validity is ok or not
-	*/
-	public static function isBool_Id($ids)
-	{
-		return (bool)preg_match('#^[01]_[0-9]+$#', $ids);
-	}
-
-	/**
-	* Check the localization pack part selected
-	*
-	* @param string $data Localization pack to check
-	* @return boolean Validity is ok or not
-	*/
-	public static function isLocalizationPackSelection($data)
-	{
-		return ($data === 'states' OR $data === 'taxes' OR $data === 'currencies' OR $data === 'languages' OR $data === 'units');
-	}
-	
-	/**
-	* Check for PHP serialized data
-	*
-	* @param string $data Serialized data to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isSerializedArray($data)
-	{
-		return ($data == NULL) OR (bool)(is_string($data) AND preg_match('/^a:[0-9]+:{.*;}$/s', $data));
-	}
-	
-	/**
-	* Check for Latitude/Longitude
-	*
-	* @param string $data Coordinate to validate
-	* @return boolean Validity is ok or not
-	*/
-	public static function isCoordinate($data)
-	{
-		return ($data == NULL) OR (bool)(preg_match('/^\-?[0-9]{1,8}\.[0-9]{1,8}$/s', $data));
-	}
-	
-	/**
-	* Check for Language Iso Code
-	*
-	* @param string $iso_code
-	* @return boolean Validity is ok or not
-	*/
-	public static function isLangIsoCode($iso_code)
-	{
-		return (bool)(preg_match('/^[a-zA-Z]{2,3}$/s', $iso_code));
-	}
-	
-	/**
-	* Check for Language File Name
-	*
-	* @param string $file_name
-	* @return boolean Validity is ok or not
-	*/
-	public static function isLanguageFileName($file_name)
-	{
-		return (bool)(preg_match('/^[a-zA-Z]{2,3}\.gzip$/s', $file_name));
-	}
-	
-	/**
-	 *
-	 * @param array $ids
-	 * @return boolean return true if the array contain only unsigned int value 
-	 */
-	public static function isArrayWithIds($ids)
-	{
-		if (sizeof($ids))
-			foreach($ids as $id)
-				if ($id == 0 || !self::isUnsignedInt($id))
-					return false;
-		return true;
-	}
-	
-	/**
-	 *
-	 * @param array $zones
-	 * @return array return true if array contain all value required for an image map zone 
-	 */
-	public static function isSceneZones($zones)
-	{
-		foreach($zones as $zone)
-		{
-			if (!isset($zone['x1']) || !self::isUnsignedInt($zone['x1']))
-				return false;
-			if (!isset($zone['y1']) || !self::isUnsignedInt($zone['y1']))
-				return false;
-			if (!isset($zone['width']) || !self::isUnsignedInt($zone['width']))
-				return false;
-			if (!isset($zone['height']) || !self::isUnsignedInt($zone['height']))
-				return false;
-			if (!isset($zone['id_product']) || !self::isUnsignedInt($zone['id_product']))
-				return false;
-		}
-		return true;
-	}
 }
 
+?>

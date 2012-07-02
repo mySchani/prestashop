@@ -3,7 +3,7 @@
 global $_MODULE;
 $_MODULE = array();
 $_MODULE['<{blockcart}prestashop>blockcart_c2e1362a9710a3dd86f937c2ea1f336d'] = 'Bloc panier';
-$_MODULE['<{blockcart}prestashop>blockcart_e03093a5753b436ee1de63b6e3e1bd02'] = 'Ajoute un bloc avec le contenu du panier du client';
+$_MODULE['<{blockcart}prestashop>blockcart_b3c2bf363aa5f1a47c4b1c718ec15a13'] = 'Ajoute un bloc avec le contenu du panier du client';
 $_MODULE['<{blockcart}prestashop>blockcart_eb4ae207521bbe6403f7fe9564d38cda'] = 'Ajax : choix invalide.';
 $_MODULE['<{blockcart}prestashop>blockcart_f4d1ea475eaa85102e2b4e6d95da84bd'] = 'Confirmation';
 $_MODULE['<{blockcart}prestashop>blockcart_c888438d14855d7d96a2724ee9c306bd'] = 'Paramètres mis à jour';
@@ -25,7 +25,6 @@ $_MODULE['<{blockcart}prestashop>blockcart_09dc02ecbb078868a3a86dded030076d'] = 
 $_MODULE['<{blockcart}prestashop>blockcart_f2a6c498fb90ee345d997f888fce3b18'] = 'Supprimer';
 $_MODULE['<{blockcart}prestashop>blockcart_ea9cf7e47ff33b2be14e6dd07cbcefc6'] = 'Expédition';
 $_MODULE['<{blockcart}prestashop>blockcart_ba794350deb07c0c96fe73bd12239059'] = 'Emballage';
-$_MODULE['<{blockcart}prestashop>blockcart_4b78ac8eb158840e9638a3aeb26c4a9d'] = 'Taxes';
 $_MODULE['<{blockcart}prestashop>blockcart_96b0141273eabab320119c467cdcaf17'] = 'Total';
 $_MODULE['<{blockcart}prestashop>blockcart_0d11c2b75cf03522c8d97938490466b2'] = 'Les prix sont TTC';
 $_MODULE['<{blockcart}prestashop>blockcart_41202aa6b8cf7ae885644717dab1e8b4'] = 'Les prix sont HT';

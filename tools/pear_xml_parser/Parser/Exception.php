@@ -17,21 +17,21 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL
- * @version    CVS: $Id: Exception.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: Exception.php,v 1.3 2005/11/07 01:52:35 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
  
 /**
  * We are extending PEAR_Exception
  */
-require_once(dirname(__FILE__).'/../../pear/PEAR.php');
+//require_once 'PEAR/Exception.php';
 
 /**
  * XML_Feed_Parser_Exception is a simple extension of PEAR_Exception, existing
  * to help with identification of the source of exceptions.
  *
  * @author  James Stewart <james@jystewart.net>
- * @version Release: @package_version@
+ * @version Release: 1.0.2
  * @package XML_Feed_Parser
  */ 
 class XML_Feed_Parser_Exception extends PEAR_Exception

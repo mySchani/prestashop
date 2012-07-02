@@ -1,51 +1,31 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-if (!defined('_PS_VERSION_'))
-	exit;
-
+/**
+  * Statistics
+  * @category stats
+  *
+  * @author Damien Metzger / Epitech
+  * @copyright Epitech / PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.2
+  */
+  
 class StatsEquipment extends ModuleGraph
 {
-	private $_html = '';
-	private $_query = '';
-	private $_query2 = '';
+    private $_html = '';
+    private $_query = '';
+    private $_query2 = '';
 
-	function __construct()
-	{
-		$this->name = 'statsequipment';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
-
+    function __construct()
+    {
+        $this->name = 'statsequipment';
+        $this->tab = 'Stats';
+        $this->version = 1.0;
+		
 		parent::__construct();
-
-		$this->displayName = $this->l('Software');
-		$this->description = $this->l('Display the software used by your visitors.');
+		
+        $this->displayName = $this->l('Software');
+        $this->description = $this->l('Display the software used by your visitors');
 	}
 	
 	public function install()
@@ -55,14 +35,14 @@ class StatsEquipment extends ModuleGraph
 	
 	private function getEquipment()
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		$result = mysql_query('
 		SELECT DISTINCT g.*
 		FROM `'._DB_PREFIX_.'connections` c 
 		LEFT JOIN `'._DB_PREFIX_.'guest` g ON g.`id_guest` = c.`id_guest`
-		WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween(), false);
+		WHERE c.`date_add` BETWEEN '.ModuleGraph::getDateBetween());
 		
 		$calcArray = array('jsOK' => 0, 'jsKO' => 0, 'javaOK' => 0, 'javaKO' => 0, 'wmpOK' => 0, 'wmpKO' => 0, 'qtOK' => 0, 'qtKO' => 0, 'realOK' => 0, 'realKO' => 0, 'flashOK' => 0, 'flashKO' => 0, 'directorOK' => 0, 'directorKO' => 0);
-		while ($row = Db::getInstance(_PS_USE_SQL_SLAVE_)->nextRow($result))
+		while ($row = mysql_fetch_assoc($result))
 		{
 			if (!$row['javascript'])
 			{
@@ -77,7 +57,7 @@ class StatsEquipment extends ModuleGraph
 			($row['sun_java']) ? ++$calcArray['javaOK'] : ++$calcArray['javaKO'];
 			($row['apple_quicktime']) ? ++$calcArray['qtOK'] : ++$calcArray['qtKO'];
 		}
-		
+		mysql_free_result($result);
 		if (!$calcArray['jsOK'])
 			return false;
 			
@@ -95,23 +75,14 @@ class StatsEquipment extends ModuleGraph
 	
 	public function hookAdminStatsModules($params)
 	{
-		if (Tools::getValue('export'))
-			if (Tools::getValue('exportType') == 'browser')
-				$this->csvExport(array('type' => 'pie', 'option' => 'wb'));
-			elseif (Tools::getValue('exportType') == 'os')
-				$this->csvExport(array('type' => 'pie', 'option' => 'os'));
-				
 		$equipment = $this->getEquipment();
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="../modules/'.$this->name.'/logo.gif" /> '.$this->displayName.'</legend>
 			<center>
-				<p><img src="../img/admin/down.gif" />'.$this->l('Determine the percentage of web browsers used by your customers.').'</p>
+				<p><img src="../img/admin/down.gif" />'.$this->l('Determine the percentage of web browser used by your customers.').'</p>
 				'.ModuleGraph::engine(array('type' => 'pie', 'option' => 'wb')).'<br /><br />
-				<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=browser"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>
 				<p><img src="../img/admin/down.gif" />'.$this->l('Determine the percentage of operating systems used by your customers.').'</p>
-				'.ModuleGraph::engine(array('type' => 'pie', 'option' => 'os')).'
-				<p><a href="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'&export=1&exportType=os"><img src="../img/admin/asterisk.gif" />'.$this->l('CSV Export').'</a></p>';
-				
+				'.ModuleGraph::engine(array('type' => 'pie', 'option' => 'os')).'';
 		if ($equipment)
 		{
 			$this->_html .= '<table class="table space" border="0" cellspacing="0" cellpadding="0">
@@ -124,9 +95,9 @@ class StatsEquipment extends ModuleGraph
 			</center>
 		</fieldset><br />
 		<fieldset class="width3"><legend><img src="../img/admin/comment.gif" /> '.$this->l('Guide').'</legend>
-		<h2>'.$this->l('Ensure that your website is accessible to all.').'</h2>
+		<h2>'.$this->l('Ensure that your website is accessible to all').'</h2>
 			<p>
-				'.$this->l('When managing Websites, it is important to keep track of software used by visitors in order to be sure that the site displays the same way for everyone. PrestaShop was built in order to be compatible with most recent Web browsers and computer operating systems (OS). However, because you may end up adding advanced features to your Website or even modify the core PrestaShop code, these additions may not be accessible by everyone. That is why it is a good idea to keep tabs on the percentage of users for each type of software before adding or changing something that only a limited number of users will be able to access.').'
+				'.$this->l('When managing Websites, it is important to keep track of software used by visitors in order to be sure that the site displays the same way for everyone, and PrestaShop was built in order to be compatible with most recent Web browsers and computer operating systems (OS). However, because you may end up adding advanced features to your Website or even modify the core PrestaShop code, these additions may not be accessible by everyone. That is why it is a good idea to keep tabs on the percentage of users for each type of software before adding or changing something that only a limited number of users will be able to access.').'
 			</p><br />
 			
 		</fieldset>';
@@ -162,7 +133,7 @@ class StatsEquipment extends ModuleGraph
 	
 	protected function getData($layers)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS($this->_query.$this->getDate().$this->_query2);
+		$result = Db::getInstance()->ExecuteS($this->_query.$this->getDate().$this->_query2);
 		$this->_values = array();
 		$i = 0;
 		foreach ($result as $row)
@@ -173,4 +144,4 @@ class StatsEquipment extends ModuleGraph
 	}
 }
 
-
+?>

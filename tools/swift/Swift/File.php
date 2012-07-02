@@ -133,13 +133,17 @@ class Swift_File
    */
   public function readln()
   {
+	
+    Tools::ps_set_magic_quotes_runtime(0);
     $this->createHandle();
     if (!$this->EOF())
     {
       $ret = fgets($this->handle);
     }
     else $ret = false;
-
+    
+    Tools::ps_set_magic_quotes_runtime($this->magic_quotes);
+    
     return $ret;
   }
   /**
@@ -150,7 +154,9 @@ class Swift_File
   public function readFull()
   {
     $ret = "";
+    Tools::ps_set_magic_quotes_runtime(0);
     while (false !== $chunk = $this->read(8192, false)) $ret .= $chunk;
+    Tools::ps_set_magic_quotes_runtime($this->magic_quotes);
     return $ret;
   }
   /**
@@ -161,6 +167,7 @@ class Swift_File
    */
   public function read($bytes, $unquote=true)
   {
+    if ($unquote) Tools::ps_set_magic_quotes_runtime(0);
     $this->createHandle();
     if (!$this->EOF())
     {
@@ -168,6 +175,7 @@ class Swift_File
     }
     else $ret = false;
     
+    if ($unquote) Tools::ps_set_magic_quotes_runtime($this->magic_quotes);
     
     return $ret;
   }

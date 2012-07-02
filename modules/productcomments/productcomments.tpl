@@ -1,29 +1,3 @@
-{*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*}
-
 <div id="idTab5">
 <script type="text/javascript" src="{$module_dir}js/jquery.rating.pack.js"></script>
 <script type="text/javascript">
@@ -55,7 +29,7 @@
 			<div style="float: left; margin-left: 20px; margin-bottom: 10px;">
 			{$c.name|escape:'html':'UTF-8'}<br />
 			{section loop=6 step=1 start=1 name=average}
-				<input class="auto-submit-star" disabled="disabled" type="radio" name="{$c.name|escape:'html':'UTF-8'}_{$smarty.section.average.index}" value="{$smarty.section.average.index}" {if isset($averages[$c.id_product_comment_criterion]) AND $averages[$c.id_product_comment_criterion]|round neq 0 AND $smarty.section.average.index eq $averages[$c.id_product_comment_criterion]|round}checked="checked"{/if} />
+				<input class="auto-submit-star" disabled="disabled" type="radio" name="{$c.name|escape:'html':'UTF-8'}_{$smarty.section.average.index}" value="{$smarty.section.average.index}" {if $averages[$c.id_product_comment_criterion]|round neq 0 and $smarty.section.average.index eq $averages[$c.id_product_comment_criterion]|round}checked="checked"{/if} />
 			{/section}
 			</div>
 		{/foreach}
@@ -66,7 +40,6 @@
 			<thead>
 				<tr>
 					<th class="first_item" style="width:80px;">{l s='From' mod='productcomments'}</th>
-					<th class="item">{l s='Title' mod='productcomments'}</th>
 					<th class="item">{l s='Comment' mod='productcomments'}</th>
 				</tr>
 			</thead>
@@ -74,12 +47,9 @@
 			{foreach from=$comments item=comment}
 				{if $comment.content}
 				<tr>
-					<td style="vertical-align:top">
+					<td style="vertical-align: top">
 						{dateFormat date=$comment.date_add|escape:'html':'UTF-8' full=0}
-						{$comment.customer_name|escape:'html':'UTF-8'}.
-					</td>
-					<td style="vertical-align:top">
-						{$comment.title}
+						{$comment.firstname|escape:'html':'UTF-8'} {$comment.lastname|truncate:1:'...'|escape:'htmlall':'UTF-8'}.
 					</td>
 					<td style="vertical-align: top">
 						{$comment.content|escape:'html':'UTF-8'|nl2br}
@@ -93,10 +63,7 @@
 {else}
 	<p class="align_center">{l s='No customer comments for the moment.' mod='productcomments'}</p>
 {/if}
-
-{if $too_early == true}
-	<p class="align_center">{l s='You should wait' mod='productcomments'} {$delay} {l s='second(s) before posting a new comment' mod='productcomments'}</p>
-{elseif $cookie->isLogged() == true || $allow_guests == true}
+{if $logged == true}
 <p class="align_center"><input style="margin:auto;" class="button_large" type="button" id="addCommentButton" value="{l s='Add a comment' mod='productcomments'}" onclick="$('#sendComment').slideDown('slow');$(this).slideUp('slow');" /></p>
 <form action="{$action_url}" method="post" class="std" id="sendComment" style="display:none;">
 	<fieldset>
@@ -123,9 +90,7 @@
 		{/section}
 		</table>
 		{/if}
-		{if $allow_guests == true && $cookie->isLogged() == false}<p><label for="customer_name">{l s='Your name:' mod='productcomments'}</label><input type="text" name="customer_name" id="customer_name" /></p>{/if}
-		<p><label for="comment_title">{l s='Title:' mod='productcomments'}</label><input type="text" name="title" id="comment_title" /></p>
-		<p><label for="content">{l s='Comment:' mod='productcomments'}</label><textarea cols="46" rows="5" name="content" id="content"></textarea></p>
+		<p><textarea cols="50" rows="5" name="content" id="content"></textarea></p>
 		<p class="submit">
 			<input class="button" name="submitMessage" value="{l s='Send' mod='productcomments'}" type="submit" />
 		</p>

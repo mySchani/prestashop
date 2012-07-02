@@ -1,65 +1,43 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-define('_PS_ADMIN_DIR_', getcwd());
-define('PS_ADMIN_DIR', _PS_ADMIN_DIR_); // Retro-compatibility
+/**
+  * Password recuperation for employees account, password.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+define('PS_ADMIN_DIR', getcwd());
 
 include(PS_ADMIN_DIR.'/../config/config.inc.php');
 include(PS_ADMIN_DIR.'/functions.php');
 
-$cookie = new Cookie('psAdmin', substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__), -10));
-
 $errors = array();
-
-$id_lang = (int)Configuration::get('PS_LANG_DEFAULT');
-$iso = strtolower(Language::getIsoById((int)$id_lang));
+$cookie = new Cookie('psAdmin', substr($_SERVER['PHP_SELF'], strlen(__PS_BASE_URI__), -10));
+$id_lang = intval($cookie->id_lang) ? intval($cookie->id_lang) : 1;
+$iso = strtolower(Language::getIsoById($cookie->id_lang ? intval($cookie->id_lang) : 1));
 include(_PS_TRANSLATIONS_DIR_.$iso.'/admin.php');
-/* PrestaShop demo mode */
-if (_PS_MODE_DEMO_)
-{
-	$errors[] = Tools::displayError('This functionnality has been disabled.');
-}
-/* PrestaShop demo mode*/
-else if (isset($_POST['Submit']))
+
+if (isset($_POST['Submit']))
 {
 	$errors = array();
 	if (empty($_POST['email']))
-		$errors[] = Tools::displayError('E-mail is empty');
+		$errors[] = Tools::displayError('e-mail is empty');
 	elseif (!Validate::isEmail($_POST['email']))
-		$errors[] = Tools::displayError('Invalid e-mail address');
+		$errors[] = Tools::displayError('invalid e-mail address');
 	else
 	{
 		$employee = new Employee();
 		if (!$employee->getByemail($_POST['email']) OR !$employee)
-			$errors[] = Tools::displayError('This account does not exist');
+			$errors[] = Tools::displayError('this account doesn\'t exist');
 		else
 		{
 			if ((strtotime($employee->last_passwd_gen.'+'.Configuration::get('PS_PASSWD_TIME_BACK').' minutes') - time()) > 0 )
-				$errors[] = Tools::displayError('You can regenerate your password only every').' '.Configuration::get('PS_PASSWD_TIME_BACK').' '.Tools::displayError('minute(s)');
+				$errors[] = Tools::displayError('You can regenerate your password only each').' '.Configuration::get('PS_PASSWD_TIME_BACK').' '.Tools::displayError('minute(s)');
 			else
 			{	
 				$pwd = Tools::passwdGen();
@@ -67,11 +45,11 @@ else if (isset($_POST['Submit']))
 				$employee->last_passwd_gen = date('Y-m-d H:i:s', time());
 				$result = $employee->update();
 				if (!$result)
-					$errors[] = Tools::displayError('An error occurred during your password change.');
+					$errors[] = Tools::displayError('an error occurred during your password change');
 				else
 				{
-					if (Mail::Send((int)$id_lang, 'password', Mail::l('Your new admin password', (int)$id_lang), array('{email}' => $employee->email, '{lastname}' => $employee->lastname, '{firstname}' => $employee->firstname, '{passwd}' => $pwd), $employee->email, $employee->firstname.' '.$employee->lastname))
-						$confirmation = 'ok';
+					Mail::Send($id_lang, 'password', 'Your new admin password', array('{email}' => $employee->email, '{lastname}' => $employee->lastname, '{firstname}' => $employee->firstname, '{passwd}' => $pwd), $employee->email, $employee->firstname.' '.$employee->lastname);
+					$confirmation = 'ok';
 				}
 			}
 		}
@@ -80,14 +58,13 @@ else if (isset($_POST['Submit']))
 
 echo '
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="'.$iso.'" lang="'.$iso.'">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr" lang="fr">
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<link type="text/css" rel="stylesheet" href="../css/login.css" />
 	<title>PrestaShop&trade; - '.translate('Administration panel').'</title>
 </head>
 <body><div id="container">';
-
 if (sizeof($errors))
 {
 	echo '<div id="error">
@@ -97,12 +74,10 @@ if (sizeof($errors))
 		echo '<li>'.$error.'</li>';
 	echo '</ol>
 	</div>';
-}
-
+}		
 echo '
 	<div id="login">
-		<h1>'.Configuration::get('PS_SHOP_NAME').'</h1>
-		<form action="'.Tools::htmlentitiesUTF8($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="" method="post">
 			<div class="page-title center">'.translate('Forgot your password?').'</div><br />';
 if (isset($confirmation))
 	echo '	<br />
@@ -118,5 +93,6 @@ else
 			</div>
 		</form>
 	</div>
-	<h2><a href="http://www.prestashop.com">&copy; Copyright by PrestaShop. all rights reserved.</a></h2>
 </div></body></html>';
+
+?>

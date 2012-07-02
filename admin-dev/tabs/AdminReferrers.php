@@ -1,48 +1,34 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Referrer tab for admin panel, AdminReferrers.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 if (!defined('PS_ADMIN_DIR')) define('PS_ADMIN_DIR', getcwd().'/..');
 include_once(PS_ADMIN_DIR.'/../config/config.inc.php');
 include_once(PS_ADMIN_DIR.'/init.php');
 
-if (Tools::getValue('token') == Tools::getAdminToken('AdminReferrers'.(int)(Tab::getIdFromClassName('AdminReferrers')).(int)(Tools::getValue('id_employee'))))
+if (Tools::getValue('token') == Tools::getAdminToken('AdminReferrers'.intval(Tab::getIdFromClassName('AdminReferrers')).intval(Tools::getValue('id_employee'))))
 {
 	if (Tools::isSubmit('ajaxProductFilter'))
-		Referrer::getAjaxProduct((int)(Tools::getValue('id_referrer')), (int)(Tools::getValue('id_product')), new Employee((int)(Tools::getValue('id_employee'))));
-	elseif (Tools::isSubmit('ajaxFillProducts'))
+		Referrer::getAjaxProduct(intval(Tools::getValue('id_referrer')), intval(Tools::getValue('id_product')), new Employee(intval(Tools::getValue('id_employee'))));
+	else if (Tools::isSubmit('ajaxFillProducts'))
 	{
 		$jsonArray = array();
 		$result = Db::getInstance()->ExecuteS('
 		SELECT p.id_product, pl.name
 		FROM '._DB_PREFIX_.'product p
-		LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.(int)(Tools::getValue('id_lang')).')
+		LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (p.id_product = pl.id_product AND pl.id_lang = '.intval(Tools::getValue('id_lang')).')
 		'.(Tools::getValue('filter') != 'undefined' ? 'WHERE name LIKE "%'.pSQL(Tools::getValue('filter')).'%"' : ''));
 		foreach ($result as $row)
-			$jsonArray[] = '{id_product:'.(int)($row['id_product']).',name:\''.addslashes($row['name']).'\'}';
+			$jsonArray[] = '{id_product:'.intval($row['id_product']).',name:\''.addslashes($row['name']).'\'}';
 		die ('['.implode(',', $jsonArray).']');
 	}
 }
@@ -69,12 +55,12 @@ class AdminReferrers extends AdminTab
 			'cache_registrations' => array('title' => $this->l('Reg.'), 'width' => 30, 'align' => 'center'),
 			'cache_orders' => array('title' => $this->l('Ord.'), 'width' => 30, 'align' => 'center'),
 			'cache_sales' => array('title' => $this->l('Sales'), 'width' => 80, 'align' => 'right', 'prefix' => '<b>', 'suffix' => '</b>', 'price' => true),
-			'cart' => array('title' => $this->l('Avg. cart'), 'width' => 50, 'align' => 'right', 'price' => true, 'havingFilter' => true),
+			'cart' => array('title' => $this->l('Avg. cart'), 'width' => 50, 'align' => 'right', 'price' => true),
 			'cache_reg_rate' => array('title' => $this->l('Reg. rate'), 'width' => 30, 'align' => 'center'),
 			'cache_order_rate' => array('title' => $this->l('Order rate'), 'width' => 30, 'align' => 'center'),
-			'fee0' => array('title' => $this->l('Click'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true),
-			'fee1' => array('title' => $this->l('Base'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true),
-			'fee2' => array('title' => $this->l('Percent'), 'width' => 30, 'align' => 'right', 'price' => true, 'havingFilter' => true));
+			'fee0' => array('title' => $this->l('Click'), 'width' => 30, 'align' => 'right', 'price' => true),
+			'fee1' => array('title' => $this->l('Base'), 'width' => 30, 'align' => 'right', 'price' => true),
+			'fee2' => array('title' => $this->l('Percent'), 'width' => 30, 'align' => 'right', 'price' => true));
 			
 		parent::__construct();
 	}
@@ -88,7 +74,7 @@ class AdminReferrers extends AdminTab
 	{
 		global $cookie, $currentIndex;
 		
-		$products = Product::getSimpleProducts((int)($cookie->id_lang));
+		$products = Product::getSimpleProducts(intval($cookie->id_lang));
 		$productsArray = array();
 		foreach ($products as $product)
 			$productsArray[] = $product['id_product'];
@@ -127,7 +113,7 @@ class AdminReferrers extends AdminTab
 					{
 						referrerStatus[id_referrer] = true;
 						for (var i = 0; i < productIds.length; ++i)
-							$.getJSON("'.dirname($currentIndex).'/ajax.php",{ajaxReferrers:1, ajaxProductFilter:1,id_employee:'.(int)($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_referrer:id_referrer,id_product:productIds[i]},
+							$.getJSON("'.dirname($currentIndex).'/tabs/AdminReferrers.php",{ajaxProductFilter:1,id_employee:'.intval($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_referrer:id_referrer,id_product:productIds[i]},
 								function(result) {
 									var newLine = newProductLine(id_referrer, result[0]);
 									$(newLine).hide().insertAfter(getE(\'trid_\'+id_referrer)).fadeIn();
@@ -154,25 +140,25 @@ class AdminReferrers extends AdminTab
 		if ($this->enableCalendar())
 		{
 			echo '
-			<div style="float:left;margin-right:20px">
-				'.AdminStatsTab::displayCalendarStatic(array('Calendar' => $this->l('Calendar'), 'Day' => $this->l('Today'), 'Month' => $this->l('Month'), 'Year' => $this->l('Year'), 'From' => $this->l('From'), 'To' => $this->l('To'))).'
+			<div style="float: left; margin-right: 20px;">
+				'.AdminStatsTab::displayCalendarStatic(array('Calendar' => $this->l('Calendar'), 'Day' => $this->l('Today'), 'Month' => $this->l('Month'), 'Year' => $this->l('Year'))).'
 			</div>';
 			if (!Tools::isSubmit('viewreferrer'))
 				echo '
 				<div style="float: left; margin-right: 20px;">
-					<fieldset style="width:630px"><legend><img src="../img/admin/tab-preferences.gif" /> '.$this->l('Settings').'</legend>
+					<fieldset class="width3"><legend><img src="../img/admin/tab-preferences.gif" /> '.$this->l('Settings').'</legend>
 						<form action="'.$currentIndex.'&token='.Tools::getValue('token').'" method="post">
 							<label>'.$this->l('Save direct traffic').'</label>
 							<div class="float" style="margin-left: 200px;">
 								<label class="t" for="tracking_dt_on"><img src="../img/admin/enabled.gif" alt="'.$this->l('Yes').'" title="'.$this->l('Yes').'" /></label>
-								<input type="radio" name="tracking_dt" id="tracking_dt_on" value="1" '.((int)(Tools::getValue('tracking_dt', Configuration::get('TRACKING_DIRECT_TRAFFIC'))) ? 'checked="checked"' : '').' />
+								<input type="radio" name="tracking_dt" id="tracking_dt_on" value="1" '.(intval(Tools::getValue('tracking_dt', Configuration::get('TRACKING_DIRECT_TRAFFIC'))) ? 'checked="checked"' : '').' />
 								<label class="t" for="tracking_dt_on"> '.$this->l('Yes').'</label>
 								<label class="t" for="tracking_dt_off"><img src="../img/admin/disabled.gif" alt="'.$this->l('No').'" title="'.$this->l('No').'" style="margin-left: 10px;" /></label>
-								<input type="radio" name="tracking_dt" id="tracking_dt_off" value="0" '.(!(int)(Tools::getValue('tracking_dt', Configuration::get('TRACKING_DIRECT_TRAFFIC'))) ? 'checked="checked"' : '').'/>
+								<input type="radio" name="tracking_dt" id="tracking_dt_off" value="0" '.(!intval(Tools::getValue('tracking_dt', Configuration::get('TRACKING_DIRECT_TRAFFIC'))) ? 'checked="checked"' : '').'/>
 								<label class="t" for="tracking_dt_off"> '.$this->l('No').'</label>
 							</div>
 							<br class="clear" />
-							<p>'.$this->l('Direct traffic can be quite consuming. You should consider enabling it only if you have a strong database server and a strong need for it.').'</p>
+							<p>'.$this->l('Direct traffic can be quite consuming, you should consider to enable it only if you have a strong database server and the need for it.').'</p>
 							<input type="submit" class="button" value="'.$this->l('   Save   ').'" name="submitSettings" />
 						</form>
 						<hr />
@@ -207,7 +193,7 @@ class AdminReferrers extends AdminTab
 
 		if (Tools::isSubmit('submitSettings'))
 			if ($this->tabAccess['edit'] === '1')
-				if (Configuration::updateValue('TRACKING_DIRECT_TRAFFIC', (int)(Tools::getValue('tracking_dt'))))
+				if (Configuration::updateValue('TRACKING_DIRECT_TRAFFIC', intval(Tools::getValue('tracking_dt'))))
 					Tools::redirectAdmin($currentIndex.'&conf=4&token='.Tools::getValue('token'));
 
 		if (ModuleGraph::getDateBetween() != Configuration::get('PS_REFERRERS_CACHE_LIKE') OR Tools::isSubmit('submitRefreshCache'))
@@ -223,16 +209,15 @@ class AdminReferrers extends AdminTab
 		global $currentIndex;
 		parent::displayForm();
 		
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 		foreach (array('http_referer_like', 'http_referer_regexp', 'request_uri_like', 'request_uri_regexp') as $field)
 			$obj->{$field} = str_replace('\\', '\\\\', $obj->{$field});
 		$uri = Tools::getHttpHost(true, true).__PS_BASE_URI__;
 
 		echo '
-		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post">
+		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" class="width2">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset><legend><img src="../img/admin/affiliation.png" /> '.$this->l('Affiliate').'</legend>
+			<fieldset class="width4"><legend><img src="../img/admin/affiliation.png" /> '.$this->l('Affiliate').'</legend>
 				<label>'.$this->l('Name').'</label>
 				<div class="margin-form">
 					<input type="text" size="20" name="name" value="'.htmlentities($this->getFieldValue($obj, 'name'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
@@ -243,44 +228,44 @@ class AdminReferrers extends AdminTab
 					<p>'.$this->l('Leave blank if no change').'</p>
 				</div>
 				<p>
-					'.$this->l('Affiliates can access their own data with this name and password.').'<br />
+					'.$this->l('Affiliates can access to their own data with these name and password.').'<br />
 					'.$this->l('Front access:').' <a href="'.$uri.'modules/trackingfront/stats.php" style="font-style: italic;">'.$uri.'modules/trackingfront/stats.php</a>
 				</p>
 			</fieldset>
 			<br class="clear" />
-			<fieldset><legend><img src="../img/admin/money.png" /> '.$this->l('Commission plan').'</legend>
+			<fieldset class="width4"><legend><img src="../img/admin/money.png" /> '.$this->l('Commission plan').'</legend>
 				<label>'.$this->l('Click fee').'</label>
 				<div class="margin-form">
-					<input type="text" size="8" name="click_fee" value="'.number_format((float)($this->getFieldValue($obj, 'click_fee')), 2).'" />
+					<input type="text" size="8" name="click_fee" value="'.number_format(floatval($this->getFieldValue($obj, 'click_fee')), 2).'" />
 					<p>'.$this->l('Fee given for each visit.').'</p>
 				</div>
 				<label>'.$this->l('Base fee').'</label>
 				<div class="margin-form">
-					<input type="text" size="8" name="base_fee" value="'.number_format((float)($this->getFieldValue($obj, 'base_fee')), 2).'" />
+					<input type="text" size="8" name="base_fee" value="'.number_format(floatval($this->getFieldValue($obj, 'base_fee')), 2).'" />
 					<p>'.$this->l('Fee given for each order placed.').'</p>
 				</div>
 				<label>'.$this->l('Percent fee').'</label>
 				<div class="margin-form">
-					<input type="text" size="8" name="percent_fee" value="'.number_format((float)($this->getFieldValue($obj, 'percent_fee')), 2).'" />
+					<input type="text" size="8" name="percent_fee" value="'.number_format(floatval($this->getFieldValue($obj, 'percent_fee')), 2).'" />
 					<p>'.$this->l('Percent of the sales.').'</p>
 				</div>
 			</fieldset>
 			<br class="clear" />
-			<fieldset><legend onclick="$(\'#tracking_help\').slideToggle();" style="cursor: pointer;"><img src="../img/admin/help.png" /> '.$this->l('Help').'</legend>
+			<fieldset class="width4"><legend onclick="openCloseLayer(\'tracking_help\')" style="cursor: pointer;"><img src="../img/admin/help.png" /> '.$this->l('Help').'</legend>
 			<div id="tracking_help" style="display: none;">
 				<p>'.$this->l('Definitions:').'</p>
 				<ul style="list-style: disc; margin-left: 20px;">
 					<li>
-						'.$this->l('The field `http_referer` is the website from which your customers arrive.').'<br />
+						'.$this->l('The field `http_referer` is the website from which your customers come.').'<br />
 						'.$this->l('For example, visitors coming from Google will have a `http_referer` like this one: "http://www.google.com/search?q=prestashop".').'<br />
-						'.$this->l('If the visitor arrives directly (by typing the URL of your shop or by using their bookmarks, for example), `http_referer` will be empty.').'<br />
+						'.$this->l('If the visitor come directly (by typing the URL of your shop or by using its bookmarks for example), `http_referer` will be empty.').'<br />
 						'.$this->l('So if you want all the visitors coming from google, you can type "%google%" in this field, or "%google.fr%" if you want the visitors coming from Google France only.').'<br />
 					</li>
 					<br />
 					<li>
-						'.$this->l('The field `request_uri` is the URL from which the customers come to your website.').'<br />
-						'.$this->l('For example, if the visitor accesses a product page, the URL will be').' "'.$uri.'music-ipods/1-ipod-nano.html".<br />
-						'.$this->l('This is interesting because you can add some tags or tokens in the links pointing to your website. For example, you can post a link').' "'.$uri.'index.php?prestashop" '.$this->l('in the forum and get statistics by entering "%prestashop" in the field `request_uri`. You will get all the visitors coming from the forum.').'
+						'.$this->l('The field `request_uri` is the URL by which the customer come to your website.').'<br />
+						'.$this->l('For example, if the visitor access to a product page, this URL will be').' "'.$uri.'music-ipods/1-ipod-nano.html".<br />
+						'.$this->l('This is interesting because you can add some tags or token in the links pointing to your website. For exemple, you can post a link').' "'.$uri.'index.php?prestashop" '.$this->l('in the forum and get statistics by entering "%prestashop" in the field `request_uri`. You will get all the visitors coming from the forum.').'
 						'.$this->l('This method is more reliable than the `http_referer` one, but there is a danger: if a search engine read a page with your link, then it will be displayed in its results and you will have not only the forum visitors, but also the ones from the search engine.').'
 					</li>
 					<br />
@@ -302,14 +287,14 @@ class AdminReferrers extends AdminTab
 					<br />
 					<li>
 						'.$this->l('The simple mode uses the MySQL "LIKE", but for a higher potency you can use MySQL regular expressions.').'
-						<a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html" target="_blank" style="font-style: italic;">'.$this->l('Take a look at the document for more details...').'</a>
+						<a href="http://dev.mysql.com/doc/refman/5.0/en/regexp.html" target="_blank" style="font-style: italic;">'.$this->l('Take a look to the documentation for more details...').'</a>
 					</li>
 				</ul>
 			</div>
 			</fieldset>
 			<br class="clear" />
-			<fieldset><legend><img src="../img/admin/affiliation.png" /> '.$this->l('Technical information - Simple mode').'</legend>
-				<a style="cursor: pointer; font-style: italic;" onclick="$(\'#tracking_help\').slideToggle();"><img src="../img/admin/help.png" /> '.$this->l('Get help!').'</a><br />
+			<fieldset class="width4"><legend><img src="../img/admin/affiliation.png" /> '.$this->l('Technical information - Simple mode').'</legend>
+				<a style="cursor: pointer; font-style: italic;" onclick="openCloseLayer(\'tracking_help\');"><img src="../img/admin/help.png" /> '.$this->l('Get help!').'</a><br />
 				<br class="clear" />
 				<h3>'.$this->l('HTTP referrer').'</h3>
 				<label>'.$this->l('Include').'</label>
@@ -334,10 +319,10 @@ class AdminReferrers extends AdminTab
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
 				<br class="clear" />
-				'.$this->l('If you know how to use MySQL regular expressions, you can use the').' <a style="cursor: pointer; font-weight: bold;" onclick="$(\'#tracking_expert\').slideToggle();">'.$this->l('expert mode').'.</a>
+				'.$this->l('If you know how to use MySQL regular expressions, you can use the').' <a style="cursor: pointer; font-weight: bold;" onclick="openCloseLayer(\'tracking_expert\');">'.$this->l('expert mode').'.</a>
 			</fieldset>
 			<br class="clear" />
-			<fieldset><legend onclick="$(\'#tracking_expert\').slideToggle();" style="cursor: pointer;"><img src="../img/admin/affiliation.png" /> '.$this->l('Technical information - Expert mode').'</legend>
+			<fieldset class="width4"><legend onclick="openCloseLayer(\'tracking_expert\')" style="cursor: pointer;"><img src="../img/admin/affiliation.png" /> '.$this->l('Technical information - Expert mode').'</legend>
 			<div id="tracking_expert" style="display: none;">
 				<h3>'.$this->l('HTTP referrer').'</h3>
 				<label>'.$this->l('Include').'</label>
@@ -369,7 +354,7 @@ class AdminReferrers extends AdminTab
 	public function viewreferrer()
 	{
 		global $cookie, $currentIndex;
-		$referrer = new Referrer((int)(Tools::getValue('id_referrer')));
+		$referrer = new Referrer(intval(Tools::getValue('id_referrer')));
 
 		$displayTab = array(
 			'uniqs' => $this->l('Unique visitors'),
@@ -388,7 +373,7 @@ class AdminReferrers extends AdminTab
 		<script type="text/javascript">
 			function updateConversionRate(id_product)
 			{
-				$.getJSON("'.dirname($currentIndex).'/ajax.php",{ajaxReferrers:1, ajaxProductFilter:1,id_employee:'.(int)($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_referrer:'.$referrer->id.',id_product:id_product},
+				$.getJSON("'.dirname($currentIndex).'/tabs/AdminReferrers.php",{ajaxProductFilter:1,id_employee:'.intval($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_referrer:'.$referrer->id.',id_product:id_product},
 					function(j) {';
 		foreach ($displayTab as $key => $value)
 			echo '$("#'.$key.'").html(j[0].'.$key.');';
@@ -400,8 +385,8 @@ class AdminReferrers extends AdminTab
 			{
 				var form = document.layers ? document.forms.product : document.product;
 				var filter = form.filterProduct.value;
-				$.getJSON("'.dirname($currentIndex).'/ajax.php",
-					{ajaxReferrers:1,ajaxFillProducts:1,id_employee:'.(int)($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_lang:'.(int)($cookie->id_lang).',filter:filter},
+				$.getJSON("'.dirname($currentIndex).'/tabs/AdminReferrers.php",
+					{ajaxFillProducts:1,id_employee:'.intval($cookie->id_employee).',token:"'.Tools::getValue('token').'",id_lang:'.intval($cookie->id_lang).',filter:filter},
 					function(j) {
 						
 						form.selectProduct.length = j.length + 1;
@@ -414,7 +399,7 @@ class AdminReferrers extends AdminTab
 				);
 			}
 		</script>
-		<fieldset style="float:left"><legend><img src="../img/admin/tab-stats.gif" /> Statistics</legend>
+		<fieldset class="width3" style="float: left"><legend><img src="../img/admin/tab-stats.gif" /> Statistics</legend>
 			<h2>'.$referrer->name.'</h2>
 			<table>';
 		foreach ($displayTab as $data => $label)
@@ -469,4 +454,4 @@ class AdminReferrers extends AdminTab
 	}
 }
 
-
+?>

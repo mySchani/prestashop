@@ -1,29 +1,15 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Tags tab for admin panel, AdminTags.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 class AdminTags extends AdminTab
 {
@@ -37,7 +23,7 @@ class AdminTags extends AdminTab
 		$this->delete = true;
 
 		$this->fieldsDisplay = array(
-		'id_tag' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
+		'id_tag' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25, 'filter_key' => 'a!id_seller_message'),
 		'lang' => array('title' => $this->l('Language'), 'filter_key' => 'l!name'),
 		'name' => array('title' => $this->l('Name'), 'width' => 200, 'filter_key' => 'a!name'),
 		'products' => array('title' => $this->l('Products'), 'align' => 'right', 'havingFilter' => true));
@@ -54,7 +40,7 @@ class AdminTags extends AdminTab
 	public function postProcess()
 	{		
 		if ($this->tabAccess['edit'] === '1' AND Tools::getValue('submitAdd'.$this->table))
-			if ($id = (int)(Tools::getValue($this->identifier)) AND $obj = new $this->className($id) AND Validate::isLoadedObject($obj))
+			if ($id = intval(Tools::getValue($this->identifier)) AND $obj = new $this->className($id) AND Validate::isLoadedObject($obj))
 				$obj->setProducts($_POST['products']);
 		return parent::postProcess();
 	}
@@ -64,8 +50,7 @@ class AdminTags extends AdminTab
 		global $currentIndex, $cookie;
 		parent::displayForm();
 		
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 		$products1 = $obj->getProducts(true);
 		$products2 = $obj->getProducts(false);
 		
@@ -136,4 +121,4 @@ class AdminTags extends AdminTab
 	}
 }
 
-
+?>

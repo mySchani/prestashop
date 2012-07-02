@@ -1,95 +1,66 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14628 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class OrderStateCore extends ObjectModel
+/**
+  * Order states class, OrderState.php
+  * Order states management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class		OrderState extends ObjectModel
 {
-	/** @var string Name */
+ 	/** @var string Name */
 	public 		$name;
-
-	/** @var string Template name if there is any e-mail to send */
+	
+	/** @var string Template name if there is any e-mail to send */	
 	public 		$template;
-
+	
 	/** @var boolean Send an e-mail to customer ? */
 	public 		$send_email;
-
+	
 	/** @var boolean Allow customer to view and download invoice when order is at this state */
 	public		$invoice;
-
+	
 	/** @var string Display state in the specified color */
 	public		$color;
-
+	
 	public		$unremovable;
 
 	/** @var boolean Log authorization */
 	public		$logable;
-
+	
 	/** @var boolean Delivery */
 	public		$delivery;
 
 	/** @var boolean Hidden */
 	public		$hidden;
 
-	/** @var boolean deleted */
-	public $deleted;
-
-	protected $fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
-	protected $fieldsRequiredLang = array('name');
-	protected $fieldsSizeLang = array('name' => 64, 'template' => 64);
-	protected $fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
-
+ 	protected 	$fieldsValidate = array('send_email' => 'isBool', 'invoice' => 'isBool', 'color' => 'isColor', 'logable' => 'isBool');
+	protected 	$fieldsRequiredLang = array('name');
+ 	protected 	$fieldsSizeLang = array('name' => 64, 'template' => 64);
+ 	protected 	$fieldsValidateLang = array('name' => 'isGenericName', 'template' => 'isTplName');
+	
 	protected 	$table = 'order_state';
 	protected 	$identifier = 'id_order_state';
-
-	protected	$webserviceParameters = array(
-		'fields' => array(
-			'unremovable' => array(),
-			'delivery' => array(),
-			'hidden' => array(),
-		),
-	);
 	
-	const FLAG_NO_HIDDEN	= 1; /* 001 */
-	const FLAG_LOGABLE		= 2; /* 010 */
-	const FLAG_DELIVERY		= 4; /* 100 */
-
 	public function getFields()
 	{
 		parent::validateFields();
-		$fields['send_email'] = (int)($this->send_email);
-		$fields['invoice'] = (int)($this->invoice);
+		$fields['send_email'] = intval($this->send_email);
+		$fields['invoice'] = intval($this->invoice);
 		$fields['color'] = pSQL($this->color);
-		$fields['unremovable'] = (int)($this->unremovable);
-		$fields['logable'] = (int)($this->logable);
-		$fields['delivery'] = (int)($this->delivery);
-		$fields['hidden'] = (int)($this->hidden);
-		$fields['deleted'] = (int)$this->deleted;
+		$fields['unremovable'] = intval($this->unremovable);
+		$fields['logable'] = intval($this->logable);
+		$fields['delivery'] = intval($this->delivery);
+		$fields['hidden'] = intval($this->hidden);
 		return $fields;
 	}
-
+	
 	/**
 	* Check then return multilingual fields for database interaction
 	*
@@ -100,20 +71,19 @@ class OrderStateCore extends ObjectModel
 		parent::validateFieldsLang();
 		return parent::getTranslationsFields(array('name', 'template'));
 	}
-
+	
 	/**
 	* Get all available order states
 	*
 	* @param integer $id_lang Language id for state name
 	* @return array Order states
 	*/
-	public static function getOrderStates($id_lang)
+	static public function getOrderStates($id_lang)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance()->ExecuteS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'order_state` os
-		LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = '.(int)($id_lang).')
-		WHERE os.`deleted` = 0
+		LEFT JOIN `'._DB_PREFIX_.'order_state_lang` osl ON (os.`id_order_state` = osl.`id_order_state` AND osl.`id_lang` = '.intval($id_lang).')
 		ORDER BY `name` ASC');
 	}
 
@@ -123,18 +93,19 @@ class OrderStateCore extends ObjectModel
 	* @param integer $id_order_state State ID
 	* @return boolean availability
 	*/
-	public static function invoiceAvailable($id_order_state)
+	static public function invoiceAvailable($id_order_state)
 	{
-		$result = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow('
+		$result = Db::getInstance()->getRow('
 		SELECT `invoice` AS ok
 		FROM `'._DB_PREFIX_.'order_state`
-		WHERE `id_order_state` = '.(int)($id_order_state));
+		WHERE `id_order_state` = '.intval($id_order_state));
 		return $result['ok'];
 	}
-
+	
 	public function isRemovable()
 	{
 	 	return !($this->unremovable);
 	}
 }
 
+?>

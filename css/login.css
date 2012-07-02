@@ -3,48 +3,26 @@
 body {
 	margin: 0;
 	padding: 0;
-	font-family: Arial;
+	font-family: "Trebuchet MS", Tahoma, Arial, sans-serif;
 	font-size: 13px;
 	color: #333;
 	text-align: center;
-	background-image: url('../img/admin/bg_2.png');
-}
-
-h1 {
-	color: #902F52;
-	font-size: 20pt;
-	padding: 15px 10px 10px 30px;
-	margin: 0;
-	overflow: hidden;
-}
-
-h2 a {
-	color: #dedede;
-	font-size: 7pt;
-	text-decoration: underline;
-	margin: 0;
-}
-
-h2 a:hover {
-	color: #dedede;
-	font-size: 7pt;
-	text-decoration: underline;
-	margin: 0;
+	background-color: #EFEFEF;
 }
 
 a {
-	color: #902d50;
+	color: #FFF;
 	text-decoration: underline;
 }
 
 a:hover {
-	color: #902d50;
+	color: #FFF;
 	text-decoration: none;
 }
 
 input, textarea, option, select {
 	color: #000;
-	font-family: Arial;
+	font-family: "Trebuchet MS", Tahoma, Arial, sans-serif;
 	font-size: 12px;
 	margin: 0;
 	padding: 0;
@@ -58,28 +36,29 @@ input:focus, textarea:focus {
 /* CONTENT */
 
 #container {
-	width: 464px;
+	width: 344px;
 	margin: 5em auto 1em auto;
 	padding: 0;
 }
 
 #login {
-	height: 313px;
-	background: url('../img/admin/bg_login.gif') no-repeat top center;
-	color: #383838;
+	height: 360px;
+	background: url('../img/admin/login-bg.jpg') no-repeat top center;
+	color: #FFF;
 	text-align: left;
-	font-weight: bold;
 }
 
 #login form {
 	margin: 0;
-	padding: 40px 30px 25px 30px;
+	padding: 140px 30px 25px 30px;
+	_padding: 132px 30px 25px 30px;
 }
 
 #login #submit {
+	float: right;
 	margin: 1em 1px;
 	padding: 0;
-	display: block;
+	text-align: right;
 }
 
 #login #submit input {
@@ -88,17 +67,19 @@ input:focus, textarea:focus {
 }
 
 #login #lost {
-	
+	float: left;
+	margin: 1.9em 0 0 0;
 	font-size: 0.95em;
 }
 
 /* ERROR */
 
-.error, #error {
+#error {
 	margin: 0 30px 15px 30px;
 	padding: 10px 15px;
-	border: 1px solid #EC9B9B;
-	background-color: #FAE2E3;
+	border-top: 1px solid #DF7B7B;
+	border-bottom: 1px solid #DF7B7B;
+	background-color: #FFE6E6;
 	text-align: left;
 }
 
@@ -109,24 +90,24 @@ input:focus, textarea:focus {
 
 #error li {
 	_margin-left: 45px;
-	font-family: Arial;
+	font-family: Verdana,Arial,Helevetica,sans-serif;
 	font-size: 11px;
 }
 
 #error h3 {
 	margin: 0 0 .83em 0;
-	padding: 5px 0 0 30px;
-	background: url(../img/admin/error.png) no-repeat 0 0;
+	padding: 0 0 0 20px;
+	background: url(../img/admin/warning.gif) no-repeat 0 0;
 	font-size: 1em;
 }
 
 /* CLASS */
 
 .input {
-	width: 260px;
+	width: 273px;
 	margin-top: 2px;
 	padding: 2px 4px;
-	border: 1px solid #588216;
+	border: 1px solid #B2B2B2;
 }
 
 .button {

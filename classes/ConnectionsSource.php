@@ -1,31 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14237 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class ConnectionsSourceCore extends ObjectModel
+/**
+  * ConnectionsSource class, ConnectionsSource.php
+  * Connection source management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class ConnectionsSource extends ObjectModel
 {
 	public $id_connections;
 	public $http_referer;
@@ -33,6 +20,8 @@ class ConnectionsSourceCore extends ObjectModel
 	public $keywords;
 	public $date_add;
 
+	// Controler les keywords
+	
 	protected	$fieldsRequired = array('id_connections', 'date_add');
 	protected	$fieldsValidate = array('id_connections' => 'isUnsignedId', 'http_referer' => 'isAbsoluteUrl', 'request_uri' => 'isUrl', 'keywords' => 'isMessage');
 
@@ -42,7 +31,7 @@ class ConnectionsSourceCore extends ObjectModel
 	public function getFields()
 	{
 		parent::validateFields();
-		$fields['id_connections'] = (int)($this->id_connections);
+		$fields['id_connections'] = intval($this->id_connections);
 		$fields['http_referer'] = pSQL($this->http_referer);
 		$fields['request_uri'] = pSQL($this->request_uri);
 		$fields['keywords'] = pSQL($this->keywords);
@@ -52,7 +41,7 @@ class ConnectionsSourceCore extends ObjectModel
 	
 	public function add($autodate = true, $nullValues = false)
 	{
-		if ($result = parent::add($autodate, $nullValues))
+		if($result = parent::add($autodate, $nullValues))
 			Referrer::cacheNewSource($this->id);
 		return $result;
 	}
@@ -69,10 +58,8 @@ class ConnectionsSourceCore extends ObjectModel
 		$source = new ConnectionsSource();
 		if (isset($_SERVER['HTTP_REFERER']) AND Validate::isAbsoluteUrl($_SERVER['HTTP_REFERER']))
 		{
-			$parsed = parse_url($_SERVER['HTTP_REFERER']);
-			$parsed_host = parse_url(Tools::getProtocol().Tools::getHttpHost(false, false).__PS_BASE_URI__);
-			if ((preg_replace('/^www./', '', $parsed['host']) == preg_replace('/^www./', '', Tools::getHttpHost(false, false))) 
-				AND !strncmp($parsed['path'], $parsed_host['path'], strlen(__PS_BASE_URI__)))
+			if ((preg_replace('/^www./', '', parse_url($_SERVER['HTTP_REFERER'], PHP_URL_HOST)) == preg_replace('/^www./', '', Tools::getHttpHost(false, false)))
+				AND !strncmp(parse_url($_SERVER['HTTP_REFERER'], PHP_URL_PATH), parse_url('http://'.Tools::getHttpHost(false, false).__PS_BASE_URI__, PHP_URL_PATH), strlen(__PS_BASE_URI__)))
 				return false;
 			if (Validate::isAbsoluteUrl(strval($_SERVER['HTTP_REFERER'])))
 			{
@@ -83,28 +70,28 @@ class ConnectionsSourceCore extends ObjectModel
 			}
 		}
 		
-		$source->id_connections = (int)($cookie->id_connections);
+		$source->id_connections = intval($cookie->id_connections);
 		$source->request_uri = Tools::getHttpHost(false, false);
 		if (isset($_SERVER['REDIRECT_URL']))
 			$source->request_uri .= strval($_SERVER['REDIRECT_URL']);
 		elseif (isset($_SERVER['REQUEST_URI']))
 			$source->request_uri .= strval($_SERVER['REQUEST_URI']);
 		if (!Validate::isUrl($source->request_uri))
-			$source->request_uri = '';
+			unset($source->request_uri);
 		return $source->add();
 	}
 	
 	public static function getOrderSources($id_order)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance()->ExecuteS('
 		SELECT cos.http_referer, cos.request_uri, cos.keywords, cos.date_add
 		FROM '._DB_PREFIX_.'orders o
 		INNER JOIN '._DB_PREFIX_.'guest g ON g.id_customer = o.id_customer
 		INNER JOIN '._DB_PREFIX_.'connections co  ON co.id_guest = g.id_guest
 		INNER JOIN '._DB_PREFIX_.'connections_source cos ON cos.id_connections = co.id_connections
-		WHERE id_order = '.(int)($id_order).'
+		WHERE id_order = '.intval($id_order).'
 		ORDER BY cos.date_add DESC');
 	}
 }
 
-
+?>

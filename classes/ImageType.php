@@ -1,31 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
+
+/**
+* ImageType class, ImageType.php
+* Image types management
+* @category classes
 *
-* NOTICE OF LICENSE
+* @author PrestaShop <support@prestashop.com>
+* @copyright PrestaShop
+* @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+* @version 1.3
 *
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
 */
 
-class ImageTypeCore extends ObjectModel
+class		ImageType extends ObjectModel
 {
 	public		$id;
 
@@ -52,9 +39,6 @@ class ImageTypeCore extends ObjectModel
 
 	/** @var integer Apply to scenes */
 	public 		$scenes;
-	
-	/** @var integer Apply to store */
-	public 		$stores;
 
 	protected $fieldsRequired = array('name', 'width', 'height');
 	protected $fieldsValidate = array(
@@ -65,8 +49,7 @@ class ImageTypeCore extends ObjectModel
 		'products' => 'isBool',
 		'manufacturers' => 'isBool',
 		'suppliers' => 'isBool',
-		'scenes' => 'isBool',
-		'stores' => 'isBool'
+		'scenes' => 'isBool'
 	);
 	protected $fieldsSize = array('name' => 16);
 
@@ -77,21 +60,18 @@ class ImageTypeCore extends ObjectModel
 	 * @var array Image types cache
 	 */
 	protected static $images_types_cache = array();
-	
-	protected	$webserviceParameters = array();
 
 	public function getFields()
 	{
 		parent::validateFields();
 		$fields['name'] = pSQL($this->name);
-		$fields['width'] = (int)($this->width);
-		$fields['height'] = (int)($this->height);
-		$fields['products'] = (int)($this->products);
-		$fields['categories'] = (int)($this->categories);
-		$fields['manufacturers'] = (int)($this->manufacturers);
-		$fields['suppliers'] = (int)($this->suppliers);
-		$fields['scenes'] = (int)($this->scenes);
-		$fields['stores'] = (int)($this->stores);
+		$fields['width'] = intval($this->width);
+		$fields['height'] = intval($this->height);
+		$fields['products'] = intval($this->products);
+		$fields['categories'] = intval($this->categories);
+		$fields['manufacturers'] = intval($this->manufacturers);
+		$fields['suppliers'] = intval($this->suppliers);
+		$fields['scenes'] = intval($this->scenes);
 		return $fields;
 	}
 
@@ -101,7 +81,7 @@ class ImageTypeCore extends ObjectModel
 	* @param string|null Image type
 	* @return array Image type definitions
 	*/
-	public static function getImagesTypes($type = NULL)
+	static public function getImagesTypes($type = NULL)
 	{
 		if (!isset(self::$images_types_cache[$type]))
 		{
@@ -123,12 +103,12 @@ class ImageTypeCore extends ObjectModel
 	* @param string $typeName Name
 	* @return integer Number of results found
 	*/
-	public static function typeAlreadyExists($typeName)
+	static public function typeAlreadyExists($typeName)
 	{
 		if (!Validate::isImageTypeName($typeName))
 			die(Tools::displayError());
 			
-		Db::getInstance()->ExecuteS('
+		$result = Db::getInstance()->ExecuteS('
 		SELECT `id_image_type`
 		FROM `'._DB_PREFIX_.'image_type`
 		WHERE `name` = \''.pSQL($typeName).'\'');
@@ -141,7 +121,7 @@ class ImageTypeCore extends ObjectModel
 	 * @param string $name
 	 * @param string $type
 	 */
-	public static function getByNameNType($name, $type)
+	static public function getByNameNType($name, $type)
 	{
 		return Db::getInstance()->getRow('SELECT `id_image_type`, `name`, `width`, `height`, `products`, `categories`, `manufacturers`, `suppliers`, `scenes` FROM `'._DB_PREFIX_.'image_type` WHERE `name` = \''.pSQL($name).'\' AND `'.pSQL($type).'` = 1');
 	}

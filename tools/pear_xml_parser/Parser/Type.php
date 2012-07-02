@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: Type.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: Type.php,v 1.22 2006/08/15 13:02:36 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -27,7 +27,7 @@
  *
  * @package XML_Feed_Parser
  * @author  James Stewart <james@jystewart.net>
- * @version Release: @package_version@
+ * @version Release: 1.0.2
  */
 abstract class XML_Feed_Parser_Type
 {
@@ -48,11 +48,6 @@ abstract class XML_Feed_Parser_Type
      * @var array
      */
     public $entries = array();
-
-    /**
-     * Store mappings between entry IDs and their position in the feed
-     */
-    public $idMappings = array();
 
     /**
      * Proxy to allow use of element names as method names
@@ -200,7 +195,7 @@ abstract class XML_Feed_Parser_Type
                 $this->entries[$offset] = new $this->itemClass(
                     $entries->item($offset), $this, $xmlBase);
                 if ($id = $this->entries[$offset]->id) {
-                    $this->idMappings[$id] = $this->entries[$offset];
+                    @$this->idMappings[$id] = $this->entries[$offset];
                 }
             } else {
                 throw new XML_Feed_Parser_Exception('No entries found');
@@ -224,7 +219,7 @@ abstract class XML_Feed_Parser_Type
     protected function getDate($method, $arguments)
     {
         $time = $this->model->getElementsByTagName($method);
-        if ($time->length == 0 || empty($time->item(0)->nodeValue)) {
+        if ($time->length == 0) {
             return false;
         }
         return strtotime($time->item(0)->nodeValue);
@@ -312,12 +307,12 @@ abstract class XML_Feed_Parser_Type
         $return = '';
         foreach ($node->attributes as $attribute) {
             if ($attribute->name == 'src' or $attribute->name == 'href') {
-                $attribute->value = $this->addBase(htmlentities($attribute->value, NULL, 'utf-8'), $attribute);
+                $attribute->value = $this->addBase($attribute->value, $attribute);
             }
             if ($attribute->name == 'base') {
                 continue;
             }
-            $return .= $attribute->name . '="' . htmlentities($attribute->value, NULL, 'utf-8') .'" ';
+            $return .= $attribute->name . '="' . $attribute->value .'" ';
         }
         if (! empty($return)) {
             return ' ' . trim($return);
@@ -326,33 +321,12 @@ abstract class XML_Feed_Parser_Type
     }
 
     /**
-     * Convert HTML entities based on the current character set.
-     * 
-     * @param String
-     * @return String
-     */
-    function processEntitiesForNodeValue($node) 
-    {
-        if (function_exists('iconv')) {
-          $current_encoding = $node->ownerDocument->encoding;
-          $value = iconv($current_encoding, 'UTF-8', $node->nodeValue);
-        } else if ($current_encoding == 'iso-8859-1') {
-          $value = utf8_encode($node->nodeValue);
-        } else {
-          $value = $node->nodeValue;
-        }
-
-        $decoded = html_entity_decode($value, NULL, 'UTF-8');
-        return htmlentities($decoded, NULL, 'UTF-8');
-    }
-
-    /**
      * Part of our xml:base processing code
      *
      * We need a couple of methods to access XHTML content stored in feeds. 
      * This is because we dereference all xml:base references before returning
      * the element. This method recurs through the tree descending from the node
-     * and builds our string.
+     * and builds our string
      *
      * @param   DOMElement $node    The DOM node we are processing
      * @return   string
@@ -375,7 +349,7 @@ abstract class XML_Feed_Parser_Type
         }
 
         if ($node instanceof DOMText) {
-            $content .= $this->processEntitiesForNodeValue($node);
+            $content .= htmlentities($node->nodeValue);
         }
 
         /* Add the closing of this node to the content */
@@ -461,14 +435,6 @@ abstract class XML_Feed_Parser_Type
         require_once 'PEAR/Config.php';
         $config = new PEAR_Config;
         return $config->get('data_dir') . '/XML_Feed_Parser/schemas';
-    }
-
-    public function relaxNGValidate() {
-        $dir = self::getSchemaDir();
-
-        $path = $dir . '/' . $this->relax;
-
-        return $this->model->relaxNGValidate($path);
     }
 }
 

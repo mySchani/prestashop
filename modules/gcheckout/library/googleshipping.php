@@ -17,7 +17,7 @@
  */
 /**
  * Classes used to represent shipping types
- * @version $Id: googleshipping.php 7541 2011-07-07 08:51:35Z gBrunier $
+ * @version $Id: googleshipping.php 1234 2007-09-25 14:58:57Z ropu $
  */
  
   /**
@@ -177,15 +177,15 @@
         case 'DROP_OFF':
         case 'REGULAR_PICKUP':
         case 'SPECIAL_PICKUP':
-          $this->carrier_pickup = $carrier_pickup;
+          $this->carrier_pickup = $carrier_pickup;;
           break;
         default:
           $this->carrier_pickup = 'DROP_OFF';
       }
-      if ($additional_fixed_charge){
+      if($additional_fixed_charge){
         $this->additional_fixed_charge = (double)$additional_fixed_charge;
       }
-      if ($additional_variable_charge_percent){
+      if($additional_variable_charge_percent){
         $this->additional_variable_charge_percent = (double)$additional_variable_charge_percent;
       }
     }
@@ -529,4 +529,4 @@
       $this->name = $name;
     }
   }
-
+?>

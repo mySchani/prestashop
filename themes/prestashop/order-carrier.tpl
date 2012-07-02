@@ -1,133 +1,68 @@
-{*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14008 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*}
-
-{if !$opc}
-	<script type="text/javascript">
-	//<![CDATA[
-		var orderProcess = 'order';
-		var currencySign = '{$currencySign|html_entity_decode:2:"UTF-8"}';
-		var currencyRate = '{$currencyRate|floatval}';
-		var currencyFormat = '{$currencyFormat|intval}';
-		var currencyBlank = '{$currencyBlank|intval}';
-		var txtProduct = "{l s='product'}";
-		var txtProducts = "{l s='products'}";
-
-		var msg = "{l s='You must agree to the terms of service before continuing.' js=1}";
-		{literal}
-		function acceptCGV()
-		{
-			if ($('#cgv').length && !$('input#cgv:checked').length)
-			{
-				alert(msg);
-				return false;
-			}
-			else
-				return true;
-		}
-		{/literal}
-	//]]>
-	</script>
-{else}
-	<script type="text/javascript">
-		var txtFree = "{l s='Free!'}";
-	</script>
-{/if}
-
-{if !$virtual_cart && $giftAllowed && $cart->gift == 1}
 <script type="text/javascript">
-{literal}
+<!--
+	var baseDir = '{$base_dir_ssl}';
+-->
+</script>
+<script type="text/javascript" src="{$js_dir}layer.js"></script>
+<script type="text/javascript" src="{$content_dir}js/conditions.js"></script>
+{if !$virtual_cart && $giftAllowed && $cart->gift == 1}
+<script type="text/javascript">{literal}
 // <![CDATA[
     $('document').ready( function(){
-		if ($('input#gift').is(':checked'))
-			$('p#gift_div').show();
+        $('#gift_div').toggle('slow');
     });
 //]]>
-{/literal}
-</script>
+{/literal}</script>
 {/if}
+{include file=$tpl_dir./thickbox.tpl}
 
-{if !$opc}
 {capture name=path}{l s='Shipping'}{/capture}
-{include file="$tpl_dir./breadcrumb.tpl"}
-{/if}
+{include file=$tpl_dir./breadcrumb.tpl}
 
-{if !$opc}<h1>{l s='Shipping'}</h1>{else}<h2>2. {l s='Delivery methods'}</h2>{/if}
+<h2>{l s='Shipping'}</h2>
 
-{if !$opc}
 {assign var='current_step' value='shipping'}
-{include file="$tpl_dir./order-steps.tpl"}
+{include file=$tpl_dir./order-steps.tpl}
 
-{include file="$tpl_dir./errors.tpl"}
+{include file=$tpl_dir./errors.tpl}
 
-<form id="form" action="{$link->getPageLink('order.php', true)}" method="post" onsubmit="return acceptCGV();">
-{else}
-<div id="opc_delivery_methods" class="opc-main-block">
-	<div id="opc_delivery_methods-overlay" class="opc-overlay" style="display: none;"></div>
-{/if}
+<form id="form" action="{$base_dir_ssl}order.php" method="post" onsubmit="return acceptCGV('{l s='Please accept the terms of service before the next step.' js=1}');">
 
-{if $conditions AND $cms_id}
+{if $conditions}
 	<h3 class="condition_title">{l s='Terms of service'}</h3>
 	<p class="checkbox">
 		<input type="checkbox" name="cgv" id="cgv" value="1" {if $checkedTOS}checked="checked"{/if} />
-		<label for="cgv">{l s='I agree to the terms of service and adhere to them unconditionally.'}</label> <a href="{$link_conditions}" class="iframe">{l s='(read)'}</a>
+		<label for="cgv">{l s='I agree with the terms of service and I adhere to them unconditionally.'}</label> <a href="{$link_conditions}" class="thickbox">{l s='(read)'}</a>
 	</p>
-	<script type="text/javascript">$('a.iframe').fancybox();</script>
 {/if}
 
 {if $virtual_cart}
 	<input id="input_virtual_carrier" class="hidden" type="hidden" name="id_carrier" value="0" />
 {else}
 	<h3 class="carrier_title">{l s='Choose your delivery method'}</h3>
-
-	<div id="HOOK_BEFORECARRIER">{if isset($carriers)}{$HOOK_BEFORECARRIER}{/if}</div>
-	{if isset($isVirtualCart) && $isVirtualCart}
-	<p class="warning">{l s='No carrier needed for this order'}</p>
-	{else}
 	{if $recyclablePackAllowed}
 	<p class="checkbox">
 		<input type="checkbox" name="recyclable" id="recyclable" value="1" {if $recyclable == 1}checked="checked"{/if} />
 		<label for="recyclable">{l s='I agree to receive my order in recycled packaging'}.</label>
 	</p>
 	{/if}
-	<p class="warning" id="noCarrierWarning" {if isset($carriers) && $carriers && count($carriers)}style="display:none;"{/if}>{l s='There are no carriers available that deliver to this address.'}</p>
-	<table id="carrierTable" class="std" {if !isset($carriers) || !$carriers || !count($carriers)}style="display:none;"{/if}>
-		<thead>
-			<tr>
-				<th class="carrier_action first_item"></th>
-				<th class="carrier_name item">{l s='Carrier'}</th>
-				<th class="carrier_infos item">{l s='Information'}</th>
-				<th class="carrier_price last_item">{l s='Price'}</th>
-			</tr>
-		</thead>
-		<tbody>
-		{if isset($carriers)}
+
+	{if $carriers && count($carriers)}
+	<div class="table_block"><br />
+		<table class="std">
+			<thead>
+				<tr>
+					<th class="carrier_action first_item"></th>
+					<th class="carrier_name item">{l s='Carrier'}</th>
+					<th class="carrier_infos item">{l s='Information'}</th>
+					<th class="carrier_price last_item">{l s='Price'}</th>
+				</tr>
+			</thead>
+			<tbody>
 			{foreach from=$carriers item=carrier name=myLoop}
 				<tr class="{if $smarty.foreach.myLoop.first}first_item{elseif $smarty.foreach.myLoop.last}last_item{/if} {if $smarty.foreach.myLoop.index % 2}alternate_item{else}item{/if}">
 					<td class="carrier_action radio">
-						<input type="radio" name="id_carrier" value="{$carrier.id_carrier|intval}" id="id_carrier{$carrier.id_carrier|intval}"  {if $opc}onclick="updateCarrierSelectionAndGift();"{/if} {if !($carrier.is_module AND $opc AND !$isLogged)}{if $carrier.id_carrier == $checked}checked="checked"{/if}{else}disabled="disabled"{/if} />
+						<input type="radio" name="id_carrier" value="{$carrier.id_carrier|intval}" id="id_carrier{$carrier.id_carrier|intval}" {if $carrier.id_carrier == $checked || ($checked == 0 && $i == 0) || ($carriers|@sizeof == 1) || $default_carrier == $carrier.id_carrier}checked="checked"{/if} />
 					</td>
 					<td class="carrier_name">
 						<label for="id_carrier{$carrier.id_carrier|intval}">
@@ -147,13 +82,16 @@
 					</td>
 				</tr>
 			{/foreach}
-			<tr id="HOOK_EXTRACARRIER">{$HOOK_EXTRACARRIER}</tr>
-		{/if}
-		</tbody>
-	</table>
-	<div style="display: none;" id="extra_carrier"></div>
+			{$HOOK_EXTRACARRIER}
+			</tbody>
+		</table>
+		<div style="display: none;" id="extra_carrier"></div>
+	</div>
+	{else}
+		<p class="warning">{l s='There are no carriers available that will deliver to this address!'}</td></tr>
+	{/if}
 
-		{if $giftAllowed}
+	{if $giftAllowed}
 		<h3 class="gift_title">{l s='Gift'}</h3>
 		<p class="checkbox">
 			<input type="checkbox" name="gift" id="gift" value="1" {if $cart->gift == 1}checked="checked"{/if} onclick="$('#gift_div').toggle('slow');" />
@@ -162,8 +100,8 @@
 			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 			{if $gift_wrapping_price > 0}
 				({l s='Additional cost of'}
-				<span class="price" id="gift-price">
-					{if $priceDisplay == 1}{convertPrice price=$total_wrapping_tax_exc_cost}{else}{convertPrice price=$total_wrapping_cost}{/if}
+				<span class="price">
+					{if $priceDisplay == 1}{convertPrice price=$total_wrapping_tax_exc}{else}{convertPrice price=$total_wrapping}{/if}
 				</span>
 				{if $use_taxes}{if $priceDisplay == 1} {l s='(tax excl.)'}{else} {l s='(tax incl.)'}{/if}{/if})
 			{/if}
@@ -172,23 +110,13 @@
 			<label for="gift_message">{l s='If you wish, you can add a note to the gift:'}</label>
 			<textarea rows="5" cols="35" id="gift_message" name="gift_message">{$cart->gift_message|escape:'htmlall':'UTF-8'}</textarea>
 		</p>
-		{/if}
 	{/if}
 {/if}
 
-{if !$opc}
 	<p class="cart_navigation submit">
 		<input type="hidden" name="step" value="3" />
 		<input type="hidden" name="back" value="{$back}" />
-		<a href="{$link->getPageLink('order.php', true)}{if !$is_guest}?step=1{if $back}&back={$back}{/if}{/if}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
+		<a href="{$base_dir_ssl}order.php?step=1{if $back}&back={$back}{/if}" title="{l s='Previous'}" class="button">&laquo; {l s='Previous'}</a>
 		<input type="submit" name="processCarrier" value="{l s='Next'} &raquo;" class="exclusive" />
 	</p>
 </form>
-{else}
-	<h3>{l s='Leave a message'}</h3>
-	<div>
-		<p>{l s='If you would like to add a comment about your order, please write it below.'}</p>
-		<p><textarea cols="120" rows="3" name="message" id="message">{if isset($oldMessage)}{$oldMessage}{/if}</textarea></p>
-	</div>
-</div>
-{/if}

@@ -1,31 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class QuickAccessCore extends ObjectModel
+/**
+  * QuickAccesses class, QuickAccess.php
+  * QuickAccesses management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+class QuickAccess extends ObjectModel
 {
  	/** @var string Name */
 	public 		$name;
@@ -50,7 +37,7 @@ class QuickAccessCore extends ObjectModel
 	{
 		parent::validateFields();
 		$fields['link'] = pSQL($this->link);
-		$fields['new_window'] = (int)($this->new_window);
+		$fields['new_window'] = intval($this->new_window);
 		return $fields;
 	}
 	
@@ -70,13 +57,14 @@ class QuickAccessCore extends ObjectModel
 	*
 	* @return array QuickAccesses
 	*/
-	public static function getQuickAccesses($id_lang)
+	static public function getQuickAccesses($id_lang)
 	{
-		return Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+		return Db::getInstance()->ExecuteS('
 		SELECT *
 		FROM `'._DB_PREFIX_.'quick_access` qa
-		LEFT JOIN `'._DB_PREFIX_.'quick_access_lang` qal ON (qa.`id_quick_access` = qal.`id_quick_access` AND qal.`id_lang` = '.(int)($id_lang).')
+		LEFT JOIN `'._DB_PREFIX_.'quick_access_lang` qal ON (qa.`id_quick_access` = qal.`id_quick_access` AND qal.`id_lang` = '.intval($id_lang).')
 		ORDER BY `name` ASC');
 	}
 }
 
+?>

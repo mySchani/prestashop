@@ -1,29 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14007 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-require(dirname(__FILE__).'/config/config.inc.php');
-ControllerFactory::getController('PricesDropController')->run();
+include(dirname(__FILE__).'/config/config.inc.php');
+include(dirname(__FILE__).'/header.php');
+include(dirname(__FILE__).'/product-sort.php');
+
+$nbProducts = Product::getPricesDrop(intval($cookie->id_lang), NULL, NULL, true);
+include(dirname(__FILE__).'/pagination.php');
+
+$smarty->assign(array(
+	'products' => Product::getPricesDrop(intval($cookie->id_lang), intval($p) - 1, intval($n), false, $orderBy, $orderWay),
+	'nbProducts' => $nbProducts));
+
+$smarty->display(_PS_THEME_DIR_.'prices-drop.tpl');
+
+include(dirname(__FILE__).'/footer.php');
+
+?>

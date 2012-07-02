@@ -1,15 +1,11 @@
-{shop_name}
- 
+Te extraÒamos en {shop_name}
+
 Hola {firstname} {lastname},
  
-Su cesta de {shop_name}
- 
-Usted es parte de nuestros mejores clientes, sin embargo, no han ordenado para {days_threshold} d√≠as.
+Usted es parte de nuestros mejores clientes, sin embargo, no ha ordenado para {days_threshold} dÌas.
 
-Queremos darle las gracias por la confianza que ustedes depositan en nosotros y nosotros le concedemos un descuento de {amount}% v√°lido en su pr√≥ximo pedido! Esta oferta es v√°lida para {days} d√≠as, as√≠ que no pierdas un instante!
+Queremos darle las gracias por la confianza que ustedes depositan en nosotros y nosotros le concedemos un descuento de {amount}% v·lido en su prÛximo pedido! Esta oferta es v·lida para {days} dÌas, asÌ que no pierdas un instante!
  
-Aqu√≠ est√° tu cup√≥n: {voucher_num}
+AquÌ est· tu cupÛn: {voucher_num}
 
-Introduzca este c√≥digo en tu carrito de compras para obtener el descuento.
- 
-{shop_name} desarrollado por PrestaShop‚Ñ¢
+Introduzca este cÛdigo en tu carrito de compras para obtener el descuento.

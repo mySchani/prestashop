@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: RSS11Element.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: RSS11Element.php,v 1.4 2006/06/30 17:41:56 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -26,7 +26,7 @@
  * XML_Feed_Parser_RSS11 with which it shares many methods.
  *
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  */
 class XML_Feed_Parser_RSS11Element extends XML_Feed_Parser_RSS11
@@ -65,7 +65,7 @@ class XML_Feed_Parser_RSS11Element extends XML_Feed_Parser_RSS11
     protected $compatMap = array(
         'content' => array('content'),
         'updated' => array('lastBuildDate'),
-        'published' => array('date'),
+        'published' => array('pubdate'),
         'subtitle' => array('description'),
         'updated' => array('date'),
         'author' => array('creator'),

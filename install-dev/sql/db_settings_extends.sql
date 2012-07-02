@@ -1,25 +1,9 @@
 SET NAMES 'utf8';
 
-/* Carrier */
-INSERT INTO `PREFIX_carrier` (`id_carrier`, `id_tax_rules_group`, `name`, `active`, `deleted`, `shipping_handling`, `is_free`) VALUES (2, 1, 'My carrier', 1, 0, 1, 0);
-INSERT INTO `PREFIX_carrier_group` (`id_carrier`, `id_group`) VALUES (2, 1);
-INSERT INTO `PREFIX_carrier_lang` (`id_carrier`, `id_lang`, `delay`) VALUES (2, 1, 'Delivery next day!'),(2, 2, 'Livraison le lendemain !'),(2, 3, '¡Entrega día siguiente!'),(2, 4, 'Zustellung am nächsten Tag!'),(2, 5, 'Consegna il giorno dopo!');
-INSERT INTO `PREFIX_carrier_zone` (`id_carrier`, `id_zone`) VALUES (2, 1),(2, 2);
-
-UPDATE `PREFIX_configuration` SET `value` = '2' WHERE `name` = 'PS_CARRIER_DEFAULT';
-
 INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VALUES
-	('MB_PAY_TO_EMAIL', '', NOW(), NOW()),
-	('MB_SECRET_WORD', '', NOW(), NOW()),
-	('MB_HIDE_LOGIN', 1, NOW(), NOW()),
-	('MB_ID_LOGO', 1, NOW(), NOW()),
-	('MB_ID_LOGO_WALLET', 1, NOW(), NOW()),
-	('MB_PARAMETERS', 0, NOW(), NOW()),
-	('MB_PARAMETERS_2', 0, NOW(), NOW()),
-	('MB_DISPLAY_MODE', 0, NOW(), NOW()),
-	('MB_CANCEL_URL', 'http://www.yoursite.com', NOW(), NOW()),
-	('MB_LOCAL_METHODS', '2', NOW(), NOW()),
-	('MB_INTER_METHODS', '5', NOW(), NOW()),
+	('PAYPAL_BUSINESS', 'paypal@prestashop.com', NOW(), NOW()),
+	('PAYPAL_SANDBOX', 0, NOW(), NOW()),
+	('PAYPAL_CURRENCY', 'customer', NOW(), NOW()),
 	('BANK_WIRE_CURRENCIES', '2,1', NOW(), NOW()),
 	('CHEQUE_CURRENCIES', '2,1', NOW(), NOW()),
 	('PRODUCTS_VIEWED_NBR', '2', NOW(), NOW()),
@@ -29,10 +13,16 @@ INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VAL
 	('MANUFACTURER_DISPLAY_TEXT', '1', NOW(), NOW()),
 	('MANUFACTURER_DISPLAY_TEXT_NB', '5', NOW(), NOW()),
 	('NEW_PRODUCTS_NBR', '5', NOW(), NOW()),
+	('STATSHOME_YEAR_FROM', DATE_FORMAT(NOW(), '%Y'), NOW(), NOW()),
+	('STATSHOME_MONTH_FROM', DATE_FORMAT(NOW(), '%m'), NOW(), NOW()),
+	('STATSHOME_DAY_FROM', DATE_FORMAT(NOW(), '%d'), NOW(), NOW()),
+	('STATSHOME_YEAR_TO', DATE_FORMAT(NOW(), '%Y'), NOW(), NOW()),
+	('STATSHOME_MONTH_TO', DATE_FORMAT(NOW(), '%m'), NOW(), NOW()),
+	('STATSHOME_DAY_TO', DATE_FORMAT(NOW(), '%d'), NOW(), NOW()),
 	('PS_TOKEN_ENABLE', '1', NOW(), NOW()),
 	('PS_STATS_RENDER', 'graphxmlswfcharts', NOW(), NOW()),
 	('PS_STATS_OLD_CONNECT_AUTO_CLEAN', 'never', NOW(), NOW()),
-	('PS_STATS_GRID_RENDER', 'gridhtml', NOW(), NOW()),
+	('PS_STATS_GRID_RENDER', 'gridextjs', NOW(), NOW()),
 	('BLOCKTAGS_NBR', '10', NOW(), NOW()),
 	('CHECKUP_DESCRIPTIONS_LT', '100', NOW(), NOW()),
 	('CHECKUP_DESCRIPTIONS_GT', '400', NOW(), NOW()),
@@ -41,117 +31,60 @@ INSERT INTO `PREFIX_configuration` (`name`, `value`, `date_add`, `date_upd`) VAL
 	('CHECKUP_SALES_LT', '1', NOW(), NOW()),
 	('CHECKUP_SALES_GT', '2', NOW(), NOW()),
 	('CHECKUP_STOCK_LT', '1', NOW(), NOW()),
-	('CHECKUP_STOCK_GT', '3', NOW(), NOW()),
-	('FOOTER_CMS', '0_3|0_4|0_6|0_7', NOW(), NOW()),
-	('FOOTER_BLOCK_ACTIVATION', '0_3|0_4|0_6|0_7', NOW(), NOW()),
-	('FOOTER_POWEREDBY', 1, NOW(), NOW()),
-	('BLOCKADVERT_LINK', 0, NOW(), NOW()),
-	('BLOCKSTORE_IMG', 'store.jpg', NOW(), NOW());
+	('CHECKUP_STOCK_GT', '3', NOW(), NOW());
 
-INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeatured', 1),(2, 'gsitemap', 1),(3, 'cheque', 1),(4, 'moneybookers', 1),(5, 'editorial', 1),
-(6, 'bankwire', 1),(7, 'blockadvertising', 1),(8, 'blockbestsellers', 1),(9, 'blockcart', 1),(10, 'blockcategories', 1),(11, 'blockcurrencies', 1),(12, 'blockcms', 1),
+INSERT INTO `PREFIX_module` (`id_module`, `name`, `active`) VALUES (1, 'homefeatured', 1),(2, 'gsitemap', 1),(3, 'cheque', 1),(4, 'paypal', 1),(5, 'editorial', 1),
+(6, 'bankwire', 1),(7, 'blockadvertising', 1),(8, 'blockbestsellers', 1),(9, 'blockcart', 1),(10, 'blockcategories', 1),(11, 'blockcurrencies', 1),(12, 'blockinfos', 1),
 (13, 'blocklanguages', 1),(14, 'blockmanufacturer', 1),(15, 'blockmyaccount', 1),(16, 'blocknewproducts', 1),(17, 'blockpaymentlogo', 1),(18, 'blockpermanentlinks', 1),
-(19, 'blocksearch', 1),(20, 'blockspecials', 1),(21, 'blocktags', 1),(22, 'blockuserinfo', 1),(24, 'blockviewed', 1),(25, 'statsdata', 1),
+(19, 'blocksearch', 1),(20, 'blockspecials', 1),(21, 'blocktags', 1),(22, 'blockuserinfo', 1),(23, 'blockvariouslinks', 1),(24, 'blockviewed', 1),(25, 'statsdata', 1),
 (26, 'statsvisits', 1),(27, 'statssales', 1),(28, 'statsregistrations', 1),(30, 'statspersonalinfos', 1),(31, 'statslive', 1),(32, 'statsequipment', 1),(33, 'statscatalog', 1),
-(34, 'graphvisifire', 1),(35, 'graphxmlswfcharts', 1),(36, 'graphgooglechart', 1),(37, 'graphartichow', 1),(39, 'gridhtml', 1),(40, 'statsbestcustomers', 1),
+(34, 'graphvisifire', 1),(35, 'graphxmlswfcharts', 1),(36, 'graphgooglechart', 1),(37, 'graphartichow', 1),(38, 'statshome', 1),(39, 'gridextjs', 1),(40, 'statsbestcustomers', 1),
 (41, 'statsorigin', 1),(42, 'pagesnotfound', 1),(43, 'sekeywords', 1),(44, 'statsproduct', 1),(45, 'statsbestproducts', 1),(46, 'statsbestcategories', 1),
-(47, 'statsbestvouchers', 1),(48, 'statsbestsuppliers', 1),(49, 'statscarrier', 1),(50, 'statsnewsletter', 1),(51, 'statssearch', 1),(52, 'statscheckup', 1),(53, 'statsstock', 1),
-(54, 'blockstore', 1),(55, 'statsforecast', 1);
+(47, 'statsbestvouchers', 1),(48, 'statsbestsuppliers', 1),(49, 'statscarrier', 1),(50, 'statsnewsletter', 1),(51, 'statssearch', 1),(52, 'statscheckup', 1);
 
 INSERT INTO `PREFIX_hook` (`name`, `title`, `description`, `position`) VALUES
 	('myAccountBlock', 'My account block', 'Display extra informations inside the "my account" block', 1);
 
-INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES (3, 1, 1),(6, 1, 2),(4, 1, 3),(4, 4, 3),(8, 2, 1),(3, 4, 1),(6, 4, 2),(9, 6, 1),(16, 6, 2),(8, 6, 3),
-(20, 6, 4),(12, 6, 5),(54, 6, 6),(15, 7, 1),(21, 7, 2),(10, 7, 3),(24, 7, 4),(14, 7, 5),(12, 7, 6),(7, 7, 7),(17, 7, 8),(5, 8, 1),(1, 8, 2),(11, 14, 1),(13, 14, 2),(18, 14, 3),
-(19, 14, 4),(22, 14, 5),(8, 19, 1),(12, 21, 1),(25, 11, 1),(25, 21, 2),(26, 32, 1),(27, 32, 2),(28, 32, 3),(30, 32, 4),(31, 32, 5),(32, 32, 6),(33, 32, 7),(34, 33, 1),
-(35, 33, 2),(36, 33, 3),(37, 33, 4),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(42, 95, 1),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
-(47, 32, 14),(48, 32, 16),(49, 32, 17),(55, 32, 22),(50, 32, 18),(51, 32, 19),(51, 45, 1),(25, 25, 1),(41, 20, 2),(52, 32, 20),(53, 32, 21),(17, 9, 2),(18, 9, 3),(24, 9, 4),(9, 9, 5),
-(15, 9, 6),(5, 9, 7),(8, 9, 8),(10, 9, 9),(20, 9, 10),(11, 9, 11),(16, 9, 12),(22, 9, 13),(13, 9, 14),(14, 9, 15),(12, 9, 16),(7, 9, 17),(21, 9, 18),(10, 60, 1),(10, 61, 1),(10, 62, 1),
-(54, 9, 19),(10,66,1),(19,9,20);
+INSERT INTO `PREFIX_hook_module` (`id_module`, `id_hook`, `position`) VALUES (3, 1, 1),(6, 1, 2),(4, 1, 3),(8, 2, 1),(3, 4, 1),(6, 4, 2),(9, 6, 1),(16, 6, 2),(8, 6, 3),
+(20, 6, 4),(15, 7, 1),(21, 7, 2),(10, 7, 3),(24, 7, 4),(14, 7, 5),(12, 7, 6),(7, 7, 7),(17, 7, 8),(5, 8, 1),(1, 8, 2),(19, 9, 1),(11, 14, 1),(13, 14, 2),(18, 14, 3),
+(19, 14, 4),(22, 14, 5),(8, 19, 1),(23, 21, 1),(25, 11, 1),(25, 21, 2),(26, 32, 1),(27, 32, 2),(28, 32, 3),(30, 32, 4),(31, 32, 5),(32, 32, 6),(33, 32, 7),(34, 33, 1),
+(35, 33, 2),(36, 33, 3),(37, 33, 4),(38, 36, 1),(39, 37, 1),(40, 32, 8),(41, 32, 9),(42, 32, 10),(43, 32, 11),(42, 14, 6),(43, 14, 7),(44, 32, 12),(45, 32, 13),(46, 32, 15),
+(47, 32, 14),(48, 32, 16),(49, 32, 17),(50, 32, 18),(51, 32, 19),(51, 45, 1),(25, 25, 1),(41, 20, 2),(52, 32, 20);
 
 CREATE TABLE `PREFIX_pagenotfound` (
-  `id_pagenotfound` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  `request_uri` VARCHAR(256) NOT NULL,
-  `http_referer` VARCHAR(256) NOT NULL,
-  `date_add` DATETIME NOT NULL,
-  PRIMARY KEY(`id_pagenotfound`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+  id_pagenotfound INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+  request_uri VARCHAR(256) NOT NULL,
+  http_referer VARCHAR(256) NOT NULL,
+  date_add DATETIME NOT NULL,
+  PRIMARY KEY(id_pagenotfound)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `PREFIX_statssearch` (
-	`id_statssearch` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-	`keywords` VARCHAR(255) NOT NULL,
-	`results` INT(6) NOT NULL DEFAULT 0,
-	`date_add` DATETIME NOT NULL,
-	PRIMARY KEY(`id_statssearch`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+CREATE TABLE PREFIX_statssearch (
+	id_statssearch INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+	keywords VARCHAR(255) NOT NULL,
+	results INT(6) NOT NULL DEFAULT 0,
+	date_add DATETIME NOT NULL,
+	PRIMARY KEY(id_statssearch)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
 CREATE TABLE `PREFIX_sekeyword` (
-	`id_sekeyword` INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-	`keyword` VARCHAR(256) NOT NULL,
-	`date_add` DATETIME NOT NULL,
-	PRIMARY KEY(`id_sekeyword`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
+	id_sekeyword INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
+	keyword VARCHAR(256) NOT NULL,
+	date_add DATETIME NOT NULL,
+	PRIMARY KEY(id_sekeyword)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-
-CREATE TABLE `PREFIX_cms_block` (
-	`id_cms_block` int(10) unsigned NOT NULL auto_increment,
-	`id_cms_category` int(10) unsigned NOT NULL,
-	`name` varchar(40) NOT NULL,
-	`location` tinyint(1) unsigned NOT NULL,
-	`position` int(10) unsigned NOT NULL default '0',
-	`display_store` tinyint(1) unsigned NOT NULL DEFAULT '1',
-	PRIMARY KEY (`id_cms_block`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-CREATE TABLE `PREFIX_cms_block_page` (
-	`id_cms_block_page` int(10) unsigned NOT NULL auto_increment,
-	`id_cms_block` int(10) unsigned NOT NULL,
-	`id_cms` int(10) unsigned NOT NULL,
-	`is_category` tinyint(1) unsigned NOT NULL,
-	PRIMARY KEY (`id_cms_block_page`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-CREATE TABLE `PREFIX_cms_block_lang` (
-	`id_cms_block` int(10) unsigned NOT NULL,
-	`id_lang` int(10) unsigned NOT NULL,
-	`name` varchar(40) NOT NULL default '',
-	PRIMARY KEY (`id_cms_block`, `id_lang`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-CREATE TABLE `PREFIX_editorial` (
-	`id_editorial` int(10) unsigned NOT NULL auto_increment,
-	`body_home_logo_link` varchar(255) NOT NULL,
-	PRIMARY KEY (`id_editorial`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-CREATE TABLE `PREFIX_editorial_lang` (
-	`id_editorial` int(10) unsigned NOT NULL,
-	`id_lang` int(10) unsigned NOT NULL,
-	`body_title` varchar(255) NOT NULL,
-	`body_subheading` varchar(255) NOT NULL,
-	`body_paragraph` text NOT NULL,
-	`body_logo_subheading` varchar(255) NOT NULL,
-	PRIMARY KEY (`id_editorial`, `id_lang`)
-) ENGINE=ENGINE_TYPE DEFAULT CHARSET=utf8;
-
-INSERT INTO `PREFIX_editorial` (`id_editorial`, `body_home_logo_link`) VALUES (1, 'http://www.prestashop.com');
-INSERT INTO `PREFIX_editorial_lang` (`id_editorial`, `id_lang`, `body_title`, `body_subheading`, `body_paragraph`, `body_logo_subheading`) VALUES
-(1, 1, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 2, 'Lorem ipsum dolor sit amet', 'Excepteur sint occaecat cupidatat non proident', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Lorem ipsum presta shop amet'),
-(1, 3, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 4, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident'),
-(1, 5, 'Lorem ipsum dolor sit amet', 'Consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua', '<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum</p>', 'Excepteur sint prestashop cupidatat non proident');
 
 INSERT INTO `PREFIX_range_price` (`id_range_price`, `id_carrier`, `delimiter1`, `delimiter2`) VALUES (1, 2, 0, 10000);
 INSERT INTO `PREFIX_range_weight` (`id_range_weight`, `id_carrier`, `delimiter1`, `delimiter2`) VALUES (1, 2, 0, 10000);
-INSERT INTO `PREFIX_delivery` (`id_delivery`, `id_range_price`, `id_range_weight`, `id_carrier`, `id_zone`, `price`) VALUES
+INSERT INTO `PREFIX_delivery` (`id_delivery`, `id_range_price`, `id_range_weight`, `id_carrier`, `id_zone`, `price`) VALUES 
 (1, NULL, 1, 2, 1, 5.00),(2, NULL, 1, 2, 2, 5.00),(4, 1, NULL, 2, 1, 5.00),(5, 1, NULL, 2, 2, 5.00);
 
 INSERT INTO `PREFIX_customer_group` (`id_customer`, `id_group`) VALUES (1, 1);
 INSERT INTO `PREFIX_category_group` (`id_category`, `id_group`) VALUES (2, 1),(3, 1),(4, 1);
 
-INSERT INTO `PREFIX_customer` (`id_customer`, `id_gender`, `id_default_group`, `secure_key`, `email`, `passwd`, `birthday`, `lastname`, `newsletter`, `optin`, `firstname`, `active`, `is_guest`, `date_add`, `date_upd`)
-	VALUES (1, 1, 1, '47ce86627c1f3c792a80773c5d2deaf8', 'pub@prestashop.com', 'ad807bdf0426766c05c64041124d30ce', '1970-01-15', 'DOE', 1, 1, 'John', 1, 0, NOW(), NOW());
+INSERT INTO `PREFIX_customer` (`id_customer`, `id_gender`, `id_default_group`, `secure_key`, `email`, `passwd`, `birthday`, `lastname`, `newsletter`, `optin`, `firstname`, `active`, `date_add`, `date_upd`)
+	VALUES (1, 1, 1, '47ce86627c1f3c792a80773c5d2deaf8', 'pub@prestashop.com', 'ad807bdf0426766c05c64041124d30ce', '1970-01-15', 'DOE', 1, 1, 'John', 1, NOW(), NOW());
 INSERT INTO `PREFIX_connections` (`id_connections`, `id_guest`, `id_page`, `ip_address`, `date_add`, `http_referer`)
 	VALUES (1, 1, 1, '2130706433', NOW(), 'http://www.prestashop.com');
 INSERT INTO `PREFIX_guest` (`id_guest`, `id_operating_system`, `id_web_browser`, `id_customer`, `javascript`, `screen_resolution_x`, `screen_resolution_y`, `screen_color`, `sun_java`, `adobe_flash`, `adobe_director`, `apple_quicktime`, `real_player`, `windows_media`, `accept_language`)
@@ -163,46 +96,32 @@ INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_product_attribut
 INSERT INTO `PREFIX_cart_product` (`id_cart`, `id_product`, `id_product_attribute`, `quantity`, `date_add`) VALUES (1, 9, 0, 1, NOW());
 
 INSERT INTO `PREFIX_orders` (`id_order`, `id_carrier`, `id_lang`, `id_customer`, `id_cart`, `id_currency`, `id_address_delivery`, `id_address_invoice`, `secure_key`, `payment`, `module`, `recyclable`, `gift`, `gift_message`, `shipping_number`, `total_discounts`, `total_paid`, `total_paid_real`, `total_products`, `total_products_wt`, `total_shipping`, `total_wrapping`, `invoice_number`, `delivery_number`, `invoice_date`, `delivery_date`, `date_add`, `date_upd`)
-	VALUES (1, 2, 2, 1, 1, 1, 2, 2, '47ce86627c1f3c792a80773c5d2deaf8', 'Chèque', 'cheque', 0, 0, '', '', '0.00', '625.98', '625.98', '516.72', '618.00', '7.98', '0.00', 0, 0, '0000-00-00 00:00:00', '0000-00-00 00:00:00', NOW(), NOW());
+	VALUES (1, 2, 2, 1, 1, 1, 2, 2, '47ce86627c1f3c792a80773c5d2deaf8', 'Chèque', 'cheque', 1, 0, '', '', '0.00', '625.98', '625.98', '516.72', '618.00', '7.98', '0.00', 1, 0, '2008-09-10 15:30:44', '0000-00-00 00:00:00', NOW(), NOW());
 INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `tax_name`, `tax_rate`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`)
 	VALUES (1, 1, 7, 23, 'iPod touch - Capacité: 32Go', 1, 0, '392.140500', '0.000000', NULL, NULL, NULL, 0, 'TVA 19.6%', '19.60', '0.00', '', 0, '0000-00-00 00:00:00');
 INSERT INTO `PREFIX_order_detail` (`id_order_detail`, `id_order`, `product_id`, `product_attribute_id`, `product_name`, `product_quantity`, `product_quantity_return`, `product_price`, `product_quantity_discount`, `product_ean13`, `product_reference`, `product_supplier_reference`, `product_weight`, `tax_name`, `tax_rate`, `ecotax`, `download_hash`, `download_nb`, `download_deadline`)
 	VALUES (2, 1, 9, 0, 'Écouteurs à isolation sonore Shure SE210', 1, 0, '124.581900', '0.000000', NULL, NULL, NULL, 0, 'TVA 19.6%', '19.60', '0.00', '', 0, '0000-00-00 00:00:00');
 INSERT INTO `PREFIX_order_history` (`id_order_history`, `id_employee`, `id_order`, `id_order_state`, `date_add`) VALUES (1, 0, 1, 1, NOW());
 
-INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'Apple Computer, Inc', NOW(), NOW(), 1);
-INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`, `active`) VALUES(2, 'Shure Incorporated', NOW(), NOW(), 1);
-
-INSERT INTO `PREFIX_manufacturer_lang` (`id_manufacturer`, `id_lang`, `description`, `short_description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
-(1, 1, '', '', '', '', ''),
-(1, 2, '', '', '', '', ''),
-(1, 3, '', '', '', '', ''),
-(1, 4, '', '', '', '', ''),
-(1, 5, '', '', '', '', '');
+INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`) VALUES (1, 'Apple Computer, Inc', NOW(), NOW());
+INSERT INTO `PREFIX_manufacturer` (`id_manufacturer`, `name`, `date_add`, `date_upd`) VALUES(2, 'Shure Incorporated', NOW(), NOW());
 
 INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_customer`, `id_manufacturer`, `id_supplier`, `alias`, `lastname`, `firstname`, `address1`, `postcode`, `city`, `phone`, `date_add`, `date_upd`, `active`, `deleted`)
-	VALUES (1, 21, 5, 0, 1, 0, 'manufacturer', 'COOK', 'Tim', '1 Infinite Loop', '95014', 'Cupertino', '(800) 275-2273', NOW(), NOW(), 1, 0);
+	VALUES (1, 21, 5, 0, 1, 0, 'manufacturer', 'JOBS', 'STEVE', '1 Infinite Loop', '95014', 'Cupertino', '(800) 275-2273', NOW(), NOW(), 1, 0);
 INSERT INTO `PREFIX_address` (`id_address`, `id_country`, `id_state`, `id_customer`, `id_manufacturer`, `id_supplier`, `alias`, `company`, `lastname`, `firstname`, `address1`, `address2`, `postcode`, `city`, `phone`, `date_add`, `date_upd`, `active`, `deleted`)
 	VALUES (2, 8, 0, 1, 0, 0, 'Mon adresse', 'My Company', 'DOE', 'John', '16, Main street', '2nd floor', '75000', 'Paris ', '0102030405', NOW(), NOW(), 1, 0);
 
-INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (1, 'AppleStore', NOW(), NOW(), 1);
-INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`, `active`) VALUES (2, 'Shure Online Store', NOW(), NOW(), 1);
+INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`) VALUES (1, 'AppleStore', NOW(), NOW());
+INSERT INTO `PREFIX_supplier` (`id_supplier`, `name`, `date_add`, `date_upd`) VALUES (2, 'Shure Online Store', NOW(), NOW());
 
-INSERT INTO `PREFIX_supplier_lang` (`id_supplier`, `id_lang`, `description`, `meta_title`, `meta_keywords`, `meta_description`) VALUES 
-(1, 1, '', '', '', ''),
-(1, 2, '', '', '', ''),
-(1, 3, '', '', '', ''),
-(1, 4, '', '', '', ''),
-(1, 5, '', '', '', '');
-
-INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufacturer`, `id_tax_rules_group`, `id_category_default`, `id_color_default`, `on_sale`, `online_only`, `ean13`, `ecotax`, `quantity`, `price`, `wholesale_price`, `reference`, `supplier_reference`, `weight`, `out_of_stock`, `quantity_discount`, `customizable`, `uploadable_files`, `text_fields`, `active`, `date_add`, `date_upd`) VALUES
-(1, 1, 1, 1, 1, 2, 2, 0, 0, '0', 0.00, 800, 124.581940, 70.000000, '', '', 0.5, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(2, 1, 1, 1, 1, 2, 0, 0, 0, '0', 0.00, 100, 66.053500, 33.000000, '', '', 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(5, 1, 1, 1, 1, 4, 0, 0, 0, '0', 0.00, 274, 1504.180602, 1000.000000, '', NULL, 1.36, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(6, 1, 1, 1, 1, 4, 0, 0, 0, '0', 0.00, 250, 1170.568561, 0.000000, '', NULL, 0.75, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(7, 1, 0, 0, 1, 2, 0, 0, 0, '', 0.00, 180, 241.638796, 200.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(8, 1, 0, 0, 1, 3, 0, 0, 1, '', 0.00, 1, 25.041806, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
-(9, 1, 2, 2, 1, 3, 0, 0, 1, '', 0.00, 1, 124.581940, 0.000000, '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW());
+INSERT INTO `PREFIX_product` (`id_product`, `indexed`, `id_supplier`, `id_manufacturer`, `id_tax`, `id_category_default`, `id_color_default`, `on_sale`, `ean13`, `ecotax`, `quantity`, `price`, `wholesale_price`, `reduction_price`, `reduction_percent`, `reduction_from`, `reduction_to`, `reference`, `supplier_reference`, `weight`, `out_of_stock`, `quantity_discount`, `customizable`, `uploadable_files`, `text_fields`, `active`, `date_add`, `date_upd`) VALUES
+(1, 1, 1, 1, 1, 2, 2, 0, '0', 0.00, 800, 124.581940, 70.000000, 0.00, 5, NOW(), NOW(), '', '', 0.5, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(2, 1, 1, 1, 1, 2, 0, 0, '0', 0.00, 100, 66.053500, 33.000000, 0.00, 0, NOW(), NOW(), '', '', 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(5, 1, 1, 1, 1, 4, 0, 0, '0', 0.00, 274, 1504.180602, 1000.000000, 0.00, 0, NOW(), NOW(), '', NULL, 1.36, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(6, 1, 1, 1, 1, 4, 0, 0, '0', 0.00, 250, 1170.568561, 0.000000, 0.00, 0,NOW(), NOW(), '', NULL, 0.75, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(7, 1, 0, 0, 1, 2, 0, 0, '', 0.00, 180, 241.638796, 200.000000, 0.00, 0, NOW(), NOW(), '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(8, 1, 0, 0, 1, 3, 0, 0, '', 0.00, 1, 25.041806, 0.000000, 0.00, 0, NOW(), NOW(), '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW()),
+(9, 1, 2, 2, 1, 3, 0, 0, '', 0.00, 1, 124.581940, 0.000000, 0.00, 0, NOW(), NOW(), '', NULL, 0, 2, 0, 0, 0, 0, 1, NOW(), NOW());
 
 
 INSERT INTO `PREFIX_product_lang` (`id_product`, `id_lang`, `description`, `description_short`, `link_rewrite`, `meta_description`, `meta_keywords`, `meta_title`, `name`, `available_now`, `available_later`) VALUES
@@ -216,39 +135,21 @@ INSERT INTO `PREFIX_product_lang` (`id_product`, `id_lang`, `description`, `desc
 (6, 2, 'Chaque MacBook est équipé d''un disque dur plus spacieux, d''une capacité atteignant 250 Go, pour stocker vos collections multimédia en expansion et vos données précieuses.<br /><br />Le modèle MacBook à 2,4 GHz intègre désormais 2 Go de mémoire en standard. L''idéal pour exécuter en souplesse vos applications préférées.', 'MacBook vous offre la liberté de mouvement grâce à son boîtier résistant en polycarbonate, à ses technologies sans fil intégrées et à son adaptateur secteur MagSafe novateur qui se déconnecte automatiquement si quelqu''un se prend les pieds dans le fil.', 'macbook', '', '', '', 'MacBook', '', NULL),
 (7, 1, '<h3>Five new hands-on applications</h3>\r\n<p>View rich HTML email with photos as well as PDF, Word, and Excel attachments. Get maps, directions, and real-time traffic information. Take notes and read stock and weather reports.</p>\r\n<h3>Touch your music, movies, and more</h3>\r\n<p>The revolutionary Multi-Touch technology built into the gorgeous 3.5-inch display lets you pinch, zoom, scroll, and flick with your fingers.</p>\r\n<h3>Internet in your pocket</h3>\r\n<p>With the Safari web browser, see websites the way they were designed to be seen and zoom in and out with a tap.<sup>2</sup> And add Web Clips to your Home screen for quick access to favorite sites.</p>\r\n<h3>What''s in the box</h3>\r\n<ul>\r\n<li><span></span>iPod touch</li>\r\n<li><span></span>Earphones</li>\r\n<li><span></span>USB 2.0 cable</li>\r\n<li><span></span>Dock adapter</li>\r\n<li><span></span>Polishing cloth</li>\r\n<li><span></span>Stand</li>\r\n<li><span></span>Quick Start guide</li>\r\n</ul>', '<ul>\r\n<li>Revolutionary Multi-Touch interface</li>\r\n<li>3.5-inch widescreen color display</li>\r\n<li>Wi-Fi (802.11b/g)</li>\r\n<li>8 mm thin</li>\r\n<li>Safari, YouTube, Mail, Stocks, Weather, Notes, iTunes Wi-Fi Music Store, Maps</li>\r\n</ul>', 'ipod-touch', '', '', '', 'iPod touch', '', NULL),
 (7, 2, '<h1>Titre 1</h1>\r\n<h2>Titre 2</h2>\r\n<h3>Titre 3</h3>\r\n<h4>Titre 4</h4>\r\n<h5>Titre 5</h5>\r\n<h6>Titre 6</h6>\r\n<ul>\r\n<li>UL</li>\r\n<li>UL</li>\r\n<li>UL</li>\r\n<li>UL</li>\r\n</ul>\r\n<ol>\r\n<li>OL</li>\r\n<li>OL</li>\r\n<li>OL</li>\r\n<li>OL</li>\r\n</ol>\r\n<p>paragraphe...</p>\r\n<p>paragraphe...</p>\r\n<p>paragraphe...</p>\r\n<table border="0">\r\n<thead> \r\n<tr>\r\n<th>th</th> <th>th</th> <th>th</th>\r\n</tr>\r\n</thead> \r\n<tbody>\r\n<tr>\r\n<td>td</td>\r\n<td>td</td>\r\n<td>td</td>\r\n</tr>\r\n<tr>\r\n<td>td</td>\r\n<td>td</td>\r\n<td>td</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<h3>Cinq nouvelles applications sous la main</h3>\r\n<p>Consultez vos e-mails au format HTML enrichi, avec photos et pieces jointes au format PDF, Word et Excel. Obtenez des cartes, des itinéraires et des informations sur l''état de la circulation en temps réel. Rédigez des notes et consultez les cours de la Bourse et les bulletins météo.</p>\r\n<h3>Touchez du doigt votre musique et vos vidéos. Entre autres.</h3>\r\n<p>La technologie multi-touch révolutionnaire intégrée au superbe écran de 3,5 pouces vous permet d''effectuer des zooms avant et arrière, de faire défiler et de feuilleter des pages à l''aide de vos seuls doigts.</p>\r\n<h3>Internet dans votre poche</h3>\r\n<p>Avec le navigateur Safari, vous pouvez consulter des sites web dans leur mise en page d''origine et effectuer un zoom avant et arrière d''une simple pression sur l''écran.</p>\r\n<h3>Contenu du coffret</h3>\r\n<ul>\r\n<li><span></span>iPod touch</li>\r\n<li><span></span>Écouteurs</li>\r\n<li><span></span>Câble USB 2.0</li>\r\n<li><span></span>Adaptateur Dock</li>\r\n<li><span></span>Chiffon de nettoyage</li>\r\n<li><span></span>Support</li>\r\n<li><span></span>Guide de démarrage rapide</li>\r\n</ul>\r\n<p> </p>', '<p>Interface multi-touch révolutionnaire<br />Écran panoramique couleur de 3,5 pouces<br />Wi-Fi (802.11b/g)<br />8 mm d''épaisseur<br />Safari, YouTube, iTunes Wi-Fi Music Store, Courrier, Cartes, Bourse, Météo, Notes</p>', 'ipod-touch', '', '', '', 'iPod touch', 'En stock', NULL),
-(8, 1, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'belkin-leather-folio-for-ipod-nano-black-chocolate', '', '', '', 'Belkin Leather Folio for iPod nano - Black / Chocolate', '', NULL),
+(8, 1, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'housse-portefeuille-en-cuir-belkin-pour-ipod-nano-noir-chocolat', '', '', '', 'Housse portefeuille en cuir Belkin pour iPod nano - Noir/Chocolat', '', NULL),
 (8, 2, '<p><strong>Caractéristiques</strong></p>\r\n<li>Cuir doux résistant<br /> </li>\r\n<li>Accès au bouton Hold<br /> </li>\r\n<li>Fermeture magnétique<br /> </li>\r\n<li>Accès au Dock Connector<br /> </li>\r\n<li>Protège-écran</li>', '<p>Cet étui en cuir tendance assure une protection complète contre les éraflures et les petits aléas de la vie quotidienne. Sa conception élégante et compacte vous permet de glisser votre iPod directement dans votre poche ou votre sac à main.</p>', 'housse-portefeuille-en-cuir-ipod-nano-noir-chocolat', '', '', '', 'Housse portefeuille en cuir (iPod nano) - Noir/Chocolat', '', NULL),
 (9, 1, '<div class="product-overview-full">Using Hi-Definition MicroSpeakers to deliver full-range audio, the ergonomic and lightweight design of the SE210 earphones is ideal for premium on-the-go listening on your iPod or iPhone. They offer the most accurate audio reproduction from both portable and home stereo audio sources--for the ultimate in precision highs and rich low end. In addition, the flexible design allows you to choose the most comfortable fit from a variety of wearing positions. <br /> <br /> <strong>Features </strong> <br /> \r\n<ul>\r\n<li>Sound-isolating design </li>\r\n<li> Hi-Definition MicroSpeaker with a single balanced armature driver </li>\r\n<li> Detachable, modular cable so you can make the cable longer or shorter depending on your activity </li>\r\n<li> Connector compatible with earphone ports on both iPod and iPhone </li>\r\n</ul>\r\n<strong>Specifications </strong><br /> \r\n<ul>\r\n<li>Speaker type: Hi-Definition MicroSpeaker </li>\r\n<li> Frequency range: 25Hz-18.5kHz </li>\r\n<li> Impedance (1kHz): 26 Ohms </li>\r\n<li> Sensitivity (1mW): 114 dB SPL/mW </li>\r\n<li> Cable length (with extension): 18.0 in./45.0 cm (54.0 in./137.1 cm) </li>\r\n</ul>\r\n<strong>In the box</strong><br /> \r\n<ul>\r\n<li>Shure SE210 earphones </li>\r\n<li> Extension cable (36.0 in./91.4 cm) </li>\r\n<li> Three pairs foam earpiece sleeves (small, medium, large) </li>\r\n<li> Three pairs soft flex earpiece sleeves (small, medium, large) </li>\r\n<li> One pair triple-flange earpiece sleeves </li>\r\n<li> Carrying case </li>\r\n</ul>\r\nWarranty<br /> Two-year limited <br />(For details, please visit <br />www.shure.com/PersonalAudio/CustomerSupport/ProductReturnsAndWarranty/index.htm.) <br /><br /> Mfr. Part No.: SE210-A-EFS <br /><br />Note: Products sold through this website that do not bear the Apple Brand name are serviced and supported exclusively by their manufacturers in accordance with terms and conditions packaged with the products. Apple''s Limited Warranty does not apply to products that are not Apple-branded, even if packaged or sold with Apple products. Please contact the manufacturer directly for technical support and customer service.</div>', '<p>Evolved from personal monitor technology road-tested by pro musicians and perfected by Shure engineers, the lightweight and stylish SE210 delivers full-range audio that''s free from outside noise.</p>', 'ecouteurs-a-isolation-sonore-shure-se210-blanc', '', '', '', 'Shure SE210 Sound-Isolating Earphones for iPod and iPhone', '', NULL),
-(9, 2, '<p>Basés sur la technologie des moniteurs personnels testée sur la route par des musiciens professionnels et perfectionnée par les ingénieurs Shure, les écouteurs SE210, légers et élégants, fournissent une sortie audio à gamme étendue exempte de tout bruit externe.</p><br /><p><strong>Conception à isolation sonore <br /></strong>Les embouts à isolation sonore fournis bloquent plus de 90 % du bruit ambiant. Combinés à un design ergonomique séduisant et un câble modulaire, ils minimisent les intrusions du monde extérieur, vous permettant de vous concentrer sur votre musique. Conçus pour les amoureux de la musique qui souhaitent faire évoluer leur appareil audio portable, les écouteurs SE210 vous permettent d''emmener la performance avec vous. <br /> <br /><strong>Micro-transducteur haute définition <br /></strong>Développés pour une écoute de qualité supérieure en déplacement, les écouteurs SE210 utilisent un seul transducteur à armature équilibrée pour bénéficier d''une gamme audio étendue. Le résultat ? Un confort d''écoute époustouflant qui restitue tous les détails d''un spectacle live.</p>\r\n<p><strong>Le kit universel Deluxe comprend les éléments suivants : <br /></strong>- <strong><em>Embouts à isolation sonore</em></strong> <br />Les embouts à isolation sonore inclus ont un double rôle : bloquer les bruits ambiants et garantir un maintien et un confort personnalisés. Comme chaque oreille est différente, le kit universel Deluxe comprend trois tailles (S, M, L) d''embouts mousse et flexibles. Choisissez la taille et le style d''embout qui vous conviennent le mieux : une bonne étanchéité est un facteur clé pour optimiser l''isolation sonore et la réponse des basses, ainsi que pour accroître le confort en écoute prolongée.<br /><br />- <em><strong>Câble modulaire</strong></em> <br />En se basant sur les commentaires de nombreux utilisateurs, les ingénieurs de Shure ont développé une solution de câble détachable pour permettre un degré de personnalisation sans précédent. Le câble de 1 mètre fourni vous permet d''adapter votre confort en fonction de l''activité et de l''application.<br /> <br />- <em><strong>Étui de transport</strong></em> <br />Outre les embouts à isolation sonore et le câble modulaire, un étui de transport compact et résistant est fourni avec les écouteurs SE210 pour vous permettre de ranger vos écouteurs de manière pratique et sans encombres.<br /> <br />- <strong><em>Garantie limitée de deux ans <br /></em></strong>Chaque solution SE210 achetée est couverte par une garantie pièces et main-d''œuvre de deux ans.<br /><br /><strong>Caractéristiques techniques</strong></p>\r\n<ul>\r\n<li> Type de transducteur : micro-transducteur haute définition<br /></li>\r\n<li> Sensibilité (1 mW) : pression acoustique de 114 dB/mW<br /></li>\r\n<li> Impédance (à 1 kHz) : 26 W<br /></li>\r\n<li> Gamme de fréquences : 25 Hz – 18,5 kHz<br /></li>\r\n<li> Longueur de câble / avec rallonge : 45 cm / 136 cm<br /></li>\r\n</ul>\r\n<p><strong>Contenu du coffret<br /></strong></p>\r\n<ul>\r\n<li> Écouteurs Shure SE210<br /></li>\r\n<li> Kit universel Deluxe (embouts à isolation sonore, câble modulaire, étui de transport)</li>\r\n</ul>', '<p>Les écouteurs à isolation sonore ergonomiques et légers offrent la reproduction audio la plus fidèle en provenance de sources audio stéréo portables ou de salon.</p>', 'ecouteurs-a-isolation-sonore-shure-se210', '', '', '', 'Écouteurs à isolation sonore Shure SE210', '', NULL),
+(9, 2, '<p>Basés sur la technologie des moniteurs personnels testée sur la route par des musiciens professionnels et perfectionnée par les ingénieurs Shure, les écouteurs SE210, légers et élégants, fournissent une sortie audio à gamme étendue exempte de tout bruit externe.</p>\r\n<p><img src="http://store.apple.com/Catalog/fr/Images/TM255_screen1.jpg" border="0" /></p>\r\n<p><strong>Conception à isolation sonore <br /></strong>Les embouts à isolation sonore fournis bloquent plus de 90 % du bruit ambiant. Combinés à un design ergonomique séduisant et un câble modulaire, ils minimisent les intrusions du monde extérieur, vous permettant de vous concentrer sur votre musique. Conçus pour les amoureux de la musique qui souhaitent faire évoluer leur appareil audio portable, les écouteurs SE210 vous permettent d''emmener la performance avec vous. <br /> <br /><strong>Micro-transducteur haute définition <br /></strong>Développés pour une écoute de qualité supérieure en déplacement, les écouteurs SE210 utilisent un seul transducteur à armature équilibrée pour bénéficier d''une gamme audio étendue. Le résultat ? Un confort d''écoute époustouflant qui restitue tous les détails d''un spectacle live.</p>\r\n<p><strong>Le kit universel Deluxe comprend les éléments suivants : <br /></strong>- <strong><em>Embouts à isolation sonore</em></strong> <br />Les embouts à isolation sonore inclus ont un double rôle : bloquer les bruits ambiants et garantir un maintien et un confort personnalisés. Comme chaque oreille est différente, le kit universel Deluxe comprend trois tailles (S, M, L) d''embouts mousse et flexibles. Choisissez la taille et le style d''embout qui vous conviennent le mieux : une bonne étanchéité est un facteur clé pour optimiser l''isolation sonore et la réponse des basses, ainsi que pour accroître le confort en écoute prolongée.<br /><br />- <em><strong>Câble modulaire</strong></em> <br />En se basant sur les commentaires de nombreux utilisateurs, les ingénieurs de Shure ont développé une solution de câble détachable pour permettre un degré de personnalisation sans précédent. Le câble de 1 mètre fourni vous permet d''adapter votre confort en fonction de l''activité et de l''application.<br /> <br />- <em><strong>Étui de transport</strong></em> <br />Outre les embouts à isolation sonore et le câble modulaire, un étui de transport compact et résistant est fourni avec les écouteurs SE210 pour vous permettre de ranger vos écouteurs de manière pratique et sans encombres.<br /> <br />- <strong><em>Garantie limitée de deux ans <br /></em></strong>Chaque solution SE210 achetée est couverte par une garantie pièces et main-d''œuvre de deux ans.<br /><br /><strong>Caractéristiques techniques</strong></p>\r\n<ul>\r\n<li> Type de transducteur : micro-transducteur haute définition<br /></li>\r\n<li> Sensibilité (1 mW) : pression acoustique de 114 dB/mW<br /></li>\r\n<li> Impédance (à 1 kHz) : 26 W<br /></li>\r\n<li> Gamme de fréquences : 25 Hz – 18,5 kHz<br /></li>\r\n<li> Longueur de câble / avec rallonge : 45 cm / 136 cm<br /></li>\r\n</ul>\r\n<p><strong>Contenu du coffret<br /></strong></p>\r\n<ul>\r\n<li> Écouteurs Shure SE210<br /></li>\r\n<li> Kit universel Deluxe (embouts à isolation sonore, câble modulaire, étui de transport)</li>\r\n</ul>', '<p>Les écouteurs à isolation sonore ergonomiques et légers offrent la reproduction audio la plus fidèle en provenance de sources audio stéréo portables ou de salon.</p>', 'ecouteurs-a-isolation-sonore-shure-se210', '', '', '', 'Écouteurs à isolation sonore Shure SE210', '', NULL),
 (7, 3, '<p>Cinco nuevas aplicaciones a mano</p>\r\n<p><br /> Consulta tu correo en formato HTML enriquecido, con fotos y ficheros adjuntos en formato PDF, Word y Excel. Consigue mapas, itinerarios e información sobre el estado de la carreteras en tiempo real. Escribe notas y consulta la bolsa y el tiempo. <br /> Alcanza con un dedo tu música y tus videos, entre otras cosas. <br /> La tecnología multi-touch revolucionaria integrada a la magnífica pantalla de 3,5 pulgadas te permitirá efectuar zoom hacia adelante y hacia atrás, y pasar y ojear las páginas solo con la ayuda de tus dedos.</p>\r\n<p>Internet en tu bolsillo</p>\r\n<p>Con el navegador Safari, podrás consultar sitios web en su compaginación de origen y efectuar un zoom hacia adelante y hacia atrás con la simple presión de un dedo en la pantalla.</p>\r\n<p>Contenido del estuche<br />    * iPod touch<br />    * Auriculares<br />    * Cable USB 2.0<br />    * Adaptador Dock<br />    * Paño de limpieza<br />    * Base<br />    * Guía de inicio rápido<br /> Título<br /> Párrafo</p>', '<p>Interfaz multi-touch revolucionaria<br /> Pantalla panorámica color de 3,5 pulgadas<br /> Wi-Fi (802.11b/g)<br /> 8 mm de espesor<br /> Safari, YouTube, iTunes Wi-Fi Music Store, Correo, Mapas, Bolsa, El tiempo, Notas</p>', 'ipod-touch', '', '', '', 'iPod touch', 'Disponible', ''),
 (1, 3, '<p><strong>Curvas aerodinámicas.</strong></p>\r\n<p>Para los aficionados a las sensaciones fuertes, os presentamos nueve nuevos colores. ¡ Y eso no es todo ! Experimenta el diseño elíptico de aluminio y vidrio. ¡ No querrás separarte de él nunca más !</p>\r\n<p><strong><br /> Estético e inteligente.</strong></p>\r\n<p>La nueva aplicación Genius hace de iPod nano tu discjockey personal. Genuis crea listas de lectura buscando en tu biblioteca las canciones que combinan entre si.</p>\r\n<p><strong><br /> Hecho para moverse contigo.</strong><br /> iPod nano está equipado de un acelerómetro. Muévelo para mezclar tu música. Voltéalo para mostrar Cover Flow. Y descubre juegos adaptados a tus movimientos.</p>', '<p>Nuevo diseño. Nuevas aplicaciones. Ahora disponible en 8 y 16 Go. iPod nano, más rock que nunca.</p>', 'ipod-nano', '', '', '', 'iPod Nano', 'Disponible', ''),
 (2, 3, '<p><strong>Un enlace inmediato.</strong><br /> <br /> Lleva hasta 500 canciones colgadas de tu manga, de tu cinturón o de tu pantalón. Presume con tu iPod shuffle como signo exterior de tu pasión por la música. Ahora ya existen cuatro nuevos colores más llamativos. <br /> <br /> <strong>Llena tu iPod shuffle.</strong><br /> <br /> iTunes es una enorme tienda dedicada a la diversión, una colección de música organizada perfectamente y un jukebox. Con tan solo un clic puedes llenar tu iPod shuffle con canciones. <br /> <br /> <strong>La música en tecnicolor. </strong><br /> <br /> iPod shuffle presenta nuevos colores vivos que realzan su diseño estilizado en aluminio anodizado. Elige entre azul, verde, rosa, rojo y el plateado de origen.</p>', '<p>iPod shuffle, el walkman más portátil del mundo, ahora en azul, verde, rosa y rojo.</p>', 'ipod-shuffle', '', '', '', 'iPod shuffle', 'Disponible', ''),
 (6, 3, '<p>Cada MacBook está equipado de un disco duro más espacioso, de una capacidad de hasta  250 Go, para almacenar tus colecciones multimedia en expansión y tus datos más preciados. <br /> El modelo  MacBook de 2,4 GHz integra 2 Go de memoria en estándar. Lo ideal para realizar sin dificultad tus aplicaciones preferidas.</p>', '<p>MacBook te ofrece una gran libertad de movimientos gracias a su exterior resistente en policarbonato, a su tecnología sin cable y a su adaptador cargador sector innovador que se desconecta automáticamente si alguien se engancha en el cable.</p>', 'macbook', '', '', '', 'MacBook', 'Disponible', ''),
 (5, 3, '<p>MacBook Air es casi tan fino como tu dedo. Se ha simplificado al máximo y a pesar de ello dispone de una pantalla panorámica de 13,3 pulgadas, de un teclado completo y de un amplio trackpad multi-touch. Portátil al 100%, te evitará tener que hacer un compromiso en lo que concierne a la pantalla y al teclado.  <br /> <br /> La increíble sutileza de MacBook Air es el resultado de un gran número de innovaciones en materia de reducción de tamaño y peso. Desde un disco duro más fino hasta puertos E/S disimulados hábilmente pasando por una batería más plana, cada detalle se consideró para que el resultado fuera lo más fino posible.<br /> <br /> MacBook Air fue creado y elaborado para disfrutar plenamente del mundo inalámbrico. Un mundo en el que la norma Wi-Fi 802.11n es tan rápida y accesible que permite liberarse completamente de cualquier atadura para comprar videos en línea, descargar programas, almacenar y compartir archivos en la Red.</p>', '<p>MacBook Air es ultra fino, ultra portátil y ultra diferente de todo el resto. Pero no se pierden kilos y centímetros en tan solo una noche. Todo esto es el resultado de un nuevo invento de normas. De un sinfín de novedades sin cable. Y de una revolución en el diseño. Con MacBook Air, la informática móvil adquiere una nueva dimensión.</p>', 'macbook-air', '', '', '', 'MacBook Air', 'Disponible', ''),
 (8, 3, '<p><strong>Características</strong></p>\r\n<ul>\r\n<li> Cuero suave resistente</li>\r\n<li>Acceso a la tecla Hold</li>\r\n<li>Cierre magnético</li>\r\n<li>Acceso al Dock Conector</li>\r\n<li>Salva pantallas</li>\r\n</ul>', '<p>Este estuche de cuero de última moda garantiza una completa protección contra los arañazos y los pequeños contratiempos de la vida diaria. Su diseño elegante y compacto te permite meter tu Ipod directamente en tu bolsillo o en tu bolso.</p>', 'funda-cuero-ipod-nano-negro-chocolate', '', '', '', 'Leather Case (iPod nano) - Negro / Chocolate', 'Disponible', ''),
-(9, 3, '<p>Los auriculares SE210, ligeros y elegantes, están basados en la tecnología de los monitores personales que los músicos profesionales utilizan en carretera y que los ingenieros de Shure han perfeccionado. También están provistos de una salida audio de gama extendida exenta de todo ruido exterior. <br /> <br /> <strong>Creado para un aislamiento sonoro</strong></p>\r\n<p>Las almohadillas provistas de un aislamiento sonoro bloquean más del 90% del ruido ambiente. Combinadas con un diseño ergonómico atractivo y un cable modular, minimizan las intrusiones del mundo exterior y te permiten concentrarte en tu música. Creados para los apasionados por la música que quieren que su aparato audio móvil evolucione, los auriculares  SE210 te permitirán llevar la tecnología allí donde tú vayas. <br /> <br /> <strong>Micro-transductor alta definición </strong><br /> Desarrollados para poder tener una audición de calidad durante los desplazamientos, los auriculares SE210 utilizan un único transductor con un armazón equilibrado para poder disfrutar de una gama audio extendida. ¿El resultado ? Un confort audio increíble que restituye cada detalle de un espectáculo en directo. <br /> <br /> <strong>El kit universal Deluxe incluye los siguientes elementos :</strong><br /> - Almohadillas para aislamiento sonoro<br /> Las almohadillas para el aislamiento sonoro tienen una doble función : bloquear el ruido ambiente y garantizar una estabilidad y un confort personalizados. Como cada oreja es diferente el kit universal Deluxe incluye tres tallas (S, M, L) de almohadillas de espuma y flexibles. Elige la talla y el estilo de almohadilla que mejor te convenga : un buen aislamiento es un factor clave tanto para optimizar el aislamiento sonoro y la respuesta de los bajos como para aumentar el confort durante una audición prolongada. <br /> <br /> - Cable modular</p>\r\n<p>Basándose en los comentarios de los numerosos usuarios, los ingenieros de Shure han creado una solución de cable separable para permitir un grado de personalización sin precedentes. El cable de 1 metro te permite adaptar el confort en función de la actividad del momento y de la aplicación. <br /> <br /> - Estuche para el transporte</p>\r\n<p>Además de las almohadillas de aislamiento sonoro y del cable modular, los auriculares SE210 están provistos de un estuche de transporte compacto y resistente para guardar los auriculares de manera práctica y sin dificultad. <br /> - Garantía límite de dos años <br /> Cada solución SE210 tiene una garantía piezas y mano de obra de dos años.</p>\r\n<p><br /> <em><strong>Características técnicas</strong></em></p>\r\n<ul>\r\n<li>Tipo de transductor : micro-transductor alta definición</li>\r\n<li>Sensibilidad (1 mW) : presión acústica de 114 dB/mW</li>\r\n<li>Impedancia : (à 1 kHz) : 26 W</li>\r\n<li>Gama de frecuencias : 25 Hz ˆ 18,5 kHz</li>\r\n<li>Longitud del cable / con alargador : 45 cm / 136 cm</li>\r\n</ul>\r\n<p><br /> <strong><em>Contenido de la caja</em></strong></p>\r\n<ul>\r\n<li>Altavoces Shure SE210</li>\r\n<li>Kit universal Deluxe (almohadillas de aislamiento sonoro, cable modular, estuche de transporte)</li>\r\n</ul>', '<p>Los auriculares con aislamiento ergonómicos y ligeros ofrecen la reproducción más fiel proveniente de fuentes audio estéreo móviles o de salón.</p>', 'auriculares-aislantes-del-sonido-shure-se210', '', '', '', 'Auriculares aislantes del sonido Shure SE210', 'Disponible', ''),
-(1, 4, '<p><span style="font-size: small;">Immer eine Kurve voraus.</span></strong></p>\r\n<p>Für all die, die gleich losrocken wollen, gibt es jetzt neun tolle Farben zur Auswahl. Aber das ist nur ein Teil der Geschichte. Mit seinem runden Design, das komplett aus Aluminium und Glas besteht, werden Sie den iPod nano nicht mehr weglegen wollen.</p>\r\n<p><span style="font-size: small;">Tolles Design. Und viel Köpfchen.</Span></strong></p>\r\n<p>Die neue Genius-Funktion verwandelt den iPod nano in Ihren hoch intelligenten, persönlichen DJ. Es erstellt Abspiellisten aus den Songs in Ihrer Sammlung, die gut zusammenpassen.</P>\r\n<p><span style="font-size: small;">Passt sich Ihren Bewegungen an.</span></strong></p>\r\n<p>Der iPod nano jetzt mit Beschleunigungsmesser. Einmal schütteln, und Ihre Musik wird neu sortiert. Kippen Sie es zur Seite für die Cover Flow-Ansicht. Und spielen Sie mit den Bewegungen, an die Sie denken.</P>', '<p>New design. New features. Now in 8GB and 16GB. iPod nano rocks like never before.</p>', 'ipod-nano', '', '', '', 'iPod Nano', 'In stock', ''),
-(2, 4, '<p>style="font-size: small;"><strong>Gleich festmachen.</strong></span></p>\r\n<p>Tragen Sie bis zu 500 Songs am Ärmel. Oder an Ihrem Gürtel. Oder an Ihrer Sporthose. iPod shuffle ist ein Erkennungszeichen echter Musikfans. Jetzt in neuen, noch leuchtenderen Farben.</P>\r\n<p>style="font-size: small;"><strong>Füttern Sie Ihren iPod shuffle.</Strong></span></p>\r\n<p>iTunes ist Ihr Super-Store für Unterhaltung. Es ist Ihre optimal organisierte Musik-Sammlung und Jukebox. Und Sie können Ihren iPod shuffle mit einem Klick laden.</P>\r\n<p>style="font-size: small;"><strong>Die Schöne und der Beat.</strong></span></p>\r\n<p>Das farbintensive eloxierte Aluminium ergänzt das schlichte Design des iPod shuffle. Jetzt in Blau, Grün, Rosa, Rot und klassischem Silber.</P>', '<p>iPod shuffle, the worldâs most wearable music player, now clips on in more vibrant blue, green, pink, and red.</p>', 'ipod-shuffle', '', '', '', 'iPod shuffle', 'In stock', ''),
-(5, 4, '<p>MacBook Air ist kaum dicker als Ihr Zeigefinger. Nahezu jedes Detail wurde abgeflacht. Und dabei hat es immer noch einen 13,3-Zoll-Widescreen-LED-Display, eine Tastatur in voller Größe und einen großen Multi-Touch-Trackpad. Es besitzt eine unvergleichliche Tragbarkeit, ohne die üblichen Kompromisse für ultraportable Bildschirme und Tastaturen.</P>Der unglaublich dünne MacBook Air ist das Ergebnis zahlreicher Innovationen zur Größen- und Gewichtsoptimierung. Die flachere Festplatte, die strategisch versteckten I/O-Ports und eine noch flachere Batterie: Alles wurde immer wieder überdacht, immer mit dem Ziel, es noch dünner zu gestalten.</P>Das Design und Konzept von MacBook Air ist voll auf die Vorteile der Kabelfreiheit ausgerichtet. Eine Welt, in der 802.11n WLAN heutzutage so schnell und so leicht verfügbar ist, dass die Menschen heute grenzenlos Filme online kaufen oder mieten, Software downloaden und Dateien über das Internet teilen oder speichern können. </P>', 'MacBook Air is ultrathin, ultraportable, and ultra unlike anything else. But you donât lose inches and pounds overnight. Itâs the result of rethinking conventions. Of multiple wireless innovations. And of breakthrough design. With MacBook Air, mobile computing suddenly has a new standard.', 'macbook-Air', '', '', '', 'MacBook Air', '', NULL),
-(6, 4, 'Jedes MacBook verfügt über eine größere Festplatte, bis zu 250GB, zum Speichern immer größer werdender Mediensammlungen und wertvoller Daten.<br/><br/>Die 2,4 GHz MacBook-Modelle haben nun 2 GB Standard-Arbeitsspeicher - ideal zum reibungslosen Abspielen Ihrer Lieblings-Anwendungen.', 'MacBook makes it easy to hit the road thanks to its tough polycarbonate case, built-in wireless technologies, and innovative MagSafe Power Adapter that releases automatically if someone accidentally trips on the cord.', 'macbook', '', '', '', 'MacBook', '', NULL),
-(7, 4, '<h3>Fünf neue Hands-on-Anwendungen</h3>\r\n<p>Rich-HTML-E-Mails mit Fotos anzeigen sowie PDF-, Word-und Excel-Anhänge. Holen Sie sich Karten, Wegbeschreibungen und Echtzeit-Verkehrsinformationen. Sie können sich Notizen machen und Börsen- und Wetterberichte lesen.</P>\r\n<h3>Berühren Sie Ihre Musik, Filme und vieles mehr</h3>\r\n<p>Mit der revolutionären, in den wunderschönen 3,5-Zoll-Display integrierten Multi-Touch-Technologie können Sie  zuziehen, zoomen, scrollen und streichen.</p>\r\n<h3>Internet in Ihrer Tasche</h3>\r\n<p>Mit dem Safari-Webbrowser sehen Sie Webseiten so, wie sie gesehen werden sollten und vergrößern und verkleinern sie mit einer Berührung.<sup>2</sup>Fügen Sie Web-Clips zu Ihrer Startseite hinzu für den Schnellzugriff auf Ihre bevorzugten Webseiten.</p>\r\n<h3>Zum Set gehören/h3>\r\n<ul>\r\n<li><span></span>der iPod touch</li>\r\n<li><span></span>Ohrhörer</li>\r\n<li><span></span>USB 2.0-Kabel</li>\r\n<li><span></span>Anschluss-Adapter</li>\r\n<li><span></span>Poliertuch</li>\r\n<li><span></span>Basis</li>\r\n<li><span></span>Quick Start Guide</li>\r\n</ul>', '<ul>\r\n<li>Revolutionary Multi-Touch interface</li>\r\n<li>3.5-inch widescreen color display</li>\r\n<li>Wi-Fi (802.11b/g)</li>\r\n<li>8 mm thin</li>\r\n<li>Safari, YouTube, Mail, Stocks, Weather, Notes, iTunes Wi-Fi Music Store, Maps</li>\r\n</ul>', 'iPod-Touch', '', '', '', 'iPod touch', '', NULL),
-(8, 4, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'lederhulle-belkin-fur-ipod-nano-schwarz-schokolade', '', '', '', 'Lederhülle Belkin für ipod nano - Schwarz/Schokolade', '', NULL),
-(9, 4, '<div class="product-overview-full">Mit ihren hochauflösenden Micro-Lautsprechern, die vollen Klang liefern und ihrem ergonomischen, leichten Design sind die SE210 Ohrhörer ideal zum mobilen Extraklasse-Musik hören auf Ihrem iPod oder iPhone. Sie bieten die genaueste Tonwiedergabe, sowohl aus tragbaren als auch aus Home-Stereo-Audio-Quellen - für ultimative präzisen Höhen und kraftvolle Bässe. Darüber hinaus ermöglicht das flexible Design optimalen Tragekomfort durch eine Vielzahl von Tragemöglichkeiten. <br/><br/>Funktionen</strong><br/>\r\n<ul>\r\n<li>Klangisolierendes Design</li>\r\n<li>Hochauflösende Micro-Lautsprecher mit Single Balanced Armature-Treiber</li>\r\n<li>Abnehmbare modulare Kabel, die Sie je nach Aktivität länger oder kürzer einstellen können</li>\r\n<li>Kompatibler Stecker mit Kopfhörer-Anschlüssen für iPod und iPhone</li>\r\n</ul>\r\n<strong>Daten</strong><br/>\r\n<ul>\r\n<li>Lautsprecher-Typ: Hochauflösende Micro-Lautsprecher</li>\r\n<li> Frequenzbereich: 25Hz-18.5kHz </li>\r\n<li>Impedanz (1kHz): 26 Ohm </li>\r\n<li>Empfindlichkeit (1mW): 114 dB SPL/mW</li>\r\n<li> Kabellänge (mit Erweiterung): 18,0 Zoll/45,0 cm (54,0 Zoll/137,1 cm) </li>\r\n</ul>\r\n<strong>Im Set enthalten</strong><br/>\r\n<ul>\r\n<li>Shure SE210 Ohrhörer </li>\r\n<li> Verlängerungskabel (36,0 Zoll/91,4 cm) </li>\r\n<li> Drei Paar Schaumstoff-Hörmuschelhüllen (klein, mittel, groß) </li>\r\n<li> Drei Paar weiche Flex-Hörmuschelhüllen (klein, mittel, groß) </li>\r\n<li> Ein Paar Triple-Flange-Hörmuschelhüllen </li>\r\n<li> Trage-Etui </li>\r\n</ul>\r\nGarantie<br /> Zwei Jahre <br />(Einzelheiten hierzu finden Sie auf <br />www.shure.com/PersonalAudio/CustomerSupport/ProductReturnsAndWarranty/index.htm). <br /><br /> Mfr. Teilenummer: SE210-A-EFS <br /><br />Hinweis: Für Produkte auf dieser Website, die nicht den Markennamen Apple tragen, werden Service und Support ausschließlich von den Herstellern gemäß der den Produkten beiliegenden Nutzungsbedingungen übernommen. Die von Apple angebotene Garantiezeit gilt nicht für Produkte, die kein Apple-Markenzeichen tragen, selbst wenn diese zusammen mit Apple-Produkten verpackt oder verkauft wurden. Bitte wenden Sie sich direkt an den Hersteller für den technischen Support und Kundendienst.</div>', '<p>Evolved from personal monitor technology road-tested by pro musicians and perfected by Shure engineers, the lightweight and stylish SE210 delivers full-range audio that''s free from outside noise.</p>', 'klangisolierte-ohrhorer-shure-se210-weib', '', '', '', 'Shure SE210 Klangisolierte Ohrhörer für iPod und iPhone', '', NULL),
-(1, 5, '<p><strong><span style="font-size: small;">Curve mozzafiato.</span></strong></p>\r\n<p>Per te che ami le sensazioni forti, ecco nove fantastici colori. Ma non è finito qui. Accarezza il design sinuoso fatto di vetro e alluminio dell\'iPod nano, e non lo lascerai più.</p>\r\n<p><strong><span style="font-size: small;">Bello e intelligente.</span></strong></p>\r\n<p>La nuova funzione Genius trasforma l\'iPod nano nel tuo DJ personale. Sa creare delle playlist andando a cercare nella libreria musicale le canzoni che stanno bene insieme.</p>\r\n<p><strong><span style="font-size: small;">Fatto per muoversi con te.</span></strong></p>\r\n<p>L\'accelerometro è integrato all\'iPod nano. Scuotilo per dare uno shuffle alla tua musica. Ruotalo di lato per vedere il Cover Flow. E divertiti con i giochi adattati alle tue movenze.</p>', '<p>Nuovo design. Nuove funzioni. Adesso in 8GB e 16GB. iPod nano, forte come non mai.</p>', 'ipod-nano', '', '', '', 'iPod Nano', 'In magazzino', ''),
-(2, 5, '<p><span style="font-size: small;"><strong>Sempre attaccato.</strong></span></p>\r\n<p>Metti 500 canzoni in tasca. O nella cintura. O nei pantaloncini. iPod shuffle ti fa avere le canzoni sempre addosso. Adesso in colori più nuovi e brillanti.</p>\r\n<p><span style="font-size: small;"><strong>Ricarica il tuo iPod shuffle.</strong></span></p>\r\n<p>iTunes è il tuo superstore del divertimento. La tua raccolta musicale super organizzata, il tuo juke-box. E puoi ricaricare il tuo iPod shuffle con un click.</p>\r\n<p><span style="font-size: small;"><strong>Musica coloratissima.</strong></span></p>\r\n<p>Complementi dai colori intensi in alluminio anodizzato: questo è il design semplice di iPod shuffle. Adesso in blu, verde rosa, rosso, e argento originale.</p>', '<p>iPod shuffle, il lettore musicale più indossabile del mondo, adesso anche nelle tonalità più vibranti di blu, verde, rosa e rosso.</p>', 'ipod-shuffle', '', '', '', 'iPod shuffle', 'In magazzino', ''),
-(5, 5, '<p>MacBook Air è sottile quasi come il tuo indice. Praticamente ogni dettaglio è stato semplificato al massimo. Eppure riesce ad avere uno schermo LED di 13,3 pollici, tastiera completa, e un ampio track-pad multi-touch. Incredibilmente portatile, non soffre dei compromessi tra schermo e tastiera.</p><p>La sottigliezza incredibile di MacBook Air è il risultato di moltissime innovazioni nel campo della riduzione di dimensioni e peso. Un hard drive più sottile, porte I/O strategicamente nascoste, batteria più piatta: tutto è stato ben calibrato pensando sempre alla sottigliezza.</p><p>MacBook Air è stato progettato e realizzato per godere a pieno dell\'universo del wireless. In un mondo in cui la norma 802.11n Wi-Fi è ormai rapida e disponibile, le persone vivono connesse -  acquistano e noleggiano film online,  scaricano programmi, condividono e conservano file nel web. </p>', 'MacBook Air è ultra-piatto, ultra-portatile, e ultra come nient\'altro al mondo.  Ma non si perdono chili e centimetri in una notte. E\' il risultato di una rielaborazione degli standard. Di moltissime innovazioni sul wireless. E di un design rivoluzionario. Con MacBook Air, l\'informatica mobile acquista una nuova dimensione.', 'macbook-air', '', '', '', 'MacBook Air', '', NULL),
-(6, 5, 'Tutti i MacBook hanno un hard drive più ampio, fino a 250GB, per conservare le tue raccolte multimediali e i dati importanti.<br /><br />I modelli MacBook a 2,4GHz  ora includono 2GB di memoria standard — ideale per le tue applicazioni preferite.', 'MacBook ti offre il massimo della libertà di movimento grazie alla sua struttura resistente in policarbonato, alle tecnologie integrate wireless, e all\'innovativo MagSafe Power Adapter che si stacca automaticamente se qualcuno accidentalmente inciampa nel cavo.', 'macbook', '', '', '', 'MacBook', '', NULL),
-(7, 5, '<h3>Cinque nuove applicazioni sotto mano</h3>\r\n<p>Consulta le tue e-mail in formato rich HTML con foto e allegati PDF, Word, e Excel. Ottieni mappe, indicazioni stradali e sul traffico in tempo reale.  Prendi appunti e consulta la Borsa e le previsioni meteo.</p>\r\n<h3>Tocca la musica, i film e altro ancora</h3>\r\n<p>La rivoluzionaria tecnologia Multi-Touch integrata al bellissimo schermo da 3,5 pollici ti permette di zoomare avanti e indietro, sfogliare e far scorrere le pagine con le dita.</p>\r\n<h3>Internet in tasca</h3>\r\n<p>Con il web browser Safari, consulta i siti web nella loro impaginazione originale e usa lo zoom avanti e indietro con la sola pressione delle dita.<sup>2</sup> Aggiungi Web Clips al tuo schermo per accedere subito ai siti preferiti.</p>\r\n<h3>Nella confezione</h3>\r\n<ul>\r\n<li><span></span>iPod touch</li>\r\n<li><span></span>Auricolari</li>\r\n<li><span></span>Cavo USB 2.0</li>\r\n<li><span></span>Adattatore Dock</li>\r\n<li><span></span>Panno per la pulizia</li>\r\n<li><span></span>Supporto</li>\r\n<li><span></span>Guida installazione rapida</li>\r\n</ul>', '<ul>\r\n<li>Interfaccia Multi-Touch rivoluzionaria</li>\r\n<li>Schermo widescreen a colori da 3,5 pollici</li>\r\n<li>Wi-Fi (802.11b/g)</li>\r\n<li>8 mm di spessore</li>\r\n<li>Safari, YouTube, Mail, Borsa, Meteo, Appunti, iTunes Wi-Fi Music Store, Mappe</li>\r\n</ul>', 'ipod-touch', '', '', '', 'iPod touch', '', NULL),
-(8, 5, '<p>Lorem ipsum</p>', '<p>Lorem ipsum</p>', 'custodia-portafoglio-in-pelle-belkin-per-ipod-nano-nero-cioccolato', '', '', '', 'Custodia portafoglio in pelle Belkin per iPod nano - Nero/Cioccolato', '', NULL),
-(9, 5, '<div class="product-overview-full">L\'ascolto con la tecnologia dei Micro-Auricolari ad Alta Definizione permette l\'ascolto ideale del tuo iPod o iPhone. E\' quanto ti offre il design leggero, ergonomico ed elegante degli auricolari SE210. Ti garantiscono un rendimento audio ad alto livello di stereo portatili e fissi, per un livello di precisione mai raggiunto prima.  Inoltre, la forma flessibile ti peremtte di scegliere la posizione migliore per indossarli. <br /> <br /> <strong>Caratteristiche</strong> <br /> \r\n<ul>\r\n<li>Design di isolamento del suono </li>\r\n<li> Micro-speaker ad alta definizione con driver singolo ad armatura bilanciata </li>\r\n<li> Cavo staccabile e regolabile in modo da poterlo allungare o accorciare in base alle tue attività </li>\r\n<li> Connettore compatibile con porte auricolari sia su iPod che iPhone </li>\r\n</ul>\r\n<strong>Specifiche tecniche </strong><br /> \r\n<ul>\r\n<li>Tipo speaker: MicroSpeaker ad alta definizione</li>\r\n<li> Gamma di frequenza: 25Hz-18.5kHz </li>\r\n<li> Impedenza (1kHz): 26 Ohms </li>\r\n<li> Sensibilità (1mW): 114 dB SPL/mW </li>\r\n<li> Lunghezza cavo (con prolunga): 18.0 in./45,0 cm (54.0 in./137,1 cm) </li>\r\n</ul>\r\n<strong>Nella confezione</strong><br /> \r\n<ul>\r\n<li>Auricolari Shure SE210 </li>\r\n<li> Cavo prolunga (36.0 in./91,4 cm) </li>\r\n<li> Tre paia di imbuti in spugna (small, medium, large) </li>\r\n<li> Tre paia di imbuti morbidi (small, medium, large) </li>\r\n<li> Un paio di imbuti a tripla aletta </li>\r\n<li> Custodia da viaggio </li>\r\n</ul>\r\nGaranzia<br /> Due anni limitata <br />(Per informazioni, visitare <br />www.shure.com/PersonalAudio/CustomerSupport/ProductReturnsAndWarranty/index.htm.) <br /><br /> Mfr. Parte N.: SE210-A-EFS <br /><br />Nota: I prodotti venduti tramite questo sito web e che non hanno il marchio Apple ricevono assistenza esclusivamente dai loro produttori con i termini e le condizioni contenute nella confezione del prodotto.  La Garanzia Limitata di Apple non si applica ai prodotti che non appartengono al marchio Apple, anche se imballati o venduti con i prodotti Apple . Contatta direttamente il produttore per supporto tecnico e servizio clienti.</div>', '<p>Basati sulla tecnologia all\'avanguardia, testati da musicisti professionisti, e messi a punto da ingegneri Shure, i leggeri ed eleganti SE210 offrono un suono nitido e privo di rumori di fondo.</p>', 'ecouteurs-a-isolation-sonore-shure-se210-blanc', '', '', '', 'auricolari-sound-isolating-shure-se210-per-ipod-e-iphone', '', NULL);
+(9, 3, '<p>Los auriculares SE210, ligeros y elegantes, están basados en la tecnología de los monitores personales que los músicos profesionales utilizan en carretera y que los ingenieros de Shure han perfeccionado. También están provistos de una salida audio de gama extendida exenta de todo ruido exterior. <br /> <br /> <strong>Creado para un aislamiento sonoro</strong></p>\r\n<p>Las almohadillas provistas de un aislamiento sonoro bloquean más del 90% del ruido ambiente. Combinadas con un diseño ergonómico atractivo y un cable modular, minimizan las intrusiones del mundo exterior y te permiten concentrarte en tu música. Creados para los apasionados por la música que quieren que su aparato audio móvil evolucione, los auriculares  SE210 te permitirán llevar la tecnología allí donde tú vayas. <br /> <br /> <strong>Micro-transductor alta definición </strong><br /> Desarrollados para poder tener una audición de calidad durante los desplazamientos, los auriculares SE210 utilizan un único transductor con un armazón equilibrado para poder disfrutar de una gama audio extendida. ¿El resultado ? Un confort audio increíble que restituye cada detalle de un espectáculo en directo. <br /> <br /> <strong>El kit universal Deluxe incluye los siguientes elementos :</strong><br /> - Almohadillas para aislamiento sonoro<br /> Las almohadillas para el aislamiento sonoro tienen una doble función : bloquear el ruido ambiente y garantizar una estabilidad y un confort personalizados. Como cada oreja es diferente el kit universal Deluxe incluye tres tallas (S, M, L) de almohadillas de espuma y flexibles. Elige la talla y el estilo de almohadilla que mejor te convenga : un buen aislamiento es un factor clave tanto para optimizar el aislamiento sonoro y la respuesta de los bajos como para aumentar el confort durante una audición prolongada. <br /> <br /> - Cable modular</p>\r\n<p>Basándose en los comentarios de los numerosos usuarios, los ingenieros de Shure han creado una solución de cable separable para permitir un grado de personalización sin precedentes. El cable de 1 metro te permite adaptar el confort en función de la actividad del momento y de la aplicación. <br /> <br /> - Estuche para el transporte</p>\r\n<p>Además de las almohadillas de aislamiento sonoro y del cable modular, los auriculares SE210 están provistos de un estuche de transporte compacto y resistente para guardar los auriculares de manera práctica y sin dificultad. <br /> - Garantía límite de dos años <br /> Cada solución SE210 tiene una garantía piezas y mano de obra de dos años.</p>\r\n<p><br /> <em><strong>Características técnicas</strong></em></p>\r\n<ul>\r\n<li>Tipo de transductor : micro-transductor alta definición</li>\r\n<li>Sensibilidad (1 mW) : presión acústica de 114 dB/mW</li>\r\n<li>Impedancia : (à 1 kHz) : 26 W</li>\r\n<li>Gama de frecuencias : 25 Hz ˆ 18,5 kHz</li>\r\n<li>Longitud del cable / con alargador : 45 cm / 136 cm</li>\r\n</ul>\r\n<p><br /> <strong><em>Contenido de la caja</em></strong></p>\r\n<ul>\r\n<li>Altavoces Shure SE210</li>\r\n<li>Kit universal Deluxe (almohadillas de aislamiento sonoro, cable modular, estuche de transporte)</li>\r\n</ul>', '<p>Los auriculares con aislamiento ergonómicos y ligeros ofrecen la reproducción más fiel proveniente de fuentes audio estéreo móviles o de salón.</p>', 'auriculares-aislantes-del-sonido-shure-se210', '', '', '', 'Auriculares aislantes del sonido Shure SE210', 'Disponible', '');
 
-INSERT INTO `PREFIX_specific_price` (`id_product`, `id_shop`, `id_currency`, `id_country`, `id_group`, `price`, `from_quantity`, `reduction`, `reduction_type`, `from`, `to`) VALUES
-(1, 0, 0, 0, 0, 0, 1, 0.05, 'percentage', '0000-00-00 00:00:00', '0000-00-00 00:00:00');
+INSERT INTO `PREFIX_category` VALUES (2, 1, 1, 1, NOW(), NOW()),(3, 1, 1, 1, NOW(), NOW()),(4, 1, 1, 1, NOW(), NOW());
 
-INSERT INTO `PREFIX_category` (`id_category`, `id_parent`, `level_depth`, `nleft`, `nright`, `active`, `date_add`, `date_upd`, `position`) VALUES
-(2, 1, 1, 2, 3, 1, NOW(), NOW(), 0),(3, 1, 1, 4, 5, 1, NOW(), NOW(), 1),(4, 1, 1, 6, 7, 1, NOW(), NOW(), 2);
-
-INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `description`, `link_rewrite`, `meta_title`, `meta_keywords`, `meta_description`) VALUES
+INSERT INTO `PREFIX_category_lang` VALUES
 (2, 1, 'iPods', 'Now that you can buy movies from the iTunes Store and sync them to your iPod, the whole world is your theater.', 'music-ipods', '', '', ''),
 (2, 2, 'iPods', 'Il est temps, pour le meilleur lecteur de musique, de remonter sur scène pour un rappel. Avec le nouvel iPod, le monde est votre scène.', 'musique-ipods', '', '', ''),
 (3, 1, 'Accessories', 'Wonderful accessories for your iPod', 'accessories-ipod', '', '', ''),
@@ -257,22 +158,16 @@ INSERT INTO `PREFIX_category_lang` (`id_category`, `id_lang`, `name`, `descripti
 (4, 2, 'Portables', 'Le tout dernier processeur Intel, un disque dur plus spacieux, de la mémoire à profusion et d''autres nouveautés. Le tout, dans à peine 2,59 cm qui vous libèrent de toute entrave. Les nouveaux portables Mac réunissent les performances, la puissance et la connectivité d''un ordinateur de bureau. Sans la partie bureau.', 'portables-apple', 'Portables Apple', 'portables apple macbook air', 'portables apple puissants et design'),
 (4, 3, 'Portátiles', 'El último procesador Intel, un disco duro más grande, con profusión de memoria y otras novedades. Todo en sólo 2,59 cm libres de cualquier obstrucción. Las nuevas portátiles Mac cumplir rendimiento, potencia y conectividad de una computadora de escritorio. Sin la parte del escritorio.', 'portatiles-apple', 'Portátiles Apple', 'portátiles apple macbook air', 'portátiles apple poderoso y el diseño'),
 (3, 3, 'Accesorios', 'Todos los accesorios de moda para tu iPod', 'ipod-accesorios', '', '', ''),
-(2, 3, 'iPods', 'Es hora de que el mejor jugador de la música, al escenario para hacer un bis. Con el nuevo iPod, el mundo es tu escenario.', 'musica-ipods', '', '', ''),
-(2, 4, 'iPods', 'Now that you can buy movies from the iTunes Store and sync them to your iPod, the whole world is your theater.', 'musik-iPods', '', '', ''),
-(3, 4, 'Zubehör', 'Wonderful accessories for your iPod', 'zubehor-ipod', '', '', ''),
-(4, 4, 'Laptops', 'The latest Intel processor, a bigger hard drive, plenty of memory, and even more new features all fit inside just one liberating inch. The new Mac laptops have the performance, power, and connectivity of a desktop computer. Without the desk part.', 'laptops', 'Apple laptops', 'Apple MacBook Air-Laptops', 'Powerful and chic Apple laptops'),
-(2, 5, 'iPods', 'Adesso che puoi acquistare film dall\'iTunes Store e inserirli nel tuo iPod, il tuo mondo è un palcoscenico.', 'musica-ipods', '', '', ''),
-(3, 5, 'Accessori', 'Fantastici accessori per il tuo iPod', 'accessori-ipod', '', '', ''),
-(4, 5, 'Laptop', 'L\'ultimissimo processore Intel, hard drive più ampio, moltissima memoria, e ancora più funzioni tutte inserite in 2,54 centimetri. I nuovi laptop Mac offrono le prestazioni, la potenza e la connettività di un computer da tavolo. Senza bisogno del tavolo.', 'laptop', 'laptop Apple', 'laptot Apple MacBook Air', 'Laptop Apple potenti ed eleganti');
+(2, 3, 'iPods', 'Es hora de que el mejor jugador de la música, al escenario para hacer un bis. Con el nuevo iPod, el mundo es tu escenario.', 'musica-ipods', '', '', '');
 
-INSERT INTO `PREFIX_category_product` (`id_category`, `id_product`, `position`) VALUES
+INSERT INTO `PREFIX_category_product` (`id_category`, `id_product`, `position`) VALUES 
 (1, 1, 0),(1, 2, 1),(1, 6, 2),(1, 7, 3),(2, 1, 0),(2, 2, 1),(2, 7, 2),(3, 8, 0),(3, 9, 1),(4, 5, 0),(4, 6, 1);
 
 INSERT INTO `PREFIX_attribute_group` (`id_attribute_group`, `is_color_group`) VALUES (1, 0),(2, 1),(3, 0);
 
-INSERT INTO `PREFIX_attribute_group_lang` (`id_attribute_group`, `id_lang`, `name`, `public_name`) VALUES
+INSERT INTO `PREFIX_attribute_group_lang` VALUES
 (1, 1, 'Disk space', 'Disk space'),(1, 2, 'Capacité', 'Capacité'),(2, 1, 'Color', 'Color'),(2, 2, 'Couleur', 'Couleur'),(3, 1, 'ICU', 'Processor'),
-(3, 2, 'ICU', 'Processeur'),(1, 3, 'Capacidad', 'Capacidad'),(2, 3, 'Color', 'Color'),(3, 3, 'ICU', 'Procesador'),(1, 4, 'Speicherplatz', 'Disk space'),(2, 4, 'Farbe', 'Color'),(3, 4, 'ICU', 'Processor'),(1, 5, 'Spazio disco', 'Spazio disco'),(2, 5, 'Colore', 'Colore'),(3, 5, 'ICU', 'Processore');
+(3, 2, 'ICU', 'Processeur'),(1, 3, 'Capacidad', 'Capacidad'),(2, 3, 'Color', 'Color'),(3, 3, 'ICU', 'Procesador');
 
 INSERT INTO `PREFIX_attribute_impact` (`id_attribute_impact`, `id_product`, `id_attribute`, `weight`, `price`) VALUES
 (1, 1, 2, 0, 60.00),(2, 1, 5, 0, 0.00),(3, 1, 16, 0, 50.00),(4, 1, 15, 0, 0.00),(5, 1, 4, 0, 0.00),(6, 1, 19, 0, 0.00),(7, 1, 3, 0, 0.00),(8, 1, 14, 0, 0.00),
@@ -283,9 +178,9 @@ INSERT INTO `PREFIX_scene` (`id_scene`, `active`) VALUES (1, 1),(2, 1),(3, 1);
 INSERT INTO `PREFIX_scene_category` (`id_scene`, `id_category`) VALUES (1, 2),(2, 2),(3, 4);
 
 INSERT INTO `PREFIX_scene_lang` (`id_scene`, `id_lang`, `name`) VALUES
-(1, 1, 'The iPods Nano'),(1, 2, 'Les iPods Nano'),(1, 3, 'El iPod Nano'),(1, 4, 'Die iPods Nano'),(1, 5, 'Gli iPod Nano'),
-(2, 1, 'The iPods'),(2, 2, 'Les iPods'),(2, 3, 'El iPod'),(2, 4, 'Die iPods'),(2, 5, 'Gli iPod'),
-(3, 1, 'The MacBooks'),(3, 2, 'Les MacBooks'),(3, 3, 'El MacBook'),(3, 4, 'Die MacBooks'),(3, 5, 'I MacBook');
+(1, 1, 'The iPods Nano'),(1, 2, 'Les iPods Nano'),(1, 3, 'El iPod Nano'),
+(2, 1, 'The iPods'),(2, 2, 'Les iPods'),(2, 3, 'El iPod'),
+(3, 1, 'The MacBooks'),(3, 2, 'Les MacBooks'),(3, 3, 'El MacBook');
 
 INSERT INTO `PREFIX_scene_products` (`id_scene`, `id_product`, `x_axis`, `y_axis`, `zone_width`, `zone_height`) VALUES
 (1, 1, 474, 15, 72, 166),(2, 2, 389, 137, 51, 46),(2, 7, 111, 83, 161, 108),(2, 1, 340, 31, 46, 151),(3, 6, 355, 37, 151, 103),(3, 6, 50, 47, 128, 84),
@@ -303,47 +198,39 @@ INSERT INTO `PREFIX_attribute_lang` VALUES (1, 1, '2GB'),(1, 2, '2Go'),(1, 3, '2
 (10, 2, 'Intel Core 2 Duo à 1,6 GHz'),(10, 3, 'Intel Core 2 Duo para 1,6 GHz'),(11, 1, '1.80GHz Intel Core 2 Duo'),(11, 2, 'Intel Core 2 Duo à 1,8 GHz'),
 (11, 3, 'Intel Core 2 Duo para 1,8 GHz'),(12, 1, '80GB: 20,000 Songs'),(12, 2, '80 Go : 20 000 chansons'),(12, 3, '80 Go : 20 000 canciones'),(13, 1, '160GB: 40,000 Songs'),
 (13, 2, '160 Go : 40 000 chansons'),(13, 3, '160 Go : 40 000 canciones'),(14, 2, 'Noir'),(14, 3, 'Negro'),(14, 1, 'Black'),(15, 1, '8Go'),(15, 2, '8Go'),(15, 3, '8Go'),
-(16, 1, '16Go'),(16, 2, '16Go'),(16, 3, '16Go'),(17, 1, '32Go'),(17, 2, '32Go'),(17, 3, '32Go'),(1, 4, '2GB'),(2, 4, '4GB'),(3, 4, 'Metallic'),
-(4, 4, 'Blau'),(5, 4, 'Pink'),(6, 4, 'Grün'),(7, 4, 'Orange'),(8, 4, 'Optionale 64 GB Solid-State-Drive'),
-(9, 4, 'Parallele ATA 80GB Drive @ 4200 rpm'),(10, 4, '1.60GHz Intel Core 2 Duo'),
-(11, 4, '1.80GHz Intel Core 2 Duo'),(12, 4, '80GB: 20.000 Songs'),(13, 4, '160GB: 40.000 Songs'),(14, 4, 'Schwarz'),(15, 4, '8Go'),
-(16, 4, '16Go'),(17, 4, '32Go'),(1, 5, '2GB'),(2, 5, '4GB'),(3, 5, 'Metallico'),
-(4, 5, 'Blu'),(5, 5, 'Rosa'),(6, 5, 'Verde'),(7, 5, 'Arancio'),(8, 5, 'Opzionale solid-state drive 64GB'),
-(9, 5, '80GB Parallel ATA Drive @ 4200 rpm'),(10, 5, '1.60GHz Intel Core 2 Duo'),
-(11, 5, '1.80GHz Intel Core 2 Duo'),(12, 5, '80GB: 20.000 canzoni'),(13, 5, '160GB: 40,000 canzoni'),(14, 5, 'Nero'),(15, 5, '8Go'),
-(16, 5, '16Go'),(17, 5, '32Go');
+(16, 1, '16Go'),(16, 2, '16Go'),(16, 3, '16Go'),(17, 1, '32Go'),(17, 2, '32Go'),(17, 3, '32Go');
 
 INSERT INTO `PREFIX_attribute_lang` (`id_attribute`, `id_lang`, `name`) VALUES
-(18, 1, 'Purple'),(18, 2, 'Violet'),(18, 3, 'Violeta'),(19, 1, 'Yellow'),(19, 2, 'Jaune'),(19, 3, 'Amarillo'),(20, 1, 'Red'),(20, 2, 'Rouge'),(20, 3, 'Rojo'),(18, 4, 'Violett'),(19, 4, 'Gelb'),(20, 4, 'Rot'),(18, 5, 'Viola'),(19, 5, 'Giallo'),(20, 5, 'Rosso');
+(18, 1, 'Purple'),(18, 2, 'Violet'),(18, 3, 'Violeta'),(19, 1, 'Yellow'),(19, 2, 'Jaune'),(19, 3, 'Amarillo'),(20, 1, 'Red'),(20, 2, 'Rouge'),(20, 3, 'Rojo');
 
-INSERT INTO `PREFIX_product_attribute` (`id_product_attribute`, `id_product`, `reference`, `supplier_reference`, `ean13`, `wholesale_price`, `price`, `ecotax`, `quantity`, `weight`, `default_on`, `minimal_quantity`) VALUES
-(30, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(29, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(28, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(27, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(26, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(25, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 4),
-(7, 2, '', '', '', 0.000000, 0.00, 0.00, 10, 0, 0, 1),
-(8, 2, '', '', '', 0.000000, 0.00, 0.00, 20, 0, 1, 1),
-(9, 2, '', '', '', 0.000000, 0.00, 0.00, 30, 0, 0, 1),
-(10, 2, '', '', '', 0.000000, 0.00, 0.00, 40, 0, 0, 1),
-(12, 5, '', NULL, '', 0.000000, 751.672241, 0.00, 100, 0, 0, 1),
-(13, 5, '', NULL, '', 0.000000, 0.00, 0.00, 99, 0, 1, 1),
-(14, 5, '', NULL, '', 0.000000, 225.752508, 0.00, 50, 0, 0, 1),
-(15, 5, '', NULL, '', 0.000000, 977.424749, 0.00, 25, 0, 0, 1),
-(23, 7, '', NULL, '', 0.000000, 150.501672, 0.00, 70, 0, 0, 1),
-(22, 7, '', NULL, '', 0.000000, 75.250836, 0.00, 60, 0, 0, 1),
-(19, 7, '', NULL, '', 0.000000, 0.00, 0.00, 50, 0, 1, 1),
-(31, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 1, 1),
-(32, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(33, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(34, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(35, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(36, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(39, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(40, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1),
-(41, 1, '', '', '', 0.000000, 41.806020, 0.00, 50, 0, 0, 1),
-(42, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0, 1);
+INSERT INTO `PREFIX_product_attribute` (`id_product_attribute`, `id_product`, `reference`, `supplier_reference`, `ean13`, `wholesale_price`, `price`, `ecotax`, `quantity`, `weight`, `default_on`) VALUES
+(30, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(29, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(28, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(27, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(26, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(25, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(7, 2, '', '', '', 0.000000, 0.00, 0.00, 10, 0, 0),
+(8, 2, '', '', '', 0.000000, 0.00, 0.00, 20, 0, 1),
+(9, 2, '', '', '', 0.000000, 0.00, 0.00, 30, 0, 0),
+(10, 2, '', '', '', 0.000000, 0.00, 0.00, 40, 0, 0),
+(12, 5, '', NULL, '', 0.000000, 899.00, 0.00, 100, 0, 0),
+(13, 5, '', NULL, '', 0.000000, 0.00, 0.00, 99, 0, 1),
+(14, 5, '', NULL, '', 0.000000, 270.00, 0.00, 50, 0, 0),
+(15, 5, '', NULL, '', 0.000000, 1169.00, 0.00, 25, 0, 0),
+(23, 7, '', NULL, '', 0.000000, 180.00, 0.00, 70, 0, 0),
+(22, 7, '', NULL, '', 0.000000, 90.00, 0.00, 60, 0, 0),
+(19, 7, '', NULL, '', 0.000000, 0.00, 0.00, 50, 0, 1),
+(31, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 1),
+(32, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(33, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(34, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(35, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(36, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(39, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(40, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0),
+(41, 1, '', '', '', 0.000000, 50.00, 0.00, 50, 0, 0),
+(42, 1, '', '', '', 0.000000, 0.00, 0.00, 50, 0, 0);
 
 INSERT INTO `PREFIX_product_attribute_image` (`id_product_attribute`, `id_image`) VALUES (30, 44),(29, 44),(28, 45),(27, 45),(26, 38),(25, 38),(7, 46),(8, 47),(9, 49),
 (10, 48),(12, 0),(13, 0),(14, 0),(15, 0),(23, 0),(22, 0),(19, 0),(31, 37),(32, 37),(33, 40),(34, 40),(35, 41),(36, 41),(39, 39),(40, 39),(41, 42),(42, 42);
@@ -356,45 +243,46 @@ INSERT INTO `PREFIX_feature` (`id_feature`) VALUES (1), (2), (3), (4), (5);
 
 INSERT INTO `PREFIX_feature_lang` (`id_feature`, `id_lang`, `name`) VALUES
 (1, 1, 'Height'), (1, 2, 'Hauteur'),(2, 1, 'Width'), (2, 2, 'Largeur'),(3, 1, 'Depth'), (3, 2, 'Profondeur'),(4, 1, 'Weight'), (4, 2, 'Poids'),(5, 1, 'Headphone'), (5, 2, 'Prise casque'),
-(1, 3, 'Alto'),(2, 3, 'Ancho'),(3, 3, 'Profundo'),(4, 3, 'Peso'),(5, 3, 'Toma auriculares'),
-(1, 4, 'Höhe'),(2, 4, 'Breite'),(3, 4, 'Tiefe'),(4, 4, 'Gewicht'),(5, 4, 'Kopfhörer'),
-(1, 5, 'Altezza'),(2, 5, 'Larghezza'),(3, 5, 'Profondità'),(4, 5, 'Peso'),(5, 5, 'Auricolare');
+(1, 3, 'Alto'),(2, 3, 'Ancho'),(3, 3, 'Profundo'),(4, 3, 'Peso'),(5, 3, 'Toma auriculares');
 
 INSERT INTO `PREFIX_feature_product` (`id_feature`, `id_product`, `id_feature_value`) VALUES
 (1, 1, 11),(1, 2, 15),(2, 1, 12),(2, 2, 16),(3, 1, 14),(3, 2, 18),(4, 1, 13),(4, 2, 17),(5, 1, 10),(5, 2, 10),(3, 7, 26),(5, 7, 9),(4, 7, 25),(2, 7, 24),(1, 7, 23);
 
 INSERT INTO `PREFIX_feature_value` (`id_feature_value`, `id_feature`, `custom`) VALUES
-(11, 1, 1),(15, 1, 1),(12, 2, 1),(16, 2, 1),(14, 3, 1),(18, 3, 1),(13, 4, 1),(17, 4, 1),(26, 3, 1),(25, 4, 1),(24, 2, 1),(23, 1, 1),(9, 5, 0),(10, 5, 0);
+(11, 1, 1),(15, 1, 1),(12, 2, 1),(16, 2, 1),(14, 3, 1),(18, 3, 1),(13, 4, 1),(17, 4, 1),(26, 3, 1),(25, 4, 1),(24, 2, 1),(23, 1, 1);
+
+INSERT INTO `PREFIX_feature_value` (`id_feature_value`, `id_feature`, `custom`) VALUES (9, 5, NULL), (10, 5, NULL);
 
 INSERT INTO `PREFIX_feature_value_lang` (`id_feature_value`, `id_lang`, `value`) VALUES
-(13, 1, '49.2 g'),(13, 2, '49,2 g'),(13, 3, '49,2 g'),(13, 4, '49.2 g'),(13, 5, '49.2 g'),(12, 2, '52,3 mm'),(12, 1, '2.06 in'),(12, 3, '52.3 mm'),(12, 4, '52.3 mm'),(12, 5, '52.3 mm'),(11, 2, '69,8 mm'),(11, 1, '2.75 in'),(11, 3, '69.8 mm'),(11, 4, '69.8 mm'),(11, 5, '69.8 mm'),
-(17, 2, '15,5 g'),(17, 1, '15.5 g'),(17, 3, '15.5 g'),(17, 4, '15.5 g'),(17, 5, '15.5 g'),(16, 2, '41,2 mm'),(16, 1, '1.62 in'),(16, 3, '41.2 mm'),(16, 4, '41.2 mm'),(16, 5, '41.2 mm'),(15, 2, '27,3 mm'),(15, 1, '1.07 in'),(15, 3, '27.3 mm'),(15, 4, '27.3 mm'),(15, 5, '27.3 mm'),(9, 1, 'Jack stereo'),(9, 4, 'Jack stereo'),(9, 5, 'Jack stereo'),
-(9, 2, 'Jack stéréo'),(9, 3, 'Jack stereo'),(10, 1, 'Mini-jack stereo'),(10, 2, 'Mini-jack stéréo'),(10, 3, 'Mini-jack stéréo'),(10, 4, 'Mini-jack stéréo'),(10, 5, 'Mini-jack stéréo'),(14, 1, '0.26 in'),(14, 2, '6,5 mm'),(14, 3, '6,5 mm'),(14, 4, '6,5 mm'),(14, 5, '6,5 mm'),(18, 4, '10,5 mm'),(18, 5, '10,5 mm)'),
-(18, 1, '0.41 in (clip included)'),(18, 2, '10,5 mm (clip compris)'),(18, 3, '10,5 mm (clip incluyendo)'),(26, 2, '8 mm'),(26, 1, '0.31 in'),(26, 3, '8 mm'),(26, 4, '8 mm'),(26, 5, '8 mm'),(25, 2, '120g'),(25, 3, '120g'),(25, 4, '120g'),(25, 5, '120g'),(25, 1, '120g'),(24, 2, '70 mm'),(24, 1, '2.76 in'),(24, 3, '70 mm'),(24, 4, '70 mm'),(24, 5, '70 mm'),
-(23, 2, '110 mm'),(23, 3, '110 mm'),(23, 1, '4.33 in'),(23, 4, '4.33 in'),(23, 5, '4.33 in');
+(13, 1, '49.2 grams'),(13, 2, '49,2 grammes'),(13, 3, '49,2 g'),(12, 2, '52,3 mm'),(12, 1, '52.3 mm'),(12, 3, '52.3 mm'),(11, 2, '69,8 mm'),(11, 1, '69.8 mm'),(11, 3, '69.8 mm'),
+(17, 2, '15,5 g'),(17, 1, '15.5 g'),(17, 3, '15.5 g'),(16, 2, '41,2 mm'),(16, 1, '41.2 mm'),(16, 3, '41.2 mm'),(15, 2, '27,3 mm'),(15, 1, '27.3 mm'),(15, 3, '27.3 mm'),(9, 1, 'Jack stereo'),
+(9, 2, 'Jack stéréo'),(9, 3, 'Jack stereo'),(10, 1, 'Mini-jack stereo'),(10, 2, 'Mini-jack stéréo'),(10, 3, 'Mini-jack stéréo'),(14, 1, '6,5 mm'),(14, 2, '6,5 mm'),(14, 3, '6,5 mm'),
+(18, 1, '10,5 mm (clip compris)'),(18, 2, '10,5 mm (clip compris)'),(18, 3, '10,5 mm (clip incluyendo)'),(26, 2, '8mm'),(26, 1, '8mm'),(26, 3, '8mm'),(25, 2, '120g'),(25, 3, '120g'),
+(25, 1, '120g'),(24, 2, '70mm'),(24, 1, '70mm'),(24, 3, '70mm'),(23, 2, '110mm'),(23, 3, '110mm'),(23, 1, '110mm');
 
 INSERT INTO `PREFIX_image` (`id_image`, `id_product`, `position`, `cover`) VALUES
 (40, 1, 4, 0),(39, 1, 3, 0),(38, 1, 2, 0),(37, 1, 1, 1),(48, 2, 3, 0),(47, 2, 2, 0),(49, 2, 4, 0),(46, 2, 1, 1),(15, 5, 1, 1),(16, 5, 2, 0),(17, 5, 3, 0),(18, 6, 4, 0),(19, 6, 5, 0),
 (20, 6, 1, 1),(24, 7, 1, 1),(33, 8, 1, 1),(27, 7, 3, 0),(26, 7, 2, 0),(29, 7, 4, 0),(30, 7, 5, 0),(32, 7, 6, 0),(36, 9, 1, 1),(41, 1, 5, 0),(42, 1, 6, 0),(44, 1, 7, 0),(45, 1, 8, 0);
 
 INSERT INTO `PREFIX_image_lang` (`id_image`, `id_lang`, `legend`) VALUES
-(40, 2, 'iPod Nano'),(40, 3, 'iPod Nano'),(40, 4, 'iPod Nano'),(40, 5, 'iPod Nano'),(40, 1, 'iPod Nano'),(39, 2, 'iPod Nano'),(39, 3, 'iPod Nano'),(39, 1, 'iPod Nano'),(39, 4, 'iPod Nano'),(39, 5, 'iPod Nano'),
-(38, 2, 'iPod Nano'),(38, 3, 'iPod Nano'),(38, 1, 'iPod Nano'),(38, 4, 'iPod Nano'),(38, 5, 'iPod Nano'),
-(37, 2, 'iPod Nano'),(37, 3, 'iPod Nano'),(37, 1, 'iPod Nano'),(37, 4, 'iPod Nano'),(37, 5, 'iPod Nano'),(48, 2, 'iPod shuffle'),(48, 3, 'iPod shuffle'),(48, 1, 'iPod shuffle'),(48, 4, 'iPod shuffle'),(48, 5, 'iPod shuffle'),(47, 2, 'iPod shuffle'),(47, 3, 'iPod shuffle'),(47, 4, 'iPod shuffle'),(47, 5, 'iPod shuffle'),
-(47, 1, 'iPod shuffle'),(49, 2, 'iPod shuffle'),(49, 3, 'iPod shuffle'),(49, 1, 'iPod shuffle'),(49, 4, 'iPod shuffle'),(49, 5, 'iPod shuffle'),(46, 2, 'iPod shuffle'),(46, 3, 'iPod shuffle'),(46, 1, 'iPod shuffle'),(46, 4, 'iPod shuffle'),(46, 5, 'iPod shuffle'),
-(10, 1, 'luxury-cover-for-ipod-video'),(10, 3, 'luxury-cover-for-ipod-video'),(10, 4, 'luxury-cover-for-ipod-video'),(10, 5, 'luxury-cover-for-ipod-video'),(10, 2, 'housse-luxe-pour-ipod-video'),(11, 1, 'cover'),(11, 2, 'housse'),(11, 3, 'cubrir'),(11, 4, 'cover'),(11, 5, 'cover'),
-(12, 1, 'myglove-ipod-nano'),(12, 2, 'myglove-ipod-nano'),(12, 3, 'myglove-ipod-nano'),(12, 4, 'myglove-ipod-nano'),(12, 5, 'myglove-ipod-nano'),(13, 1, 'myglove-ipod-nano'),(13, 2, 'myglove-ipod-nano'),(13, 3, 'myglove-ipod-nano'),(13, 4, 'myglove-ipod-nano'),(13, 5, 'myglove-ipod-nano'),
-(14, 1, 'myglove-ipod-nano'),(14, 2, 'myglove-ipod-nano'),(14, 3, 'myglove-ipod-nano'),(14, 4, 'myglove-ipod-nano'),(14, 5, 'myglove-ipod-nano'),(15, 1, 'MacBook Air'),(15, 2, 'macbook-air-1'),(15, 3, 'macbook-air-1'),(15, 4, 'macbook-air-1'),(15, 5, 'macbook-air-1'),(16, 1, 'MacBook Air'),(16, 2, 'macbook-air-2'),(16, 3, 'macbook-air-2'),(16, 4, 'macbook-air-2'),(16, 5, 'macbook-air-2'),(17, 1, 'MacBook Air'),(17, 2, 'macbook-air-3'),(17, 3, 'macbook-air-3'),(17, 4, 'macbook-air-3'),(17, 5, 'macbook-air-3'),(18, 1, 'MacBook Air'),(18, 2, 'macbook-air-4'),
-(18, 3, 'macbook-air-4'),(18, 4, 'macbook-air-4'),(18, 5, 'macbook-air-4'),(19, 1, 'MacBook Air'),(19, 2, 'macbook-air-5'),(19, 3, 'macbook-air-5'),(19, 4, 'macbook-air-5'),(19, 5, 'macbook-air-5'),(20, 1, ' MacBook Air SuperDrive'),(20, 2, 'superdrive-pour-macbook-air-1'),
-(20, 3, 'superdrive-pour-macbook-air-1'),(20, 4, 'superdrive-pour-macbook-air-1'),(20, 5, 'superdrive-pour-macbook-air-1'),(24, 2, 'iPod touch'),(24, 1, 'iPod touch'),(24, 3, 'iPod touch'),(24, 4, 'iPod touch'),(24, 5, 'iPod touch'),(33, 1, 'housse-portefeuille-en-cuir'),(33, 3, 'housse-portefeuille-en-cuir'),(33, 4, 'housse-portefeuille-en-cuir'),(33, 5, 'housse-portefeuille-en-cuir'),
-(26, 1, 'iPod touch'),(26, 2, 'iPod touch'),(26, 3, 'iPod touch'),(26, 4, 'iPod touch'),(26, 5, 'iPod touch'),(27, 1, 'iPod touch'),(27, 2, 'iPod touch'),(27, 3, 'iPod touch'),(27, 4, 'iPod touch'),(27, 5, 'iPod touch'),(29, 1, 'iPod touch'),(29, 2, 'iPod touch'),(29, 3, 'iPod touch'),(29, 4, 'iPod touch'),(29, 5, 'iPod touch'),(30, 1, 'iPod touch'),(30, 2, 'iPod touch'),(30, 3, 'iPod touch'),(30, 4, 'iPod touch'),(30, 5, 'iPod touch'),(32, 1, 'iPod touch'),(32, 2, 'iPod touch'),(32, 3, 'iPod touch'),(32, 4, 'iPod touch'),(32, 5, 'iPod touch'),
+(40, 2, 'iPod Nano'),(40, 3, 'iPod Nano'),(40, 1, 'iPod Nano'),(39, 2, 'iPod Nano'),(39, 3, 'iPod Nano'),(39, 1, 'iPod Nano'),(38, 2, 'iPod Nano'),(38, 3, 'iPod Nano'),(38, 1, 'iPod Nano'),
+(37, 2, 'iPod Nano'),(37, 3, 'iPod Nano'),(37, 1, 'iPod Nano'),(48, 2, 'iPod shuffle'),(48, 3, 'iPod shuffle'),(48, 1, 'iPod shuffle'),(47, 2, 'iPod shuffle'),(47, 3, 'iPod shuffle'),
+(47, 1, 'iPod shuffle'),(49, 2, 'iPod shuffle'),(49, 3, 'iPod shuffle'),(49, 1, 'iPod shuffle'),(46, 2, 'iPod shuffle'),(46, 3, 'iPod shuffle'),(46, 1, 'iPod shuffle'),
+(10, 1, 'luxury-cover-for-ipod-video'),(10, 3, 'luxury-cover-for-ipod-video'),(10, 2, 'housse-luxe-pour-ipod-video'),(11, 1, 'cover'),(11, 2, 'housse'),(11, 3, 'cubrir'),
+(12, 1, 'myglove-ipod-nano'),(12, 2, 'myglove-ipod-nano'),(12, 3, 'myglove-ipod-nano'),(13, 1, 'myglove-ipod-nano'),(13, 2, 'myglove-ipod-nano'),(13, 3, 'myglove-ipod-nano'),
+(14, 1, 'myglove-ipod-nano'),(14, 2, 'myglove-ipod-nano'),(14, 3, 'myglove-ipod-nano'),(15, 1, 'MacBook Air'),(15, 2, 'macbook-air-1'),(15, 3, 'macbook-air-1'),(16, 1, 'MacBook Air'),
+(16, 2, 'macbook-air-2'),(16, 3, 'macbook-air-2'),(17, 1, 'MacBook Air'),(17, 2, 'macbook-air-3'),(17, 3, 'macbook-air-3'),(18, 1, 'MacBook Air'),(18, 2, 'macbook-air-4'),
+(18, 3, 'macbook-air-4'),(19, 1, 'MacBook Air'),(19, 2, 'macbook-air-5'),(19, 3, 'macbook-air-5'),(20, 1, ' MacBook Air SuperDrive'),(20, 2, 'superdrive-pour-macbook-air-1'),
+(20, 3, 'superdrive-pour-macbook-air-1'),(24, 2, 'iPod touch'),(24, 1, 'iPod touch'),(24, 3, 'iPod touch'),(33, 1, 'housse-portefeuille-en-cuir'),(33, 3, 'housse-portefeuille-en-cuir'),
+(26, 1, 'iPod touch'),(26, 2, 'iPod touch'),(26, 3, 'iPod touch'),(27, 1, 'iPod touch'),(27, 2, 'iPod touch'),(27, 3, 'iPod touch'),(29, 1, 'iPod touch'),(29, 2, 'iPod touch'),
+(29, 3, 'iPod touch'),(30, 1, 'iPod touch'),(30, 2, 'iPod touch'),(30, 3, 'iPod touch'),(32, 1, 'iPod touch'),(32, 2, 'iPod touch'),(32, 3, 'iPod touch'),
 (33, 2, 'housse-portefeuille-en-cuir-ipod-nano'),(36, 2, 'Écouteurs à isolation sonore Shure SE210'),(36, 3, 'Auriculares aislantes del sonido Shure SE210'),
-(36, 1, 'Shure SE210 Sound-Isolating Earphones for iPod and iPhone'),(36, 4, 'Shure SE210 Sound-Isolating Earphones for iPod and iPhone'),(36, 5, 'Shure SE210 Sound-Isolating Earphones for iPod and iPhone'),(41, 1, 'iPod Nano'),(41, 2, 'iPod Nano'),(41, 3, 'iPod Nano'),(41, 4, 'iPod Nano'),(41, 5, 'iPod Nano'),(42, 1, 'iPod Nano'),(42, 2, 'iPod Nano'),
-(42, 3, 'iPod Nano'),(42, 4, 'iPod Nano'),(42, 5, 'iPod Nano'),(44, 1, 'iPod Nano'),(44, 2, 'iPod Nano'),(44, 3, 'iPod Nano'),(44, 4, 'iPod Nano'),(44, 5, 'iPod Nano'),(45, 1, 'iPod Nano'),(45, 2, 'iPod Nano'),(45, 3, 'iPod Nano'),(45, 4, 'iPod Nano'),(45, 5, 'iPod Nano');
+(36, 1, 'Shure SE210 Sound-Isolating Earphones for iPod and iPhone'),(41, 1, 'iPod Nano'),(41, 2, 'iPod Nano'),(41, 3, 'iPod Nano'),(42, 1, 'iPod Nano'),(42, 2, 'iPod Nano'),
+(42, 3, 'iPod Nano'),(44, 1, 'iPod Nano'),(44, 2, 'iPod Nano'),(44, 3, 'iPod Nano'),(45, 1, 'iPod Nano'),(45, 2, 'iPod Nano'),(45, 3, 'iPod Nano');
 
 INSERT INTO `PREFIX_tag` (`id_tag`, `id_lang`, `name`) VALUES (5, 1, 'apple'),(6, 2, 'ipod'),(7, 2, 'nano'),(8, 2, 'apple'),(18, 2, 'shuffle'),
 (19, 2, 'macbook'),(20, 2, 'macbookair'),(21, 2, 'air'),(22, 1, 'superdrive'),(27, 2, 'marche'),(26, 2, 'casque'),(25, 2, 'écouteurs'),
-(24, 2, 'ipod touch tactile'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
+(24, 2, 'ipod touch tacticle'),(23, 1, 'Ipod touch'),(28, 1, 'ipod'),(29, 1, 'nano'),(30, 3, 'ipod'),(31, 3, 'nano'),(32, 3, 'apple'),(33, 1, 'shuffle'),
 (34, 3, 'shuffle'),(35, 2, 'superdrive'),(36, 3, 'superdrive'),(37, 3, 'Ipod touch');
 
 INSERT INTO `PREFIX_product_tag` (`id_product`, `id_tag`) VALUES (1, 5),(1, 6),(1, 7),(1, 8),(1, 28),(1, 29),(1, 30),(1, 31),(1, 32),(2, 6),(2, 18),(2, 28),
@@ -428,29 +316,8 @@ Gracias por su comprensión.
 
 Saludos cordiales,');
 
-INSERT INTO `PREFIX_order_message_lang` (`id_order_message`, `id_lang`, `name`, `message`) VALUES
-(1, 4, 'Frist', 'Hi,
-
-Leider ist einer der Artikel aus Ihrer Bestellung momentan nicht auf Lager. Dies kann zu einer leichten Lieferverzögerung führen. Wir entschuldigen uns hierfür und bemühen uns schnellstens um Abhilfe.
-
-Mit freundlichen Grüßen,');
-
-INSERT INTO `PREFIX_order_message_lang` (`id_order_message`, `id_lang`, `name`, `message`) VALUES
-(1, 5, 'Ritardo', 'Salve,
-
-purtroppo un articolo che hai ordinato non è al momento in magazzino. Questo potrebbe provocare un leggero ritardo nella consegna.
-Ti preghiamo di scusarci; ci stiamo organizzando per ovviare a questo inconveniente.
-
-Cordialmente,');
-
-/* Block CMS module*/
-
-INSERT INTO `PREFIX_cms_block` (`id_cms_block`, `id_cms_category`, `name`, `location`, `position`) VALUES(1, 1, '', 0, 0);
-INSERT INTO `PREFIX_cms_block_page` (`id_cms_block_page`, `id_cms_block`, `id_cms`, `is_category`) VALUES(1, 1, 1, 0), (2, 1, 2, 0), (3, 1, 3, 0), (4, 1, 4, 0), (5, 1, 5, 0), (6, 1, 6, 0), (7, 1, 7, 0);
-INSERT INTO `PREFIX_cms_block_lang` (`id_cms_block`, `id_lang`, `name`) VALUES (1, 1, 'Information'),(1, 2, 'Informations'),(1, 3, 'Informaciónes'),(1, 4, 'Information'),(1, 5, 'Informazioni');
-
 /* Currency/Country module */
-INSERT INTO `PREFIX_module_currency` (`id_module`, `id_currency`) VALUES (3, 1),(3, 2),(3, 3),(4, 1),(4, 2),(4, 3),(6, 1),(6, 2),(6, 3);
+INSERT INTO `PREFIX_module_currency` (`id_module`, `id_currency`) VALUES (3, 1),(3, 2),(3, 3),(4, -2),(6, 1),(6, 2),(6, 3);
 INSERT INTO `PREFIX_module_group` (`id_module`, `id_group`) VALUES (3, 1),(4, 1),(6, 1);
 
 INSERT INTO `PREFIX_module_country` (`id_module`, `id_country`) VALUES (3, 1),(3, 2),(3, 3),(3, 4),(3, 5),(3, 6),(3, 7),(3, 8),
@@ -632,7 +499,7 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (46, 1, 'library'),(47, 1, 'that'),(48, 1, 'together'),(49, 1, 'made'),(50, 1, 'move'),(51, 1, 'with'),(52, 1, 'moves'),(53, 1, 'accelerometer'),
 (54, 1, 'comes'),(55, 1, 'shake'),(56, 1, 'shuffle'),(57, 1, 'music'),(58, 1, 'turn'),(59, 1, 'sideways'),(60, 1, 'view'),(61, 1, 'cover'),(62, 1, 'flow'),
 (63, 1, 'play'),(64, 1, 'games'),(65, 1, 'designed'),(66, 1, 'mind'),(67, 1, 'ipods'),(68, 1, 'apple'),(69, 1, 'computer,'),(70, 1, 'metal'),
-(71, 1, '16go'),(72, 1, 'yellow'),(73, 1, 'blue'),(74, 1, 'black'),(75, 1, 'orange'),(76, 1, 'pink'),(77, 1, 'green'),(78, 1, 'purple'),(79, 1, 'g'),
+(71, 1, '16go'),(72, 1, 'yellow'),(73, 1, 'blue'),(74, 1, 'black'),(75, 1, 'orange'),(76, 1, 'pink'),(77, 1, 'green'),(78, 1, 'purple'),(79, 1, 'grams'),
 (80, 1, 'minijack'),(81, 1, 'stereo'),(82, 2, 'ipod'),(83, 2, 'nano'),(84, 2, 'nouveau'),(85, 2, 'design'),(86, 2, 'nouvelles'),(87, 2, 'fonctionnalité'),
 (88, 2, 'désormais'),(89, 2, 'nano,'),(90, 2, 'plus'),(91, 2, 'rock'),(92, 2, 'jamais'),(93, 2, 'courbes'),(94, 2, 'avantageuses'),(95, 2, 'pour'),
 (96, 2, 'amateurs'),(97, 2, 'sensations,'),(98, 2, 'voici'),(99, 2, 'neuf'),(100, 2, 'nouveaux'),(101, 2, 'coloris'),(102, 2, 'n''est'),(103, 2, 'tout'),
@@ -643,7 +510,7 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (134, 2, 'secouezle'),(135, 2, 'mélanger'),(136, 2, 'musique'),(137, 2, 'basculezle'),(138, 2, 'afficher'),(139, 2, 'cover'),(140, 2, 'flow'),
 (141, 2, 'découvrez'),(142, 2, 'jeux'),(143, 2, 'adaptés'),(144, 2, 'mouvements'),(145, 2, 'ipods'),(146, 2, 'apple'),(147, 2, 'computer,'),(148, 2, 'metal'),
 (149, 2, '16go'),(150, 2, 'jaune'),(151, 2, 'bleu'),(152, 2, 'noir'),(153, 2, 'orange'),(154, 2, 'rose'),(155, 2, 'vert'),(156, 2, 'violet'),
-(157, 2, 'g'),(158, 2, 'minijack'),(159, 2, 'stéréo'),(160, 3, 'ipod'),(161, 3, 'nano'),(162, 3, 'nuevo'),(163, 3, 'diseño'),(164, 3, 'nuevas'),
+(157, 2, 'grammes'),(158, 2, 'minijack'),(159, 2, 'stéréo'),(160, 3, 'ipod'),(161, 3, 'nano'),(162, 3, 'nuevo'),(163, 3, 'diseño'),(164, 3, 'nuevas'),
 (165, 3, 'aplicaciones'),(166, 3, 'ahora'),(167, 3, 'disponible'),(168, 3, 'nano,'),(169, 3, 'rock'),(170, 3, 'nunca'),(171, 3, 'curvas'),
 (172, 3, 'aerodinámicas'),(173, 3, 'para'),(174, 3, 'aficionados'),(175, 3, 'sensaciones'),(176, 3, 'fuertes,'),(177, 3, 'presentamos'),(178, 3, 'nueve'),
 (179, 3, 'nuevos'),(180, 3, 'colores'),(181, 3, 'todo'),(182, 3, 'experimenta'),(183, 3, 'elíptico'),(184, 3, 'aluminio'),(185, 3, 'vidrio'),
@@ -747,7 +614,7 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (925, 2, 'internet'),(926, 2, 'poche'),(927, 2, 'navigateur'),(928, 2, 'safari,'),(929, 2, 'consulter'),(930, 2, 'sites'),(931, 2, 'leur'),(932, 2, 'mise'),
 (933, 2, 'page'),(934, 2, 'effectuer'),(935, 2, 'zoom'),(936, 2, 'arrière'),(937, 2, 'simple'),(938, 2, 'pression'),(939, 2, 'l''écran'),(940, 2, 'contenu'),
 (941, 2, 'coffret'),(942, 2, 'écouteurs'),(943, 2, 'câble'),(944, 2, 'dock'),(945, 2, 'chiffon'),(946, 2, 'nettoyage'),(947, 2, 'support'),(948, 2, 'guide'),
-(949, 2, 'démarrage'),(950, 2, 'tactile'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
+(949, 2, 'démarrage'),(950, 2, 'tacticle'),(951, 2, '32go'),(952, 2, 'jack'),(953, 2, '120g'),(954, 2, '70mm'),(955, 2, '110mm'),(956, 3, 'touch'),
 (957, 3, 'interfaz'),(958, 3, 'revolucionaria'),(959, 3, 'color'),(960, 3, 'pulgadas'),(961, 3, '(80211b'),(962, 3, 'espesor'),(963, 3, 'safari,'),
 (964, 3, 'youtube,'),(965, 3, 'music'),(966, 3, 'store,'),(967, 3, 'correo,'),(968, 3, 'mapas,'),(969, 3, 'bolsa,'),(970, 3, 'tiempo,'),(971, 3, 'notas'),
 (972, 3, 'cinco'),(973, 3, 'mano'),(974, 3, 'consulta'),(975, 3, 'correo'),(976, 3, 'formato'),(977, 3, 'html'),(978, 3, 'enriquecido,'),(979, 3, 'fotos'),
@@ -833,259 +700,3 @@ INSERT INTO `PREFIX_search_word` (`id_word`, `id_lang`, `word`) VALUES (1, 1, 'i
 (1536, 3, 'piezas'),(1537, 3, 'obra'),(1538, 3, 'técnicas'),(1539, 3, 'tipo'),(1540, 3, 'sensibilidad'),(1541, 3, 'acústica'),(1542, 3, 'impedancia'),
 (1543, 3, 'khz)'),(1544, 3, 'frecuencias'),(1545, 3, 'longitud'),(1546, 3, 'alargador'),(1547, 3, 'caja'),(1548, 3, 'altavoces'),(1549, 3, '(almohadillas'),
 (1550, 3, 'sonoro,'),(1551, 3, 'transporte)'),(1552, 3, 'incorporated');
-
-INSERT INTO `PREFIX_access` (`id_profile`, `id_tab`, `view`, `add`, `edit`, `delete`) VALUES
-(2, 1, 1, 1, 1, 1),
-(2, 2, 1, 1, 1, 1),
-(2, 3, 1, 1, 1, 1),
-(2, 4, 0, 0, 0, 0),
-(2, 5, 1, 1, 1, 1),
-(2, 6, 0, 0, 0, 0),
-(2, 7, 0, 0, 0, 0),
-(2, 8, 0, 0, 0, 0),
-(2, 9, 0, 0, 0, 0),
-(2, 10, 0, 0, 0, 0),
-(2, 11, 0, 0, 0, 0),
-(2, 12, 1, 1, 1, 1),
-(2, 13, 1, 1, 1, 1),
-(2, 14, 0, 0, 0, 0),
-(2, 15, 0, 0, 0, 0),
-(2, 16, 0, 0, 0, 0),
-(2, 17, 1, 1, 1, 1),
-(2, 18, 0, 0, 0, 0),
-(2, 19, 0, 0, 0, 0),
-(2, 20, 1, 1, 1, 1),
-(2, 21, 1, 1, 1, 1),
-(2, 22, 0, 0, 0, 0),
-(2, 23, 0, 0, 0, 0),
-(2, 24, 0, 0, 0, 0),
-(2, 26, 0, 0, 0, 0),
-(2, 27, 0, 0, 0, 0),
-(2, 28, 0, 0, 0, 0),
-(2, 29, 0, 0, 0, 0),
-(2, 30, 0, 0, 0, 0),
-(2, 31, 0, 0, 0, 0),
-(2, 32, 0, 0, 0, 0),
-(2, 33, 0, 0, 0, 0),
-(2, 34, 1, 1, 1, 1),
-(2, 35, 0, 0, 0, 0),
-(2, 36, 0, 0, 0, 0),
-(2, 37, 0, 0, 0, 0),
-(2, 38, 0, 0, 0, 0),
-(2, 39, 0, 0, 0, 0),
-(2, 40, 0, 0, 0, 0),
-(2, 41, 0, 0, 0, 0),
-(2, 42, 1, 1, 1, 1),
-(2, 43, 0, 0, 0, 0),
-(2, 44, 0, 0, 0, 0),
-(2, 46, 0, 0, 0, 0),
-(2, 47, 1, 1, 1, 1),
-(2, 48, 0, 0, 0, 0),
-(2, 49, 1, 1, 1, 1),
-(2, 51, 0, 0, 0, 0),
-(2, 52, 0, 0, 0, 0),
-(2, 53, 0, 0, 0, 0),
-(2, 54, 0, 0, 0, 0),
-(2, 55, 1, 1, 1, 1),
-(2, 56, 0, 0, 0, 0),
-(2, 57, 0, 0, 0, 0),
-(2, 58, 0, 0, 0, 0),
-(2, 59, 1, 1, 1, 1),
-(2, 60, 1, 1, 1, 1),
-(2, 61, 0, 0, 0, 0),
-(2, 62, 0, 0, 0, 0),
-(2, 63, 0, 0, 0, 0),
-(2, 64, 0, 0, 0, 0),
-(2, 65, 0, 0, 0, 0),
-(2, 66, 0, 0, 0, 0),
-(2, 67, 0, 0, 0, 0),
-(2, 68, 0, 0, 0, 0),
-(2, 69, 0, 0, 0, 0),
-(2, 70, 0, 0, 0, 0),
-(2, 71, 0, 0, 0, 0),
-(2, 72, 0, 0, 0, 0),
-(2, 73, 1, 1, 1, 1),
-(2, 80, 0, 0, 0, 0),
-(2, 81, 0, 0, 0, 0),
-(2, 82, 0, 0, 0, 0),
-(2, 83, 0, 0, 0, 0),
-(2, 84, 0, 0, 0, 0),
-(2, 85, 0, 0, 0, 0),
-(2, 86, 0, 0, 0, 0),
-(2, 87, 0, 0, 0, 0),
-(2, 88, 1, 1, 1, 1),
-(3, 1, 1, 1, 1, 1),
-(3, 2, 0, 0, 0, 0),
-(3, 3, 0, 0, 0, 0),
-(3, 4, 0, 0, 0, 0),
-(3, 5, 0, 0, 0, 0),
-(3, 6, 0, 0, 0, 0),
-(3, 7, 0, 0, 0, 0),
-(3, 8, 0, 0, 0, 0),
-(3, 9, 1, 0, 0, 0),
-(3, 10, 0, 0, 0, 0),
-(3, 11, 0, 0, 0, 0),
-(3, 12, 0, 0, 0, 0),
-(3, 13, 0, 0, 0, 0),
-(3, 14, 0, 0, 0, 0),
-(3, 15, 0, 0, 0, 0),
-(3, 16, 0, 0, 0, 0),
-(3, 17, 0, 0, 0, 0),
-(3, 18, 0, 0, 0, 0),
-(3, 19, 0, 0, 0, 0),
-(3, 20, 0, 0, 0, 0),
-(3, 21, 0, 0, 0, 0),
-(3, 22, 0, 0, 0, 0),
-(3, 23, 0, 0, 0, 0),
-(3, 24, 0, 0, 0, 0),
-(3, 26, 0, 0, 0, 0),
-(3, 27, 0, 0, 0, 0),
-(3, 28, 0, 0, 0, 0),
-(3, 29, 0, 0, 0, 0),
-(3, 30, 0, 0, 0, 0),
-(3, 31, 0, 0, 0, 0),
-(3, 32, 1, 1, 1, 1),
-(3, 33, 1, 1, 1, 1),
-(3, 34, 0, 0, 0, 0),
-(3, 35, 0, 0, 0, 0),
-(3, 36, 0, 0, 0, 0),
-(3, 37, 0, 0, 0, 0),
-(3, 38, 0, 0, 0, 0),
-(3, 39, 0, 0, 0, 0),
-(3, 40, 0, 0, 0, 0),
-(3, 41, 0, 0, 0, 0),
-(3, 42, 0, 0, 0, 0),
-(3, 43, 1, 0, 0, 0),
-(3, 44, 0, 0, 0, 0),
-(3, 46, 0, 0, 0, 0),
-(3, 47, 0, 0, 0, 0),
-(3, 48, 0, 0, 0, 0),
-(3, 49, 0, 0, 0, 0),
-(3, 51, 0, 0, 0, 0),
-(3, 52, 0, 0, 0, 0),
-(3, 53, 0, 0, 0, 0),
-(3, 54, 0, 0, 0, 0),
-(3, 55, 0, 0, 0, 0),
-(3, 56, 0, 0, 0, 0),
-(3, 57, 1, 1, 1, 1),
-(3, 58, 0, 0, 0, 0),
-(3, 59, 0, 0, 0, 0),
-(3, 60, 0, 0, 0, 0),
-(3, 61, 0, 0, 0, 0),
-(3, 62, 0, 0, 0, 0),
-(3, 63, 0, 0, 0, 0),
-(3, 64, 0, 0, 0, 0),
-(3, 65, 0, 0, 0, 0),
-(3, 66, 0, 0, 0, 0),
-(3, 67, 0, 0, 0, 0),
-(3, 68, 0, 0, 0, 0),
-(3, 69, 0, 0, 0, 0),
-(3, 70, 0, 0, 0, 0),
-(3, 71, 0, 0, 0, 0),
-(3, 72, 0, 0, 0, 0),
-(3, 73, 0, 0, 0, 0),
-(3, 80, 0, 0, 0, 0),
-(3, 81, 0, 0, 0, 0),
-(3, 82, 0, 0, 0, 0),
-(3, 83, 0, 0, 0, 0),
-(3, 84, 0, 0, 0, 0),
-(3, 85, 0, 0, 0, 0),
-(3, 86, 0, 0, 0, 0),
-(3, 87, 0, 0, 0, 0),
-(3, 88, 1, 1, 1, 1),
-(4, 1, 1, 1, 1, 1),
-(4, 2, 1, 1, 1, 1),
-(4, 3, 1, 1, 1, 1),
-(4, 4, 0, 0, 0, 0),
-(4, 5, 0, 0, 0, 0),
-(4, 6, 1, 1, 1, 1),
-(4, 7, 0, 0, 0, 0),
-(4, 8, 0, 0, 0, 0),
-(4, 9, 0, 0, 0, 0),
-(4, 10, 1, 0, 0, 0),
-(4, 11, 0, 0, 0, 0),
-(4, 12, 1, 1, 1, 1),
-(4, 13, 0, 0, 0, 0),
-(4, 14, 0, 0, 0, 0),
-(4, 15, 0, 0, 0, 0),
-(4, 16, 0, 0, 0, 0),
-(4, 17, 0, 0, 0, 0),
-(4, 18, 0, 0, 0, 0),
-(4, 19, 0, 0, 0, 0),
-(4, 20, 0, 0, 0, 0),
-(4, 21, 0, 0, 0, 0),
-(4, 22, 0, 0, 0, 0),
-(4, 23, 0, 0, 0, 0),
-(4, 24, 0, 0, 0, 0),
-(4, 26, 0, 0, 0, 0),
-(4, 27, 0, 0, 0, 0),
-(4, 28, 0, 0, 0, 0),
-(4, 29, 0, 0, 0, 0),
-(4, 30, 0, 0, 0, 0),
-(4, 31, 0, 0, 0, 0),
-(4, 32, 0, 0, 0, 0),
-(4, 33, 0, 0, 0, 0),
-(4, 34, 0, 0, 0, 0),
-(4, 35, 0, 0, 0, 0),
-(4, 36, 0, 0, 0, 0),
-(4, 37, 0, 0, 0, 0),
-(4, 38, 0, 0, 0, 0),
-(4, 39, 0, 0, 0, 0),
-(4, 40, 0, 0, 0, 0),
-(4, 41, 0, 0, 0, 0),
-(4, 42, 1, 1, 1, 1),
-(4, 43, 1, 0, 0, 0),
-(4, 44, 0, 0, 0, 0),
-(4, 46, 0, 0, 0, 0),
-(4, 47, 0, 0, 0, 0),
-(4, 48, 0, 0, 0, 0),
-(4, 49, 1, 1, 1, 1),
-(4, 51, 0, 0, 0, 0),
-(4, 52, 0, 0, 0, 0),
-(4, 53, 0, 0, 0, 0),
-(4, 54, 1, 1, 1, 1),
-(4, 55, 0, 0, 0, 0),
-(4, 56, 0, 0, 0, 0),
-(4, 57, 0, 0, 0, 0),
-(4, 58, 0, 0, 0, 0),
-(4, 59, 1, 1, 1, 1),
-(4, 60, 0, 0, 0, 0),
-(4, 61, 0, 0, 0, 0),
-(4, 62, 1, 1, 1, 1),
-(4, 63, 1, 1, 1, 1),
-(4, 64, 0, 0, 0, 0),
-(4, 65, 1, 1, 1, 1),
-(4, 66, 0, 0, 0, 0),
-(4, 67, 0, 0, 0, 0),
-(4, 68, 0, 0, 0, 0),
-(4, 69, 0, 0, 0, 0),
-(4, 70, 0, 0, 0, 0),
-(4, 71, 0, 0, 0, 0),
-(4, 72, 0, 0, 0, 0),
-(4, 73, 0, 0, 0, 0),
-(4, 80, 0, 0, 0, 0),
-(4, 81, 0, 0, 0, 0),
-(4, 82, 1, 1, 1, 1),
-(4, 83, 0, 0, 0, 0),
-(4, 84, 0, 0, 0, 0),
-(4, 85, 0, 0, 0, 0),
-(4, 86, 0, 0, 0, 0),
-(4, 87, 0, 0, 0, 0),
-(4, 88, 1, 1, 1, 1);
-
-INSERT INTO `PREFIX_profile` (`id_profile`) VALUES (2),(3),(4);
-INSERT INTO `PREFIX_profile_lang` (`id_lang`, `id_profile`, `name`) VALUES
-(1, 2, 'Logistician'),(2, 2, 'Logisticien'),(3, 2, 'Logistician'),(4, 2, 'Logistiker'),(5, 2, 'Logista'),
-(1, 3, 'Translator'),(2, 3, 'Traducteur'),(3, 3, 'Translator'),(4, 3, 'Übersetzer'),(5, 3, 'Traduttore'),
-(1, 4, 'Salesman'),(2, 4, 'Commercial'),(3, 4, 'Salesman'),(4, 4, 'Verkäufer'),(5, 4, 'Venditore');
-
-INSERT INTO `PREFIX_stock_mvt` (`id_stock_mvt`, `id_product`, `id_product_attribute`, `id_order`, `id_stock_mvt_reason`, `id_employee`, `quantity`, `date_add`, `date_upd`) VALUES
-(1, 6, 0, 0, 2, 1, 250, NOW(), NOW()),(2, 8, 0, 0, 2, 1, 1, NOW(), NOW()),(3, 9, 0, 0, 2, 1, 1, NOW(), NOW()),(4, 2, 7, 0, 2, 1, 10, NOW(), NOW()),(5, 2, 8, 0, 2, 1, 20, NOW(), NOW()),(6, 2, 9, 0, 2, 1, 30, NOW(), NOW()),(7, 2, 10, 0, 2, 1, 40, NOW(), NOW()),(8, 5, 12, 0, 2, 1, 100, NOW(), NOW()),(9, 5, 13, 0, 2, 1, 99, NOW(), NOW()),(10, 5, 14, 0, 2, 1, 50, NOW(), NOW()),(11, 5, 15, 0, 2, 1, 25, NOW(), NOW()),(12, 7, 19, 0, 2, 1, 50, NOW(), NOW()),(13, 7, 22, 0, 2, 1, 60, NOW(), NOW()),(14, 7, 23, 0, 2, 1, 70, NOW(), NOW()),(15, 1, 25, 0, 2, 1, 50, NOW(), NOW()),(16, 1, 26, 0, 2, 1, 50, NOW(), NOW()),(17, 1, 27, 0, 2, 1, 50, NOW(), NOW()),(18, 1, 28, 0, 2, 1, 50, NOW(), NOW()),(19, 1, 29, 0, 2, 1, 50, NOW(), NOW()),(20, 1, 30, 0, 2, 1, 50, NOW(), NOW()),(21, 1, 31, 0, 2, 1, 50, NOW(), NOW()),(22, 1, 32, 0, 2, 1, 50, NOW(), NOW()),(23, 1, 33, 0, 2, 1, 50, NOW(), NOW()),(24, 1, 34, 0, 2, 1, 50, NOW(), NOW()),(25, 1, 35, 0, 2, 1, 50, NOW(), NOW()),(26, 1, 36, 0, 2, 1, 50, NOW(), NOW()),(27, 1, 39, 0, 2, 1, 50, NOW(), NOW()),(28, 1, 40, 0, 2, 1, 50, NOW(), NOW()),(29, 1, 41, 0, 2, 1, 50, NOW(), NOW()),(30, 1, 42, 0, 2, 1, 50, NOW(), NOW());
-
-INSERT INTO `PREFIX_store` (`id_store`, `id_country`, `id_state`, `name`, `address1`, `address2`, `city`, `postcode`, `latitude`, `longitude`, `hours`, `phone`, `fax`, `email`, `note`, `active`, `date_add`, `date_upd`) VALUES
-(1, 21, 9, 'Dade County', '3030 SW 8th St Miami', '', 'Miami', ' 33135', 25.765005, -80.243797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:53:13', '2010-11-09 10:53:13'),
-(2, 21, 9, 'E Fort Lauderdale', '1000 Northeast 4th Ave Fort Lauderdale', '', 'Miami', ' 33304', 26.137936, -80.139435, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:56:26', '2010-11-09 10:56:26'),
-(3, 21, 9, 'Pembroke Pines', '11001 Pines Blvd Pembroke Pines', '', 'Miami', '33026', 26.009987, -80.294472, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 10:58:42', '2010-11-09 11:01:11'),
-(4, 21, 9, 'Coconut Grove', '2999 SW 32nd Avenue', '', ' Miami', ' 33133', 25.736296, -80.244797, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:00:38', '2010-11-09 11:04:52'),
-(5, 21, 9, 'N Miami/Biscayne', '12055 Biscayne Blvd', '', 'Miami', '33181', 25.886740, -80.163292, 'a:7:{i:0;s:13:"09:00 - 19:00";i:1;s:13:"09:00 - 19:00";i:2;s:13:"09:00 - 19:00";i:3;s:13:"09:00 - 19:00";i:4;s:13:"09:00 - 19:00";i:5;s:13:"10:00 - 16:00";i:6;s:13:"10:00 - 16:00";}', '', '', '', '', 1, '2010-11-09 11:11:28', '2010-11-09 11:11:28');
-

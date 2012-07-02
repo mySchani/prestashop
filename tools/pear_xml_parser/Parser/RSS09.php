@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: RSS09.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: RSS09.php,v 1.5 2006/07/26 21:18:46 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -25,7 +25,7 @@
  * This class handles RSS0.9 feeds.
  * 
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  * @todo    Find a Relax NG URI we can use
  */
@@ -35,7 +35,7 @@ class XML_Feed_Parser_RSS09 extends XML_Feed_Parser_Type
      * The URI of the RelaxNG schema used to (optionally) validate the feed 
      * @var string
      */
-    protected $relax = '';
+    private $relax = '';
 
     /**
      * We're likely to use XPath, so let's keep it global
@@ -208,13 +208,6 @@ class XML_Feed_Parser_RSS09 extends XML_Feed_Parser_Type
         }
         $link = $links->item($offset);
         return $this->addBase($link->nodeValue, $link);
-    }
-
-    /**
-     * Not implemented - no available validation.
-     */
-    public function relaxNGValidate() {
-        return true;
     }
 }
 

@@ -1,48 +1,18 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
-
+  
 class StatsCheckUp extends Module
 {
-	function __construct()
-	{
-		$this->name = 'statscheckup';
-		$this->tab = 'analytics_stats';
-		$this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
+    function __construct()
+    {
+        $this->name = 'statscheckup';
+        $this->tab = 'Stats';
+        $this->version = 1.0;
 
-		parent::__construct();
-
-		$this->displayName = $this->l('Catalog evaluation');
-		$this->description = $this->l('Quick evaluation of your catalog quality.');
-	}
+        parent::__construct();
+		
+        $this->displayName = $this->l('Catalog evaluation');
+        $this->description = $this->l('Catalog quality in a blink');
+    }
 
 	public function install()
 	{
@@ -70,8 +40,8 @@ class StatsCheckUp extends Module
 		if (!isset($cookie->checkup_order))
 			$cookie->checkup_order = 1;
 		
-		$db = Db::getInstance(_PS_USE_SQL_SLAVE_);
-		$employee = new Employee((int)($cookie->id_employee));
+		$db = Db::getInstance();
+		$employee = new Employee(intval($cookie->id_employee));
 		$prop30 = ((strtotime($employee->stats_date_to.' 23:59:59') - strtotime($employee->stats_date_from.' 00:00:00')) / 60 / 60 / 24) / 30;
 		$languages = $db->ExecuteS('SELECT * FROM '._DB_PREFIX_.'lang');
 		$arrayColors = array(
@@ -79,7 +49,7 @@ class StatsCheckUp extends Module
 			1 => '<img src="../modules/'.$this->name.'/orange.png" alt="'.$this->l('average').'" />',
 			2 => '<img src="../modules/'.$this->name.'/green.png" alt="'.$this->l('good').'" />'
 		);
-		$tokenProducts = Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee));
+		$tokenProducts = Tools::getAdminToken('AdminCatalog'.intval(Tab::getIdFromClassName('AdminCatalog')).intval($cookie->id_employee));
 		$divisor = 4;
 		$totals = array('products' => 0, 'active' => 0, 'images' => 0, 'sales' => 0, 'stock' => 0);
 		foreach ($languages as $language)
@@ -129,20 +99,20 @@ class StatsCheckUp extends Module
 			table.checkup td {padding:5px 10px}
 			table.checkup2 td {text-align:right}
 		</style>
-		<form action="'.$currentIndex.'&token='.Tools::safeOutput(Tools::getValue('token')).'&module='.$this->name.'" method="post" class="checkup">
+		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'&module='.$this->name.'" method="post" class="checkup">
 		<table class="table checkup" border="0" cellspacing="0" cellspacing="0">
 			<tr><th></th><th>'.$arrayColors[0].' '.$this->l('Not enough').'</th><th>'.$arrayColors[2].' '.$this->l('Alright').'</th></tr>';
 		foreach ($arrayConf as $conf => $translations)
 			$html .= '<tr>
 				<th>'.$translations['name'].'</th>
-				<td>'.$this->l('lower than').' <input type="text" name="CHECKUP_'.$conf.'_LT" value="'.Tools::safeOutput(Tools::getValue('CHECKUP_'.$conf.'_LT', Configuration::get('CHECKUP_'.$conf.'_LT'))).'" /> '.$translations['text'].'
-				<td>'.$this->l('greater than').' <input type="text" name="CHECKUP_'.$conf.'_GT" value="'.Tools::safeOutput(Tools::getValue('CHECKUP_'.$conf.'_GT', Configuration::get('CHECKUP_'.$conf.'_GT'))).'" /> '.$translations['text'].'
+				<td>'.$this->l('lower than').' <input type="text" name="CHECKUP_'.$conf.'_LT" value="'.Tools::getValue('CHECKUP_'.$conf.'_LT', Configuration::get('CHECKUP_'.$conf.'_LT')).'" /> '.$translations['text'].'
+				<td>'.$this->l('greater than').' <input type="text" name="CHECKUP_'.$conf.'_GT" value="'.Tools::getValue('CHECKUP_'.$conf.'_GT', Configuration::get('CHECKUP_'.$conf.'_GT')).'" /> '.$translations['text'].'
 			</tr>';
 		$html .= '</table>
 			<div><input type="submit" name="submitCheckup" class="button" value="'.$this->l('   Save   ').'" /></div>
 		</form>
 		<div class="clear">&nbsp;</div>
-		<form action="'.$currentIndex.'&token='.Tools::safeOutput(Tools::getValue('token')).'&module='.$this->name.'" method="post">
+		<form action="'.$currentIndex.'&token='.Tools::getValue('token').'&module='.$this->name.'" method="post">
 			'.$this->l('Order by').'
 			<select name="submitCheckupOrder" onchange="this.form.submit();" style="width:100px">
 				<option value="1">'.$this->l('ID').'</option>
@@ -253,4 +223,4 @@ class StatsCheckUp extends Module
     }
 }
 
-
+?>

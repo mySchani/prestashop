@@ -1,31 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+/**
+  * OrderDiscount class, OrderDiscount.php
+  * OrdersDiscount management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
-class OrderDiscountCore extends ObjectModel
+class OrderDiscount extends ObjectModel
 {
 	/** @var integer */
 	public $id_order_discount;
@@ -33,9 +19,6 @@ class OrderDiscountCore extends ObjectModel
 	/** @var integer */
 	public $id_order;
 
-	/** @var integer */
-	public $id_discount;
-	
 	/** @var string */	
 	public $name;
 
@@ -50,22 +33,17 @@ class OrderDiscountCore extends ObjectModel
 	/* MySQL does not allow 'order detail' for a table name */
 	protected 	$table = 'order_discount';
 	protected 	$identifier = 'id_order_discount';
-
-	protected	$webserviceParameters = array(
-		'fields' => array(
-			'id_order' => array('xlink_resource' => 'orders'),
-		),
-	);
 	
 	public function getFields()
 	{
 		parent::validateFields();
 
-		$fields['id_order'] = (int)($this->id_order);
+		$fields['id_order'] = intval($this->id_order);
 		$fields['name'] = pSQL($this->name);
-		$fields['value'] = (int)($this->value);
+		$fields['value'] = intval($this->value);
 		
 		return $fields;
 	}	
 }
 
+?>

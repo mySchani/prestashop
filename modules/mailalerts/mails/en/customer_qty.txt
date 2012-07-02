@@ -1,4 +1,4 @@
-Hi,
+Bonjour,
 
 Product {product} is now available.
 Indeed, the item is once again in-stock.

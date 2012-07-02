@@ -1,15 +1,11 @@
-{shop_name}
- 
 Hola {firstname} {lastname},
- 
+
 Gracias por su confianza.
- 
+
 Usted es parte de nuestros mejores clientes y, como tal, queremos darle las gracias por la confianza que comparten.
 
-Como excepci√≥n, le concedemos un descuento de {amount}% v√°lido en su pr√≥ximo pedido! Esta oferta es v√°lida para {days} d√≠as, as√≠ que no pierdas un instante!
+Como excepciÛn, le concedemos un descuento de {amount}% v·lido en su prÛximo pedido! Esta oferta es v·lida para {days} dÌas, asÌ que no pierdas un instante!
  
-Aqu√≠ est√° tu cup√≥n: {voucher_num}
+AquÌ est· tu cupÛn: {voucher_num}
 
-Introduzca este c√≥digo en tu carrito de compras para obtener el descuento.
- 
-{shop_name} desarrollado por PrestaShop‚Ñ¢
+Introduzca este cÛdigo en tu carrito de compras para obtener el descuento.

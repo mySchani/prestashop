@@ -1,89 +1,33 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class ProductCommentCriterion extends ObjectModel
+/**
+  * ProductCommentCriterion class, ProductCommentCriterion.php
+  * Product Comments Criterion management
+  * @category classes
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+class ProductCommentCriterion
 {
-	public		$id;
-	public		$id_product_comment_criterion_type;
-	
-	public		$name;
-	public		$active = 1;
-	protected	$fieldsRequiredLang = array('name');
-	protected	$fieldsSizeLang = array('name' => 128);
-	protected	$fieldsValidateLang = array('name' => 'isGenericName');
-	
-	protected	$table = 'product_comment_criterion';
-	protected	$identifier = 'id_product_comment_criterion';
-	
-	
-	public function getFields()
+	/**
+	 * Add a Comment Criterion
+	 *
+	 * @return boolean succeed
+	 */
+	static public function add($id_lang, $name)
 	{
-		parent::validateFields();
-		return array('id_product_comment_criterion_type' => (int)$this->id_product_comment_criterion_type, 'active' => (int)$this->active);
-	}
-	
-	public function getTranslationsFieldsChild()
-	{
-		parent::validateFieldsLang();
-		return parent::getTranslationsFields(array('name'));
-	}
-	
-	public function delete()
-	{
-		if (!parent::delete())
-			return false;
-		if ($this->id_product_comment_criterion_type == 2)
-			if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
-														WHERE id_product_comment_criterion='.(int)$this->id))
-				return false;
-		elseif ($this->id_product_comment_criterion_type == 3)
-			if (!Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
-														WHERE id_product_comment_criterion='.(int)$this->id))
-				return false;
-
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_grade`
-														WHERE `id_product_comment_criterion` = '.(int)$this->id);
-	}
-	
-	public function update($nullValues = false)
-	{
-		$previousUpdate = new self((int)$this->id);
-		if (!parent::update($nullValues))
-			return false;
-		if ($previousUpdate->id_product_comment_criterion_type != $this->id_product_comment_criterion_type)
-		{
-			if ($previousUpdate->id_product_comment_criterion_type == 2)
-				return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_category
-																WHERE id_product_comment_criterion='.(int)$previousUpdate->id);
-			elseif ($previousUpdate->id_product_comment_criterion_type == 3)
-				return Db::getInstance()->Execute('DELETE FROM '._DB_PREFIX_.'product_comment_criterion_product
-																WHERE id_product_comment_criterion='.(int)$previousUpdate->id);
-		}
-		return true;
+		if (!Validate::isUnsignedId($id_lang) ||
+			!Validate::isMessage($name))
+			die(Tools::displayError());
+		return (Db::getInstance()->Execute('
+		INSERT INTO `'._DB_PREFIX_.'product_comment_criterion`
+		(`id_lang`, `name`) VALUES(
+		'.intval($id_lang).',
+		\''.pSQL($name).'\')'));
 	}
 	
 	/**
@@ -91,25 +35,16 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return boolean succeed
 	 */
-	public function addProduct($id_product)
+	static public function addToProduct($id_product_comment_criterion, $id_product)
 	{
-		if (!Validate::isUnsignedId($id_product))
+		if (!Validate::isUnsignedId($id_product_comment_criterion) ||
+			!Validate::isUnsignedId($id_product))
 			die(Tools::displayError());
-		return (Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_product` (`id_product_comment_criterion`, `id_product`) 
-														VALUES('.(int)$this->id.','.(int)$id_product.')'));
-	}
-	
-	/**
-	 * Link a Comment Criterion to a category
-	 *
-	 * @return boolean succeed
-	 */
-	public function addCategory($id_category)
-	{
-		if (!Validate::isUnsignedId($id_category))
-			die(Tools::displayError());
-		return (Db::getInstance()->Execute('INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_category` (`id_product_comment_criterion`, `id_category`) 
-														VALUES('.(int)$this->id.','.(int)$id_category.')'));
+		return (Db::getInstance()->Execute('
+		INSERT INTO `'._DB_PREFIX_.'product_comment_criterion_product`
+		(`id_product_comment_criterion`, `id_product`) VALUES(
+		'.intval($id_product_comment_criterion).',
+		'.intval($id_product).')'));
 	}
 	
 	/**
@@ -117,20 +52,39 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return boolean succeed
 	 */
-	public function addGrade($id_product_comment, $grade)
+	static public function addGrade($id_product_comment, $id_product_comment_criterion, $grade)
 	{
-		if (!Validate::isUnsignedId($id_product_comment))
+		if (!Validate::isUnsignedId($id_product_comment) ||
+			!Validate::isUnsignedId($id_product_comment_criterion))
 			die(Tools::displayError());
 		if ($grade < 0)
 			$grade = 0;
-		elseif ($grade > 10)
+		else if ($grade > 10)
 			$grade = 10;
 		return (Db::getInstance()->Execute('
 		INSERT INTO `'._DB_PREFIX_.'product_comment_grade`
 		(`id_product_comment`, `id_product_comment_criterion`, `grade`) VALUES(
-		'.(int)($id_product_comment).',
-		'.(int)$this->id.',
-		'.(int)($grade).')'));
+		'.intval($id_product_comment).',
+		'.intval($id_product_comment_criterion).',
+		'.intval($grade).')'));
+	}
+	
+	/**
+	 * Update criterion
+	 *
+	 * @return boolean succeed
+	 */
+	static public function update($id_product_comment_criterion, $id_lang, $name)
+	{
+		if (!Validate::isUnsignedId($id_product_comment_criterion) ||
+			!Validate::isUnsignedId($id_lang) ||
+			!Validate::isMessage($name))
+			die(Tools::displayError());
+		return (Db::getInstance()->Execute('
+		UPDATE `'._DB_PREFIX_.'product_comment_criterion` SET
+		`name` = \''.pSQL($name).'\'
+		WHERE `id_product_comment_criterion` = '.intval($id_product_comment_criterion).' AND
+		`id_lang` = '.intval($id_lang)));
 	}
 	
 	/**
@@ -138,20 +92,17 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterion
 	 */
-	public static function getByProduct($id_product, $id_lang)
+	static public function getByProduct($id_product, $id_lang)
 	{
 		if (!Validate::isUnsignedId($id_product) ||
 			!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
-		return Db::getInstance()->ExecuteS('
-		SELECT pcc.`id_product_comment_criterion`, pccl.`name`
+		return (Db::getInstance()->ExecuteS('
+		SELECT pcc.`id_product_comment_criterion`, pcc.`name`
 		FROM `'._DB_PREFIX_.'product_comment_criterion` pcc
-		LEFT JOIN `'._DB_PREFIX_.'product_comment_criterion_lang` pccl ON (pcc.id_product_comment_criterion = pccl.id_product_comment_criterion)
-		LEFT JOIN `'._DB_PREFIX_.'product_comment_criterion_product` pccp ON (pcc.`id_product_comment_criterion` = pccp.`id_product_comment_criterion` AND pccp.`id_product` = '.(int)$id_product.')
-		LEFT JOIN `'._DB_PREFIX_.'product_comment_criterion_category` pccc ON (pcc.`id_product_comment_criterion` = pccc.`id_product_comment_criterion`)
-		LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.id_category_default = pccc.id_category AND p.id_product = '.(int)$id_product.')
-		WHERE pccl.`id_lang` = '.(int)($id_lang).' AND (pccp.id_product IS NOT NULL OR p.id_product IS NOT NULL OR pcc.id_product_comment_criterion_type = 1) AND pcc.active = 1
-		GROUP BY pcc.id_product_comment_criterion');
+		INNER JOIN `'._DB_PREFIX_.'product_comment_criterion_product` pccp ON pcc.`id_product_comment_criterion` = pccp.`id_product_comment_criterion`
+		WHERE pccp.`id_product` = '.intval($id_product).' AND 
+		pcc.`id_lang` = '.intval($id_lang)));
 	}
 	
 	/**
@@ -159,56 +110,52 @@ class ProductCommentCriterion extends ObjectModel
 	 *
 	 * @return array Criterions
 	 */
-	public static function getCriterions($id_lang, $type = false, $active = false)
+	static public function get($id_lang)
 	{
 		if (!Validate::isUnsignedId($id_lang))
 			die(Tools::displayError());
 		return (Db::getInstance()->ExecuteS('
-		SELECT pcc.`id_product_comment_criterion`, pcc.id_product_comment_criterion_type, pccl.`name`, pcc.active
-		FROM `'._DB_PREFIX_.'product_comment_criterion` pcc
-		JOIN `'._DB_PREFIX_.'product_comment_criterion_lang` pccl ON (pcc.id_product_comment_criterion = pccl.id_product_comment_criterion)
-		WHERE pccl.`id_lang` = '.(int)$id_lang.($active ? ' AND active = 1' : '').($type ? ' AND id_product_comment_criterion_type = '.(int)$type : '').'
-		ORDER BY pccl.`name` ASC'));
+		SELECT pcc.`id_product_comment_criterion`, pcc.`name`
+		  FROM `'._DB_PREFIX_.'product_comment_criterion` pcc
+		WHERE pcc.`id_lang` = '.intval($id_lang).'
+		ORDER BY pcc.`name` ASC'));
 	}
 	
-	public function getProducts()
+	/**
+	 * Delete product criterion by product
+	 *
+	 * @return boolean succeed
+	 */
+	static public function deleteByProduct($id_product)
 	{
-		$res = Db::getInstance()->ExecuteS('
-		SELECT pccp.id_product, pccp.id_product_comment_criterion
-		FROM `'._DB_PREFIX_.'product_comment_criterion_product` pccp
-		WHERE pccp.id_product_comment_criterion = '.(int)$this->id);
-		$products = array();
-		if ($res)
-			foreach ($res AS $row)
-				$products[] = (int)$row['id_product'];
-		return $products;
+		if (!Validate::isUnsignedId($id_product))
+			die(Tools::displayError());
+		return (Db::getInstance()->Execute('
+		DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product`
+		WHERE `id_product` = '.intval($id_product)));
 	}
 	
-	public function getCategories()
+	/**
+	 * Delete all reference of a criterion
+	 *
+	 * @return boolean succeed
+	 */
+	static public function delete($id_product_comment_criterion)
 	{
-		$res = Db::getInstance()->ExecuteS('
-		SELECT pccc.id_category, pccc.id_product_comment_criterion
-		FROM `'._DB_PREFIX_.'product_comment_criterion_category` pccc
-		WHERE pccc.id_product_comment_criterion = '.(int)$this->id);
-		$criterions = array();
-		if ($res)
-			foreach ($res AS $row)
-				$criterions[] = (int)$row['id_category'];
-		return $criterions;
+		if (!Validate::isUnsignedId($id_product_comment_criterion))
+			die(Tools::displayError());
+		$result = Db::getInstance()->Execute('
+		DELETE FROM `'._DB_PREFIX_.'product_comment_grade`
+		WHERE `id_product_comment_criterion` = '.intval($id_product_comment_criterion));
+		if ($result === false)
+			return ($result);
+		$result = Db::getInstance()->Execute('
+		DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product`
+		WHERE `id_product_comment_criterion` = '.intval($id_product_comment_criterion));
+		if ($result === false)
+			return ($result);
+		return (Db::getInstance()->Execute('
+		DELETE FROM `'._DB_PREFIX_.'product_comment_criterion`
+		WHERE `id_product_comment_criterion` = '.intval($id_product_comment_criterion)));
 	}
-	
-	public function deleteCategories()
-	{
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_category` WHERE `id_product_comment_criterion` = '.(int)$this->id);
-	}
-	
-	public function deleteProducts()
-	{
-		return Db::getInstance()->Execute('DELETE FROM `'._DB_PREFIX_.'product_comment_criterion_product` WHERE `id_product_comment_criterion` = '.(int)$this->id);
-	}
-	
-	public static function getTypes()
-	{
-		return array(1 => Tools::displayError('Valid for the entire catalog'), 2 => Tools::displayError('Restricted to some categories'), 3 => Tools::displayError('Restricted to some products'));
-	}
-}
+};

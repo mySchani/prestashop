@@ -1,29 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
 /* SSL Management */
 $useSSL = true;
@@ -38,20 +13,20 @@ if ($cookie->isLogged())
 {
 	if (Tools::getValue('action') == 'delete')
 	{
-		$id_customer = (int)($cookie->id_customer);
-		if (!$id_product = (int)(Tools::getValue('id_product')))
-			$errors[] = Tools::displayError('You must have a product to delete an alert.'); 
-		$id_product_attribute = (int)(Tools::getValue('id_product_attribute'));
-		$customer = new Customer((int)($id_customer));
-		MailAlerts::deleteAlert((int)($id_customer), strval($customer->email), (int)($id_product), (int)($id_product_attribute));
+		$id_customer = intval($cookie->id_customer);
+		if (!$id_product = intval(Tools::getValue('id_product')))
+			$errors[] = Tools::displayError('You need a product to delete an alert'); 
+		$id_product_attribute = intval(Tools::getValue('id_product_attribute'));
+		$customer = new Customer(intval($id_customer));
+		MailAlerts::deleteAlert(intval($id_customer), 0, intval($id_product), intval($id_product_attribute));
 	}
-	$smarty->assign('alerts', MailAlerts::getProductsAlerts((int)($cookie->id_customer), (int)($cookie->id_lang)));
+	$smarty->assign('alerts', MailAlerts::getProductsAlerts(intval($cookie->id_customer), intval($cookie->id_lang)));
 }
 else
-	$errors[] = Tools::displayError('You must be logged in to manage your alerts.'); 
+	$errors[] = Tools::displayError('You need to be logged to manage your alerts'); 
 
 $smarty->assign(array(
-	'id_customer' => (int)($cookie->id_customer),
+	'id_customer' => intval($cookie->id_customer),
 	'errors' => $errors
 ));
 

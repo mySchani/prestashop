@@ -1,29 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
 /* SSL Management */
 $useSSL = true;
@@ -45,52 +20,47 @@ if ($cookie->isLogged())
 	{
 		if (Configuration::get('PS_TOKEN_ACTIVATED') == 1 AND
 			strcmp(Tools::getToken(), Tools::getValue('token')))
-			$errors[] = Tools::displayError('Invalid token');
+			$errors[] = Tools::displayError('invalid token');
 		if (!sizeof($errors))
 		{
 			$name = Tools::getValue('name');
 			if (empty($name))
-				$errors[] = Tools::displayError('You must specify a name.');
+				$errors[] = Tools::displayError('you must specify a name');
 			if (WishList::isExistsByNameForUser($name))
-				$errors[] = Tools::displayError('This name is already used by another list.');
+				$errors[] = Tools::displayError('this name is already used by an other list');
 			
-			if (!sizeof($errors))
+			if(!sizeof($errors))
 			{
 				$wishlist = new WishList();
 				$wishlist->name = $name;
-				$wishlist->id_customer = (int)$cookie->id_customer;
+				$wishlist->id_customer = $cookie->id_customer;
 				list($us, $s) = explode(' ', microtime());
 				srand($s * $us);
 				$wishlist->token = strtoupper(substr(sha1(uniqid(rand(), true)._COOKIE_KEY_.$cookie->id_customer), 0, 16));
 				$wishlist->add();
-				Mail::Send((int)$cookie->id_lang, 'wishlink', Mail::l('Your wishlist\'s link', (int)$cookie->id_lang), 
-					array(
-					'{wishlist}' => $wishlist->name,
-					'{message}' => Tools::getProtocol().htmlentities($_SERVER['HTTP_HOST'], ENT_COMPAT, 'UTF-8').__PS_BASE_URI__.'modules/blockwishlist/view.php?token='.$wishlist->token),
-					$cookie->email, $cookie->firstname.' '.$cookie->lastname, NULL, strval(Configuration::get('PS_SHOP_NAME')), NULL, NULL, dirname(__FILE__).'/mails/');
 			}
 		}
 	}
-	elseif ($add)
-		WishList::addCardToWishlist((int)($cookie->id_customer), (int)(Tools::getValue('id_wishlist')), (int)($cookie->id_lang));
-	elseif ($delete AND empty($id_wishlist) === false)
+	else if ($add)
+		WishList::addCardToWishlist(intval($cookie->id_customer), intval(Tools::getValue('id_wishlist')), intval($cookie->id_lang));
+	else if ($delete AND empty($id_wishlist) === false)
 	{
-		$wishlist = new WishList((int)($id_wishlist));
+		$wishlist = new WishList(intval($id_wishlist));
 		if (Validate::isLoadedObject($wishlist))
 			$wishlist->delete();
 		else
-			$errors[] = Tools::displayError('Cannot delete this wishlist');
+			$errors[] = Tools::displayError('can`t delete this whislist');
 	}
-	$smarty->assign('wishlists', WishList::getByIdCustomer((int)($cookie->id_customer)));
-	$smarty->assign('nbProducts', WishList::getInfosByIdCustomer((int)($cookie->id_customer)));
+	$smarty->assign('wishlists', WishList::getByIdCustomer(intval($cookie->id_customer)));
+	$smarty->assign('nbProducts', WishList::getInfosByIdCustomer(intval($cookie->id_customer)));
 }
 else
 {
-	Tools::redirect('authentication.php?back=modules/blockwishlist/mywishlist.php');
+	Tools::redirect('authentication.php?back=/modules/blockwishlist/mywishlist.php');
 }
 
 $smarty->assign(array(
-	'id_customer' => (int)($cookie->id_customer),
+	'id_customer' => intval($cookie->id_customer),
 	'errors' => $errors
 ));
 
@@ -103,4 +73,4 @@ else
 
 include(dirname(__FILE__).'/../../footer.php');
 
-
+?>

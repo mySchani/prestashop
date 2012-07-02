@@ -1,29 +1,3 @@
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14645 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
 if (!id_language)
 	var id_language = Number(1);
 
@@ -103,24 +77,15 @@ function copy2friendlyURL()
 	$('#link_rewrite_' + id_language).val(str2url($('#name_' + id_language).val().replace(/^[0-9]+\./, ''), 'UTF-8'));
 }
 
-function copyMeta2friendlyURL()
-{
-	$('#input_link_rewrite_' + id_language).val(str2url($('#name_' + id_language).val().replace(/^[0-9]+\./, ''), 'UTF-8'));
-}
-
 function updateCurrentText()
 {
 	$('#current_product').html($('#name_' + id_language).val());
 }
-function updateFriendlyURLByName()
-{
-	$('#link_rewrite_' + id_language).val(str2url($('#name_' + id_language).val(), 'UTF-8'));
-	$('#friendly-url').html($('#link_rewrite_' + id_language).val());
-}
+
 function updateFriendlyURL()
 {
 	$('#link_rewrite_' + id_language).val(str2url($('#link_rewrite_' + id_language).val(), 'UTF-8'));
-	$('#seo #friendly-url').text($('#link_rewrite_' + id_language).val());
+	$('#friendly-url').html($('link_rewrite_' + id_language).val());
 }
 
 function toggleLanguageFlags(elt)
@@ -154,55 +119,52 @@ function changeFormLanguage(id_language_new, iso_code, employee_cookie)
 	if (employee_cookie)
 		$.post("ajax.php", { form_language_id: id_language_new });
 	id_language = id_language_new;
-	updateFriendlyURL();
+	
 	updateCurrentText();
 }
 
 function displayFlags(languages, defaultLanguageID, employee_cookie)
 {
-	if ($('.translatable'))
-	{
-		$('.translatable').each(function() {
-			if (!$(this).find('.displayed_flag').length > 0) {
-				$.each(languages, function(key, language) {
-					if (language['id_lang'] == defaultLanguageID)
-					{
-						defaultLanguage = language;
-						return false;
-					}
-				});
-				var displayFlags = $('<div></div>')
-					.addClass('displayed_flag')
-					.append($('<img>')
-						.addClass('language_current')
-						.addClass('pointer')
-						.attr('src', '../img/l/' + defaultLanguage['id_lang'] + '.jpg')
-						.attr('alt', defaultLanguage['name'])
-						.click(function() {
-							toggleLanguageFlags(this);
-						})
-					);
-				var languagesFlags = $('<div></div>')
-					.addClass('language_flags')
-					.html(choose_language_trad+'<br /><br />');
-				$.each(languages, function(key, language) {
-					var img = $('<img>')
-						.addClass('pointer')
-						.css('margin', '0 2px')
-						.attr('src', '../img/l/' + language['id_lang'] + '.jpg')
-						.attr('alt', language['name'])
-						.click(function() {
-							changeFormLanguage(language['id_lang'], language['iso_code'], employee_cookie);
-						});
-					languagesFlags.append(img);
-				});
-				if ($(this).find('p:last-child').hasClass('clear'))
-					$(this).find('p:last-child').before(displayFlags).before(languagesFlags);
-				else
-					$(this).append(displayFlags).append(languagesFlags);
-			}
-		});
-	}
+	$('.translatable').each(function() {
+		if (!$(this).find('.displayed_flag').length > 0) {
+			$.each(languages, function(key, language) {
+				if (language['id_lang'] == defaultLanguageID)
+				{
+					defaultLanguage = language;
+					return false;
+				}
+			});
+			var displayFlags = $('<div></div>')
+				.addClass('displayed_flag')
+				.append($('<img>')
+					.addClass('language_current')
+					.addClass('pointer')
+					.attr('src', '../img/l/' + defaultLanguage['id_lang'] + '.jpg')
+					.attr('alt', defaultLanguage['name'])
+					.click(function() {
+						toggleLanguageFlags(this);
+					})
+				);
+			var languagesFlags = $('<div></div>')
+				.addClass('language_flags')
+				.html('Choose language:<br /><br />');
+			$.each(languages, function(key, language) {
+				var img = $('<img>')
+					.addClass('pointer')
+					.css('margin', '0 2px')
+					.attr('src', '../img/l/' + language['id_lang'] + '.jpg')
+					.attr('alt', language['name'])
+					.click(function() {
+						changeFormLanguage(language['id_lang'], language['iso_code'], employee_cookie);
+					});
+				languagesFlags.append(img);
+			});
+			if ($(this).find('p:last-child').hasClass('clear'))
+				$(this).find('p:last-child').before(displayFlags).before(languagesFlags);
+			else 
+				$(this).append(displayFlags).append(languagesFlags);
+		}
+	});
 }
 
 function checkAll(pForm)
@@ -281,7 +243,7 @@ function addAccessory(event, data, formatted)
 		return false;
 	var productId = data[1];
 	var productName = data[0];
-
+	
 	var $divAccessories = $('#divAccessories');
 	var $inputAccessories = $('#inputAccessories');
 	var $nameAccessories = $('#nameAccessories');
@@ -292,7 +254,7 @@ function addAccessory(event, data, formatted)
 	$inputAccessories.val($inputAccessories.val() + productId + '-');
 	$('#product_autocomplete_input').val('');
 	$('#product_autocomplete_input').setOptions({
-		extraParams: {excludeIds : getAccessorieIds()}
+		extraParams: {excludeIds : $('#inputAccessories').val().replace(/\-/g,',').replace(/\,$/,'')}
 	});
 }
 
@@ -307,7 +269,7 @@ function delAccessory(id)
 	var inputCut = input.value.split('-');
 	var nameCut = name.value.split('¤');
 
-	if (inputCut.length != nameCut.length)
+	if (inputCut.lenght != nameCut.lenght)
 		return alert('Bad size');
 
 	// Reset all hidden fields
@@ -330,20 +292,15 @@ function delAccessory(id)
 		else
 			$('#selectAccessories').append('<option selected="selected" value="' + inputCut[i] + '-' + nameCut[i] + '">' + inputCut[i] + ' - ' + nameCut[i] + '</option>');
 	}
-
-	$('#product_autocomplete_input').setOptions({
-		extraParams: {excludeIds : getAccessorieIds()}
-	});
 }
 
 function dontChange(srcText)
 {
 	if (srcText == '')
 		return false;
-	if (window.search_texts)
-		for (var i in search_texts)
-			if (srcText == search_texts[i])
-				return false;
+	for (var i in search_texts)
+		if (srcText == search_texts[i])
+			return false;
 	return true;
 }
 
@@ -366,7 +323,7 @@ function formSubmit(e, button)
 		getE(button).focus();
 		getE(button).click();
 	}
-}
+} 
 function	noComma(elem)
 {
  	getE(elem).value = getE(elem).value.replace(new RegExp(',', 'g'), '.');
@@ -385,35 +342,83 @@ function addLoadEvent(func) {
   }
 }
 
-function helpboxParser(current)
-{
- 	// While the span exists and we didn't find the right one, for each attribute, if attribute is "name" and has value == "help_box"
-	for (var j = 0; j < current.parentNode.getElementsByTagName('span').length; j++)
-		for(var k = 0; k < current.parentNode.getElementsByTagName('span')[j].attributes.length; k++)
-			if (current.parentNode.getElementsByTagName('span')[j].attributes[k].name === 'name' && current.parentNode.getElementsByTagName('span')[j].attributes[k].nodeValue === 'help_box')
-				return j;
+function helpboxParser(current) {
+ 	// While the span exists and we didn't find the right one
+	for (var j = 0; j < current.parentNode.getElementsByTagName('span').length; j++) {
 
+		// For each attribut
+		for(var k = 0; k < current.parentNode.getElementsByTagName('span')[j].attributes.length; k++)
+			// If it's the attribut "name" and its value is "help_box"
+			if (current.parentNode.getElementsByTagName('span')[j].attributes[k].name === 'name' && current.parentNode.getElementsByTagName('span')[j].attributes[k].nodeValue === 'help_box') {
+				// We finaly found it
+				return j;
+			}
+	}
 	return -1;
+}
+
+function prepareInputsForHints() {
+	var inputs = document.getElementsByTagName('input');
+	var found;
+
+	// For each input
+	for (var i=0; i<inputs.length; i++)
+	{
+		// on focus, show the hint
+		inputs[i].onfocus = function ()
+		{
+			var id = helpboxParser(this);
+			if (id > -1)
+				this.parentNode.getElementsByTagName('span')[id].style.display = 'inline';
+		}
+		// when the cursor moves away from the field, hide the hint
+		inputs[i].onblur = function ()
+		{
+		 	var id = helpboxParser(this);
+		 	if (id > -1)
+				this.parentNode.getElementsByTagName('span')[id].style.display = 'none';
+		}
+	}
+}
+
+function prepareBoQuery() {
+	var inputs = document.getElementsByTagName('input');
+	var found;
+
+	// For each input
+	for (var i=0; i<inputs.length; i++)
+	{
+		// on focus, show the hint
+		inputs[i].onfocus = function ()
+		{
+			if($(this).attr('id') == 'bo_query')
+				if(!dontChange($('input#bo_query').val()))
+					$('input#bo_query').val('');
+		}
+		// when the cursor moves away from the field, hide the hint
+		inputs[i].onblur = function ()
+		{
+			if($(this).attr('id') == 'bo_query' && $(this).val().length < 1)
+				$(this).val(search_texts[$('select#bo_search_type').val() - 1]);
+		}
+	}
 }
 
 if (helpboxes)
 {
-	$(function()
-	{
-		if ($('input'))
-		{
-			$('input').focus(function() { $(this).parent().find('.hint:first').css('display', 'block'); });
-			$('input').blur(function() { $(this).parent().find('.hint:first').css('display', 'none'); });
-		}
+	$(function(){
+		$('input').focus(function() {
+			$(this).parent().find('.hint').css('display', 'block');
+		});
+		$('input').blur(function() {
+			$(this).parent().find('.hint').css('display', 'none');
+		});
 	});
+	
+	//addLoadEvent(prepareInputsForHints);
 }
+addLoadEvent(prepareBoQuery);
 
-/**
- * Deprecated
- * 
- * @param id_product
- * @param id_image
- */
 function changePic(id_product, id_image)
 {
  	if (id_image == -1)
@@ -518,21 +523,15 @@ function askFeatureName(selected, selector)
 		$('#features_' + selector).show();
 		$('#feature_name_' + selector).attr('name', selected.name);
 	}
-	else
-	{
-		$('#features_' + selector).hide();
-		$('#feature_name_' + selector).removeAttr('name');
-	}
-
 }
 
 function replaceFeature(toReplace, selector)
 {
 	var elem;
-
+	
 	if ($('#feature_name_' + selector).val() == '')
 		return false;
-
+	
 	elem = getE(toReplace);
 	elem.options[elem.selectedIndex].text = $('#feature_name_' + selector).val();
 	elem.options[elem.selectedIndex].value = '#F_' + $('#feature_name_' + selector).val();
@@ -585,7 +584,7 @@ function orderDeleteProduct(txtConfirm, txtExplain)
 			totalQty = parseInt($(this).parent().find('input#totalQty[type=hidden]').val());
 			totalQtyReturn = parseInt($(this).parent().find('input#totalQtyReturn[type=hidden]').val());
 			productName = $(this).parent().find('input#productName[type=hidden]').val();
-			totalAvailable = totalQty - totalQtyReturn;
+			totalAvailable = totalQty - totalQtyReturn;;	
 			if (totalCancel > totalAvailable)
 			{
 				alert(txtConfirm + ' : \'' + ' ' + productName + '\' ! \n\n' + txtExplain + ' ('+ totalCancel + ' > ' + totalAvailable +')' + '\n ');
@@ -701,16 +700,16 @@ function showAttributeColorGroup(name, container)
 	id_list = document.getElementById(name);
 	value = id_list.options[id_list.selectedIndex].value;
 	if (attributesGroups[value])
-		$('#colorAttributeProperties').fadeIn();
+		openCloseLayer(container, 'open');
 	else
-		$('#colorAttributeProperties').fadeOut();
+		openCloseLayer(container, 'close');
 }
 
 function orderOverwriteMessage(sl, text)
 {
 	var $zone = $('#txt_msg');
 	var sl_value = sl.options[sl.selectedIndex].value;
-
+	
 	if (sl_value != '0')
 	{
 		if ($zone.val().length > 0 && !confirm(text))
@@ -728,108 +727,13 @@ function stockManagementActivationAuthorization()
 {
 	if (getE('PS_STOCK_MANAGEMENT_on').checked)
 	{
-		getE('PS_ORDER_OUT_OF_STOCK_on').disabled = false;
-		getE('PS_ORDER_OUT_OF_STOCK_off').disabled = false;
-		getE('PS_DISPLAY_QTIES_on').disabled = false;
-		getE('PS_DISPLAY_QTIES_off').disabled = false;
+		getE('PS_ORDER_OUT_OF_STOCK_on').readOnly = false;
+		getE('PS_ORDER_OUT_OF_STOCK_off').readOnly = false;
 	}
 	else
 	{
-		getE('PS_DISPLAY_QTIES_off').checked = true;
-		getE('PS_DISPLAY_QTIES_on').disabled = 'disabled';
-		getE('PS_DISPLAY_QTIES_off').disabled = 'disabled';
 		getE('PS_ORDER_OUT_OF_STOCK_on').checked = true;
-		getE('PS_ORDER_OUT_OF_STOCK_on').disabled = 'disabled';
-		getE('PS_ORDER_OUT_OF_STOCK_off').disabled = 'disabled';
+		getE('PS_ORDER_OUT_OF_STOCK_on').readOnly = true;
+		getE('PS_ORDER_OUT_OF_STOCK_off').readOnly = true;
 	}
 }
-
-function hookCheckboxes(id, opt, champ)
-{
-	if (opt == 1 && champ.checked == false)
-		$('#Ghook'+id).attr('checked', false);
-	else if (opt == 0)
-	{
-		if (champ.checked)
-			$('.hook'+id).attr('checked', "checked");
-		else
-			$('.hook'+id).attr('checked', false);
-	}
-}
-
-function changeCMSActivationAuthorization()
-{
-	if (getE('PS_CONDITIONS_on').checked)
-		getE('PS_CONDITIONS_CMS_ID').disabled = false;
-	else
-		getE('PS_CONDITIONS_CMS_ID').disabled = 'disabled';
-}
-
-function disableZipFormat()
-{
-	if ($('#need_zip_code_on').attr('checked') == false)
-	{
-		$('.zip_code_format').hide();
-		$('#zip_code_format').val('');
-	}
-	else
-		$('.zip_code_format').show();
-}
-
-
-function spreadFees(id_range)
-{
-	newVal = $('#fees_all_'+id_range).val().replace(/,/g, '.');
-	$('.fees_'+id_range).val(newVal);
-}
-
-function clearAllFees(id_range)
-{
-	$('#fees_all_'+id_range).val('');
-}
-
-function toggleDraftWarning(show)
-{
-	if (show)
-		$('.draft').slideDown('slow');
-	else
-		$('.draft').slideUp('slow');
-}
-
-function showOptions(show)
-{
-	if (show)
-		$('tr#product_options').slideDown('slow');
-	else
-		$('tr#product_options').slideUp('slow');
-}
-
-function submitAddProductAndPreview()
-{
-	$('#fakeSubmitAddProductAndPreview').attr('name','submitAddProductAndPreview');
-	$('#product').submit();
-}
-
-function submitAddcmsAndPreview()
-{
-	$('#previewSubmitAddcmsAndPreview').attr('name','submitAddcmsAndPreview');
-	$('#cms').submit();
-}
-
-function showHelp(url, label, iso_lang, ps_version, doc_version, country)
-{
-    trackClickOnHelp(label, doc_version);
-    $('#help-'+label).attr('src','../img/admin/help2.png');
-    window.open(url +'/'+iso_lang+'/doc/'+label+'?version='+ps_version+'&country='+country+'#', '_blank', 'scrollbars=yes,menubar=no,toolbar=no,location=no,width=517,height=600');
-    return false;
-}
-
-
-function trackClickOnHelp(label, doc_version)
-{
-   	$.ajax({
-		url: 'ajax.php',
-		data: 'submitTrackClickOnHelp&label='+ label +'&version='+doc_version
-	});
-}
-

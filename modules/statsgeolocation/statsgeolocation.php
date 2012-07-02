@@ -1,32 +1,14 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-if (!defined('_PS_VERSION_'))
-	exit;
+/**
+  * Statistics
+  * @category stats
+  *
+  * @author Damien Metzger / Epitech
+  * @copyright Epitech / PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.2
+  */
 
 class StatsGeoLocation extends Module
 {
@@ -36,10 +18,8 @@ class StatsGeoLocation extends Module
 	function __construct()
 	{
 		$this->name = 'statsgeolocation';
-		$this->tab = 'analytics_stats';
+		$this->tab = 'Stats';
 		$this->version = 1.0;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 		
 		parent::__construct();
 		
@@ -93,7 +73,7 @@ class StatsGeoLocation extends Module
 			`y` int(4) NOT NULL,
 			`id_country` INTEGER UNSIGNED NOT NULL,
 			PRIMARY KEY(`id_location_coords`)
-			) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8'))
+			) ENGINE=MyISAM DEFAULT CHARSET=utf8'))
 			return false;
 
 		$flag = 0;
@@ -124,7 +104,7 @@ class StatsGeoLocation extends Module
 		$this->_html = '
 		<fieldset class="width3"><legend><img src="'.$this->_path.'logo.gif" alt="" title="" /> '.$this->displayName.'</legend>
 			<center>
-				<p><img src="../img/admin/down.gif" />'.$this->l('This module shows the distribution of the countries of your customers by displaying different sized points on the worldmap below. See the fame of your website all around the world and which continent you have yet to conquer.').'</p>
+				<p><img src="../img/admin/down.gif" />'.$this->l('This module shows the country distribution of your customers by displaying different sized points on the worldmap below. See the fame of your website all around the world and which continent you\'ve not conquered yet.').'</p>
 			</center>
 			<p class="space">
 				<img src="'.$this->_path.'drawer.php" alt="" title="" />
@@ -155,7 +135,7 @@ class StatsGeoLocation extends Module
 
 		$map_size;
 		$cross_size;
-		$id_lang = (isset($cookie->id_lang) ? (int)($cookie->id_lang) : Configuration::get('PS_LANG_DEFAULT'));
+		$id_lang = (isset($cookie->id_lang) ? intval($cookie->id_lang) : Configuration::get('PS_LANG_DEFAULT'));
 		$wait = $this->l('Please wait...');
 
 		if ((file_exists('../modules/'.$this->name.'/'.$this->_map_path) == FALSE) || 
@@ -178,7 +158,7 @@ class StatsGeoLocation extends Module
 				<input type="hidden" id="opt" value="1" />
 				<input type="hidden" id="id_lang" value="'.$id_lang.'" />
 				<input type="hidden" id="lang_info" value="'.$this->l('Click on the map to set the position of:').'" />
-				<input type="hidden" id="lang_error" value="'.$this->l('Error: click on the map or the cancel button').'" />
+				<input type="hidden" id="lang_error" value="'.$this->l('Error: you should click on the map or on the cancel button').'" />
 				<input type="hidden" id="lang_cancel" value="'.$this->l('Cancel').'" />
 				<input type="hidden" id="lang_validate" value="'.$this->l('Validate').'" />
 				<input type="hidden" id="marker_size" value="'.$cross_size[0].'" />
@@ -190,4 +170,4 @@ class StatsGeoLocation extends Module
 		return $output;
 	}
 }
-
+?>

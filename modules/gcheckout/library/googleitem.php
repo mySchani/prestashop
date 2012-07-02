@@ -17,7 +17,7 @@
 
 /**
  * Classes used to represent an item to be used for Google Checkout
- * @version $Id: googleitem.php 9818 2011-11-03 10:00:52Z vSchoener $
+ * @version $Id: googleitem.php 1234 2007-09-25 14:58:57Z ropu $
  */
 
  /**
@@ -63,10 +63,10 @@
     function GoogleItem($name, $desc, $qty, $price, $item_weight='', $numeric_weight='') {
       $this->item_name = $name; 
       $this->item_description= $desc;
-      $this->unit_price = (float)$price;
-      $this->quantity = (int)$qty;
+      $this->unit_price = $price;
+      $this->quantity = $qty;
 
-      if ($item_weight != '' && $numeric_weight !== '') {
+      if($item_weight != '' && $numeric_weight !== '') {
         switch(strtoupper($item_weight)){
           case 'KG':
             $this->item_weight = strtoupper($item_weight);
@@ -158,4 +158,4 @@
       $this->digital_content = true;
     }
   }
-
+?>

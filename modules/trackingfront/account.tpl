@@ -1,32 +1,6 @@
-{*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*}
-
 		<div style="width: 800px; height: 75px; background-color: #8AB50E; margin: 0 auto; color: white; font-family: arial; border-bottom: 5px solid #567500;">
 			<div style="float: left; font-size: 36px;  margin-left: 20px; font-weight: bold; height: 75px; line-height: 75px; vertical-align: middle;">{l s='Affiliation space' mod='trackingfront'}</div>
-			<div style="float: right; font-size: 18px; margin-right: 20px; font-weight: bold; height: 75px; line-height: 75px; vertical-align: middle;"><a href="{$smarty.server.PHP_SELF|escape:'htmlall':'UTF-8'}?logout_tracking">{l s='Logout' mod='trackingfront'}</a></div>
+			<div style="float: right; font-size: 18px; margin-right: 20px; font-weight: bold; height: 75px; line-height: 75px; vertical-align: middle;"><a href="{$php_self|escape:'htmlall':'UTF-8'}?logout_tracking">{l s='Logout' mod='trackingfront'}</a></div>
 		</div>
 		<div style="width: 800px; height: 250px; background-color: #EEEEEE; margin: 0 auto; font-family: arial;">
 			<div style="float:left; margin: 25px 0 0 50px;">

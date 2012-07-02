@@ -1,29 +1,15 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Currencies tab for admin panel, AdminCurrencies.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
@@ -41,22 +27,12 @@ class AdminCurrencies extends AdminTab
 		'id_currency' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'name' => array('title' => $this->l('Currency'), 'width' => 100),
 		'iso_code' => array('title' => $this->l('ISO code'), 'align' => 'center', 'width' => 35),
-		'iso_code_num' => array('title' => $this->l('ISO code num'), 'align' => 'center', 'width' => 35),
 		'sign' => array('title' => $this->l('Symbol'), 'width' => 20, 'align' => 'center', 'orderby' => false, 'search' => false),
-		'conversion_rate' => array('title' => $this->l('Conversion rate'), 'float' => true, 'align' => 'center', 'width' => 50, 'search' => false),
-		'active' => array('title' => $this->l('Enabled'), 'width' => 25, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false));
+		'conversion_rate' => array('title' => $this->l('Conversion rate'), 'float' => true, 'align' => 'center', 'width' => 50, 'search' => false));
 
 		$this->optionTitle = $this->l('Currencies options');
 		$this->_fieldsOptions = array(
-			'PS_CURRENCY_DEFAULT' => array(
-				'title' => $this->l('Default currency:'),
-				'desc' => $this->l('The default currency used in shop')
-					.'<div class=warn"><img src="../img/admin/warn2.png" />'.$this->l('If you change default currency, you will have to manually edit every product price.').'</div>',
-					'cast' => 'intval',
-					'type' => 'select',
-					'identifier' => 'id_currency',
-					'list' => Currency::getCurrencies()
-				),
+			'PS_CURRENCY_DEFAULT' => array('title' => $this->l('Default currency:'), 'desc' => $this->l('The default currency used in shop'), 'cast' => 'intval', 'type' => 'select', 'identifier' => 'id_currency', 'list' => Currency::getCurrencies()),
 		);
 		$this->_where = 'AND a.`deleted` = 0';
 
@@ -74,36 +50,17 @@ class AdminCurrencies extends AdminTab
 				if (Validate::isLoadedObject($object = $this->loadObject()))
 				{
 					if ($object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-						$this->_errors[] = $this->l('You cannot delete the default currency');
+						$this->_errors[] = $this->l('You can\'t delete the default currency');
 					elseif ($object->delete())
 						Tools::redirectAdmin($currentIndex.'&conf=1'.'&token='.$this->token);
 					else
-						$this->_errors[] = Tools::displayError('An error occurred during deletion.');
+						$this->_errors[] = Tools::displayError('an error occurred during deletion');
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred while deleting object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
+					$this->_errors[] = Tools::displayError('an error occurred while deleting object').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
 			}
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
-		}
-		elseif ((isset($_GET['status'.$this->table]) OR isset($_GET['status'])) AND Tools::getValue($this->identifier))
-		{
-			if ($this->tabAccess['edit'] === '1')
-			{
-				if (Validate::isLoadedObject($object = $this->loadObject()))
-				{
-					if ($object->active AND $object->id == Configuration::get('PS_CURRENCY_DEFAULT'))
-						$this->_errors[] = $this->l('You cannot disable the default currency');
-					elseif ($object->toggleStatus())
-						Tools::redirectAdmin($currentIndex.'&conf=5'.((($id_category = (int)(Tools::getValue('id_category'))) AND Tools::getValue('id_product')) ? '&id_category='.$id_category : '').'&token='.$this->token);
-					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating status.');
-				}
-				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating status for object.').' <b>'.$this->table.'</b> '.Tools::displayError('(cannot load object)');
-			}
-			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
 		}
 		elseif (Tools::getValue('submitOptions'.$this->table))
 		{
@@ -111,7 +68,11 @@ class AdminCurrencies extends AdminTab
 			{
 				Configuration::updateValue($key, $field['cast'](Tools::getValue($key)));
 				if ($key == 'PS_CURRENCY_DEFAULT')
-					Currency::refreshCurrencies();
+				{
+					$currency = new Currency($field['cast'](Tools::getValue($key)));
+					$currency->conversion_rate = 1;
+					$currency->update();
+				}
 			}
 			Tools::redirectAdmin($currentIndex.'&conf=6'.'&token='.$this->token);
 		}
@@ -127,43 +88,32 @@ class AdminCurrencies extends AdminTab
 	public function displayOptionsList()
 	{
 		global	$currentIndex;
-		
-		$dir = explode(DIRECTORY_SEPARATOR, dirname(__FILE__));
-		for ($i = 0; $i < 2; ++$i)
-			$adminDir = array_pop($dir);
 
 		parent::displayOptionsList();
 		echo '<br /><br />
-		<form action="'.$currentIndex.'&token='.$this->token.'" method="post">
+		<form action="'.$currentIndex.'&token='.$this->token.'" method="post" class="width3">
 			<fieldset>
 			<legend><img src="../img/admin/exchangesrate.gif" />'.$this->l('Currency rates').'</legend>
-			<label>'.$this->l('Update currency rates').'</label>
+			<label>'.$this->l('Update currencies rates:').'</label>
 				<div class="margin-form">
 					<p>'.$this->l('Update your currencies exchanges rates with a real-time tool').'</p>
 				</div>
 				<div class="margin-form">
-					<input type="submit" value="'.$this->l('Update currency rates').'" name="submitExchangesRates" class="button" />
+					<input type="submit" value="'.$this->l('Update  currencies rates').'" name="submitExchangesRates" class="button" />
 				</div>
 			</fieldset>
 		</form>';
-		echo '<br /></br />
-		<fieldset>
-			<legend><img src="../img/admin/tab-tools.gif" />'.$this->l('Currency rates update').'</legend>
-			<p>'.$this->l('Place this URL in crontab or call it manually daily').':<br />
-			<b>'.Tools::getShopDomain(true, true). __PS_BASE_URI__.$adminDir.'/cron_currency_rates.php?secure_key='.md5(_COOKIE_KEY_.Configuration::get('PS_SHOP_NAME')).'</b></p>
-		</fieldset>';
 	}
-	
+
 	public function displayForm($isMainTab = true)
 	{
 		global $currentIndex;
 		parent::displayForm();
 
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 
 		echo '
-		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post">
+		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" class="width3">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
 			<fieldset><legend><img src="../img/admin/money.gif" />'.$this->l('Currencies').'</legend>
 				<label>'.$this->l('Currency:').' </label>
@@ -178,21 +128,15 @@ class AdminCurrencies extends AdminTab
 					<span class="hint-pointer">&nbsp;</span>
 					<p class="clear">'.$this->l('ISO code, e.g., USD for dollar, EUR for euro').'...</p>
 				</div>
-				<label>'.$this->l('Numeric ISO code:').' </label>
-				<div class="margin-form">
-					<input type="text" size="30" maxlength="32" name="iso_code_num" value="'.htmlentities($this->getFieldValue($obj, 'iso_code_num'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
-					<span class="hint-pointer">&nbsp;</span>
-					<p class="clear">'.$this->l('Numeric ISO code, e.g., 840 for dollar, 978 for euro').'...</p>
-				</div>
 				<label>'.$this->l('Symbol:').' </label>
 				<div class="margin-form">
-					<input type="text" size="3" maxlength="8" name="sign" value="'.$this->getFieldValue($obj, 'sign').'" /> <sup>*</sup>
+					<input type="text" size="3" maxlength="8" name="sign" value="'.htmlentities($this->getFieldValue($obj, 'sign'), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					<p class="clear">'.$this->l('Will appear on Front Office, e.g., &euro;, $').'...</p>
 				</div>
 				<label>'.$this->l('Conversion rate:').' </label>
 				<div class="margin-form">
 					<input type="text" size="3" maxlength="11" name="conversion_rate" value="'.htmlentities($this->getFieldValue($obj, 'conversion_rate')).'" /> <sup>*</sup>
-					<p class="clear">'.$this->l('Conversion rate from one unit of your shop\'s default currency (for example, 1€) to this currency. For example, if the default currency is euros and this currency is dollars, type \'1.20\'').' 1&euro; = $1.20</p>
+					<p class="clear">'.$this->l('Conversion rate from one unit of your shop\'s default currency (for example, 1€) to this currency. For example, if the default currency is euros and this currency is dollars, type \'1.52\'').' 1&euro; = $1.38</p>
 				</div>
 				<label>'.$this->l('Formatting:').' </label>
 				<div class="margin-form">
@@ -225,13 +169,6 @@ class AdminCurrencies extends AdminTab
 					<label class="t" for="blank_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 					<p>'.$this->l('Include a blank between sign and price, e.g.,').'<br />$1,240.15 -> $ 1,240.15</p>
 				</div>
-				<label>'.$this->l('Enable:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="active" id="active_on" value="1" '.($this->getFieldValue($obj, 'active') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
-					<input type="radio" name="active" id="active_off" value="0" '.(!$this->getFieldValue($obj, 'active') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
-				</div>
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -241,3 +178,4 @@ class AdminCurrencies extends AdminTab
 	}
 }
 
+?>

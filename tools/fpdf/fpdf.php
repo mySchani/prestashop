@@ -1010,13 +1010,13 @@ function Output($name='', $dest='')
 		case 'I':
 			//Send to standard output
 			if(ob_get_length())
-				$this->Error('Some data has already been output, cannot send PDF file');
+				$this->Error('Some data has already been output, can\'t send PDF file');
 			if(php_sapi_name()!='cli')
 			{
 				//We send to a browser
 				header('Content-Type: application/pdf');
 				if(headers_sent())
-					$this->Error('Some data has already been output, cannot send PDF file');
+					$this->Error('Some data has already been output, can\'t send PDF file');
 				header('Content-Length: '.strlen($this->buffer));
 				header('Content-Disposition: inline; filename="'.$name.'"');
 				header('Cache-Control: private, max-age=0, must-revalidate');
@@ -1028,10 +1028,10 @@ function Output($name='', $dest='')
 		case 'D':
 			//Download file
 			if(ob_get_length())
-				$this->Error('Some data has already been output, cannot send PDF file');
+				$this->Error('Some data has already been output, can\'t send PDF file');
 			header('Content-Type: application/x-download');
 			if(headers_sent())
-				$this->Error('Some data has already been output, cannot send PDF file');
+				$this->Error('Some data has already been output, can\'t send PDF file');
 			header('Content-Length: '.strlen($this->buffer));
 			header('Content-Disposition: attachment; filename="'.$name.'"');
 			header('Cache-Control: private, max-age=0, must-revalidate');
@@ -1069,6 +1069,9 @@ function _dochecks()
 	//Check mbstring overloading
 	if(ini_get('mbstring.func_overload') & 2)
 		$this->Error('mbstring overloading must be disabled');
+	//Disable runtime magic quotes
+	if(get_magic_quotes_runtime())
+		Tools::ps_set_magic_quotes_runtime(0);
 }
 
 function _getpageformat($format)

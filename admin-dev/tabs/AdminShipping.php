@@ -1,29 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14784 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Shipping tab for admin panel, AdminShipping.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 
 class AdminShipping extends AdminTab
 {
@@ -55,7 +43,7 @@ class AdminShipping extends AdminTab
 			 	/* Check required fields */
 				foreach ($this->_fieldsHandling AS $field => $values)
 					if (($value = Tools::getValue($field)) == false AND (string)$value != '0')
-						$this->_errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is required.');
+						$this->_errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is required');
 
 				/* Check field validity */
 				foreach ($this->_fieldsHandling AS $field => $values)
@@ -63,7 +51,7 @@ class AdminShipping extends AdminTab
 					{
 						$function = $values['validation'];
 						if (!Validate::$function(Tools::getValue($field)))
-							$this->_errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is invalid.');
+							$this->_errors[] = Tools::displayError('field').' <b>'.$values['title'].'</b> '.Tools::displayError('is invalid');
 					}
 
 				/* Update configuration values */
@@ -79,7 +67,7 @@ class AdminShipping extends AdminTab
 				}
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->_errors[] = Tools::displayError('You do not have permission to edit anything here.');
 		}
 
 		/* Shipping fees */
@@ -87,15 +75,15 @@ class AdminShipping extends AdminTab
 		{
 		 	if ($this->tabAccess['edit'] === '1')
 			{
-				if (($id_carrier = (int)(Tools::getValue('id_carrier'))) AND $id_carrier == ($id_carrier2 = (int)(Tools::getValue('id_carrier2'))))
+				if (($id_carrier = intval(Tools::getValue('id_carrier'))) AND $id_carrier == ($id_carrier2 = intval(Tools::getValue('id_carrier2'))))
 				{
 					$carrier = new Carrier($id_carrier);
 					if (Validate::isLoadedObject($carrier))
 					{
 					 	/* Get configuration values */
-						$shipping_method = $carrier->getShippingMethod();
-						$rangeTable = $carrier->getRangeTable(); 
-						
+						$shipping_method = intval(Configuration::get('PS_SHIPPING_METHOD'));
+
+						$rangeTable = $shipping_method ? 'range_weight' : 'range_price';
 						$carrier->deleteDeliveryPrice($rangeTable);
 
 						/* Build prices list */
@@ -104,28 +92,29 @@ class AdminShipping extends AdminTab
 							if (strstr($key, 'fees_'))
 							{
 								$tmpArray = explode('_', $key);
-								$priceList .= '('.($shipping_method == Carrier::SHIPPING_METHOD_PRICE ? (int)($tmpArray[2]) : 'NULL').',
-								'.($shipping_method == Carrier::SHIPPING_METHOD_WEIGHT ? (int)($tmpArray[2]) : 'NULL').', '.(int)$carrier->id.',
-								'.(int)$tmpArray[1].', '.number_format(abs(preg_replace("#,#", '.', $value)), 6, '.', '').'),';
+								$priceList .= '('.($shipping_method == 0 ? intval($tmpArray[2]) : 'NULL').',
+								'.($shipping_method == 1 ? intval($tmpArray[2]) : 'NULL').', '.$carrier->id.',
+								'.intval($tmpArray[1]).', '.number_format(abs($value), 2, '.', '').'),';
 								unset($tmpArray);
 							}
 						$priceList = rtrim($priceList, ',');
+
 						/* Update delivery prices */
 						$carrier->addDeliveryPrice($priceList);
 						Tools::redirectAdmin($currentIndex.'&conf=6'.'&token='.$this->token);
 					}
 					else
-						$this->_errors[] = Tools::displayError('An error occurred while updating fees (cannot load carrier object).');
+						$this->_errors[] = Tools::displayError('an error occurred while updating fees (cannot load carrier object)');
 				}
 				elseif (isset($id_carrier2))
 				{
 					$_POST['id_carrier'] = $id_carrier2;
 				}
 				else
-					$this->_errors[] = Tools::displayError('An error occurred while updating fees (cannot load carrier object).');
+					$this->_errors[] = Tools::displayError('an error occurred while updating fees (cannot load carrier object)');
 			}
 			else
-				$this->_errors[] = Tools::displayError('You do not have permission to edit here.');
+				$this->_errors[] = Tools::displayError('You do not have permission to edit anything here.');
 		}
 	}
 
@@ -146,7 +135,7 @@ class AdminShipping extends AdminTab
 		unset($confKeys['PS_SHIPPING_METHOD']);
 
 		echo '
-		<form action="'.$currentIndex.'&submitHandling'.$this->table.'=1&token='.$this->token.'" method="post">
+		<form action="'.$currentIndex.'&submitHandling'.$this->table.'=1&token='.$this->token.'" method="post" class="width2">
 			<fieldset>
 				<legend><img src="../img/admin/delivery.gif" />'.$this->l('Handling').'</legend>';
 
@@ -159,7 +148,7 @@ class AdminShipping extends AdminTab
 			<label class="clear">'.$confKey['title'].':</label>
 			<div class="margin-form">';
 			echo $sign_left;
-			echo '<input size="6" type="text" name="'.$key.'" value="'.Tools::safeOutput($postValue != false ? $postValue : $confValues[$key]).'" />';
+			echo '<input size="6" type="text" name="'.$key.'" value="'.(($postValue != false OR (string)$postValue == '0') ? $postValue : $confValues[$key]).'" />';
 			echo $sign_right.' '.($key == 'PS_SHIPPING_HANDLING' ? $this->l('(tax excl.)') : '');
 			echo '</div>';
 		}
@@ -195,111 +184,78 @@ class AdminShipping extends AdminTab
 	public function displayFormFees()
 	{
 		global $currentIndex;
-		
-		$carrierArray = array();
-		$id_carrier = Tools::getValue('id_carrier');
-		$carriers = Carrier::getCarriers((int)(Configuration::get('PS_LANG_DEFAULT')), true , false,false, NULL, Carrier::PS_CARRIERS_AND_CARRIER_MODULES_NEED_RANGE);
-		foreach ($carriers AS $carrier)
-			if (!$carrier['is_free'])
-				$carrierArray[] = array(
-					'id' => $carrier['id_carrier'],
-					'display' => '<option value="'.(int)($carrier['id_carrier']).'"'.(($carrier['id_carrier'] == $id_carrier) ? ' selected="selected"' : '').'>'.$carrier['name'].'</option>'
-				);
-		if (count($carrierArray))
-		{
-			if (!$id_carrier)
-				$id_carrier = (int)$carrierArray[0]['id'];
-			$carrierSelected = new Carrier($id_carrier);
-		}
-		
+
 		echo '<br /><br />
 		<h2>'.$this->l('Fees by carrier, geographical zone, and ranges').'</h2>
-		<form action="'.$currentIndex.'&token='.$this->token.'" id="fees" name="fees" method="post">
+		<form action="'.$currentIndex.'&token='.$this->token.'" id="fees" name="fees" method="post" class="width2">
 			<fieldset>
-				<legend><img src="../img/admin/delivery.gif" />'.$this->l('Fees').'</legend>';
-		
-		if (!count($carrierArray))
-			echo $this->l('You only have free carriers, there is no need to configure your delivery prices.');
-		else
-		{
-			echo '<b>'.$this->l('Carrier:').' </b>
+				<legend><img src="../img/admin/delivery.gif" />'.$this->l('Fees').'</legend>
+				<b>'.$this->l('Carrier:').' </b>
 				<select name="id_carrier2" onchange="document.fees.submit();">';
-			foreach ($carrierArray AS $carrierOption)
-				echo $carrierOption['display'];
-			echo '
+		$carriers = Carrier::getCarriers(intval(Configuration::get('PS_LANG_DEFAULT')));
+		$id_carrier = Tools::getValue('id_carrier') ? intval(Tools::getValue('id_carrier')) : intval($carriers[0]['id_carrier']);
+		$carrierSelected = new Carrier($id_carrier);
+		foreach ($carriers AS $carrier)
+			echo '<option value="'.intval($carrier['id_carrier']).'"'.(($carrier['id_carrier'] == $id_carrier) ? ' selected="selected"' : '').'>'.$carrier['name'].'</option>';
+		echo '
 				</select><br />
 				<table class="table space" cellpadding="0" cellspacing="0">
 					<tr>
 						<th>'.$this->l('Zone / Range').'</th>';
 
-			$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
-			
-			$rangeObj = $carrierSelected->getRangeObject();
-			$rangeTable = $carrierSelected->getRangeTable();
-			$suffix = $carrierSelected->getRangeSuffix();
-
-			$rangeIdentifier = 'id_'.$rangeTable;
-			$ranges = $rangeObj->getRanges($id_carrier);
-			$delivery = Carrier::getDeliveryPriceByRanges($rangeTable, $id_carrier);
-			foreach ($delivery AS $deliv)
-				$deliveryArray[$deliv['id_zone']][$deliv['id_carrier']][$deliv[$rangeIdentifier]] = $deliv['price'];
-			if (!$carrierSelected->is_free)
+				$shipping_method = intval(Configuration::get('PS_SHIPPING_METHOD'));
+				$currency = new Currency(Configuration::get('PS_CURRENCY_DEFAULT'));
+				$rangeObj = $shipping_method ? new RangeWeight() : new RangePrice();
+				$rangeTable = $shipping_method ? 'range_weight' : 'range_price';
+				$rangeIdentifier = 'id_'.$rangeTable;
+				$ranges = $rangeObj->getRanges($id_carrier);
+				$suffix = $shipping_method ? Configuration::get('PS_WEIGHT_UNIT') : $currency->sign;
+				$delivery = Carrier::getDeliveryPriceByRanges($rangeTable);
+				foreach ($delivery AS $deliv)
+					$deliveryArray[$deliv['id_zone']][$deliv['id_carrier']][$deliv[$rangeIdentifier]] = $deliv['price'];
 				foreach ($ranges AS $range)
-					echo '<th style="font-size: 11px;">'.(float)($range['delimiter1']).$suffix.' '.$this->l('to').' '.(float)($range['delimiter2']).$suffix.'</th>';
+					echo '<th style="font-size: 11px;">'.floatval($range['delimiter1']).$suffix.' '.$this->l('to').' '.floatval($range['delimiter2']).$suffix.'</th>';
 				echo '</tr>';
 
-			$zones = $carrierSelected->getZones();
-			if (sizeof($ranges) && !$carrierSelected->is_free)
-			{
-				if (sizeof($zones) > 1)
-				{
-					echo '
-					<tr>
-						<th style="height: 30px;">'.$this->l('All').'</th>';
-						foreach ($ranges AS $range)
-							echo '<td class="center">'.$currency->getSign('left').'<input type="text" id="fees_all_'.$range[$rangeIdentifier].'" onchange="this.value = this.value.replace(/,/g, \'.\');" onkeyup="if ((event.keyCode||event.which) != 9){ spreadFees('.$range[$rangeIdentifier].') }" style="width: 45px;" />'.$currency->getSign('right').'</td>';
-					echo '</tr>';
-				}
-			
-				foreach ($zones AS $zone)
-				{
-					echo '
-					<tr>
-						<th style="height: 30px;">'.$zone['name'].'</th>';
-					foreach ($ranges AS $range)
+				$zones = Zone::getZones(true);
+				if (sizeof($ranges))
+					foreach ($zones AS $zone)
 					{
-						if (isset($deliveryArray[$zone['id_zone']][$id_carrier][$range[$rangeIdentifier]]))
-							$price = $deliveryArray[$zone['id_zone']][$id_carrier][$range[$rangeIdentifier]];
-						else
-							$price = '0.00';
-						echo '<td class="center">'.$currency->getSign('left').'<input type="text" class="fees_'.$range[$rangeIdentifier].'" onchange="this.value = this.value.replace(/,/g, \'.\');" name="fees_'.$zone['id_zone'].'_'.$range[$rangeIdentifier].'" onkeyup="clearAllFees('.$range[$rangeIdentifier].')" value="'.$price.'" style="width: 45px;" />'.$currency->getSign('right').'</td>';
+						if (!$carrierSelected->getZone($zone['id_zone']))
+							continue ;
+						echo '
+						<tr>
+							<th style="height: 30px;">'.$zone['name'].'</th>';
+						foreach ($ranges AS $range)
+						{
+							if (isset($deliveryArray[$zone['id_zone']][$id_carrier][$range[$rangeIdentifier]]))
+								$price = $deliveryArray[$zone['id_zone']][$id_carrier][$range[$rangeIdentifier]];
+							else
+								$price = '0.00';
+							echo '<td class="center">'.$currency->getSign('left').'<input type="text" name="fees_'.$zone['id_zone'].'_'.$range[$rangeIdentifier].'" value="'.$price.'" style="width: 45px;" />'.$currency->getSign('right').'</td>';
+						}
+						echo '
+						</tr>';
 					}
-					echo '
+				echo '
+					<tr>
+						<td colspan="'.(sizeof($ranges) + 1).'" class="center" style="border-bottom: none; height: 40px;">
+							<input type="hidden" name="submitFees'.$this->table.'" value="1" />
+					';
+				if (sizeof($ranges))
+					echo '	<input type="submit" value="'.$this->l('   Save   ').'" class="button" />';
+				else
+					echo $this->l('No ranges set for this carrier');
+				echo '
+						</td>
 					</tr>';
-				}
-			}
-				
-			echo '<tr>
-					<td colspan="'.(sizeof($ranges) + 1).'" class="center" style="border-bottom: none; height: 40px;">
-						<input type="hidden" name="submitFees'.$this->table.'" value="1" />';
-			if (sizeof($ranges) && !$carrierSelected->is_free)
-				echo '	<input type="submit" value="'.$this->l('   Save   ').'" class="button" />';
-			elseif ($carrierSelected->is_free)
-				echo $this->l('This is a free carrier');
-			else
-				echo $this->l('No ranges set for this carrier');
-			echo '
-					</td>
-				</tr>';
-			echo '
-			</table>
-			<p>'.$this->l('Prices do not include tax.').'</p>';
-		}
-		echo '
+				echo '
+				</table>
+				<p>'.$this->l('Prices are tax excluded.').'</p>
 			</fieldset>
 			<input type="hidden" name="id_carrier" value="'.$id_carrier.'" />
 		</form>';
 	}
 }
 
-
+?>

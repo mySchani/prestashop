@@ -1,35 +1,27 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14352 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-// Save the value of $useSSL ($useSSL will be overwritten by FrontController::__contruct())
-$controller = new FrontController();
+// P3P Policies (http://www.w3.org/TR/2002/REC-P3P-20020416/#compact_policies)
+header('P3P: CP="IDC DSP COR CURa ADMa OUR IND PHY ONL COM STA"');
 
-if (Tools::usingSecureMode())
-	$useSSL = $controller->ssl = true;
-	
-$controller->displayHeader();
+require_once(dirname(__FILE__).'/init.php');
 
+/* CSS */
+$css_files[_THEME_CSS_DIR_.'global.css'] = 'all';
+
+/* Hooks are volontary out the initialize array (need those variables already assigned) */
+$smarty->assign(array(
+	'HOOK_HEADER' => Module::hookExec('header'),
+	'HOOK_LEFT_COLUMN' => Module::hookExec('leftColumn'),
+	'HOOK_TOP' => Module::hookExec('top'),
+	'static_token' => Tools::getToken(false),
+	'token' => Tools::getToken(),
+	'priceDisplayPrecision' => _PS_PRICE_DISPLAY_PRECISION_,
+	'content_only' => intval(Tools::getValue('content_only'))
+));
+
+if(isset($css_files) AND !empty($css_files)) $smarty->assign('css_files', $css_files);
+if(isset($js_files) AND !empty($js_files)) $smarty->assign('js_files', $js_files);
+
+$smarty->display(_PS_THEME_DIR_.'header.tpl');
+
+?>

@@ -1,29 +1,17 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14731 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Manufacturers tab for admin panel, AdminManufacturers.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
+
+include_once(realpath(PS_ADMIN_DIR.'/../').'/classes/AdminTab.php');
 
 class AdminManufacturers extends AdminTab
 {
@@ -43,21 +31,20 @@ class AdminManufacturers extends AdminTab
 	 	$this->delete = true;
 
 		// Sub tab addresses
-		$countries = Country::getCountries((int)($cookie->id_lang));
+		$countries = Country::getCountries(intval($cookie->id_lang));
 		foreach ($countries AS $country)
 			$this->countriesArray[$country['id_country']] = $country['name'];
-		
 		$this->fieldsDisplayAddresses = array(
 		'id_address' => array('title' => $this->l('ID'), 'align' => 'center', 'width' => 25),
 		'm!manufacturer_name' => array('title' => $this->l('Manufacturer'), 'width' => 100),
 		'firstname' => array('title' => $this->l('First name'), 'width' => 80),
-		'lastname' => array('title' => $this->l('Last name'), 'width' => 100, 'filter_key' => 'a!lastname'),
-		'postcode' => array('title' => $this->l('Postcode/ Zip Code'), 'align' => 'right', 'width' => 50),
+		'lastname' => array('title' => $this->l('Last name'), 'width' => 100, 'filter_key' => 'a!name'),
+		'postcode' => array('title' => $this->l('Post/Zip code'), 'align' => 'right', 'width' => 50),
 		'city' => array('title' => $this->l('City'), 'width' => 150),
 		'country' => array('title' => $this->l('Country'), 'width' => 100, 'type' => 'select', 'select' => $this->countriesArray, 'filter_key' => 'cl!id_country'));
 		$this->_includeTabTitle = array($this->l('Manufacturers addresses'));
 		$this->_joinAddresses = 'LEFT JOIN `'._DB_PREFIX_.'country_lang` cl ON 
-		(cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.(int)($cookie->id_lang).') ';
+		(cl.`id_country` = a.`id_country` AND cl.`id_lang` = '.intval($cookie->id_lang).') ';
 	 	$this->_joinAddresses .= 'LEFT JOIN `'._DB_PREFIX_.'manufacturer` m ON (a.`id_manufacturer` = m.`id_manufacturer`)';
 		$this->_selectAddresses = 'cl.`name` as country, m.`name` AS manufacturer_name';
 		$this->_includeTab = array('Addresses' => array('addressType' => 'manufacturer', 'fieldsDisplay' => $this->fieldsDisplayAddresses, '_join' => $this->_joinAddresses, '_select' => $this->_selectAddresses));
@@ -74,9 +61,12 @@ class AdminManufacturers extends AdminTab
 			'name' => array('title' => $this->l('Name'), 'width' => 200),
 			'logo' => array('title' => $this->l('Logo'), 'align' => 'center', 'image' => 'm', 'orderby' => false, 'search' => false),
 			'addresses' => array('title' => $this->l('Addresses'), 'align' => 'right', 'tmpTableFilter' => true, 'width' => 20),
-			'products' => array('title' => $this->l('Products'), 'align' => 'right', 'tmpTableFilter' => true, 'width' => 20),
-			'active' => array('title' => $this->l('Enabled'), 'width' => 25, 'align' => 'center', 'active' => 'status', 'type' => 'bool', 'orderby' => false)
+			'products' => array('title' => $this->l('Products'), 'align' => 'right', 'tmpTableFilter' => true, 'width' => 20)
 		);
+
+		$countries = Country::getCountries(intval($cookie->id_lang));
+		foreach ($countries AS $country)
+			$this->countriesArray[$country['id_country']] = $country['name'];
 
 		parent::__construct();
 	}
@@ -84,11 +74,11 @@ class AdminManufacturers extends AdminTab
 	public function afterImageUpload()
 	{
 		/* Generate image with differents size */
-		if (($id_manufacturer = (int)(Tools::getValue('id_manufacturer'))) AND isset($_FILES) AND count($_FILES) AND file_exists(_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg'))
+		if (($id_manufacturer = intval(Tools::getValue('id_manufacturer'))) AND isset($_FILES) AND count($_FILES) AND file_exists(_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg'))
 		{
 			$imagesTypes = ImageType::getImagesTypes('manufacturers');
 			foreach ($imagesTypes AS $k => $imageType)
-				imageResize(_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg', _PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($imageType['name']).'.jpg', (int)($imageType['width']), (int)($imageType['height']));
+				imageResize(_PS_MANU_IMG_DIR_.$id_manufacturer.'.jpg', _PS_MANU_IMG_DIR_.$id_manufacturer.'-'.stripslashes($imageType['name']).'.jpg', intval($imageType['width']), intval($imageType['height']));
 		}
 	}
 
@@ -97,22 +87,21 @@ class AdminManufacturers extends AdminTab
 		global $currentIndex, $cookie;
 		parent::displayForm();
 		
-		if (!($manufacturer = $this->loadObject(true)))
-			return;
+		$manufacturer = $this->loadObject(true);
 		$langtags = 'cdesc2¤cdesc¤mmeta_title¤mmeta_keywords¤mmeta_description';
 
 		echo '
-		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data">
+		<form action="'.$currentIndex.'&submitAdd'.$this->table.'=1&token='.$this->token.'" method="post" enctype="multipart/form-data" class="width3">
 		'.($manufacturer->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$manufacturer->id.'" />' : '').'
-			<fieldset style="width: 905px;">
+			<fieldset style="width: 850px;">
 				<legend><img src="../img/admin/manufacturers.gif" />'.$this->l('Manufacturers').'</legend>
-				<label>'.$this->l('Name').'</label>
+				<label>'.$this->l('Name:').'</label>
 				<div class="margin-form">
 					<input type="text" size="40" name="name" value="'.htmlentities(Tools::getValue('name', $manufacturer->name), ENT_COMPAT, 'UTF-8').'" /> <sup>*</sup>
 					<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 				</div>';
 
-		echo '<br class="clear" /><label>'.$this->l('Short description').'</label>
+		echo '<br class="clear" /><label>'.$this->l('Short description:').'</label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '
@@ -122,7 +111,7 @@ class AdminManufacturers extends AdminTab
 		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, $langtags, 'cdesc2');
 		echo '</div>';
 				
-		echo '<br class="clear" /><br /><br /><label>'.$this->l('Description').'</label>
+		echo '<br class="clear" /><br /><br /><label>'.$this->l('Description:').'</label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '
@@ -134,61 +123,84 @@ class AdminManufacturers extends AdminTab
 		
 		// TinyMCE
 		global $cookie;
-		$iso = Language::getIsoById((int)($cookie->id_lang));
-		$isoTinyMCE = (file_exists(_PS_ROOT_DIR_.'/js/tiny_mce/langs/'.$iso.'.js') ? $iso : 'en');
-		$ad = dirname($_SERVER["PHP_SELF"]);
+		$iso = Language::getIsoById(intval($cookie->id_lang));
 		echo '
-			<script type="text/javascript">	
-			var iso = \''.$isoTinyMCE.'\' ;
-			var pathCSS = \''._THEME_CSS_DIR_.'\' ;
-			var ad = \''.$ad.'\' ;
-			</script>
-			<script type="text/javascript" src="'.__PS_BASE_URI__.'js/tiny_mce/tiny_mce.js"></script>
-			<script type="text/javascript" src="'.__PS_BASE_URI__.'js/tinymce.inc.js"></script>';
-		echo '<br style="clear:both;" /><br/><br/><label>'.$this->l('Logo').'</label>
+		<script type="text/javascript" src="'.__PS_BASE_URI__.'js/tinymce/jscripts/tiny_mce/jquery.tinymce.js"></script>
+		<script type="text/javascript">
+		function tinyMCEInit(element)
+		{
+			$().ready(function() {
+				$(element).tinymce({
+					// Location of TinyMCE script
+					script_url : \''.__PS_BASE_URI__.'js/tinymce/jscripts/tiny_mce/tiny_mce.js\',
+					// General options
+					theme : "advanced",
+					plugins : "safari,pagebreak,style,layer,table,advimage,advlink,inlinepopups,media,searchreplace,contextmenu,paste,directionality,fullscreen",
+					// Theme options
+					theme_advanced_buttons1 : "newdocument,|,bold,italic,underline,strikethrough,|,justifyleft,justifycenter,justifyright,justifyfull,styleselect,formatselect,fontselect,fontsizeselect",
+					theme_advanced_buttons2 : "cut,copy,paste,pastetext,pasteword,|,search,replace,|,bullist,numlist,|,outdent,indent,blockquote,|,undo,redo,|,link,unlink,anchor,image,cleanup,help,code,,|,forecolor,backcolor",
+					theme_advanced_buttons3 : "tablecontrols,|,hr,removeformat,visualaid,|,sub,sup,|,charmap,media,|,ltr,rtl,|,fullscreen",
+					theme_advanced_buttons4 : "insertlayer,moveforward,movebackward,absolute,|,styleprops,|,cite,abbr,acronym,del,ins,attribs,|,pagebreak",
+					theme_advanced_toolbar_location : "top",
+					theme_advanced_toolbar_align : "left",
+					theme_advanced_statusbar_location : "bottom",
+					theme_advanced_resizing : false,
+					content_css : "'.__PS_BASE_URI__.'themes/'._THEME_NAME_.'/css/global.css",
+					document_base_url : "'.__PS_BASE_URI__.'",
+					width: "582",
+					height: "auto",
+					font_size_style_values : "8pt, 10pt, 12pt, 14pt, 18pt, 24pt, 36pt",
+					// Drop lists for link/image/media/template dialogs
+					template_external_list_url : "lists/template_list.js",
+					external_link_list_url : "lists/link_list.js",
+					external_image_list_url : "lists/image_list.js",
+					media_external_list_url : "lists/media_list.js",
+					elements : "nourlconvert",
+					convert_urls : false,
+					language : "'.(file_exists(_PS_ROOT_DIR_.'/js/tinymce/jscripts/tiny_mce/langs/'.$iso.'.js') ? $iso : 'en').'"
+				});
+			});
+		}
+		tinyMCEInit(\'textarea.rte\');
+		</script>
+		';
+		echo '<br style="clear:both;" /><br/><br/><label>'.$this->l('Logo:').'</label>
 				<div class="margin-form">';
-					$this->displayImage($manufacturer->id, _PS_MANU_IMG_DIR_.$manufacturer->id.'.jpg', 350, NULL, NULL, true);
+					$this->displayImage($manufacturer->id, _PS_MANU_IMG_DIR_.$manufacturer->id.'.jpg', 350);
 		echo '	<br /><input type="file" name="logo" />
 					<p>'.$this->l('Upload manufacturer logo from your computer').'</p>
 				</div>
-				<label>'.$this->l('Meta title').'</label>
+				<label>'.$this->l('Meta title:').'</label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '
 					<div id="mmeta_title_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input type="text" name="meta_title_'.$language['id_lang'].'" id="meta_title_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_title', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
+						<input type="text" name="meta_title_'.$language['id_lang'].'" id="meta_title_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_title', intval($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
 						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, $langtags, 'mmeta_title');
 		echo '		<div class="clear"></div>
 				</div>
-				<label>'.$this->l('Meta description').'</label>
+				<label>'.$this->l('Meta description:').'</label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '<div id="mmeta_description_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input type="text" name="meta_description_'.$language['id_lang'].'" id="meta_description_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_description', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
+						<input type="text" name="meta_description_'.$language['id_lang'].'" id="meta_description_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_description', intval($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
 						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 				</div>';
 		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, $langtags, 'mmeta_description');
 		echo '		<div class="clear"></div>
 				</div>
-				<label>'.$this->l('Meta keywords').'</label>
+				<label>'.$this->l('Meta keywords:').'</label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '
 					<div id="mmeta_keywords_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input type="text" name="meta_keywords_'.$language['id_lang'].'" id="meta_keywords_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_keywords', (int)($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
+						<input type="text" name="meta_keywords_'.$language['id_lang'].'" id="meta_keywords_'.$language['id_lang'].'" value="'.htmlentities($this->getFieldValue($manufacturer, 'meta_keywords', intval($language['id_lang'])), ENT_COMPAT, 'UTF-8').'" />
 						<span class="hint" name="help_box">'.$this->l('Forbidden characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 					</div>';
 		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, $langtags, 'mmeta_keywords');
 		echo '		<div class="clear"></div>
-				</div>
-				<label>'.$this->l('Enable:').' </label>
-				<div class="margin-form">
-					<input type="radio" name="active" id="active_on" value="1" '.($this->getFieldValue($manufacturer, 'active') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_on"> <img src="../img/admin/enabled.gif" alt="'.$this->l('Enabled').'" title="'.$this->l('Enabled').'" /></label>
-					<input type="radio" name="active" id="active_off" value="0" '.(!$this->getFieldValue($manufacturer, 'active') ? 'checked="checked" ' : '').'/>
-					<label class="t" for="active_off"> <img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('Disabled').'" /></label>
 				</div>
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
@@ -201,12 +213,11 @@ class AdminManufacturers extends AdminTab
 	public function viewmanufacturer()
 	{
 		global $cookie;
-		if (!($manufacturer = $this->loadObject()))
-			return;
+		$manufacturer = $this->loadObject();
 		echo '<h2>'.$manufacturer->name.'</h2>';
 
-		$products = $manufacturer->getProductsLite((int)($cookie->id_lang));
-		$addresses = $manufacturer->getAddresses((int)($cookie->id_lang));
+		$products = $manufacturer->getProductsLite(intval($cookie->id_lang));
+		$addresses = $manufacturer->getAddresses(intval($cookie->id_lang));
 		
 		echo '<h3>'.$this->l('Total addresses:').' '.sizeof($addresses).'</h3>';
 		echo '<hr />';
@@ -240,21 +251,16 @@ class AdminManufacturers extends AdminTab
 		echo '<h3>'.$this->l('Total products:').' '.sizeof($products).'</h3>';
 		foreach ($products AS $product)
 		{
-			$product = new Product($product['id_product'], false, (int)($cookie->id_lang));
+			$product = new Product($product['id_product'], false, intval($cookie->id_lang));
 			echo '<hr />';
 			if (!$product->hasAttributes())
 			{
 				echo '
-				<div style="float:right;">
-					<a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button">'.$this->l('Edit').'</a>
-					<a href="?tab=AdminCatalog&id_product='.$product->id.'&deleteproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button" onclick="return confirm(\''.$this->l('Delete item #', __CLASS__, TRUE).$product->id.' ?\');">'.$this->l('Delete').'</a>
-				</div>
 				<table border="0" cellpadding="0" cellspacing="0" class="table width3">
 					<tr>
-						<th>'.$product->name.' <img src="../img/admin/'.($product->active ? 'enabled' : 'disabled').'.gif" /></th>
+						<th>'.$product->name.'</th>
 						'.(!empty($product->reference) ? '<th width="150">'.$this->l('Ref:').' '.$product->reference.'</th>' : '').'
 						'.(!empty($product->ean13) ? '<th width="120">'.$this->l('EAN13:').' '.$product->ean13.'</th>' : '').'
-						'.(!empty($product->upc) ? '<th width="120">'.$this->l('UPC:').' '.$product->upc.'</th>' : '').'
 						'.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<th class="right" width="50">'.$this->l('Qty:').' '.$product->quantity.'</th>' : '').'
 					</tr>
 				</table>';
@@ -262,26 +268,20 @@ class AdminManufacturers extends AdminTab
 			else
 			{
 				echo '
-				<div style="float:right;">
-					<a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button">'.$this->l('Edit').'</a>
-					<a href="?tab=AdminCatalog&id_product='.$product->id.'&deleteproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'" class="button" onclick="return confirm(\''.$this->l('Delete item #', __CLASS__, TRUE).$product->id.' ?\');">'.$this->l('Delete').'</a>
-				</div>
-				<h3><a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.(int)(Tab::getIdFromClassName('AdminCatalog')).(int)($cookie->id_employee)).'">'.$product->name.'</a> <img src="../img/admin/'.($product->active ? 'enabled' : 'disabled').'.gif" /></h3>
-				<table border="0" cellpadding="0" cellspacing="0" class="table" style="width:600px">
+				<h3><a href="?tab=AdminCatalog&id_product='.$product->id.'&updateproduct&token='.Tools::getAdminToken('AdminCatalog'.intval(Tab::getIdFromClassName('AdminCatalog')).intval($cookie->id_employee)).'">'.$product->name.'</a></h3>
+				<table border="0" cellpadding="0" cellspacing="0" class="table" style="width: 600px;">
 					<tr>
 	                    <th>'.$this->l('Attribute name').'</th>
 	                    <th width="80">'.$this->l('Reference').'</th>
 	                    <th width="80">'.$this->l('EAN13').'</th>
-						<th width="80">'.$this->l('UPC').'</th>
 	                   '.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<th class="right" width="40">'.$this->l('Quantity').'</th>' : '').'
                 	</tr>';
 			     	/* Build attributes combinaisons */
-				$combinaisons = $product->getAttributeCombinaisons((int)($cookie->id_lang));
+				$combinaisons = $product->getAttributeCombinaisons(intval($cookie->id_lang));
 				foreach ($combinaisons AS $k => $combinaison)
 				{
 					$combArray[$combinaison['id_product_attribute']]['reference'] = $combinaison['reference'];
 					$combArray[$combinaison['id_product_attribute']]['ean13'] = $combinaison['ean13'];
-					$combArray[$combinaison['id_product_attribute']]['upc'] = $combinaison['upc'];
 					$combArray[$combinaison['id_product_attribute']]['quantity'] = $combinaison['quantity'];
 					$combArray[$combinaison['id_product_attribute']]['attributes'][] = array($combinaison['group_name'], $combinaison['attribute_name'], $combinaison['id_attribute']);
 				}
@@ -295,10 +295,9 @@ class AdminManufacturers extends AdminTab
 					echo '
 					<tr'.($irow++ % 2 ? ' class="alt_row"' : '').' >
 						<td>'.stripslashes($list).'</td>
-						<td>'.(!empty($product_attribute['reference']) ? $product_attribute['reference'] : '-').'</td>
-						<td>'.(!empty($product_attribute['ean13']) ? $product_attribute['ean13'] : '-').'</td>
-						<td>'.(!empty($product_attribute['upc']) ? $product_attribute['upc'] : '-').'</td>
-						'.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<td class="right">'.$product_attribute['quantity'].'</td>' : '').'
+						<td>'.$product_attribute['reference'].'</td>
+						'.(Configuration::get('PS_STOCK_MANAGEMENT') ? '<td>'.$product_attribute['ean13'].'</td>' : '').'
+						<td class="right">'.$product_attribute['quantity'].'</td>
 					</tr>';
 				}
 				unset($combArray);

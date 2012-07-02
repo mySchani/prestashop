@@ -17,7 +17,7 @@
  * @author     James Stewart <james@jystewart.net>
  * @copyright  2005 James Stewart <james@jystewart.net>
  * @license    http://www.gnu.org/copyleft/lesser.html  GNU LGPL 2.1
- * @version    CVS: $Id: RSS2Element.php 8706 2011-09-21 23:15:30Z bLeveque $
+ * @version    CVS: $Id: RSS2Element.php,v 1.11 2006/07/26 21:18:47 jystewart Exp $
  * @link       http://pear.php.net/package/XML_Feed_Parser/
  */
 
@@ -26,7 +26,7 @@
  * called by XML_Feed_Parser_RSS2 with which it shares many methods.
  *
  * @author    James Stewart <james@jystewart.net>
- * @version    Release: @package_version@
+ * @version    Release: 1.0.2
  * @package XML_Feed_Parser
  */
 class XML_Feed_Parser_RSS2Element extends XML_Feed_Parser_RSS2

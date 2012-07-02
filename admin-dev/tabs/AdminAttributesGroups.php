@@ -1,29 +1,15 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14002 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
+
+/**
+  * Attributes tab for admin panel, AdminAttributesGroups.php
+  * @category admin
+  *
+  * @author PrestaShop <support@prestashop.com>
+  * @copyright PrestaShop
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 1.3
+  *
+  */
 
 include_once(PS_ADMIN_DIR.'/../classes/AdminTab.php');
 include_once(PS_ADMIN_DIR.'/tabs/AdminAttributes.php');
@@ -57,7 +43,7 @@ class AdminAttributesGroups extends AdminTab
 			OR isset($_GET['updateattribute']) OR isset($_GET['addattribute']))
 		{
 			$this->adminAttributes->displayForm($this->token);
-			echo '<br /><br /><a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow2.gif" /> '.$this->l('Back to list').'</a><br />';
+			echo '<br /><br /><a href="'.$currentIndex.'&token='.$this->token.'"><img src="../img/admin/arrow.gif" /> '.$this->l('Back to list').'</a><br />';
 		}
 		else
 			parent::display();
@@ -65,27 +51,24 @@ class AdminAttributesGroups extends AdminTab
 
 	public function postProcess()
 	{
-		global $cookie, $currentIndex;
+	 	global	$cookie, $currentIndex;
 		
 		$this->adminAttributes->tabAccess = Profile::getProfileAccess($cookie->profile, $this->id);
 		$this->adminAttributes->postProcess($this->token);
-		
-		Module::hookExec('postProcessAttributeGroup',
-		array('errors' => &$this->_errors)); // send _errors as reference to allow postProcessAttributeGroup to stop saving process
 
-		if (Tools::getValue('submitDel'.$this->table))
+		if(Tools::getValue('submitDel'.$this->table))
 		{
-			if ($this->tabAccess['delete'] === '1')
+		 	if ($this->tabAccess['delete'] === '1')
 			{
-				if (isset($_POST[$this->table.'Box']))
-				{
+			 	if (isset($_POST[$this->table.'Box']))
+			 	{
 					$object = new $this->className();
 					if ($object->deleteSelection($_POST[$this->table.'Box']))
 						Tools::redirectAdmin($currentIndex.'&conf=2'.'&token='.$this->token);
-					$this->_errors[] = Tools::displayError('An error occurred while deleting selection.');
+					$this->_errors[] = Tools::displayError('an error occurred while deleting selection');
 				}
 				else
-					$this->_errors[] = Tools::displayError('You must select at least one element to delete.');
+					$this->_errors[] = Tools::displayError('you must select at least one element to delete');
 			}
 			else
 				$this->_errors[] = Tools::displayError('You do not have permission to delete here.');
@@ -109,7 +92,7 @@ class AdminAttributesGroups extends AdminTab
 		<a href="'.$currentIndex.'&addattribute&token='.$this->token.'"><img src="../img/admin/add.gif" border="0" /> '.$this->l('Add attribute').'</a><br /><br />
 		'.$this->l('Click on the group name to view its attributes. Click again to hide them.').'<br /><br />';
 		if ($this->_list === false)
-			Tools::displayError('No elements found');
+			Tools::displayError('no elements found');
 
 		$this->displayListHeader();
 		echo '<input type="hidden" name="groupid" value="0">';
@@ -120,11 +103,11 @@ class AdminAttributesGroups extends AdminTab
 		$irow = 0;
 		foreach ($this->_list AS $tr)
 		{
-			$id = (int)($tr['id_'.$this->table]);
+			$id = intval($tr['id_'.$this->table]);
 		 	echo '
 			<tr'.($irow++ % 2 ? ' class="alt_row"' : '').'>
 				<td style="vertical-align: top; padding: 4px 0 4px 0" class="center"><input type="checkbox" name="'.$this->table.'Box[]" value="'.$id.'" class="noborder" /></td>
-				<td style="width: 140px; vertical-align: top; padding: 4px 0 4px 0; cursor: pointer" onclick="$(\'#attributes_'.$id.'\').slideToggle();">'.$tr['name'].'</td>
+				<td style="width: 140px; vertical-align: top; padding: 4px 0 4px 0; cursor: pointer" onclick="openCloseLayer(\'attributes_'.$id.'\');">'.$tr['name'].'</td>
 				<td style="vertical-align: top; padding: 4px 0 4px 0; width: 340px">
 					<div id="attributes_'.$id.'" style="display: none">
 					<table class="table" cellpadding="0" cellspacing="0">
@@ -133,21 +116,21 @@ class AdminAttributesGroups extends AdminTab
 							<th width="100%">'.$this->l('Attribute').'</th>
 							<th>'.$this->l('Actions').'</th>
 						</tr>';
-			$attributes = AttributeGroup::getAttributes((int)($cookie->id_lang), $id);
+			$attributes = AttributeGroup::getAttributes(intval($cookie->id_lang), $id);
 			foreach ($attributes AS $attribute)
 			{
 				echo '
 						<tr>
 							<td class="center"><input type="checkbox" name="attribute'.$id.'Box[]" value="'.$attribute['id_attribute'].'" class="noborder" /></td>
 							<td>
-								'.($tr['is_color_group'] ? '<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; '.(!file_exists('../img/co/'.$attribute['id_attribute'].'.jpg') ? 'background-color: '.$attribute['color'].';' : 'background-image: url(../img/co/'.$attribute['id_attribute'].'.jpg);').' margin-right: 4px;"></div>' : '')
+								'.($tr['is_color_group'] ? '<div style="float: left; width: 18px; height: 12px; border: 1px solid #996633; background-color: '.$attribute['color'].'; margin-right: 4px;"></div>' : '')
 								.$attribute['name'].'
 							</td>
 							<td class="center">
 								<a href="'.$currentIndex.'&id_attribute='.$attribute['id_attribute'].'&updateattribute&token='.$this->token.'">
 								<img src="../img/admin/edit.gif" border="0" alt="'.$this->l('Edit').'" title="'.$this->l('Edit').'" /></a>&nbsp;
 								<a href="'.$currentIndex.'&id_attribute='.$attribute['id_attribute'].'&deleteattribute&token='.$this->token.'"
-								onclick="return confirm(\''.$this->l('Delete attribute', __CLASS__, true, false).' : '.$attribute['name'].'?\');">
+								onclick="return confirm(\''.$this->l('Delete attribute', __CLASS__, true, false).' #'.$attribute['id_attribute'].'?\');">
 								<img src="../img/admin/delete.gif" border="0" alt="'.$this->l('Delete').'" title="'.$this->l('Delete').'" /></a>
 							</td>
 						</tr>';
@@ -163,7 +146,7 @@ class AdminAttributesGroups extends AdminTab
 				<td style="vertical-align: top; padding: 4px 0 4px 0" class="center">
 					<a href="'.$currentIndex.'&id_'.$this->table.'='.$id.'&update'.$this->table.'&token='.$this->token.'">
 					<img src="../img/admin/edit.gif" border="0" alt="'.$this->l('Edit').'" title="'.$this->l('Edit').'" /></a>&nbsp;
-					<a href="'.$currentIndex.'&id_'.$this->table.'='.$id.'&delete'.$this->table.'&token='.$this->token.'" onclick="return confirm(\''.$this->l('Delete item', __CLASS__, true, false).' : '.$tr['name'].'?\');">
+					<a href="'.$currentIndex.'&id_'.$this->table.'='.$id.'&delete'.$this->table.'&token='.$this->token.'" onclick="return confirm(\''.$this->l('Delete item', __CLASS__, true, false).' #'.$id.'?\');">
 					<img src="../img/admin/delete.gif" border="0" alt="'.$this->l('Delete').'" title="'.$this->l('Delete').'" /></a>
 				</td>
 			</tr>';
@@ -177,25 +160,21 @@ class AdminAttributesGroups extends AdminTab
 		global $currentIndex;
 		parent::displayForm();
 
-		if (!($obj = $this->loadObject(true)))
-			return;
+		$obj = $this->loadObject(true);
 
 		echo '
 		<form action="'.$currentIndex.'&token='.$this->token.'" method="post">
 		'.($obj->id ? '<input type="hidden" name="id_'.$this->table.'" value="'.$obj->id.'" />' : '').'
-			<fieldset><legend><img src="../img/admin/asterisk.gif" />'.$this->l('Attributes group').'</legend>
+			<fieldset class="width3"><legend><img src="../img/admin/asterisk.gif" />'.$this->l('Attributes group').'</legend>
 				<label>'.$this->l('Name:').' </label>
 				<div class="margin-form">';
 		foreach ($this->_languages as $language)
 			echo '
 					<div id="name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input size="33" type="text" name="name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'name', (int)($language['id_lang']))).'" /><sup> *</sup>
+						<input size="33" type="text" name="name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'name', intval($language['id_lang']))).'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
-					</div>
-				<script type="text/javascript">
-					var flag_fields = \'name¤public_name\';
-				</script>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'name', false, true);
+					</div>';
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤public_name', 'name');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -204,11 +183,11 @@ class AdminAttributesGroups extends AdminTab
 		foreach ($this->_languages as $language)
 			echo '
 					<div id="public_name_'.$language['id_lang'].'" style="display: '.($language['id_lang'] == $this->_defaultFormLanguage ? 'block' : 'none').'; float: left;">
-						<input size="33" type="text" name="public_name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'public_name', (int)($language['id_lang']))).'" /><sup> *</sup>
+						<input size="33" type="text" name="public_name_'.$language['id_lang'].'" value="'.htmlspecialchars($this->getFieldValue($obj, 'public_name', intval($language['id_lang']))).'" /><sup> *</sup>
 						<span class="hint" name="help_box">'.$this->l('Invalid characters:').' <>;=#{}<span class="hint-pointer">&nbsp;</span></span>
 						<p style="clear: both">'.$this->l('Term or phrase displayed to the customer').'</p>
 					</div>';
-		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'flag_fields', 'public_name', false, true);
+		$this->displayFlags($this->_languages, $this->_defaultFormLanguage, 'name¤public_name', 'public_name');
 		echo '
 					<div class="clear"></div>
 				</div>
@@ -220,7 +199,6 @@ class AdminAttributesGroups extends AdminTab
 					<label class="t" for="is_color_group_off"><img src="../img/admin/disabled.gif" alt="'.$this->l('Disabled').'" title="'.$this->l('No').'" /></label>
 					<p>'.$this->l('This is a color group').'</p>
 				</div>
-				'.Module::hookExec('attributeGroupForm', array('id_attribute_group' => $obj->id)).'
 				<div class="margin-form">
 					<input type="submit" value="'.$this->l('   Save   ').'" name="submitAdd'.$this->table.'" class="button" />
 				</div>
@@ -230,4 +208,4 @@ class AdminAttributesGroups extends AdminTab
 	}
 }
 
-
+?>

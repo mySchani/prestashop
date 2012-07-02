@@ -1,43 +1,24 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Open Software License (OSL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/osl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14001 $
-*  @license    http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
-class BackupCore
+/**
+  * Backup class, Backup.php
+  * AdminBackup
+  * @category classes
+  *
+  * @author Andrew Brampton
+  * @copyright Andrew Brampton
+  * @license http://www.opensource.org/licenses/osl-3.0.php Open-source licence 3.0
+  * @version 0.1
+  *
+  */
+
+class Backup
 {
 	/** @var integer Object id */
 	public $id;
+
 	/** @var string Last error messages */
 	public $error;
-	/** @var string default backup directory. */
-	public static $backupDir = '/backups/';
-	/** @var string custom backup directory. */
-	public $customBackupDir = NULL;
-
-	public $psBackupAll = true;
-	public $psBackupDropTable = true;
 
 	/**
 	 * Creates a new backup object
@@ -47,72 +28,26 @@ class BackupCore
 	public function __construct($filename = NULL)
 	{
 		if ($filename)
-			$this->id = $this->getRealBackupPath($filename);
-
-			$psBackupAll = Configuration::get('PS_BACKUP_ALL');
-			$psBackupDropTable = Configuration::get('PS_BACKUP_DROP_TABLE');
-			$this->psBackupAll = $psBackupAll !== false ? $psBackupAll : true;
-			$this->psBackupDropTable = $psBackupDropTable !== false ? $psBackupDropTable : true;
-	}
-	
-	/**
-	 * you can set a different path with that function
-	 * 
-	 * @TODO include the prefix name
-	 * @param string $dir 
-	 * @return boolean bo
-	 */
-	public function setCustomBackupPath($dir)
-	{
-		$customDir = DIRECTORY_SEPARATOR.trim($dir,'/').DIRECTORY_SEPARATOR;
-		if(is_dir(_PS_ADMIN_DIR_.DIRECTORY_SEPARATOR.$customDir.DIRECTORY_SEPARATOR))
-			$this->customBackupDir = $customDir;
-		else
-			return false;
-
-		return true;
-
+			$this->id = self::getBackupPath($filename);
 	}
 
-	/**
-	 * get the path to use for backup (customBackupDir if specified, or default)
-	 * 
-	 * @param string $filename filename to use
-	 * @return string full path
-	 */
-	public function getRealBackupPath($filename = NULL)
-	{
-		$backupDir = Backup::getBackupPath($filename);
-		if (!empty($this->customBackupDir))
-		{
-			$backupDir = str_replace(_PS_ADMIN_DIR_.self::$backupDir, _PS_ADMIN_DIR_.$this->customBackupDir, $backupDir);
-
-			if(strrpos($backupDir,DIRECTORY_SEPARATOR))
-				$backupDir .= DIRECTORY_SEPARATOR;
-		}
-		return $backupDir;
-	}
 	/**
 	 * Get the full path of the backup file
 	 *
-	 * @param string $filename prefix of the backup file (datetime will be the second part)
+	 * @param string $filename Filename of the backup file
 	 * @return The full path of the backup file, or false if the backup file does not exists
 	 */
 	public static function getBackupPath($filename)
 	{
-		$backupdir = realpath(_PS_ADMIN_DIR_.self::$backupDir);
+		$backupdir = realpath(PS_ADMIN_DIR.'/backups/');
 
 		if ($backupdir === false)
-			die(Tools::displayError('Backups directory does not exist.'));
+			die(Tools::displayError('Backups directory does not exist'));
 
 		// Check the realpath so we can validate the backup file is under the backup directory
-		if(!empty($filename))
-			$backupfile = realpath($backupdir.'/'.$filename);
-		else
-			$backupfile = $backupdir.DIRECTORY_SEPARATOR;
-
+		$backupfile = realpath($backupdir.'/'.$filename);
 		if ($backupfile === false OR strncmp($backupdir, $backupfile, strlen($backupdir)) != 0)
-			die (Tools::displayError());
+			die (Tools::displayError('Hack attempt'));
 
 		return $backupfile;
 	}
@@ -177,15 +112,15 @@ class BackupCore
 			return false;
 		}
 
-		if (!$this->psBackupAll)
+		if (!Configuration::get('PS_BACKUP_ALL'))
 			$ignore_insert_table = array(_DB_PREFIX_.'connections', _DB_PREFIX_.'connections_page', _DB_PREFIX_.'connections_source', _DB_PREFIX_.'guest', _DB_PREFIX_.'statssearch');
 		else
 			$ignore_insert_table = array();
 		
 		// Generate some random number, to make it extra hard to guess backup file names
-		$rand = dechex(mt_rand(0, min(0xffffffff, mt_getrandmax())));
+		$rand = dechex ( mt_rand(0, min(0xffffffff, mt_getrandmax() ) ) );
 		$date = time();
-		$backupfile = $this->getRealBackupPath().$date.'-'.$rand.'.sql';
+		$backupfile = PS_ADMIN_DIR . '/backups/' . $date . '-' . $rand . '.sql';
 
 		// Figure out what compression is available and open the file
 		if (function_exists('bzopen'))
@@ -193,7 +128,7 @@ class BackupCore
 			$backupfile .= '.bz2';
 			$fp = @bzopen($backupfile, 'w');
 		}
-		elseif (function_exists('gzopen'))
+		else if (function_exists('gzopen'))
 		{
 			$backupfile .= '.gz';
 			$fp = @gzopen($backupfile, 'w');
@@ -209,13 +144,13 @@ class BackupCore
 
 		$this->id = realpath($backupfile);
 
-		fwrite($fp, '/* Backup for '.Tools::getShopDomain(false, false).__PS_BASE_URI__."\n *  at ".date($date)."\n */\n");
+		fwrite($fp, '/* Backup for ' . Tools::getHttpHost(false, false) . __PS_BASE_URI__ . "\n *  at " . date($date) . "\n */\n");
 		fwrite($fp, "\n".'SET NAMES \'utf8\';'."\n\n");
 
 		// Find all tables
 		$tables = Db::getInstance()->ExecuteS('SHOW TABLES');
 		$found = 0;
-		foreach ($tables AS $table)
+		foreach ($tables as $table)
 		{
 			$table = current($table);
 
@@ -230,15 +165,11 @@ class BackupCore
 			{
 				fclose($fp);
 				$this->delete();
-				echo Tools::displayError('An error occurred while backing up. Unable to obtain the schema of').' "'.$table;
+				echo Tools::displayError('An error occur while backing up. Unable to obtain the schema of').' "'.$table;
 				return false;
 			}
 
 			fwrite($fp, '/* Scheme for table ' . $schema[0]['Table'] . " */\n");
-			
-			if ($this->psBackupDropTable)
-				fwrite($fp, 'DROP TABLE IF EXISTS `'.$schema[0]['Table'].'`;'."\n");
-			
 			fwrite($fp, $schema[0]['Create Table'] . ";\n\n");
 
 			if (!in_array($schema[0]['Table'], $ignore_insert_table))
@@ -256,10 +187,10 @@ class BackupCore
 					{
 						$s = '(';
 						
-						foreach ($row AS $field => $value)
+						foreach ($row as $field => $value)
 						{
 							$tmp = "'" . mysql_real_escape_string($value) . "',";
-							if ($tmp != "'',")
+							if($tmp != "'',")
 								$s .= $tmp;
 							else
 							{

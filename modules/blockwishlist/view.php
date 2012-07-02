@@ -1,29 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
 
 /* SSL Management */
 $useSSL = true;
@@ -39,22 +14,22 @@ if (empty($token) === false)
 	if (empty($result) === true || $result === false)
 		$errors[] = Tools::displayError('Invalid wishlist token');
 	WishList::refreshWishList($wishlist['id_wishlist']);
-	$products = WishList::getProductByIdCustomer((int)($wishlist['id_wishlist']), (int)($wishlist['id_customer']), (int)($cookie->id_lang), null, true);
+	$products = WishList::getProductByIdCustomer(intval($wishlist['id_wishlist']), intval($wishlist['id_customer']), intval($cookie->id_lang), null, true);
 	for ($i = 0; $i < sizeof($products); ++$i)
 	{
-		$obj = new Product((int)($products[$i]['id_product']), false, (int)($cookie->id_lang));
+		$obj = new Product(intval($products[$i]['id_product']), false, intval($cookie->id_lang));
 		if (!Validate::isLoadedObject($obj))
 			continue;
 		else
 		{
-			if ($products[$i]['id_product_attribute'] != 0 && isset($combination_imgs[$products[$i]['id_product_attribute']][0]))
+			if ($products[$i]['id_product_attribute'] != 0)
 			{
-				$combination_imgs = $obj->getCombinationImages((int)($cookie->id_lang));
+				$combination_imgs = $obj->getCombinationImages(intval($cookie->id_lang));
 				$products[$i]['cover'] = $obj->id.'-'.$combination_imgs[$products[$i]['id_product_attribute']][0]['id_image'];
 			}
 			else
 			{
-				$images = $obj->getImages((int)($cookie->id_lang));
+				$images = $obj->getImages(intval($cookie->id_lang));
 				foreach ($images AS $k => $image)
 				{
 					if ($image['cover'])
@@ -64,18 +39,17 @@ if (empty($token) === false)
 					}
 				}
 				if (!isset($products[$i]['cover']))
-					$products[$i]['cover'] = Language::getIsoById((int)($cookie->id_lang)).'-default';
+					$products[$i]['cover'] = Language::getIsoById(intval($cookie->id_lang)).'-default';
 			}
 		}
 	}
-	WishList::incCounter((int)($wishlist['id_wishlist']));
+	WishList::incCounter(intval($wishlist['id_wishlist']));
 	$ajax = Configuration::get('PS_BLOCK_CART_AJAX');
-	$smarty->assign(array (
-		'current_wishlist' => $wishlist,
-		'token' => $token,
-		'ajax' => ((isset($ajax) AND (int)($ajax) == 1) ? '1' : '0'),
-		'wishlists' => WishList::getByIdCustomer((int)($wishlist['id_customer'])),
-		'products' => $products));
+	$smarty->assign('current_wishlist', $wishlist);
+	$smarty->assign('token', $token);
+	$smarty->assign('ajax', (isset($ajax) AND intval($ajax) == 1) ? '1' : '0' );
+	$smarty->assign('wishlists', WishList::getByIdCustomer(intval($wishlist['id_customer'])));
+	$smarty->assign('products', $products);
 }
 
 if (Tools::file_exists_cache(_PS_THEME_DIR_.'modules/blockwishlist/view.tpl'))

@@ -1,32 +1,4 @@
 <?php
-/*
-* 2007-2012 PrestaShop
-*
-* NOTICE OF LICENSE
-*
-* This source file is subject to the Academic Free License (AFL 3.0)
-* that is bundled with this package in the file LICENSE.txt.
-* It is also available through the world-wide-web at this URL:
-* http://opensource.org/licenses/afl-3.0.php
-* If you did not receive a copy of the license and are unable to
-* obtain it through the world-wide-web, please send an email
-* to license@prestashop.com so we can send you a copy immediately.
-*
-* DISCLAIMER
-*
-* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
-* versions in the future. If you wish to customize PrestaShop for your
-* needs please refer to http://www.prestashop.com for more information.
-*
-*  @author PrestaShop SA <contact@prestashop.com>
-*  @copyright  2007-2012 PrestaShop SA
-*  @version  Release: $Revision: 14011 $
-*  @license    http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
-*  International Registered Trademark & Property of PrestaShop SA
-*/
-
-if (!defined('_PS_VERSION_'))
-	exit;
 
 class BlockViewed extends Module
 {
@@ -36,22 +8,19 @@ class BlockViewed extends Module
 	function __construct()
 	{
 		$this->name = 'blockviewed';
-		$this->tab = 'front_office_features';
+		$this->tab = 'Blocks';
 		$this->version = 0.9;
-		$this->author = 'PrestaShop';
-		$this->need_instance = 0;
 
 		parent::__construct();
 
 		$this->displayName = $this->l('Viewed products block');
-		$this->description = $this->l('Adds a block displaying last-viewed products.');
+		$this->description = $this->l('Adds a block displaying last-viewed products');
 	}
 
 	function install()
 	{
 		if (!parent::install()
 			OR !$this->registerHook('leftColumn')
-			OR !$this->registerHook('header')
 			OR !Configuration::updateValue('PRODUCTS_VIEWED_NBR', 2))
 			return false;
 		return true;
@@ -63,12 +32,12 @@ class BlockViewed extends Module
 		if (Tools::isSubmit('submitBlockViewed'))
 		{
 			if (!$productNbr = Tools::getValue('productNbr') OR empty($productNbr))
-				$output .= '<div class="alert error">'.$this->l('You must fill in the \'Products displayed\' field.').'</div>';
-			elseif ((int)($productNbr) == 0)
+				$output .= '<div class="alert error">'.$this->l('You must fill in the \'Products displayed\' field').'</div>';
+			elseif (intval($productNbr) == 0)
 				$output .= '<div class="alert error">'.$this->l('Invalid number.').'</div>';
 			else
 			{
-				Configuration::updateValue('PRODUCTS_VIEWED_NBR', (int)($productNbr));
+				Configuration::updateValue('PRODUCTS_VIEWED_NBR', intval($productNbr));
 				$output .= '<div class="conf confirm"><img src="../img/admin/ok.gif" alt="'.$this->l('Confirmation').'" />'.$this->l('Settings updated').'</div>';
 			}
 		}
@@ -78,7 +47,7 @@ class BlockViewed extends Module
 	public function displayForm()
 	{
 		$output = '
-		<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post">
+		<form action="'.$_SERVER['REQUEST_URI'].'" method="post">
 			<fieldset><legend><img src="'.$this->_path.'logo.gif" alt="" title="" />'.$this->l('Settings').'</legend>
 				<label>'.$this->l('Products displayed').'</label>
 				<div class="margin-form">
@@ -95,7 +64,7 @@ class BlockViewed extends Module
 	{
 		global $link, $smarty, $cookie;
 
-		$id_product = (int)(Tools::getValue('id_product'));
+		$id_product = intval(Tools::getValue('id_product'));
 		$productsViewed = (isset($params['cookie']->viewed) AND !empty($params['cookie']->viewed)) ? array_slice(explode(',', $params['cookie']->viewed), 0, Configuration::get('PRODUCTS_VIEWED_NBR')) : array();
 
 		if (sizeof($productsViewed))
@@ -103,16 +72,17 @@ class BlockViewed extends Module
 			$defaultCover = Language::getIsoById($params['cookie']->id_lang).'-default';
 
 			$productIds = implode(',', $productsViewed);
-			$productsImages = Db::getInstance(_PS_USE_SQL_SLAVE_)->ExecuteS('
+			$productsImages = Db::getInstance()->ExecuteS('
 			SELECT i.id_image, p.id_product, il.legend, p.active, pl.name, pl.description_short, pl.link_rewrite, cl.link_rewrite AS category_rewrite
 			FROM '._DB_PREFIX_.'product p
 			LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
-			LEFT JOIN '._DB_PREFIX_.'image i ON (i.id_product = p.id_product AND i.cover = 1)
+			LEFT JOIN '._DB_PREFIX_.'image i ON (i.id_product = p.id_product)
 			LEFT JOIN '._DB_PREFIX_.'image_lang il ON (il.id_image = i.id_image)
 			LEFT JOIN '._DB_PREFIX_.'category_lang cl ON (cl.id_category = p.id_category_default)
 			WHERE p.id_product IN ('.$productIds.')
-			AND pl.id_lang = '.(int)($params['cookie']->id_lang).'
-			AND cl.id_lang = '.(int)($params['cookie']->id_lang)
+			AND pl.id_lang = '.intval($params['cookie']->id_lang).'
+			AND cl.id_lang = '.intval($params['cookie']->id_lang).'
+			AND i.cover = 1'
 			);
 
 			$productsImagesArray = array();
@@ -127,15 +97,15 @@ class BlockViewed extends Module
 					continue;
 				else
 				{
-					$obj->id = (int)($productsImagesArray[$productViewed]['id_product']);
-					$obj->cover = (int)($productsImagesArray[$productViewed]['id_product']).'-'.(int)($productsImagesArray[$productViewed]['id_image']);
+					$obj->id = intval($productsImagesArray[$productViewed]['id_product']);
+					$obj->cover = intval($productsImagesArray[$productViewed]['id_product']).'-'.intval($productsImagesArray[$productViewed]['id_image']);
 					$obj->legend = $productsImagesArray[$productViewed]['legend'];
 					$obj->name = $productsImagesArray[$productViewed]['name'];
 					$obj->description_short = $productsImagesArray[$productViewed]['description_short'];
 					$obj->link_rewrite = $productsImagesArray[$productViewed]['link_rewrite'];
 					$obj->category_rewrite = $productsImagesArray[$productViewed]['category_rewrite'];
 
-					if (!isset($obj->cover) || !$productsImagesArray[$productViewed]['id_image'])
+					if (!isset($obj->cover))
 					{
 						$obj->cover = $defaultCover;
 						$obj->legend = '';
@@ -153,8 +123,8 @@ class BlockViewed extends Module
 				LEFT JOIN `'._DB_PREFIX_.'category_product` cp ON (cp.`id_product` = p.`id_product`)
 				LEFT JOIN `'._DB_PREFIX_.'category_group` cg ON (cg.`id_category` = cp.`id_category`)
 				LEFT JOIN `'._DB_PREFIX_.'customer_group` cug ON (cug.`id_group` = cg.`id_group`)
-				WHERE p.`id_product` = '.(int)($id_product).'
-				'.($cookie->id_customer ? 'AND cug.`id_customer` = '.(int)($cookie->id_customer) : 
+				WHERE p.`id_product` = '.intval($id_product).'
+				'.($cookie->id_customer ? 'AND cug.`id_customer` = '.intval($cookie->id_customer) : 
 				'AND cg.`id_group` = 1')
 				);
 				if ($result['total'])
@@ -162,7 +132,7 @@ class BlockViewed extends Module
 			}
 			$viewed = '';
 			foreach ($productsViewed AS $id_product_viewed)
-				$viewed .= (int)($id_product_viewed).',';
+				$viewed .= intval($id_product_viewed).',';
 			$params['cookie']->viewed = rtrim($viewed, ',');
 
 			if (!sizeof($productsViewedObj))
@@ -175,7 +145,7 @@ class BlockViewed extends Module
 			return $this->display(__FILE__, 'blockviewed.tpl');
 		}
 		elseif ($id_product)
-			$params['cookie']->viewed = (int)($id_product);
+			$params['cookie']->viewed = intval($id_product);
 		return ;
 	}
 
@@ -184,8 +154,4 @@ class BlockViewed extends Module
 		return $this->hookRightColumn($params);
 	}
 
-	function hookHeader($params)
-	{
-		Tools::addCSS(($this->_path).'blockviewed.css', 'all');
-	}
 }
